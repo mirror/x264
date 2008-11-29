@@ -1,7 +1,10 @@
 /*****************************************************************************
  * rdo.c: h264 encoder library (rate-distortion optimization)
  *****************************************************************************
- * Copyright (C) 2005-2008 Loren Merritt <lorenm@u.washington.edu>
+ * Copyright (C) 2005-2008 x264 project
+ *
+ * Authors: Loren Merritt <lorenm@u.washington.edu>
+ *          Fiona Glaser <fiona@x264.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

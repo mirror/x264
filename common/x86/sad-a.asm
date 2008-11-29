@@ -5,6 +5,7 @@
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
 ;*          Laurent Aimar <fenrir@via.ecp.fr>
+;*          Fiona Glaser <fiona@x264.com>
 ;*          Alex Izvorski <aizvorksi@gmail.com>
 ;*
 ;* This program is free software; you can redistribute it and/or modify
