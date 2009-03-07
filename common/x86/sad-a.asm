@@ -4,8 +4,8 @@
 ;* Copyright (C) 2003-2008 x264 project
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
-;*          Laurent Aimar <fenrir@via.ecp.fr>
 ;*          Fiona Glaser <fiona@x264.com>
+;*          Laurent Aimar <fenrir@via.ecp.fr>
 ;*          Alex Izvorski <aizvorksi@gmail.com>
 ;*
 ;* This program is free software; you can redistribute it and/or modify
