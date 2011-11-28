@@ -884,7 +884,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         {
             INIT4( hadamard_ac, _sse2 );
         }
-
+        pixf->vsad = x264_pixel_vsad_sse2;
         pixf->intra_sad_x3_8x8    = x264_intra_sad_x3_8x8_sse2;
         pixf->intra_sad_x3_8x8c   = x264_intra_sad_x3_8x8c_sse2;
         pixf->intra_sad_x3_16x16  = x264_intra_sad_x3_16x16_sse2;
@@ -911,7 +911,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         {
             INIT4( hadamard_ac, _ssse3 );
         }
-
+        pixf->vsad = x264_pixel_vsad_ssse3;
         pixf->sa8d[PIXEL_16x16]= x264_pixel_sa8d_16x16_ssse3;
         pixf->sa8d[PIXEL_8x8]  = x264_pixel_sa8d_8x8_ssse3;
         pixf->intra_sad_x3_4x4    = x264_intra_sad_x3_4x4_ssse3;
@@ -942,6 +942,10 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->ssd_nv12_core    = x264_pixel_ssd_nv12_core_avx;
         pixf->ssim_4x4x2_core  = x264_pixel_ssim_4x4x2_core_avx;
         pixf->ssim_end4        = x264_pixel_ssim_end4_avx;
+    }
+    if( cpu&X264_CPU_XOP )
+    {
+        pixf->vsad = x264_pixel_vsad_xop;
     }
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH

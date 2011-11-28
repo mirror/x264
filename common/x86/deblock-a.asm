@@ -1780,6 +1780,52 @@ INIT_XMM sse2
 DEBLOCK_CHROMA
 INIT_XMM avx
 DEBLOCK_CHROMA
+
+%macro DEBLOCK_H_CHROMA_422_INTRA_10 0
+cglobal deblock_h_chroma_422_intra, 4,6,8
+    add         r1, r1
+    mov         r4, 64/mmsize
+%if mmsize == 16
+    lea         r5, [r1*3]
+%endif
+.loop:
+    CHROMA_H_LOAD r5
+    call        deblock_intra_body
+    CHROMA_H_STORE r5
+    lea         r0, [r0+r1*(mmsize/4)]
+    dec         r4
+    jg .loop
+    REP_RET
+%endmacro
+INIT_XMM sse2
+DEBLOCK_H_CHROMA_422_INTRA_10
+
+%macro DEBLOCK_H_CHROMA_422_10 0
+cglobal deblock_h_chroma_422, 5,7,8
+    add         r1, r1
+    mov         r5, 64/mmsize
+    lea         r6, [r1*3]
+.loop:
+    CHROMA_H_LOAD r6
+    RESET_MM_PERMUTATION
+    LOAD_AB     m4, m5, r2, r3
+    LOAD_MASK   m0, m1, m2, m3, m4, m5, m7, m6, m4
+    pxor        m4, m4
+    movd        m6, [r4-1]
+    psraw       m6, 8
+    SPLATW      m6, m6
+    pmaxsw      m6, m4
+    pand        m7, m6
+    DEBLOCK_P0_Q0 m1, m2, m0, m3, m7, m5, m6
+    CHROMA_H_STORE r6
+    lea         r0, [r0+r1*(mmsize/4)]
+    add         r4, mmsize/16
+    dec         r5
+    jg .loop
+    REP_RET
+%endmacro
+INIT_XMM sse2
+DEBLOCK_H_CHROMA_422_10
 %endif ; HIGH_BIT_DEPTH
 
 %ifndef HIGH_BIT_DEPTH
@@ -1791,7 +1837,7 @@ DEBLOCK_CHROMA
     sub    t5, r1
 %if mmsize==8
     mov   dword r0m, 2
-.skip_prologue:
+.loop:
 %endif
 %endmacro
 
@@ -1802,10 +1848,6 @@ DEBLOCK_CHROMA
     lea    t6, [r1*3]
     mov    t5, r0
     add    r0, t6
-%if mmsize==8
-    mov   dword r0m, 2
-.skip_prologue:
-%endif
 %endmacro
 
 %macro CHROMA_V_LOOP 1
@@ -1816,7 +1858,7 @@ DEBLOCK_CHROMA
     add   r4, 2
 %endif
     dec   dword r0m
-    jg .skip_prologue
+    jg .loop
 %endif
 %endmacro
 
@@ -1828,7 +1870,7 @@ DEBLOCK_CHROMA
     add   r4, 2
 %endif
     dec   dword r0m
-    jg .skip_prologue
+    jg .loop
 %endif
 %endmacro
 
@@ -1865,6 +1907,10 @@ cglobal deblock_v_chroma, 5,6,8
 ;-----------------------------------------------------------------------------
 cglobal deblock_h_chroma, 5,7,8
     CHROMA_H_START
+%if mmsize==8
+    mov   dword r0m, 2
+.loop:
+%endif
     TRANSPOSE4x8W_LOAD PASS8ROWS(t5, r0, r1, t6)
     call chroma_inter_body
     TRANSPOSE8x2W_STORE PASS8ROWS(t5, r0, r1, t6, 2)
@@ -1888,14 +1934,9 @@ cglobal deblock_h_chroma_422, 5,7,8
 %else
     %define cntr dword r0m
 %endif
-    dec    r2d
-    dec    r3d
-    sub    r0, 4
-    lea    t6, [r1*3]
-    mov    t5, r0
-    add    r0, t6
+    CHROMA_H_START
     mov  cntr, 32/mmsize
-.skip_prologue:
+.loop:
     TRANSPOSE4x8W_LOAD PASS8ROWS(t5, r0, r1, t6)
     LOAD_MASK  r2d, r3d
     movd       m6, [r4] ; tc0
@@ -1913,7 +1954,7 @@ cglobal deblock_h_chroma_422, 5,7,8
     lea   t5, [t5+r1*(mmsize/2)]
     add   r4, mmsize/8
     dec   cntr
-    jg .skip_prologue
+    jg .loop
     REP_RET
 %endmacro
 
@@ -1972,6 +2013,10 @@ cglobal deblock_v_chroma_intra, 4,5,8
 ;-----------------------------------------------------------------------------
 cglobal deblock_h_chroma_intra, 4,6,8
     CHROMA_H_START
+%if mmsize==8
+    mov   dword r0m, 2
+.loop:
+%endif
     TRANSPOSE4x8W_LOAD  PASS8ROWS(t5, r0, r1, t6)
     call chroma_intra_body
     TRANSPOSE8x2W_STORE PASS8ROWS(t5, r0, r1, t6, 2)
@@ -1986,6 +2031,27 @@ DEBLOCK_CHROMA_INTRA
 %ifndef ARCH_X86_64
 INIT_MMX mmx2
 DEBLOCK_CHROMA_INTRA
+%endif
+
+%macro DEBLOCK_H_CHROMA_422_INTRA 0
+cglobal deblock_h_chroma_422_intra, 4,7,8
+    CHROMA_H_START
+    mov   r6d, 32/mmsize
+.loop:
+    TRANSPOSE4x8W_LOAD  PASS8ROWS(t5, r0, r1, t6)
+    call chroma_intra_body
+    TRANSPOSE8x2W_STORE PASS8ROWS(t5, r0, r1, t6, 2)
+    lea   r0, [r0+r1*(mmsize/2)]
+    lea   t5, [t5+r1*(mmsize/2)]
+    dec  r6d
+    jg .loop
+    REP_RET
+%endmacro
+INIT_XMM sse2
+DEBLOCK_H_CHROMA_422_INTRA
+%ifndef ARCH_X86_64
+INIT_MMX mmx2
+DEBLOCK_H_CHROMA_422_INTRA
 %endif
 %endif ; !HIGH_BIT_DEPTH
 

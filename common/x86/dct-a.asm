@@ -31,6 +31,7 @@
 %include "x86util.asm"
 
 SECTION_RODATA
+pw_ppmmmmpp:    dw 1,1,-1,-1,-1,-1,1,1
 pb_sub4frame:   db 0,1,4,8,5,2,3,6,9,12,13,10,7,11,14,15
 pb_sub4field:   db 0,4,1,8,12,5,9,13,2,6,10,14,3,7,11,15
 pb_subacmask:   dw 0,-1,-1,-1,-1,-1,-1,-1
@@ -851,6 +852,79 @@ INIT_XMM ssse3
 SUB8x16_DCT_DC
 
 %endif ; !HIGH_BIT_DEPTH
+
+%macro DCTDC_4ROW_SSE2 2
+    mova       %1, [r1+FENC_STRIDEB*%2]
+    mova       m0, [r2+FDEC_STRIDEB*%2]
+%assign Y (%2+1)
+%rep 3
+    paddw      %1, [r1+FENC_STRIDEB*Y]
+    paddw      m0, [r2+FDEC_STRIDEB*Y]
+%assign Y (Y+1)
+%endrep
+    psubw      %1, m0
+    pshufd     m0, %1, q2301
+    paddw      %1, m0
+%endmacro
+
+%ifdef HIGH_BIT_DEPTH
+%macro SUB8x8_DCT_DC_10 0
+cglobal sub8x8_dct_dc, 3,3,3
+    DCTDC_4ROW_SSE2 m1, 0
+    DCTDC_4ROW_SSE2 m2, 4
+    mova       m0, [pw_ppmmmmpp]
+    pmaddwd    m1, m0
+    pmaddwd    m2, m0
+    pshufd     m0, m1, q2200      ; -1 -1 +0 +0
+    pshufd     m1, m1, q0033      ; +0 +0 +1 +1
+    paddd      m1, m0
+    pshufd     m0, m2, q1023      ; -2 +2 -3 +3
+    paddd      m1, m2
+    paddd      m1, m0
+    mova     [r0], m1
+    RET
+%endmacro
+INIT_XMM sse2
+SUB8x8_DCT_DC_10
+
+%macro SUB8x16_DCT_DC_10 0
+cglobal sub8x16_dct_dc, 3,3,6
+    DCTDC_4ROW_SSE2 m1, 0
+    DCTDC_4ROW_SSE2 m2, 4
+    DCTDC_4ROW_SSE2 m3, 8
+    DCTDC_4ROW_SSE2 m4, 12
+    mova       m0, [pw_ppmmmmpp]
+    pmaddwd    m1, m0
+    pmaddwd    m2, m0
+    pshufd     m5, m1, q2200      ; -1 -1 +0 +0
+    pshufd     m1, m1, q0033      ; +0 +0 +1 +1
+    paddd      m1, m5
+    pshufd     m5, m2, q1023      ; -2 +2 -3 +3
+    paddd      m1, m2
+    paddd      m1, m5             ; a6 a2 a4 a0
+    pmaddwd    m3, m0
+    pmaddwd    m4, m0
+    pshufd     m5, m3, q2200
+    pshufd     m3, m3, q0033
+    paddd      m3, m5
+    pshufd     m5, m4, q1023
+    paddd      m3, m4
+    paddd      m3, m5             ; a7 a3 a5 a1
+    paddd      m0, m1, m3
+    psubd      m1, m3
+    pshufd     m0, m0, q3120
+    pshufd     m1, m1, q3120
+    punpcklqdq m2, m0, m1
+    punpckhqdq m1, m0
+    mova  [r0+ 0], m2
+    mova  [r0+16], m1
+    RET
+%endmacro
+INIT_XMM sse2
+SUB8x16_DCT_DC_10
+INIT_XMM avx
+SUB8x16_DCT_DC_10
+%endif
 
 ;-----------------------------------------------------------------------------
 ; void zigzag_scan_8x8_frame( int16_t level[64], int16_t dct[8][8] )

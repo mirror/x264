@@ -153,6 +153,8 @@ int  x264_pixel_var2_8x16_ssse3( uint8_t *, int, uint8_t *, int, int * );
 int  x264_pixel_var2_8x16_xop( uint8_t *, int, uint8_t *, int, int * );
 int  x264_pixel_vsad_mmx2( pixel *src, int stride, int height );
 int  x264_pixel_vsad_sse2( pixel *src, int stride, int height );
+int  x264_pixel_vsad_ssse3( pixel *src, int stride, int height );
+int  x264_pixel_vsad_xop( pixel *src, int stride, int height );
 
 #define DECL_ADS( size, suffix ) \
 int x264_pixel_ads##size##_##suffix( int enc_dc[size], uint16_t *sums, int delta,\

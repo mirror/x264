@@ -347,6 +347,57 @@ SAD_XMM  8,  8
 %endrep
 %endmacro
 
+%macro PIXEL_VSAD 0
+cglobal pixel_vsad, 3,3,8
+    mova      m0, [r0]
+    mova      m1, [r0+16]
+    mova      m2, [r0+2*r1]
+    mova      m3, [r0+2*r1+16]
+    lea       r0, [r0+4*r1]
+    psubw     m0, m2
+    psubw     m1, m3
+    ABSW2     m0, m1, m0, m1, m4, m5
+    paddw     m0, m1
+    sub      r2d, 2
+    je .end
+.loop:
+    mova      m4, [r0]
+    mova      m5, [r0+16]
+    mova      m6, [r0+2*r1]
+    mova      m7, [r0+2*r1+16]
+    lea       r0, [r0+4*r1]
+    psubw     m2, m4
+    psubw     m3, m5
+    psubw     m4, m6
+    psubw     m5, m7
+    ABSW      m2, m2, m1
+    ABSW      m3, m3, m1
+    ABSW      m4, m4, m1
+    ABSW      m5, m5, m1
+    paddw     m0, m2
+    paddw     m0, m3
+    paddw     m0, m4
+    paddw     m0, m5
+    mova      m2, m6
+    mova      m3, m7
+    sub r2d, 2
+    jg .loop
+.end:
+%if BIT_DEPTH == 9
+    HADDW     m0, m1 ; max sum: 62(pixel diffs)*511(pixel_max)=31682
+%else
+    HADDUW    m0, m1 ; max sum: 62(pixel diffs)*1023(pixel_max)=63426
+%endif
+    movd     eax, m0
+    RET
+%endmacro
+INIT_XMM sse2
+PIXEL_VSAD
+INIT_XMM ssse3
+PIXEL_VSAD
+INIT_XMM xop
+PIXEL_VSAD
+
 ;-----------------------------------------------------------------------------
 ; void pixel_sad_xK_MxN( uint16_t *fenc, uint16_t *pix0, uint16_t *pix1,
 ;                        uint16_t *pix2, int i_stride, int scores[3] )

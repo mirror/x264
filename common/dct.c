@@ -511,7 +511,9 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->idct4x4dc       = x264_idct4x4dc_sse2;
         dctf->add8x8_idct     = x264_add8x8_idct_sse2;
         dctf->add16x16_idct   = x264_add16x16_idct_sse2;
+        dctf->sub8x8_dct_dc   = x264_sub8x8_dct_dc_sse2;
         dctf->add8x8_idct_dc  = x264_add8x8_idct_dc_sse2;
+        dctf->sub8x16_dct_dc  = x264_sub8x16_dct_dc_sse2;
         dctf->add16x16_idct_dc= x264_add16x16_idct_dc_sse2;
     }
     if( cpu&X264_CPU_AVX )
@@ -522,6 +524,7 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->add8x8_idct     = x264_add8x8_idct_avx;
         dctf->add16x16_idct   = x264_add16x16_idct_avx;
         dctf->add8x8_idct_dc  = x264_add8x8_idct_dc_avx;
+        dctf->sub8x16_dct_dc  = x264_sub8x16_dct_dc_avx;
         dctf->add16x16_idct_dc= x264_add16x16_idct_dc_avx;
     }
 #endif // HAVE_MMX

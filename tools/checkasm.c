@@ -426,6 +426,10 @@ static int check_pixel( int cpu_ref, int cpu_new )
         }
     report( "pixel hadamard_ac :" );
 
+    // maximize sum
+    for( int i = 0; i < 32; i++ )
+        for( int j = 0; j < 16; j++ )
+            pbuf4[16*i+j] = -((i+j)&1) & PIXEL_MAX;
     ok = 1; used_asm = 0;
     if( pixel_asm.vsad != pixel_ref.vsad )
     {
@@ -434,13 +438,17 @@ static int check_pixel( int cpu_ref, int cpu_new )
             int res_c, res_asm;
             set_func_name( "vsad" );
             used_asm = 1;
-            res_c   = call_c( pixel_c.vsad,   pbuf1, 16, h );
-            res_asm = call_a( pixel_asm.vsad, pbuf1, 16, h );
-            if( res_c != res_asm )
+            for( int j = 0; j < 2 && ok; j++ )
             {
-                ok = 0;
-                fprintf( stderr, "vsad: height=%d, %d != %d\n", h, res_c, res_asm );
-                break;
+                pixel *p = j ? pbuf4 : pbuf1;
+                res_c   = call_c( pixel_c.vsad,   p, 16, h );
+                res_asm = call_a( pixel_asm.vsad, p, 16, h );
+                if( res_c != res_asm )
+                {
+                    ok = 0;
+                    fprintf( stderr, "vsad: height=%d, %d != %d\n", h, res_c, res_asm );
+                    break;
+                }
             }
         }
     }
@@ -721,8 +729,8 @@ static int check_dct( int cpu_ref, int cpu_new )
         {
             int cond_a = (i < 2) ? 1 : ((j&3) == 0 || (j&3) == (i-1));
             int cond_b = (i == 0) ? 1 : !cond_a;
-            enc[0] = enc[1] = cond_a ? PIXEL_MAX : 0;
-            enc[2] = enc[3] = cond_b ? PIXEL_MAX : 0;
+            enc[0] = enc[1] = enc[4] = enc[5] = enc[8] = enc[9] = enc[12] = enc[13] = cond_a ? PIXEL_MAX : 0;
+            enc[2] = enc[3] = enc[6] = enc[7] = enc[10] = enc[11] = enc[14] = enc[15] = cond_b ? PIXEL_MAX : 0;
 
             for( int k = 0; k < 4; k++ )
                 dec[k] = PIXEL_MAX - enc[k];
