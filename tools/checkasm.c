@@ -1565,11 +1565,15 @@ static int check_deblock( int cpu_ref, int cpu_new )
     TEST_DEBLOCK( deblock_luma[1], 1, tcs[i] );
     TEST_DEBLOCK( deblock_h_chroma_420, 0, tcs[i] );
     TEST_DEBLOCK( deblock_h_chroma_422, 0, tcs[i] );
+    TEST_DEBLOCK( deblock_chroma_420_mbaff, 0, tcs[i] );
+    TEST_DEBLOCK( deblock_chroma_422_mbaff, 0, tcs[i] );
     TEST_DEBLOCK( deblock_chroma[1], 1, tcs[i] );
     TEST_DEBLOCK( deblock_luma_intra[0], 0 );
     TEST_DEBLOCK( deblock_luma_intra[1], 1 );
     TEST_DEBLOCK( deblock_h_chroma_420_intra, 0 );
     TEST_DEBLOCK( deblock_h_chroma_422_intra, 0 );
+    TEST_DEBLOCK( deblock_chroma_420_intra_mbaff, 0 );
+    TEST_DEBLOCK( deblock_chroma_422_intra_mbaff, 0 );
     TEST_DEBLOCK( deblock_chroma_intra[1], 1 );
 
     if( db_a.deblock_strength != db_ref.deblock_strength )

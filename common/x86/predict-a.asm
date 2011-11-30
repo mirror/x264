@@ -1423,8 +1423,8 @@ cglobal predict_8x8_vl, 2,2,8
     mova         [r0-2*FDEC_STRIDEB], m3
     PALIGNR      m3, m7, m6, SIZEOF_PIXEL*2, m5
     mova         [r0+0*FDEC_STRIDEB], m3
-    PALIGNR      m3, m7, m6, SIZEOF_PIXEL*3, m5
-    mova         [r0+2*FDEC_STRIDEB], m3
+    PALIGNR      m7, m7, m6, SIZEOF_PIXEL*3, m5
+    mova         [r0+2*FDEC_STRIDEB], m7
     PALIGNR      m3, m1, m0, SIZEOF_PIXEL*7, m6
     PSLLPIX      m5, m0, 1
     PRED8x8_LOWPASS m0, m5, m2, m0, m7
@@ -1435,8 +1435,8 @@ cglobal predict_8x8_vl, 2,2,8
     mova         [r0-1*FDEC_STRIDEB], m4
     PALIGNR      m4, m1, m0, SIZEOF_PIXEL*3, m2
     mova         [r0+1*FDEC_STRIDEB], m4
-    PALIGNR      m4, m1, m0, SIZEOF_PIXEL*4, m2
-    mova         [r0+3*FDEC_STRIDEB], m4
+    PALIGNR      m1, m1, m0, SIZEOF_PIXEL*4, m2
+    mova         [r0+3*FDEC_STRIDEB], m1
     RET
 %endmacro
 %ifdef HIGH_BIT_DEPTH
