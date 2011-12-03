@@ -1663,7 +1663,6 @@ PREDICT_8x16C_V
 ;-----------------------------------------------------------------------------
 %ifdef HIGH_BIT_DEPTH
 
-INIT_XMM sse2
 %macro PREDICT_C_H 1
 cglobal predict_8x%1c_h, 1,1
     add        r0, FDEC_STRIDEB*4
@@ -1672,11 +1671,18 @@ cglobal predict_8x%1c_h, 1,1
     movd       m0, [r0+FDEC_STRIDEB*Y-SIZEOF_PIXEL*2]
     SPLATW     m0, m0, 1
     mova [r0+FDEC_STRIDEB*Y], m0
+%if mmsize == 8
+    mova [r0+FDEC_STRIDEB*Y+8], m0
+%endif
 %assign Y Y+1
 %endrep
     RET
 %endmacro
 
+INIT_MMX mmx2
+PREDICT_C_H 8
+PREDICT_C_H 16
+INIT_XMM sse2
 PREDICT_C_H 8
 PREDICT_C_H 16
 

@@ -338,6 +338,7 @@ void x264_predict_8x8c_init_mmx( int cpu, x264_predict_t pf[7] )
     if( !(cpu&X264_CPU_MMX2) )
         return;
     pf[I_PRED_CHROMA_DC]      = x264_predict_8x8c_dc_mmx2;
+    pf[I_PRED_CHROMA_H]       = x264_predict_8x8c_h_mmx2;
     if( !(cpu&X264_CPU_SSE2) )
         return;
     pf[I_PRED_CHROMA_V]       = x264_predict_8x8c_v_sse2;
@@ -386,6 +387,7 @@ void x264_predict_8x16c_init_mmx( int cpu, x264_predict_t pf[7] )
     if( !(cpu&X264_CPU_MMX2) )
         return;
     pf[I_PRED_CHROMA_DC]      = x264_predict_8x16c_dc_mmx2;
+    pf[I_PRED_CHROMA_H]       = x264_predict_8x16c_h_mmx2;
     if( !(cpu&X264_CPU_SSE2) )
         return;
     pf[I_PRED_CHROMA_V]       = x264_predict_8x16c_v_sse2;
