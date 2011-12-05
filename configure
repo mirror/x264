@@ -768,10 +768,10 @@ if [ "$swscale" = "auto" ] ; then
     [ -z "$SWSCALE_LIBS" ] && SWSCALE_LIBS="-lswscale -lavutil"
 
     if cc_check "libswscale/swscale.h" "$SWSCALE_CFLAGS $SWSCALE_LIBS" "sws_init_context(0,0,0);" ; then
-        if cc_check "libavutil/pixdesc.h" "$SWSCALE_CFLAGS $SWSCALE_LIBS" "av_get_pix_fmt_name(0);" ; then
+        if cpp_check "libavutil/pixdesc.h" "$SWSCALE_CFLAGS $SWSCALE_LIBS" "defined(PIX_FMT_RGB)" ; then
             swscale="yes"
         else
-            echo "Warning: av_get_pix_fmt_name is missing from libavutil, update for swscale support"
+            echo "Warning: PIX_FMT_RGB is missing from libavutil, update for swscale support"
         fi
     fi
 fi
