@@ -373,14 +373,17 @@ static int x264_coeff_level_run##num( dctcoef *dct, x264_run_level_t *runlevel )
 {\
     int i_last = runlevel->last = x264_coeff_last##num(dct);\
     int i_total = 0;\
+    int mask = 0;\
     do\
     {\
         int r = 0;\
         runlevel->level[i_total] = dct[i_last];\
+        mask |= 1 << (i_last);\
         while( --i_last >= 0 && dct[i_last] == 0 )\
             r++;\
         runlevel->run[i_total++] = r;\
     } while( i_last >= 0 );\
+    runlevel->mask = mask;\
     return i_total;\
 }
 

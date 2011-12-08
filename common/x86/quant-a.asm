@@ -1352,8 +1352,16 @@ cglobal coeff_level_run%1,0,7
     movifnidn t1, r1mp
     pxor    m2, m2
     LAST_MASK %1, t5d, t0-(%1&1)*SIZEOF_DCTCOEF, t4d
-    not    t5d
-    shl    t5d, 32-((%1+1)&~1)
+%if %1==15
+    shr   t5d, 1
+%elif %1==8
+    and   t5d, 0xff
+%elif %1==4
+    and   t5d, 0xf
+%endif
+    xor   t5d, (1<<%1)-1
+    mov   [t1+4], t5d
+    shl    t5d, 32-%1
     mov    t4d, %1-1
     LZCOUNT t3d, t5d, 0x1f
     xor    t6d, t6d
@@ -1365,12 +1373,12 @@ cglobal coeff_level_run%1,0,7
     LZCOUNT t3d, t5d, 0x1f
 %ifdef HIGH_BIT_DEPTH
     mov    t2d, [t0+t4*4]
-    mov   [t1+t6  +4+16*4], t3b
-    mov   [t1+t6*4+ 4], t2d
+    mov   [t1+t6+8+16*4], t3b
+    mov   [t1+t6*4+ 8], t2d
 %else
     mov    t2w, [t0+t4*2]
-    mov   [t1+t6  +4+16*2], t3b
-    mov   [t1+t6*2+ 4], t2w
+    mov   [t1+t6+8+16*2], t3b
+    mov   [t1+t6*2+ 8], t2w
 %endif
     inc    t3d
     shl    t5d, t3b

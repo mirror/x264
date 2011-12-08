@@ -2013,6 +2013,7 @@ static int check_quant( int cpu_ref, int cpu_new )
             int result_c = call_c( qf_c.lastname, dct1+ac, &runlevel_c ); \
             int result_a = call_a( qf_a.lastname, dct1+ac, &runlevel_a ); \
             if( result_c != result_a || runlevel_c.last != runlevel_a.last || \
+                runlevel_c.mask != runlevel_a.mask || \
                 memcmp(runlevel_c.level, runlevel_a.level, sizeof(dctcoef)*result_c) || \
                 memcmp(runlevel_c.run, runlevel_a.run, sizeof(uint8_t)*(result_c-1)) ) \
             { \
