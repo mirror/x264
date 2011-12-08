@@ -52,6 +52,8 @@ cextern pb_1
 cextern pw_1
 cextern pd_1
 cextern pd_32
+cextern pw_ppppmmmm
+cextern pw_pmpmpmpm
 
 %macro WALSH4_1D 6
     SUMSUB_BADC %1, %5, %4, %3, %2, %6
@@ -727,11 +729,11 @@ ADD16x16
 ; void sub8x8_dct_dc( int16_t dct[2][2], uint8_t *pix1, uint8_t *pix2 )
 ;-----------------------------------------------------------------------------
 
-%macro DCTDC_2ROW_MMX 3
+%macro DCTDC_2ROW_MMX 4
     movq      %1, [r1+FENC_STRIDE*(0+%3)]
     movq      m1, [r1+FENC_STRIDE*(1+%3)]
-    movq      m2, [r2+FDEC_STRIDE*(0+%3)]
-    movq      m3, [r2+FDEC_STRIDE*(1+%3)]
+    movq      m2, [r2+FDEC_STRIDE*(0+%4)]
+    movq      m3, [r2+FDEC_STRIDE*(1+%4)]
     movq      %2, %1
     punpckldq %1, m1
     punpckhdq %2, m1
@@ -747,30 +749,29 @@ ADD16x16
     psubw     %2, m1
 %endmacro
 
-%macro DCT2x2 2 ; reg s1/s0 (!=m1), reg s3/s2
-    pshufw    mm1, %1, q2200  ;  s1  s1  s0  s0
-    pshufw    mm0, %2, q2301  ;  s3  __  s2  __
-    paddw     mm1, %2         ;  s1 s13  s0 s02
-    psubw     mm1, mm0        ; d13 s13 d02 s02
-    pshufw    mm0, mm1, q1010 ; d02 s02 d02 s02
-    psrlq     mm1, 32         ;  __  __ d13 s13
-    paddw     mm0, mm1        ; d02 s02 d02+d13 s02+s13
-    psllq     mm1, 32         ; d13 s13
-    psubw     mm0, mm1        ; d02-d13 s02-s13 d02+d13 s02+s13
+%macro DCT2x2 2 ; reg s1/s0, reg s3/s2 (!=m0/m1)
+    PSHUFLW   m1, %1, q2200  ;  s1  s1  s0  s0
+    PSHUFLW   m0, %2, q2301  ;  s3  __  s2  __
+    paddw     m1, %2         ;  s1 s13  s0 s02
+    psubw     m1, m0         ; d13 s13 d02 s02
+    PSHUFLW   m0, m1, q1010  ; d02 s02 d02 s02
+    psrlq     m1, 32         ;  __  __ d13 s13
+    paddw     m0, m1         ; d02 s02 d02+d13 s02+s13
+    psllq     m1, 32         ; d13 s13
+    psubw     m0, m1         ; d02-d13 s02-s13 d02+d13 s02+s13
 %endmacro
 
 %ifndef HIGH_BIT_DEPTH
 INIT_MMX
 cglobal sub8x8_dct_dc_mmx2, 3,3
-    DCTDC_2ROW_MMX m0, m4, 0
-    DCTDC_2ROW_MMX m5, m6, 2
+    DCTDC_2ROW_MMX m0, m4, 0, 0
+    DCTDC_2ROW_MMX m5, m6, 2, 2
     paddw     m0, m5
     paddw     m4, m6
     punpckldq m0, m4
-    add       r1, FENC_STRIDE*4
     add       r2, FDEC_STRIDE*4
-    DCTDC_2ROW_MMX m7, m4, 0
-    DCTDC_2ROW_MMX m5, m6, 2
+    DCTDC_2ROW_MMX m7, m4, 4, 0
+    DCTDC_2ROW_MMX m5, m6, 6, 2
     paddw     m7, m5
     paddw     m4, m6
     punpckldq m7, m4
@@ -779,41 +780,76 @@ cglobal sub8x8_dct_dc_mmx2, 3,3
     ret
 
 INIT_XMM
-%macro DCTDC_2ROW_SSE2 3
-    movq      m0, [r1+FENC_STRIDE*(0+%1)]
-    movq      m1, [r1+FENC_STRIDE*(1+%1)]
-    movq      m2, [r2+FDEC_STRIDE*(0+%1)]
-    movq      m3, [r2+FDEC_STRIDE*(1+%1)]
-    punpckldq m0, m1
-    punpckldq m2, m3
-    psadbw    m0, m7
-    psadbw    m2, m7
-%if %2
-    paddw     %3, m0
-    paddw     m6, m2
+%macro DCTDC_2ROW_SSE2 4
+    movq      m1, [r1+FENC_STRIDE*(0+%1)]
+    movq      m2, [r1+FENC_STRIDE*(1+%1)]
+    punpckldq m1, m2
+    movq      m2, [r2+FDEC_STRIDE*(0+%2)]
+    punpckldq m2, [r2+FDEC_STRIDE*(1+%2)]
+    psadbw    m1, m0
+    psadbw    m2, m0
+%if %3
+    paddd     %4, m1
+    psubd     %4, m2
 %else
-    SWAP      %3, m0
-    SWAP      m6, m2
+    psubd     m1, m2
+    SWAP      %4, m1
 %endif
 %endmacro
 
-cglobal sub8x8_dct_dc_sse2, 3,3,8
-    pxor     m7, m7
-    DCTDC_2ROW_SSE2 0, 0, m4
-    DCTDC_2ROW_SSE2 2, 1, m4
-    add      r1, FENC_STRIDE*4
+cglobal sub8x8_dct_dc_sse2, 3,3
+    pxor     m0, m0
+    DCTDC_2ROW_SSE2 0, 0, 0, m3
+    DCTDC_2ROW_SSE2 2, 2, 1, m3
     add      r2, FDEC_STRIDE*4
-    psubd    m4, m6
-    DCTDC_2ROW_SSE2 0, 0, m5
-    DCTDC_2ROW_SSE2 2, 1, m5
-    psubd    m5, m6
-    packssdw m4, m5
-    movhlps  m5, m4
-    movdq2q mm0, m4
-    movdq2q mm7, m5
-    DCT2x2  mm0, mm7
-    movq   [r0], mm0
+    DCTDC_2ROW_SSE2 4, 0, 0, m4
+    DCTDC_2ROW_SSE2 6, 2, 1, m4
+    packssdw m3, m3
+    packssdw m4, m4
+    DCT2x2   m3, m4
+    movq   [r0], m0
     RET
+
+%macro SUB8x16_DCT_DC 0
+cglobal sub8x16_dct_dc, 3,3
+    pxor       m0, m0
+    DCTDC_2ROW_SSE2 0, 0, 0, m3
+    DCTDC_2ROW_SSE2 2, 2, 1, m3
+    add        r1, FENC_STRIDE*8
+    add        r2, FDEC_STRIDE*8
+    DCTDC_2ROW_SSE2 -4, -4, 0, m4
+    DCTDC_2ROW_SSE2 -2, -2, 1, m4
+    shufps     m3, m4, q2020
+    DCTDC_2ROW_SSE2 0, 0, 0, m5
+    DCTDC_2ROW_SSE2 2, 2, 1, m5
+    add        r2, FDEC_STRIDE*4
+    DCTDC_2ROW_SSE2 4, 0, 0, m4
+    DCTDC_2ROW_SSE2 6, 2, 1, m4
+    shufps     m5, m4, q2020
+%if cpuflag(ssse3)
+    %define %%sign psignw
+%else
+    %define %%sign pmullw
+%endif
+    SUMSUB_BA d, 5, 3, 0
+    packssdw   m5, m3
+    pshuflw    m0, m5, q2301
+    pshufhw    m0, m0, q2301
+    %%sign     m5, [pw_pmpmpmpm]
+    paddw      m0, m5
+    pshufd     m1, m0, q1320
+    pshufd     m0, m0, q0231
+    %%sign     m1, [pw_ppppmmmm]
+    paddw      m0, m1
+    mova     [r0], m0
+    RET
+%endmacro ; SUB8x16_DCT_DC
+
+INIT_XMM sse2
+SUB8x16_DCT_DC
+INIT_XMM ssse3
+SUB8x16_DCT_DC
+
 %endif ; !HIGH_BIT_DEPTH
 
 ;-----------------------------------------------------------------------------
