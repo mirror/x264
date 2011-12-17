@@ -272,7 +272,7 @@
     paddd   %1, %2
 %endmacro
 
-%macro HADDW 2
+%macro HADDW 2 ; reg, tmp
 %if cpuflag(xop) && mmsize == 16
     vphaddwq  %1, %1
     movhlps   %2, %1
@@ -782,4 +782,13 @@
         db %1*2+1
         %rotate 1
     %endrep
+%endmacro
+
+; instruction, accum, input, iteration (zero to swap, nonzero to add)
+%macro ACCUM 4
+%if %4
+    %1        m%2, m%3
+%else
+    SWAP       %2, %3
+%endif
 %endmacro

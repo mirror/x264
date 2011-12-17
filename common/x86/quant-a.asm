@@ -138,11 +138,7 @@ cextern pd_1024
     psrad       m1, 16
     PSIGND      m1, m0
     mova      [%1], m1
-%if %4
-    por         m5, m1
-%else
-    SWAP         5, 1
-%endif
+    ACCUM      por, 5, 1, %4
 %else ; !sse4
     mova        m0, [%1]
     ABSD        m1, m0
@@ -156,11 +152,7 @@ cextern pd_1024
     psrld       m1, 16
     PSIGND      m1, m0
     mova      [%1], m1
-%if %4
-    por         m5, m1
-%else
-    SWAP         5, 1
-%endif
+    ACCUM     por, 5, 1, %4
 %endif ; cpuflag
 %endmacro
 
@@ -180,11 +172,7 @@ cextern pd_1024
     PSIGND      m3, m1
     mova      [%1], m2
     mova      [%1+mmsize], m3
-%if %4
-    por         m5, m2
-%else
-    SWAP         5, 2
-%endif
+    ACCUM      por, 5, 2, %4
     por         m5, m3
 %else ; !sse4
     QUANT_ONE_DC %1, %2, %3, %4
@@ -208,11 +196,7 @@ cextern pd_1024
     psrad       m1, 16
     PSIGND      m1, m0
     mova      [%1], m1
-%if %4
-    por         m5, m1
-%else
-    SWAP         5, 1
-%endif
+    ACCUM      por, 5, 1, %4
 %endmacro
 
 %macro QUANT_TWO_AC 4
@@ -231,11 +215,7 @@ cextern pd_1024
     PSIGND      m3, m1
     mova      [%1], m2
     mova      [%1+mmsize], m3
-%if %4
-    por         m5, m2
-%else
-    SWAP         5,  2
-%endif
+    ACCUM      por, 5, 2, %4
     por         m5, m3
 %else ; !sse4
     QUANT_ONE_AC_MMX %1, %2, %3, %4
@@ -307,11 +287,7 @@ QUANT_AC 8, 8
     pmulhuw    m0, %2   ; divide
     PSIGNW     m0, m1   ; restore sign
     mova       %1, m0   ; store
-%if %4
-    por        m5, m0
-%else
-    SWAP        5, 0
-%endif
+    ACCUM     por, 5, 0, %4
 %endmacro
 
 %macro QUANT_TWO 7
@@ -327,13 +303,8 @@ QUANT_AC 8, 8
     PSIGNW     m2, m3
     mova       %1, m0
     mova       %2, m2
-%if %7
-    por        m5, m0
+    ACCUM     por, 5, 0, %7
     por        m5, m2
-%else
-    SWAP        5,  0
-    por        m5, m2
-%endif
 %endmacro
 
 ;-----------------------------------------------------------------------------

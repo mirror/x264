@@ -1437,15 +1437,9 @@ ZIGZAG_SUB_4x4 ac, field
     mova     [r0+(%1+64)*SIZEOF_PIXEL], m2
     mova     [r0+(%1+96)*SIZEOF_PIXEL], m3
     packsswb m0, m1
-%if %1
-    por      m6, m2
-    por      m7, m3
-    por      m5, m0
-%else
-    SWAP      5, 0
-    SWAP      6, 2
-    SWAP      7, 3
-%endif
+    ACCUM   por, 6, 2, %1
+    ACCUM   por, 7, 3, %1
+    ACCUM   por, 5, 0, %1
 %endmacro
 
 %macro ZIGZAG_8x8_CAVLC 1

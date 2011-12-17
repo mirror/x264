@@ -242,11 +242,7 @@ SAD_W16
     psadbw  m1, m3
     psadbw  m2, m4
     lea     r2, [r2+2*r3]
-%if %1
-    paddw   m0, m1
-%else
-    SWAP     0, 1
-%endif
+    ACCUM paddw, 0, 1, %1
     paddw   m0, m2
 %endmacro
 
@@ -391,25 +387,13 @@ cglobal intra_sad_x3_4x4_mmx2, 3,3
     movq      m5, [r0+FENC_STRIDE*%1]
     movq      m4, m5
     psadbw    m4, m0
-%if %1
-    paddw     m1, m4
-%else
-    SWAP       1, 4
-%endif
+    ACCUM  paddw, 1, 4, %1
     movq      m4, m5
     psadbw    m4, m6
-%if %1
-    paddw     m2, m4
-%else
-    SWAP       2, 4
-%endif
+    ACCUM  paddw, 2, 4, %1
     pshufw    m4, m7, %2
     psadbw    m5, m4
-%if %1
-    paddw     m3, m5
-%else
-    SWAP       3, 5
-%endif
+    ACCUM  paddw, 3, 5, %1
 %endmacro
 
 INIT_MMX
@@ -467,13 +451,8 @@ cglobal intra_sad_x3_8x8_mmx2, 3,3
     psadbw      m5, m6
     paddw       m1, m3
     paddw       m4, m5
-%if %1
-    paddw       m0, m1
-    paddw       m2, m4
-%else
-    SWAP 0,1
-    SWAP 2,4
-%endif
+    ACCUM    paddw, 0, 1, %1
+    ACCUM    paddw, 2, 4, %1
 %endmacro
 
 %macro INTRA_SAD_8x8C 0
