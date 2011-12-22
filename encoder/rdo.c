@@ -532,8 +532,8 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
             // no need to modify level_tree for ctx=0: it starts with an infinite loop of 0s.
             int sigindex = !dc && i_coefs == 64 ? significant_coeff_flag_offset_8x8[b_interlaced][i] :
                            b_chroma && dc && i_coefs == 8 ? coeff_flag_offset_chroma_422_dc[i] : i;
-            const uint32_t cost_sig0 = x264_cabac_size_decision_noup2( &cabac_state_sig[sigindex], 0 )
-                                     * (uint64_t)i_lambda2 >> ( CABAC_SIZE_BITS - LAMBDA_BITS );
+            uint64_t cost_sig0 = x264_cabac_size_decision_noup2( &cabac_state_sig[sigindex], 0 )
+                               * (uint64_t)i_lambda2 >> ( CABAC_SIZE_BITS - LAMBDA_BITS );
             for( int j = 1; j < 8; j++ )
             {
                 if( nodes_cur[j].score != TRELLIS_SCORE_MAX )
@@ -583,7 +583,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
         // but it's only around .003 dB, and skipping them ~doubles the speed of trellis.
         // could also try q-2: that sometimes helps, but also sometimes decimates blocks
         // that are better left coded, especially at QP > 40.
-        for( int abs_level = q; abs_level >= q-1; abs_level-- )
+        for( int abs_level = q-1; abs_level <= q; abs_level++ )
         {
             int unquant_abs_level = (((dc?unquant_mf[0]<<1:unquant_mf[zigzag[i]]) * abs_level + 128) >> 8);
             int d = i_coef - unquant_abs_level;
