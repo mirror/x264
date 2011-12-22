@@ -36,9 +36,6 @@
 #   include "arm/dct.h"
 #endif
 
-uint16_t x264_dct4_weight2_zigzag[2][16];
-uint16_t x264_dct8_weight2_zigzag[2][64];
-
 static void dct4x4dc( dctcoef d[16] )
 {
     dctcoef tmp[16];
@@ -661,17 +658,6 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
     }
 #endif
 #endif // HIGH_BIT_DEPTH
-}
-
-void x264_dct_init_weights( void )
-{
-    for( int j = 0; j < 2; j++ )
-    {
-        for( int i = 0; i < 16; i++ )
-            x264_dct4_weight2_zigzag[j][i] = x264_dct4_weight2_tab[ x264_zigzag_scan4[j][i] ];
-        for( int i = 0; i < 64; i++ )
-            x264_dct8_weight2_zigzag[j][i] = x264_dct8_weight2_tab[ x264_zigzag_scan8[j][i] ];
-    }
 }
 
 

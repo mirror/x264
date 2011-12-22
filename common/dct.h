@@ -88,9 +88,6 @@ static const uint16_t x264_dct8_weight2_tab[64] = {
 };
 #undef W
 
-extern uint16_t x264_dct4_weight2_zigzag[2][16]; // [2] = {frame, field}
-extern uint16_t x264_dct8_weight2_zigzag[2][64];
-
 typedef struct
 {
     // pix1  stride = FENC_STRIDE
