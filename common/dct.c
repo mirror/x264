@@ -597,6 +597,12 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->sub8x8_dct8      = x264_sub8x8_dct8_avx;
         dctf->sub16x16_dct8    = x264_sub16x16_dct8_avx;
     }
+
+    if( cpu&X264_CPU_XOP )
+    {
+        dctf->sub8x8_dct       = x264_sub8x8_dct_xop;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_xop;
+    }
 #endif //HAVE_MMX
 
 #if HAVE_ALTIVEC

@@ -32,9 +32,12 @@
 
 SECTION .text
 
-%ifndef HIGH_BIT_DEPTH
+cextern pw_2
+cextern pw_m2
 cextern pw_32
 cextern hsub_mul
+
+%ifndef HIGH_BIT_DEPTH
 
 ; in: m0..m7
 ; out: 0,4,6 in mem, rest in regs
@@ -401,6 +404,8 @@ DCT_SUB8
 INIT_XMM ssse3
 DCT_SUB8
 INIT_XMM avx
+DCT_SUB8
+INIT_XMM xop
 DCT_SUB8
 
 ;-----------------------------------------------------------------------------

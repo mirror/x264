@@ -38,6 +38,8 @@ void x264_sub8x8_dct_ssse3  ( int16_t dct[ 4][16], uint8_t *pix1, uint8_t *pix2 
 void x264_sub16x16_dct_ssse3( int16_t dct[16][16], uint8_t *pix1, uint8_t *pix2 );
 void x264_sub8x8_dct_avx    ( int16_t dct[ 4][16], uint8_t *pix1, uint8_t *pix2 );
 void x264_sub16x16_dct_avx  ( int16_t dct[16][16], uint8_t *pix1, uint8_t *pix2 );
+void x264_sub8x8_dct_xop    ( int16_t dct[ 4][16], uint8_t *pix1, uint8_t *pix2 );
+void x264_sub16x16_dct_xop  ( int16_t dct[16][16], uint8_t *pix1, uint8_t *pix2 );
 void x264_sub8x8_dct_dc_mmx2( int16_t dct    [ 4], uint8_t *pix1, uint8_t *pix2 );
 void x264_sub8x8_dct_dc_sse2( dctcoef dct    [ 4], pixel   *pix1, pixel   *pix2 );
 void x264_sub8x16_dct_dc_sse2 ( dctcoef dct  [ 4], pixel   *pix1, pixel   *pix2 );

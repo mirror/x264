@@ -586,7 +586,10 @@
 %endmacro
 
 %macro SUMSUB2_AB 4
-%ifnum %3
+%if cpuflag(xop)
+    pmacs%1%1 m%4, m%3, [p%1_m2], m%2
+    pmacs%1%1 m%2, m%2, [p%1_2], m%3
+%elifnum %3
     psub%1  m%4, m%2, m%3
     psub%1  m%4, m%3
     padd%1  m%2, m%2
@@ -597,22 +600,6 @@
     padd%1  m%2, %3
     psub%1  m%4, %3
     psub%1  m%4, %3
-%endif
-%endmacro
-
-%macro SUMSUB2_BA 4
-%if avx_enabled
-    padd%1  m%4, m%2, m%3
-    padd%1  m%4, m%3
-    psub%1  m%3, m%2
-    psub%1  m%3, m%2
-    SWAP     %2,  %4
-%else
-    mova    m%4, m%2
-    padd%1  m%2, m%3
-    padd%1  m%2, m%3
-    psub%1  m%3, m%4
-    psub%1  m%3, m%4
 %endif
 %endmacro
 

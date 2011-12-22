@@ -452,9 +452,11 @@ INIT_XMM
 cextern sub8x8_dct_sse2.skip_prologue
 cextern sub8x8_dct_ssse3.skip_prologue
 cextern sub8x8_dct_avx.skip_prologue
+cextern sub8x8_dct_xop.skip_prologue
 SUB_NxN_DCT  sub16x16_dct_sse2,  sub8x8_dct_sse2,  128, 8, 0, 0
 SUB_NxN_DCT  sub16x16_dct_ssse3, sub8x8_dct_ssse3, 128, 8, 0, 0
 SUB_NxN_DCT  sub16x16_dct_avx,   sub8x8_dct_avx,   128, 8, 0, 0
+SUB_NxN_DCT  sub16x16_dct_xop,   sub8x8_dct_xop,   128, 8, 0, 0
 
 cextern add8x8_idct_sse2.skip_prologue
 cextern add8x8_idct_avx.skip_prologue

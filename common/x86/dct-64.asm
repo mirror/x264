@@ -31,9 +31,12 @@
 
 SECTION .text
 
-%ifndef HIGH_BIT_DEPTH
+cextern pw_2
+cextern pw_m2
 cextern pw_32
 cextern hsub_mul
+
+%ifndef HIGH_BIT_DEPTH
 
 %macro DCT8_1D 10
     SUMSUB_BA w, %5, %4 ; %5=s34, %4=d34
@@ -197,6 +200,8 @@ DCT_SUB8
 INIT_XMM ssse3
 DCT_SUB8
 INIT_XMM avx
+DCT_SUB8
+INIT_XMM xop
 DCT_SUB8
 
 ;-----------------------------------------------------------------------------
