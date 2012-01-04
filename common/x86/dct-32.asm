@@ -37,51 +37,130 @@ cextern pw_m2
 cextern pw_32
 cextern hsub_mul
 
-%ifndef HIGH_BIT_DEPTH
-
-; in: m0..m7
-; out: 0,4,6 in mem, rest in regs
-%macro DCT8_1D 9
-    SUMSUB_BA w, %8, %1      ; %8 = s07,  %1 = d07
-    SUMSUB_BA w, %7, %2      ; %7 = s16,  %2 = d16
-    SUMSUB_BA w, %6, %3      ; %6 = s25,  %3 = d25
-    SUMSUB_BA w, %5, %4      ; %5 = s34,  %4 = d34
-    SUMSUB_BA w, %5, %8      ; %5 = a0,   %8 = a2
-    SUMSUB_BA w, %6, %7      ; %6 = a1,   %7 = a3
-    SUMSUB_BA w, %6, %5      ; %6 = dst0, %5 = dst4
-    mova    [%9+0x00], m%6
-    mova    [%9+0x40], m%5
-    psraw   m%6, m%7, 1      ; a3>>1
-    paddw   m%6, m%8         ; a2 + (a3>>1)
-    psraw   m%8, 1           ; a2>>1
-    psubw   m%8, m%7         ; (a2>>1) - a3
-    mova    [%9+0x60], m%8
-    psraw   m%5, m%3, 1
-    paddw   m%5, m%3         ; d25+(d25>>1)
-    psubw   m%7, m%1, m%4    ; a5 = d07-d34-(d25+(d25>>1))
-    psubw   m%7, m%5
-    psraw   m%5, m%2, 1
-    paddw   m%5, m%2         ; d16+(d16>>1)
-    paddw   m%8, m%1, m%4
-    psubw   m%8, m%5         ; a6 = d07+d34-(d16+(d16>>1))
-    psraw   m%5, m%1, 1
-    paddw   m%5, m%1         ; d07+(d07>>1)
-    paddw   m%5, m%2
-    paddw   m%5, m%3         ; a4 = d16+d25+(d07+(d07>>1))
-    psraw   m%1, m%4, 1
-    paddw   m%1, m%4         ; d34+(d34>>1)
-    paddw   m%1, m%2
-    psubw   m%1, m%3         ; a7 = d16-d25+(d34+(d34>>1))
-    psraw   m%4, m%1, 2
-    paddw   m%4, m%5         ; a4 + (a7>>2)
-    psraw   m%3, m%8, 2
-    paddw   m%3, m%7         ; a5 + (a6>>2)
-    psraw   m%5, 2
-    psraw   m%7, 2
-    psubw   m%5, m%1         ; (a4>>2) - a7
-    psubw   m%8, m%7         ; a6 - (a5>>2)
-    SWAP %2, %4, %3, %6, %8, %5
+%macro SPILL_SHUFFLE 3-* ; ptr, list of regs, list of memory offsets
+    %xdefine %%base %1
+    %rep %0/2
+    %xdefine %%tmp m%2
+    %rotate %0/2
+    mova [%%base + %2*16], %%tmp
+    %rotate 1-%0/2
+    %endrep
 %endmacro
+
+%macro UNSPILL_SHUFFLE 3-*
+    %xdefine %%base %1
+    %rep %0/2
+    %xdefine %%tmp m%2
+    %rotate %0/2
+    mova %%tmp, [%%base + %2*16]
+    %rotate 1-%0/2
+    %endrep
+%endmacro
+
+%macro SPILL 2+ ; assume offsets are the same as reg numbers
+    SPILL_SHUFFLE %1, %2, %2
+%endmacro
+
+%macro UNSPILL 2+
+    UNSPILL_SHUFFLE %1, %2, %2
+%endmacro
+
+; in: size, m0..m7, %10,%11,%12
+; out: 0,4,6 in memory at %10,%11,%12, rest in regs
+%macro DCT8_1D 12
+    SUMSUB_BA %1, %9, %2      ; %9 = s07,  %2 = d07
+    SUMSUB_BA %1, %8, %3      ; %8 = s16,  %3 = d16
+    SUMSUB_BA %1, %7, %4      ; %7 = s25,  %4 = d25
+    SUMSUB_BA %1, %6, %5      ; %6 = s34,  %5 = d34
+    SUMSUB_BA %1, %6, %9      ; %6 = a0,   %9 = a2
+    SUMSUB_BA %1, %7, %8      ; %7 = a1,   %8 = a3
+    SUMSUB_BA %1, %7, %6      ; %7 = dst0, %6 = dst4
+    mova     [%10], m%7
+    mova     [%11], m%6
+    psra%1   m%7, m%8, 1      ; a3>>1
+    padd%1   m%7, m%9         ; a2 + (a3>>1)
+    psra%1   m%9, 1           ; a2>>1
+    psub%1   m%9, m%8         ; (a2>>1) - a3
+    mova     [%12], m%9
+    psra%1   m%6, m%4, 1
+    padd%1   m%6, m%4         ; d25+(d25>>1)
+    psub%1   m%8, m%2, m%5    ; a5 = d07-d34-(d25+(d25>>1))
+    psub%1   m%8, m%6
+    psra%1   m%6, m%3, 1
+    padd%1   m%6, m%3         ; d16+(d16>>1)
+    padd%1   m%9, m%2, m%5
+    psub%1   m%9, m%6         ; a6 = d07+d34-(d16+(d16>>1))
+    psra%1   m%6, m%2, 1
+    padd%1   m%6, m%2         ; d07+(d07>>1)
+    padd%1   m%6, m%3
+    padd%1   m%6, m%4         ; a4 = d16+d25+(d07+(d07>>1))
+    psra%1   m%2, m%5, 1
+    padd%1   m%2, m%5         ; d34+(d34>>1)
+    padd%1   m%2, m%3
+    psub%1   m%2, m%4         ; a7 = d16-d25+(d34+(d34>>1))
+    psra%1   m%5, m%2, 2
+    padd%1   m%5, m%6         ; a4 + (a7>>2)
+    psra%1   m%4, m%9, 2
+    padd%1   m%4, m%8         ; a5 + (a6>>2)
+    psra%1   m%6, 2
+    psra%1   m%8, 2
+    psub%1   m%6, m%2         ; (a4>>2) - a7
+    psub%1   m%9, m%8         ; a6 - (a5>>2)
+    SWAP %3, %5, %4, %7, %9, %6
+%endmacro
+
+%ifdef HIGH_BIT_DEPTH
+
+%macro SUB8x8_DCT8 0
+cglobal sub8x8_dct8, 3,3,8
+global current_function %+ .skip_prologue
+.skip_prologue:
+    LOAD_DIFF8x4 0,1,2,3, none,none, r1, r2
+    LOAD_DIFF8x4 4,5,6,7, none,none, r1, r2
+
+    DCT8_1D w, 0,1,2,3,4,5,6,7, r0,r0+0x10,r0+0x50
+    mova  m0, [r0]
+
+    mova  [r0+0x30], m5
+    mova  [r0+0x70], m7
+    TRANSPOSE4x4W 0,1,2,3,4
+    WIDEN_SXWD 0,4
+    WIDEN_SXWD 1,5
+    WIDEN_SXWD 2,6
+    WIDEN_SXWD 3,7
+    DCT8_1D d, 0,4,1,5,2,6,3,7, r0,r0+0x80,r0+0xC0
+    mova  [r0+0x20], m4
+    mova  [r0+0x40], m1
+    mova  [r0+0x60], m5
+    mova  [r0+0xA0], m6
+    mova  [r0+0xE0], m7
+    mova  m4, [r0+0x10]
+    mova  m5, [r0+0x30]
+    mova  m6, [r0+0x50]
+    mova  m7, [r0+0x70]
+
+    TRANSPOSE4x4W 4,5,6,7,0
+    WIDEN_SXWD 4,0
+    WIDEN_SXWD 5,1
+    WIDEN_SXWD 6,2
+    WIDEN_SXWD 7,3
+    DCT8_1D d,4,0,5,1,6,2,7,3, r0+0x10,r0+0x90,r0+0xD0
+    mova  [r0+0x30], m0
+    mova  [r0+0x50], m5
+    mova  [r0+0x70], m1
+    mova  [r0+0xB0], m2
+    mova  [r0+0xF0], m3
+    ret
+%endmacro
+
+INIT_XMM sse2
+SUB8x8_DCT8
+INIT_XMM sse4
+SUB8x8_DCT8
+INIT_XMM avx
+SUB8x8_DCT8
+
+%else ; !HIGH_BIT_DEPTH
 
 ; in: 0,4 in mem, rest in regs
 ; out: m0..m7
@@ -145,37 +224,9 @@ load_diff_4x8_mmx:
     ret
 
 cglobal dct8_mmx
-    DCT8_1D 0,1,2,3,4,5,6,7,r0
+    DCT8_1D w,0,1,2,3,4,5,6,7,r0,r0+0x40,r0+0x60
     SAVE_MM_PERMUTATION
     ret
-
-%macro SPILL_SHUFFLE 3-* ; ptr, list of regs, list of memory offsets
-    %xdefine %%base %1
-    %rep %0/2
-    %xdefine %%tmp m%2
-    %rotate %0/2
-    mova [%%base + %2*16], %%tmp
-    %rotate 1-%0/2
-    %endrep
-%endmacro
-
-%macro UNSPILL_SHUFFLE 3-*
-    %xdefine %%base %1
-    %rep %0/2
-    %xdefine %%tmp m%2
-    %rotate %0/2
-    mova %%tmp, [%%base + %2*16]
-    %rotate 1-%0/2
-    %endrep
-%endmacro
-
-%macro SPILL 2+ ; assume offsets are the same as reg numbers
-    SPILL_SHUFFLE %1, %2, %2
-%endmacro
-
-%macro UNSPILL 2+
-    UNSPILL_SHUFFLE %1, %2, %2
-%endmacro
 
 ;-----------------------------------------------------------------------------
 ; void sub8x8_dct8( int16_t dct[8][8], uint8_t *pix1, uint8_t *pix2 )
@@ -386,11 +437,11 @@ global current_function %+ .skip_prologue
     LOAD_DIFF m7, m0, none, [r1+7*FENC_STRIDE], [r2+3*FDEC_STRIDE]
     UNSPILL r0, 0
 %endif
-    DCT8_1D 0,1,2,3,4,5,6,7,r0
+    DCT8_1D w,0,1,2,3,4,5,6,7,r0,r0+0x40,r0+0x60
     UNSPILL r0, 0,4
     TRANSPOSE8x8W 0,1,2,3,4,5,6,7,[r0+0x60],[r0+0x40],1
     UNSPILL r0, 4
-    DCT8_1D 0,1,2,3,4,5,6,7,r0
+    DCT8_1D w,0,1,2,3,4,5,6,7,r0,r0+0x40,r0+0x60
     SPILL r0, 1,2,3,5,7
     ret
 %endmacro

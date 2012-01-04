@@ -36,54 +36,110 @@ cextern pw_m2
 cextern pw_32
 cextern hsub_mul
 
-%ifndef HIGH_BIT_DEPTH
+; in: size, m0..m7, temp, temp
+; out: m0..m7
+%macro DCT8_1D 11
+    SUMSUB_BA %1, %6, %5, %11 ; %6=s34, %5=d34
+    SUMSUB_BA %1, %7, %4, %11 ; %7=s25, %4=d25
+    SUMSUB_BA %1, %8, %3, %11 ; %8=s16, %3=d16
+    SUMSUB_BA %1, %9, %2, %11 ; %9=s07, %2=d07
 
-%macro DCT8_1D 10
-    SUMSUB_BA w, %5, %4 ; %5=s34, %4=d34
-    SUMSUB_BA w, %6, %3 ; %6=s25, %3=d25
-    SUMSUB_BA w, %7, %2 ; %7=s16, %2=d16
-    SUMSUB_BA w, %8, %1 ; %8=s07, %1=d07
+    SUMSUB_BA %1, %7, %8, %11 ; %7=a1, %8=a3
+    SUMSUB_BA %1, %6, %9, %11 ; %6=a0, %9=a2
 
-    SUMSUB_BA w, %6, %7, %10 ; %6=a1, %7=a3
-    SUMSUB_BA w, %5, %8, %10 ; %5=a0, %8=a2
+    psra%1   m%10, m%2, 1
+    padd%1   m%10, m%2
+    padd%1   m%10, m%3
+    padd%1   m%10, m%4 ; %10=a4
 
-    psraw   m%9, m%1, 1
-    paddw   m%9, m%1
-    paddw   m%9, m%2
-    paddw   m%9, m%3 ; %9=a4
+    psra%1   m%11, m%5, 1
+    padd%1   m%11, m%5
+    padd%1   m%11, m%3
+    psub%1   m%11, m%4 ; %11=a7
 
-    psraw   m%10, m%4, 1
-    paddw   m%10, m%4
-    paddw   m%10, m%2
-    psubw   m%10, m%3 ; %10=a7
+    SUMSUB_BA %1, %5, %2
+    psub%1   m%2, m%4
+    psub%1   m%5, m%3
+    psra%1   m%4, 1
+    psra%1   m%3, 1
+    psub%1   m%2, m%4 ; %2=a5
+    psub%1   m%5, m%3 ; %5=a6
 
-    SUMSUB_BA w, %4, %1
-    psubw   m%1, m%3
-    psubw   m%4, m%2
-    psraw   m%3, 1
-    psraw   m%2, 1
-    psubw   m%1, m%3 ; %1=a5
-    psubw   m%4, m%2 ; %4=a6
+    psra%1   m%3, m%11, 2
+    padd%1   m%3, m%10 ; %3=b1
+    psra%1   m%10, 2
+    psub%1   m%10, m%11 ; %10=b7
 
-    psraw   m%2, m%10, 2
-    paddw   m%2, m%9 ; %2=b1
-    psraw   m%9, 2
-    psubw   m%9, m%10 ; %9=b7
+    SUMSUB_BA %1, %7, %6, %11 ; %7=b0, %6=b4
 
-    SUMSUB_BA w, %6, %5, %10 ; %6=b0, %5=b4
+    psra%1   m%4, m%8, 1
+    padd%1   m%4, m%9 ; %4=b2
+    psra%1   m%9, 1
+    psub%1   m%9, m%8 ; %9=b6
 
-    psraw   m%3, m%7, 1
-    paddw   m%3, m%8 ; %3=b2
-    psraw   m%8, 1
-    psubw   m%8, m%7 ; %8=b6
+    psra%1   m%8, m%5, 2
+    padd%1   m%8, m%2 ; %8=b3
+    psra%1   m%2, 2
+    psub%1   m%5, m%2 ; %5=b5
 
-    psraw   m%7, m%4, 2
-    paddw   m%7, m%1 ; %7=b3
-    psraw   m%1, 2
-    psubw   m%4, m%1 ; %4=b5
-
-    SWAP %1, %6, %4, %7, %8, %9
+    SWAP %2, %7, %5, %8, %9, %10
 %endmacro
+
+%ifdef HIGH_BIT_DEPTH
+
+%macro SUB8x8_DCT8 0
+cglobal sub8x8_dct8, 3,3,14
+%ifdef WIN64
+    call .skip_prologue
+    RET
+%endif
+global current_function %+ .skip_prologue
+.skip_prologue:
+    LOAD_DIFF8x4 0,1,2,3, none,none, r1, r2
+    LOAD_DIFF8x4 4,5,6,7, none,none, r1, r2
+
+    DCT8_1D w, 0,1,2,3,4,5,6,7, 8,9
+
+    TRANSPOSE4x4W 0,1,2,3,8
+    WIDEN_SXWD 0,8
+    WIDEN_SXWD 1,9
+    WIDEN_SXWD 2,10
+    WIDEN_SXWD 3,11
+    DCT8_1D d, 0,8,1,9,2,10,3,11, 12,13
+    mova  [r0+0x00], m0
+    mova  [r0+0x20], m8
+    mova  [r0+0x40], m1
+    mova  [r0+0x60], m9
+    mova  [r0+0x80], m2
+    mova  [r0+0xA0], m10
+    mova  [r0+0xC0], m3
+    mova  [r0+0xE0], m11
+
+    TRANSPOSE4x4W 4,5,6,7,0
+    WIDEN_SXWD 4,0
+    WIDEN_SXWD 5,1
+    WIDEN_SXWD 6,2
+    WIDEN_SXWD 7,3
+    DCT8_1D d,4,0,5,1,6,2,7,3, 8,9
+    mova  [r0+0x10], m4
+    mova  [r0+0x30], m0
+    mova  [r0+0x50], m5
+    mova  [r0+0x70], m1
+    mova  [r0+0x90], m6
+    mova  [r0+0xB0], m2
+    mova  [r0+0xD0], m7
+    mova  [r0+0xF0], m3
+    ret
+%endmacro
+
+INIT_XMM sse2
+SUB8x8_DCT8
+INIT_XMM sse4
+SUB8x8_DCT8
+INIT_XMM avx
+SUB8x8_DCT8
+
+%else ; !HIGH_BIT_DEPTH
 
 %macro IDCT8_1D 10
     SUMSUB_BA w, %5, %1, %9 ; %5=a0, %1=a2
@@ -136,7 +192,7 @@ cextern hsub_mul
 %endmacro
 
 %macro DCT_SUB8 0
-cglobal sub8x8_dct, 3,3,11
+cglobal sub8x8_dct, 3,3,10
     add r2, 4*FDEC_STRIDE
 %if cpuflag(ssse3)
     mova m7, [hsub_mul]
@@ -177,9 +233,9 @@ global current_function %+ .skip_prologue
     SWAP 7, 10
     LOAD_DIFF8x4  0, 1, 2, 3, 4, 10, r1, r2-4*FDEC_STRIDE
     LOAD_DIFF8x4  4, 5, 6, 7, 8, 10, r1, r2-4*FDEC_STRIDE
-    DCT8_1D       0,1,2,3,4,5,6,7,8,9
+    DCT8_1D    w, 0,1,2,3,4,5,6,7,8,9
     TRANSPOSE8x8W 0,1,2,3,4,5,6,7,8
-    DCT8_1D       0,1,2,3,4,5,6,7,8,9
+    DCT8_1D    w, 0,1,2,3,4,5,6,7,8,9
     movdqa  [r0+0x00], m0
     movdqa  [r0+0x10], m1
     movdqa  [r0+0x20], m2

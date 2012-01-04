@@ -74,12 +74,14 @@ void x264_idct4x4dc_avx      ( int32_t d[16] );
 
 void x264_sub8x8_dct8_mmx    ( int16_t dct   [64], uint8_t *pix1, uint8_t *pix2 );
 void x264_sub16x16_dct8_mmx  ( int16_t dct[4][64], uint8_t *pix1, uint8_t *pix2 );
-void x264_sub8x8_dct8_sse2   ( int16_t dct   [64], uint8_t *pix1, uint8_t *pix2 );
-void x264_sub16x16_dct8_sse2 ( int16_t dct[4][64], uint8_t *pix1, uint8_t *pix2 );
+void x264_sub8x8_dct8_sse2   ( dctcoef dct   [64], pixel *pix1, pixel *pix2 );
+void x264_sub16x16_dct8_sse2 ( dctcoef dct[4][64], pixel *pix1, pixel *pix2 );
 void x264_sub8x8_dct8_ssse3  ( int16_t dct   [64], uint8_t *pix1, uint8_t *pix2 );
 void x264_sub16x16_dct8_ssse3( int16_t dct[4][64], uint8_t *pix1, uint8_t *pix2 );
-void x264_sub8x8_dct8_avx    ( int16_t dct   [64], uint8_t *pix1, uint8_t *pix2 );
-void x264_sub16x16_dct8_avx  ( int16_t dct[4][64], uint8_t *pix1, uint8_t *pix2 );
+void x264_sub8x8_dct8_sse4   ( int32_t dct   [64], uint16_t *pix1, uint16_t *pix2 );
+void x264_sub16x16_dct8_sse4 ( int32_t dct[4][64], uint16_t *pix1, uint16_t *pix2 );
+void x264_sub8x8_dct8_avx    ( dctcoef dct   [64], pixel *pix1, pixel *pix2 );
+void x264_sub16x16_dct8_avx  ( dctcoef dct[4][64], pixel *pix1, pixel *pix2 );
 
 
 void x264_add8x8_idct8_mmx   ( uint8_t *dst, int16_t dct   [64] );

@@ -143,6 +143,17 @@
 %endif
 %endmacro
 
+%macro WIDEN_SXWD 2
+    punpckhwd m%2, m%1
+    psrad     m%2, 16
+%if cpuflag(sse4)
+    pmovsxwd  m%1, m%1
+%else
+    punpcklwd m%1, m%1
+    psrad     m%1, 16
+%endif
+%endmacro
+
 %macro ABSW 2-3 ; dst, src, tmp (tmp used only if dst==src)
 %if cpuflag(ssse3)
     pabsw   %1, %2
@@ -684,7 +695,7 @@
 %endmacro
 
 %macro LOAD_DIFF8x4 8 ; 4x dst, 1x tmp, 1x mul, 2x ptr
-%if cpuflag(ssse3)
+%if BIT_DEPTH == 8 && cpuflag(ssse3)
     movh       m%2, [%8+%1*FDEC_STRIDE]
     movh       m%1, [%7+%1*FENC_STRIDE]
     punpcklbw  m%1, m%2
@@ -702,10 +713,10 @@
     pmaddubsw  m%3, m%6
     pmaddubsw  m%4, m%6
 %else
-    LOAD_DIFF  m%1, m%5, m%6, [%7+%1*FENC_STRIDE], [%8+%1*FDEC_STRIDE]
-    LOAD_DIFF  m%2, m%5, m%6, [%7+%2*FENC_STRIDE], [%8+%2*FDEC_STRIDE]
-    LOAD_DIFF  m%3, m%5, m%6, [%7+%3*FENC_STRIDE], [%8+%3*FDEC_STRIDE]
-    LOAD_DIFF  m%4, m%5, m%6, [%7+%4*FENC_STRIDE], [%8+%4*FDEC_STRIDE]
+    LOAD_DIFF  m%1, m%5, m%6, [%7+%1*FENC_STRIDEB], [%8+%1*FDEC_STRIDEB]
+    LOAD_DIFF  m%2, m%5, m%6, [%7+%2*FENC_STRIDEB], [%8+%2*FDEC_STRIDEB]
+    LOAD_DIFF  m%3, m%5, m%6, [%7+%3*FENC_STRIDEB], [%8+%3*FDEC_STRIDEB]
+    LOAD_DIFF  m%4, m%5, m%6, [%7+%4*FENC_STRIDEB], [%8+%4*FDEC_STRIDEB]
 %endif
 %endmacro
 

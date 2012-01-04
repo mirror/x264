@@ -755,6 +755,12 @@ static int check_dct( int cpu_ref, int cpu_new )
             { \
                 ok = 0; \
                 fprintf( stderr, #name " [FAILED]\n" ); \
+                for( int k = 0; k < size; k++ )\
+                    printf( "%d ", ((dctcoef*)t1)[k] );\
+                printf("\n");\
+                for( int k = 0; k < size; k++ )\
+                    printf( "%d ", ((dctcoef*)t2)[k] );\
+                printf("\n");\
                 break; \
             } \
             call_c( dct_c.name, t1, enc, dec ); \
