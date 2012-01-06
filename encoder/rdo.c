@@ -32,8 +32,8 @@
 
 /* Transition and size tables for abs<9 MVD and residual coding */
 /* Consist of i_prefix-2 1s, one zero, and a bypass sign bit */
-static uint8_t cabac_transition_unary[15][128];
-static uint16_t cabac_size_unary[15][128];
+uint8_t x264_cabac_transition_unary[15][128];
+uint16_t x264_cabac_size_unary[15][128];
 /* Transition and size tables for abs>9 MVD */
 /* Consist of 5 1s and a bypass sign bit */
 static uint8_t cabac_transition_5ones[128];
@@ -386,8 +386,8 @@ void x264_rdo_init( void )
                 f8_bits += x264_cabac_size_decision2( &ctx, 0 );
             f8_bits += 1 << CABAC_SIZE_BITS; //sign
 
-            cabac_size_unary[i_prefix][i_ctx] = f8_bits;
-            cabac_transition_unary[i_prefix][i_ctx] = ctx;
+            x264_cabac_size_unary[i_prefix][i_ctx] = f8_bits;
+            x264_cabac_transition_unary[i_prefix][i_ctx] = ctx;
         }
     }
     for( int i_ctx = 0; i_ctx < 128; i_ctx++ )
@@ -469,7 +469,7 @@ int trellis_dc_shortcut( int sign_coef, int quant_coef, int unquant_mf, int coef
             unsigned f8_bits = cost_sig;
             int prefix = X264_MIN( abs_level - 1, 14 );
             f8_bits += x264_cabac_size_decision_noup2( cabac_state+1, prefix > 0 );
-            f8_bits += cabac_size_unary[prefix][cabac_state[5]];
+            f8_bits += x264_cabac_size_unary[prefix][cabac_state[5]];
             if( abs_level >= 15 )
                 f8_bits += bs_size_ue_big( abs_level - 15 ) << CABAC_SIZE_BITS;
             score += (uint64_t)f8_bits * lambda2 >> ( CABAC_SIZE_BITS - LAMBDA_BITS );
@@ -496,7 +496,7 @@ int trellis_coef( int j, int const_level, int abs_level, int prefix, int suffix_
     if( const_level > 1 )
     {
         levelgt1_state = j >= 6 ? nodes_prev[j].cabac_state[levelgt1_ctx-6] : level_state[levelgt1_ctx];
-        f8_bits += cabac_size_unary[prefix][levelgt1_state] + suffix_cost;
+        f8_bits += x264_cabac_size_unary[prefix][levelgt1_state] + suffix_cost;
     }
     else
         f8_bits += 1 << CABAC_SIZE_BITS;
@@ -513,7 +513,7 @@ int trellis_coef( int j, int const_level, int abs_level, int prefix, int suffix_
         if( j >= 3 ) // skip the transition if we're not going to reuse the context
             nodes_cur[node_ctx].cabac_state[level1_ctx>>2] = x264_cabac_transition[level1_state][const_level > 1];
         if( const_level > 1 && node_ctx == 7 )
-            nodes_cur[node_ctx].cabac_state[levelgt1_ctx-6] = cabac_transition_unary[prefix][levelgt1_state];
+            nodes_cur[node_ctx].cabac_state[levelgt1_ctx-6] = x264_cabac_transition_unary[prefix][levelgt1_state];
         nodes_cur[node_ctx].level_idx = nodes_prev[j].level_idx;
         SET_LEVEL( nodes_cur[node_ctx], nodes_prev[j], abs_level );
     }
@@ -636,8 +636,8 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
 {
     ALIGNED_ARRAY_16( dctcoef, orig_coefs, [64] );
     ALIGNED_ARRAY_16( dctcoef, quant_coefs, [64] );
-    const uint16_t *coef_weight1 = num_coefs == 64 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
-    const uint16_t *coef_weight2 = num_coefs == 64 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
+    const uint32_t *coef_weight1 = num_coefs == 64 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
+    const uint32_t *coef_weight2 = num_coefs == 64 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
     const int b_interlaced = MB_INTERLACED;
     uint8_t *cabac_state_sig = &h->cabac.state[ significant_coeff_flag_offset[b_interlaced][ctx_block_cat] ];
     uint8_t *cabac_state_last = &h->cabac.state[ last_coeff_flag_offset[b_interlaced][ctx_block_cat] ];
@@ -738,8 +738,8 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
              * subtracting from one score is equivalent to adding to the rest. */\
             if( !ctx_hi )\
             {\
-                int sigindex = !dc && num_coefs == 64 ? significant_coeff_flag_offset_8x8[b_interlaced][i] :\
-                               b_chroma && dc && num_coefs == 8 ? coeff_flag_offset_chroma_422_dc[i] : i;\
+                int sigindex = !dc && num_coefs == 64 ? x264_significant_coeff_flag_offset_8x8[b_interlaced][i] :\
+                               b_chroma && dc && num_coefs == 8 ? x264_coeff_flag_offset_chroma_422_dc[i] : i;\
                 uint64_t cost_sig0 = x264_cabac_size_decision_noup2( &cabac_state_sig[sigindex], 0 )\
                                    * (uint64_t)lambda2 >> ( CABAC_SIZE_BITS - LAMBDA_BITS );\
                 nodes_cur[0].score -= cost_sig0;\
@@ -759,10 +759,10 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
 \
         if( i < num_coefs-1 || ctx_hi )\
         {\
-            int sigindex  = !dc && num_coefs == 64 ? significant_coeff_flag_offset_8x8[b_interlaced][i] :\
-                            b_chroma && dc && num_coefs == 8 ? coeff_flag_offset_chroma_422_dc[i] : i;\
-            int lastindex = !dc && num_coefs == 64 ? last_coeff_flag_offset_8x8[i] :\
-                            b_chroma && dc && num_coefs == 8 ? coeff_flag_offset_chroma_422_dc[i] : i;\
+            int sigindex  = !dc && num_coefs == 64 ? x264_significant_coeff_flag_offset_8x8[b_interlaced][i] :\
+                            b_chroma && dc && num_coefs == 8 ? x264_coeff_flag_offset_chroma_422_dc[i] : i;\
+            int lastindex = !dc && num_coefs == 64 ? x264_last_coeff_flag_offset_8x8[i] :\
+                            b_chroma && dc && num_coefs == 8 ? x264_coeff_flag_offset_chroma_422_dc[i] : i;\
             cost_siglast[0] = x264_cabac_size_decision_noup2( &cabac_state_sig[sigindex], 0 );\
             int cost_sig1   = x264_cabac_size_decision_noup2( &cabac_state_sig[sigindex], 1 );\
             cost_siglast[1] = x264_cabac_size_decision_noup2( &cabac_state_last[lastindex], 0 ) + cost_sig1;\
@@ -890,8 +890,8 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
 {
     ALIGNED_16( dctcoef quant_coefs[2][16] );
     ALIGNED_16( dctcoef coefs[16] ) = {0};
-    const uint16_t *coef_weight1 = b_8x8 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
-    const uint16_t *coef_weight2 = b_8x8 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
+    const uint32_t *coef_weight1 = b_8x8 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
+    const uint32_t *coef_weight2 = b_8x8 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
     int delta_distortion[16];
     int64_t score = 1ULL<<62;
     int i, j;
