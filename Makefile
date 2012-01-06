@@ -86,7 +86,7 @@ endif
 
 ifeq ($(ARCH),X86_64)
 ARCH_X86 = yes
-ASMSRC   = $(X86SRC:-32.asm=-64.asm)
+ASMSRC   = $(X86SRC:-32.asm=-64.asm) common/x86/trellis-64.asm
 ASFLAGS += -DARCH_X86_64
 endif
 

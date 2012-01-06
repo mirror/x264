@@ -392,6 +392,18 @@ level_run(8)
 level_run(15)
 level_run(16)
 
+#if ARCH_X86_64
+#define INIT_TRELLIS(cpu)\
+    pf->trellis_cabac_4x4 = x264_trellis_cabac_4x4_##cpu;\
+    pf->trellis_cabac_8x8 = x264_trellis_cabac_8x8_##cpu;\
+    pf->trellis_cabac_4x4_psy = x264_trellis_cabac_4x4_psy_##cpu;\
+    pf->trellis_cabac_8x8_psy = x264_trellis_cabac_8x8_psy_##cpu;\
+    pf->trellis_cabac_dc = x264_trellis_cabac_dc_##cpu;\
+    pf->trellis_cabac_chroma_422_dc = x264_trellis_cabac_chroma_422_dc_##cpu;
+#else
+#define INIT_TRELLIS(...)
+#endif
+
 void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
 {
     pf->quant_8x8 = quant_8x8;
@@ -426,6 +438,7 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
 
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX
+    INIT_TRELLIS( sse2 );
     if( cpu&X264_CPU_MMX2 )
     {
 #if ARCH_X86
@@ -503,6 +516,7 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
             pf->decimate_score16 = x264_decimate_score16_ssse3_slowctz;
         }
         pf->decimate_score64 = x264_decimate_score64_ssse3;
+        INIT_TRELLIS( ssse3 );
     }
     if( cpu&X264_CPU_SSE4 )
     {
@@ -527,6 +541,7 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH
 #if HAVE_MMX
+    INIT_TRELLIS( sse2 );
     if( cpu&X264_CPU_MMX )
     {
 #if ARCH_X86
@@ -630,6 +645,7 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
             pf->decimate_score16 = x264_decimate_score16_ssse3_slowctz;
         }
         pf->decimate_score64 = x264_decimate_score64_ssse3;
+        INIT_TRELLIS( ssse3 );
     }
 
     if( cpu&X264_CPU_SSE4 )

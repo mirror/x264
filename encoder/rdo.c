@@ -694,6 +694,25 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
         return dct[0] = trellis_dc_shortcut( orig_coefs[0], quant_coefs[0], unquant_mf[0], coef_weight2[0], lambda2, cabac_state, cost_sig );
     }
 
+#if HAVE_MMX && ARCH_X86_64
+#define TRELLIS_ARGS unquant_mf, zigzag, lambda2, last_nnz, orig_coefs, quant_coefs, dct,\
+                     cabac_state_sig, cabac_state_last, M64(cabac_state), M16(cabac_state+8)
+    if( num_coefs == 16 && !dc )
+        if( b_chroma || !h->mb.i_psy_trellis )
+            return h->quantf.trellis_cabac_4x4( TRELLIS_ARGS, b_ac );
+        else
+            return h->quantf.trellis_cabac_4x4_psy( TRELLIS_ARGS, b_ac, h->mb.pic.fenc_dct4[idx&15], h->mb.i_psy_trellis );
+    else if( num_coefs == 64 && !dc )
+        if( b_chroma || !h->mb.i_psy_trellis )
+            return h->quantf.trellis_cabac_8x8( TRELLIS_ARGS, b_interlaced );
+        else
+            return h->quantf.trellis_cabac_8x8_psy( TRELLIS_ARGS, b_interlaced, h->mb.pic.fenc_dct8[idx&3], h->mb.i_psy_trellis);
+    else if( num_coefs == 8 && dc )
+        return h->quantf.trellis_cabac_chroma_422_dc( TRELLIS_ARGS );
+    else if( dc )
+        return h->quantf.trellis_cabac_dc( TRELLIS_ARGS, num_coefs-1 );
+#endif
+
     // (# of coefs) * (# of ctx) * (# of levels tried) = 1024
     // we don't need to keep all of those: (# of coefs) * (# of ctx) would be enough,
     // but it takes more time to remove dead states than you gain in reduced memory.
