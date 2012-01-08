@@ -1267,15 +1267,21 @@ cglobal pixel_satd_4x4, 4,6
 
 %macro BACKUP_POINTERS 0
 %ifdef ARCH_X86_64
-    mov    r10, r0
-    mov    r11, r2
+%ifdef WIN64
+    PUSH r7
+%endif
+    mov     r6, r0
+    mov     r7, r2
 %endif
 %endmacro
 
 %macro RESTORE_AND_INC_POINTERS 0
 %ifdef ARCH_X86_64
-    lea     r0, [r10+8]
-    lea     r2, [r11+8]
+    lea     r0, [r6+8]
+    lea     r2, [r7+8]
+%ifdef WIN64
+    POP r7
+%endif
 %else
     mov     r0, r0mp
     mov     r2, r2mp
@@ -1473,10 +1479,10 @@ cglobal pixel_satd_8x4, 4,6,8
 ; int pixel_sa8d_8x8( uint8_t *, int, uint8_t *, int )
 ;-----------------------------------------------------------------------------
 cglobal pixel_sa8d_8x8_internal
-    lea  r10, [r0+4*r1]
-    lea  r11, [r2+4*r3]
+    lea  r6, [r0+4*r1]
+    lea  r7, [r2+4*r3]
     LOAD_SUMSUB_8x4P 0, 1, 2, 8, 5, 6, 7, r0, r2
-    LOAD_SUMSUB_8x4P 4, 5, 3, 9, 11, 6, 7, r10, r11
+    LOAD_SUMSUB_8x4P 4, 5, 3, 9, 11, 6, 7, r6, r7
 %if vertical
     HADAMARD8_2D 0, 1, 2, 8, 4, 5, 3, 9, 6, amax
 %else ; non-sse2
@@ -1488,7 +1494,7 @@ cglobal pixel_sa8d_8x8_internal
     SAVE_MM_PERMUTATION
     ret
 
-cglobal pixel_sa8d_8x8, 4,6,12
+cglobal pixel_sa8d_8x8, 4,8,12
     FIX_STRIDES r1, r3
     lea  r4, [3*r1]
     lea  r5, [3*r3]
@@ -1506,7 +1512,7 @@ cglobal pixel_sa8d_8x8, 4,6,12
     shr eax, 1
     RET
 
-cglobal pixel_sa8d_16x16, 4,6,12
+cglobal pixel_sa8d_16x16, 4,8,12
     FIX_STRIDES r1, r3
     lea  r4, [3*r1]
     lea  r5, [3*r3]
@@ -1942,14 +1948,6 @@ cglobal intra_satd_x3_4x4, 3,3
 %endif
     RET
 
-%ifdef ARCH_X86_64
-    %define  t0 r10
-    %define  t2 r11
-%else
-    %define  t0 r0
-    %define  t2 r2
-%endif
-
 ;-----------------------------------------------------------------------------
 ; void intra_satd_x3_16x16( uint8_t *fenc, uint8_t *fdec, int *res )
 ;-----------------------------------------------------------------------------
@@ -1974,14 +1972,14 @@ cglobal intra_satd_x3_16x16, 0,5
 %endif
 
     ; 1D hadamards
-    mov        t0d, 12
+    mov        r3d, 12
     movd        m6, [pw_32]
 .loop_edge:
-    SCALAR_HADAMARD left, t0, m0, m1
-    SCALAR_HADAMARD top,  t0, m1, m2, m3
+    SCALAR_HADAMARD left, r3, m0, m1
+    SCALAR_HADAMARD top,  r3, m1, m2, m3
     pavgw       m0, m1
     paddw       m6, m0
-    sub        t0d, 4
+    sub        r3d, 4
     jge .loop_edge
     psrlw       m6, 2
     pand        m6, [sw_f0] ; dc
@@ -2060,6 +2058,12 @@ cglobal intra_satd_x3_16x16, 0,5
     ADD        rsp, stack_pad
     RET
 
+%ifdef ARCH_X86_64
+    %define  t0 r6
+%else
+    %define  t0 r2
+%endif
+
 ;-----------------------------------------------------------------------------
 ; void intra_satd_x3_8x8c( uint8_t *fenc, uint8_t *fdec, int *res )
 ;-----------------------------------------------------------------------------
@@ -2077,29 +2081,29 @@ cglobal intra_satd_x3_8x8c, 0,6
     mova [sums+16], m7
 
     ; 1D hadamards
-    mov         t0d, 4
+    mov         r3d, 4
 .loop_edge:
-    SCALAR_HADAMARD left, t0, m0, m1
-    SCALAR_HADAMARD top,  t0, m0, m1, m2
-    sub         t0d, 4
+    SCALAR_HADAMARD left, r3, m0, m1
+    SCALAR_HADAMARD top,  r3, m0, m1, m2
+    sub         r3d, 4
     jge .loop_edge
 
     ; dc
-    movzx       t2d, word [left_1d+0]
+    movzx       t0d, word [left_1d+0]
     movzx       r3d, word [top_1d+0]
     movzx       r4d, word [left_1d+8]
     movzx       r5d, word [top_1d+8]
-    lea         t2d, [t2 + r3 + 16]
+    lea         t0d, [t0 + r3 + 16]
     lea         r3d, [r4 + r5 + 16]
-    shr         t2d, 1
+    shr         t0d, 1
     shr         r3d, 1
     add         r4d, 8
     add         r5d, 8
-    and         t2d, -16 ; tl
+    and         t0d, -16 ; tl
     and         r3d, -16 ; br
     and         r4d, -16 ; bl
     and         r5d, -16 ; tr
-    mov         [dc_1d+ 0], t2d ; tl
+    mov         [dc_1d+ 0], t0d ; tl
     mov         [dc_1d+ 4], r5d ; tr
     mov         [dc_1d+ 8], r4d ; bl
     mov         [dc_1d+12], r3d ; br

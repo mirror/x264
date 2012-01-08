@@ -921,10 +921,10 @@ cextern decimate_table8
 ;This is not true for score64.
 cglobal decimate_score%1, 1,3
 %ifdef PIC
-    lea r10, [decimate_table4]
-    lea r11, [decimate_mask_table4]
-    %define table r10
-    %define mask_table r11
+    lea r4, [decimate_table4]
+    lea r5, [decimate_mask_table4]
+    %define table r4
+    %define mask_table r5
 %else
     %define table decimate_table4
     %define mask_table decimate_mask_table4
@@ -990,10 +990,10 @@ DECIMATE4x4 16
 %macro DECIMATE8x8 0
 
 %ifdef ARCH_X86_64
-cglobal decimate_score64, 1,4
+cglobal decimate_score64, 1,5
 %ifdef PIC
-    lea r10, [decimate_table8]
-    %define table r10
+    lea r4, [decimate_table8]
+    %define table r4
 %else
     %define table decimate_table8
 %endif

@@ -1417,7 +1417,7 @@ cglobal pixel_sad_x3_%1x%2_cache%3_%6
     jmp pixel_sad_x3_%1x%2_%4
 .split:
 %ifdef ARCH_X86_64
-    PROLOGUE 6,7
+    PROLOGUE 6,9
 %ifdef WIN64
     movsxd r4, r4d
     sub  rsp, 8
@@ -1427,26 +1427,26 @@ cglobal pixel_sad_x3_%1x%2_cache%3_%6
     mov  r2, r1
     mov  r1, FENC_STRIDE
     mov  r3, r4
-    mov  r10, r0
-    mov  r11, r5
+    mov  r7, r0
+    mov  r8, r5
     call pixel_sad_%1x%2_cache%3_%5
-    mov  [r11], eax
+    mov  [r8], eax
 %ifdef WIN64
     mov  r2, [rsp]
 %else
     pop  r2
 %endif
-    mov  r0, r10
+    mov  r0, r7
     call pixel_sad_%1x%2_cache%3_%5
-    mov  [r11+4], eax
+    mov  [r8+4], eax
 %ifdef WIN64
     mov  r2, [rsp+8]
 %else
     pop  r2
 %endif
-    mov  r0, r10
+    mov  r0, r7
     call pixel_sad_%1x%2_cache%3_%5
-    mov  [r11+8], eax
+    mov  [r8+8], eax
 %ifdef WIN64
     add  rsp, 24
 %endif
@@ -1483,8 +1483,8 @@ cglobal pixel_sad_x4_%1x%2_cache%3_%6
     jmp pixel_sad_x4_%1x%2_%4
 .split:
 %ifdef ARCH_X86_64
-    PROLOGUE 6,7
-    mov  r11,  r6mp
+    PROLOGUE 6,9
+    mov  r8,  r6mp
 %ifdef WIN64
     movsxd r5, r5d
 %endif
@@ -1494,33 +1494,33 @@ cglobal pixel_sad_x4_%1x%2_cache%3_%6
     mov  r2, r1
     mov  r1, FENC_STRIDE
     mov  r3, r5
-    mov  r10, r0
+    mov  r7, r0
     call pixel_sad_%1x%2_cache%3_%5
-    mov  [r11], eax
+    mov  [r8], eax
 %ifdef WIN64
     mov  r2, [rsp]
 %else
     pop  r2
 %endif
-    mov  r0, r10
+    mov  r0, r7
     call pixel_sad_%1x%2_cache%3_%5
-    mov  [r11+4], eax
+    mov  [r8+4], eax
 %ifdef WIN64
     mov  r2, [rsp+8]
 %else
     pop  r2
 %endif
-    mov  r0, r10
+    mov  r0, r7
     call pixel_sad_%1x%2_cache%3_%5
-    mov  [r11+8], eax
+    mov  [r8+8], eax
 %ifdef WIN64
     mov  r2, [rsp+16]
 %else
     pop  r2
 %endif
-    mov  r0, r10
+    mov  r0, r7
     call pixel_sad_%1x%2_cache%3_%5
-    mov  [r11+12], eax
+    mov  [r8+12], eax
 %ifdef WIN64
     add  rsp, 24
 %endif

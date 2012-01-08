@@ -366,9 +366,6 @@ cglobal %1, 3,3,%7
 %endif
 %endif ; !HIGH_BIT_DEPTH
 .skip_prologue:
-%ifdef WIN64
-    sub  rsp, 8
-%endif
     call %2.skip_prologue
     add  r0, %3
     add  r1, %4-%5-%6*FENC_STRIDE
@@ -383,7 +380,6 @@ cglobal %1, 3,3,%7
     add  r2, %4-%5-%6*FDEC_STRIDE
 %ifdef WIN64
     call %2.skip_prologue
-    add  rsp, 8
     RET
 %else
     jmp  %2.skip_prologue
@@ -407,9 +403,6 @@ cglobal %1, 2,2,11
     add  r0, 4*FDEC_STRIDE
 %endif
 .skip_prologue:
-%ifdef WIN64
-    sub  rsp, 8
-%endif
     call %2.skip_prologue
     add  r0, %4-%5-%6*FDEC_STRIDE
     add  r1, %3
@@ -421,7 +414,6 @@ cglobal %1, 2,2,11
     add  r1, %3
 %ifdef WIN64
     call %2.skip_prologue
-    add  rsp, 8
     RET
 %else
     jmp  %2.skip_prologue
