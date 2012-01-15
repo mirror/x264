@@ -765,13 +765,24 @@
     packuswb   %2, %1
 %endmacro
 
-%macro STORE_DIFF 4
+; (high depth) in: %1, %2, min to clip, max to clip, mem128
+; in: %1, tmp, %3, mem64
+%macro STORE_DIFF 4-5
+%ifdef HIGH_BIT_DEPTH
+    psrad      %1, 6
+    psrad      %2, 6
+    packssdw   %1, %2
+    paddw      %1, %5
+    CLIPW      %1, %3, %4
+    mova       %5, %1
+%else
     movh       %2, %4
     punpcklbw  %2, %3
     psraw      %1, 6
     paddsw     %1, %2
     packuswb   %1, %1
     movh       %4, %1
+%endif
 %endmacro
 
 %macro SHUFFLE_MASK_W 8

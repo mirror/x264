@@ -395,12 +395,15 @@ cglobal %1, 3,3,%7
 ;-----------------------------------------------------------------------------
 %macro ADD_NxN_IDCT 6-7
 %ifdef HIGH_BIT_DEPTH
-cglobal %1, 2,2,6
+cglobal %1, 2,2,%7
+%if %3==256
+    add r1, 128
+%endif
 %else
 cglobal %1, 2,2,11
     pxor m7, m7
 %endif
-%if mmsize==16
+%if mmsize==16 && %3!=256
     add  r0, 4*FDEC_STRIDE
 %endif
 .skip_prologue:
@@ -430,10 +433,14 @@ INIT_MMX
 SUB_NxN_DCT  sub8x8_dct_mmx,     sub4x4_dct_mmx,   64,  8, 0, 0, 0
 SUB_NxN_DCT  sub16x16_dct_mmx,   sub8x8_dct_mmx,   64, 16, 8, 8, 0
 INIT_XMM
-ADD_NxN_IDCT add8x8_idct_sse2,   add4x4_idct_sse2, 64,  8, 0, 0
-ADD_NxN_IDCT add16x16_idct_sse2, add8x8_idct_sse2, 64, 16, 8, 8
-ADD_NxN_IDCT add8x8_idct_avx,    add4x4_idct_avx,  64,  8, 0, 0
-ADD_NxN_IDCT add16x16_idct_avx,  add8x8_idct_avx,  64, 16, 8, 8
+ADD_NxN_IDCT add8x8_idct_sse2,   add4x4_idct_sse2, 64,  8, 0, 0, 6
+ADD_NxN_IDCT add16x16_idct_sse2, add8x8_idct_sse2, 64, 16, 8, 8, 6
+ADD_NxN_IDCT add8x8_idct_avx,    add4x4_idct_avx,  64,  8, 0, 0, 6
+ADD_NxN_IDCT add16x16_idct_avx,  add8x8_idct_avx,  64, 16, 8, 8, 6
+cextern add8x8_idct8_sse2.skip_prologue
+cextern add8x8_idct8_avx.skip_prologue
+ADD_NxN_IDCT add16x16_idct8_sse2, add8x8_idct8_sse2, 256, 16, 0, 0, 16
+ADD_NxN_IDCT add16x16_idct8_avx,  add8x8_idct8_avx,  256, 16, 0, 0, 16
 cextern sub8x8_dct8_sse2.skip_prologue
 cextern sub8x8_dct8_sse4.skip_prologue
 cextern sub8x8_dct8_avx.skip_prologue

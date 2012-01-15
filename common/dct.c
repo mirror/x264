@@ -513,6 +513,8 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->sub16x16_dct8   = x264_sub16x16_dct8_sse2;
         dctf->add8x8_idct     = x264_add8x8_idct_sse2;
         dctf->add16x16_idct   = x264_add16x16_idct_sse2;
+        dctf->add8x8_idct8    = x264_add8x8_idct8_sse2;
+        dctf->add16x16_idct8    = x264_add16x16_idct8_sse2;
         dctf->sub8x8_dct_dc   = x264_sub8x8_dct_dc_sse2;
         dctf->add8x8_idct_dc  = x264_add8x8_idct_dc_sse2;
         dctf->sub8x16_dct_dc  = x264_sub8x16_dct_dc_sse2;
@@ -532,6 +534,8 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->sub16x16_dct8   = x264_sub16x16_dct8_avx;
         dctf->add8x8_idct     = x264_add8x8_idct_avx;
         dctf->add16x16_idct   = x264_add16x16_idct_avx;
+        dctf->add8x8_idct8    = x264_add8x8_idct8_avx;
+        dctf->add16x16_idct8  = x264_add16x16_idct8_avx;
         dctf->add8x8_idct_dc  = x264_add8x8_idct_dc_avx;
         dctf->sub8x16_dct_dc  = x264_sub8x16_dct_dc_avx;
         dctf->add16x16_idct_dc= x264_add16x16_idct_dc_avx;
