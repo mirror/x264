@@ -117,10 +117,10 @@ typedef struct
 {
     x264_pthread_mutex_t mtx_broadcast;
     x264_pthread_mutex_t mtx_waiter_count;
-    int waiter_count;
+    volatile int waiter_count;
     HANDLE semaphore;
     HANDLE waiters_done;
-    int is_broadcast;
+    volatile int is_broadcast;
 } x264_win32_cond_t;
 
 int x264_pthread_cond_init( x264_pthread_cond_t *cond, const x264_pthread_condattr_t *attr )
@@ -211,13 +211,19 @@ int x264_pthread_cond_signal( x264_pthread_cond_t *cond )
 
     /* non-native condition variables */
     x264_win32_cond_t *win32_cond = cond->ptr;
+
+    x264_pthread_mutex_lock( &win32_cond->mtx_broadcast );
     x264_pthread_mutex_lock( &win32_cond->mtx_waiter_count );
     int have_waiter = win32_cond->waiter_count;
     x264_pthread_mutex_unlock( &win32_cond->mtx_waiter_count );
 
     if( have_waiter )
+    {
         ReleaseSemaphore( win32_cond->semaphore, 1, NULL );
-    return 0;
+        WaitForSingleObject( win32_cond->waiters_done, INFINITE );
+    }
+
+    return x264_pthread_mutex_unlock( &win32_cond->mtx_broadcast );
 }
 
 int x264_pthread_cond_wait( x264_pthread_cond_t *cond, x264_pthread_mutex_t *mutex )
@@ -229,11 +235,10 @@ int x264_pthread_cond_wait( x264_pthread_cond_t *cond, x264_pthread_mutex_t *mut
     x264_win32_cond_t *win32_cond = cond->ptr;
 
     x264_pthread_mutex_lock( &win32_cond->mtx_broadcast );
-    x264_pthread_mutex_unlock( &win32_cond->mtx_broadcast );
-
     x264_pthread_mutex_lock( &win32_cond->mtx_waiter_count );
     win32_cond->waiter_count++;
     x264_pthread_mutex_unlock( &win32_cond->mtx_waiter_count );
+    x264_pthread_mutex_unlock( &win32_cond->mtx_broadcast );
 
     // unlock the external mutex
     x264_pthread_mutex_unlock( mutex );
@@ -241,7 +246,7 @@ int x264_pthread_cond_wait( x264_pthread_cond_t *cond, x264_pthread_mutex_t *mut
 
     x264_pthread_mutex_lock( &win32_cond->mtx_waiter_count );
     win32_cond->waiter_count--;
-    int last_waiter = !win32_cond->waiter_count && win32_cond->is_broadcast;
+    int last_waiter = !win32_cond->waiter_count || !win32_cond->is_broadcast;
     x264_pthread_mutex_unlock( &win32_cond->mtx_waiter_count );
 
     if( last_waiter )
