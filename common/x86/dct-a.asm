@@ -42,6 +42,34 @@ pb_scan4frame2b: SHUFFLE_MASK_W 6,3,7,10,13,14,11,15
 pb_idctdc_unpack: db 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3
 pb_idctdc_unpack2: db 4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7
 
+pb_scan8framet1: SHUFFLE_MASK_W 0,  1,  6,  7,  8,  9, 13, 14
+pb_scan8framet2: SHUFFLE_MASK_W 2 , 3,  4,  7,  9, 15, 10, 14
+pb_scan8framet3: SHUFFLE_MASK_W 0,  1,  5,  6,  8, 11, 12, 13
+pb_scan8framet4: SHUFFLE_MASK_W 0,  3,  4,  5,  8, 11, 12, 15
+pb_scan8framet5: SHUFFLE_MASK_W 1,  2,  6,  7,  9, 10, 13, 14
+pb_scan8framet6: SHUFFLE_MASK_W 0,  3,  4,  5, 10, 11, 12, 15
+pb_scan8framet7: SHUFFLE_MASK_W 1,  2,  6,  7,  8,  9, 14, 15
+pb_scan8framet8: SHUFFLE_MASK_W 0,  1,  2,  7,  8, 10, 11, 14
+pb_scan8framet9: SHUFFLE_MASK_W 1,  4,  5,  7,  8, 13, 14, 15
+
+pb_scan8frame1: SHUFFLE_MASK_W  0,  8,  1,  2,  9, 12,  4, 13
+pb_scan8frame2: SHUFFLE_MASK_W  4,  0,  1,  5,  8, 10, 12, 14
+pb_scan8frame3: SHUFFLE_MASK_W 12, 10,  8,  6,  2,  3,  7,  9
+pb_scan8frame4: SHUFFLE_MASK_W  0,  1,  8, 12,  4, 13,  9,  2
+pb_scan8frame5: SHUFFLE_MASK_W  5, 14, 10,  3, 11, 15,  6,  7
+pb_scan8frame6: SHUFFLE_MASK_W  6,  8, 12, 13,  9,  7,  5,  3
+pb_scan8frame7: SHUFFLE_MASK_W  1,  3,  5,  7, 10, 14, 15, 11
+pb_scan8frame8: SHUFFLE_MASK_W  10, 3, 11, 14,  5,  6, 15,  7
+
+pb_scan8field1 : SHUFFLE_MASK_W    0,   1,   2,   8,   9,   3,   4,  10
+pb_scan8field2a: SHUFFLE_MASK_W 0x80,  11,   5,   6,   7,  12,0x80,0x80
+pb_scan8field2b: SHUFFLE_MASK_W    0,0x80,0x80,0x80,0x80,0x80,   1,   8
+pb_scan8field3a: SHUFFLE_MASK_W   10,   5,   6,   7,  11,0x80,0x80,0x80
+pb_scan8field3b: SHUFFLE_MASK_W 0x80,0x80,0x80,0x80,0x80,   1,   8,   2
+pb_scan8field4a: SHUFFLE_MASK_W    4,   5,   6,   7,  11,0x80,0x80,0x80
+pb_scan8field6 : SHUFFLE_MASK_W    4,   5,   6,   7,  11,0x80,0x80,  12
+pb_scan8field7 : SHUFFLE_MASK_W    5,   6,   7,  11,0x80,0x80,  12,  13
+
 SECTION .text
 
 cextern pw_32_0
@@ -1052,6 +1080,15 @@ SCAN_8x8
 ;-----------------------------------------------------------------------------
 ; void zigzag_scan_8x8_frame( dctcoef level[64], dctcoef dct[8][8] )
 ;-----------------------------------------------------------------------------
+; Output order:
+;  0  8  1  2  9 16 24 17
+; 10  3  4 11 18 25 32 40
+; 33 26 19 12  5  6 13 20
+; 27 34 41 48 56 49 42 35
+; 28 21 14  7 15 22 29 36
+; 43 50 57 58 51 44 37 30
+; 23 31 38 45 52 59 60 53
+; 46 39 47 54 61 62 55 63
 %macro SCAN_8x8_FRAME 5
 cglobal zigzag_scan_8x8_frame, 2,2,8
     mova        m0, [r1]
@@ -1429,6 +1466,98 @@ ZIGZAG_SUB_4x4 ac, frame
 ZIGZAG_SUB_4x4   , field
 ZIGZAG_SUB_4x4 ac, field
 %endif ; !HIGH_BIT_DEPTH
+
+%if HIGH_BIT_DEPTH == 0
+INIT_XMM xop
+cglobal zigzag_scan_8x8_field, 2,3,7
+    lea        r2, [pb_scan8field1]
+    %define off(m) (r2+m-pb_scan8field1)
+    mova       m0, [r1+  0]
+    mova       m1, [r1+ 16]
+    vpperm     m5, m0, m1, [off(pb_scan8field1)]
+    mova [r0+  0], m5
+    vpperm     m0, m0, m1, [off(pb_scan8field2a)]
+    mova       m2, [r1+ 32]
+    mova       m3, [r1+ 48]
+    vpperm     m5, m2, m3, [off(pb_scan8field2b)]
+    por        m5, m0
+    mova [r0+ 16], m5
+    mova       m4, [off(pb_scan8field3b)]
+    vpperm     m1, m1, m2, [off(pb_scan8field3a)]
+    mova       m0, [r1+ 64]
+    vpperm     m5, m3, m0, m4
+    por        m5, m1
+    mova [r0+ 32], m5
+    ; 4b, 5b are the same as pb_scan8field3b.
+    ; 5a is the same as pb_scan8field4a.
+    mova       m5, [off(pb_scan8field4a)]
+    vpperm     m2, m2, m3, m5
+    mova       m1, [r1+ 80]
+    vpperm     m6, m0, m1, m4
+    por        m6, m2
+    mova [r0+ 48], m6
+    vpperm     m3, m3, m0, m5
+    mova       m2, [r1+ 96]
+    vpperm     m5, m1, m2, m4
+    por        m5, m3
+    mova [r0+ 64], m5
+    vpperm     m5, m0, m1, [off(pb_scan8field6)]
+    mova [r0+ 80], m5
+    vpperm     m5, m1, m2, [off(pb_scan8field7)]
+    mov       r2d, [r1+ 98]
+    mov  [r0+ 90], r2d
+    mova [r0+ 96], m5
+    mova       m3, [r1+112]
+    movd [r0+104], m3
+    mov       r2d, [r1+108]
+    mova [r0+112], m3
+    mov  [r0+112], r2d
+    %undef off
+    RET
+
+cglobal zigzag_scan_8x8_frame, 2,3,8
+    lea        r2, [pb_scan8frame1]
+    %define off(m) (r2+m-pb_scan8frame1)
+    mova       m7, [r1+ 16]
+    mova       m3, [r1+ 32]
+    vpperm     m7, m7, m3, [off(pb_scan8framet1)] ;  8  9 14 15 16 17 21 22
+    mova       m2, [r1+ 48]
+    vpperm     m0, m3, m2, [off(pb_scan8framet2)] ; 18 19 20 23 25 31 26 30
+    mova       m1, [r1+ 80]
+    mova       m4, [r1+ 64]
+    vpperm     m3, m4, m1, [off(pb_scan8framet3)] ; 32 33 37 38 40 43 44 45
+    vpperm     m6, m0, m3, [off(pb_scan8framet4)] ; 18 23 25 31 32 38 40 45
+    vpperm     m5, m0, m3, [off(pb_scan8framet5)] ; 19 20 26 30 33 37 43 44
+    vpperm     m3, m2, m4, [off(pb_scan8framet6)] ; 24 27 28 29 34 35 36 39
+    mova       m4, [r1+ 96]
+    vpperm     m4, m1, m4, [off(pb_scan8framet7)] ; 41 42 46 47 48 49 54 55
+    mova       m1, [r1+  0]
+    vpperm     m2, m1, m3, [off(pb_scan8framet8)] ;  0  1  2  7 24 28 29 36
+    vpperm     m1, m2, m7, [off(pb_scan8frame1)]  ;  0  8  1  2  9 16 24 17
+    mova [r0+  0], m1
+    movh       m0, [r1+  6]
+    movhps     m0, [r1+ 20]                       ;  3  4  5  6 10 11 12 13
+    vpperm     m1, m0, m6, [off(pb_scan8frame2)]  ; 10  3  4 11 18 25 32 40
+    mova [r0+ 16], m1
+    vpperm     m1, m0, m5, [off(pb_scan8frame3)]  ; 33 26 19 12  5  6 13 20
+    mova [r0+ 32], m1
+    vpperm     m1, m2, m7, [off(pb_scan8frame5)]  ; 28 21 14  7 15 22 29 36
+    mova [r0+ 64], m1
+    movh       m0, [r1+100]
+    movhps     m0, [r1+114]                       ; 50 51 52 53 57 58 59 60
+    vpperm     m1, m5, m0, [off(pb_scan8frame6)]  ; 43 50 57 58 51 44 37 30
+    mova [r0+ 80], m1
+    vpperm     m1, m6, m0, [off(pb_scan8frame7)]  ; 23 31 38 45 52 59 60 53
+    mova [r0+ 96], m1
+    mova       m1, [r1+112]
+    vpperm     m0, m3, m1, [off(pb_scan8framet9)] ; 27 34 35 39 56 61 62 63
+    vpperm     m1, m0, m4, [off(pb_scan8frame4)]  ; 27 34 41 48 56 49 42 35
+    mova [r0+ 48], m1
+    vpperm     m1, m0, m4, [off(pb_scan8frame8)]  ; 46 39 47 54 61 62 55 63
+    mova [r0+112], m1
+    %undef off
+    RET
+%endif
 
 ;-----------------------------------------------------------------------------
 ; void zigzag_interleave_8x8_cavlc( int16_t *dst, int16_t *src, uint8_t *nnz )

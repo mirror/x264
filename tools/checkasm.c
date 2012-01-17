@@ -908,12 +908,24 @@ static int check_dct( int cpu_ref, int cpu_new )
     { \
         set_func_name( "zigzag_"#name"_%s", interlace?"field":"frame" ); \
         used_asm = 1; \
-        memcpy(dct, buf1, size*sizeof(dctcoef)); \
+        for( int i = 0; i < size*size; i++ ) \
+            dct[i] = i; \
         call_c( zigzag_c[interlace].name, t1, dct ); \
         call_a( zigzag_asm[interlace].name, t2, dct ); \
-        if( memcmp( t1, t2, size*sizeof(dctcoef) ) ) \
+        if( memcmp( t1, t2, size*size*sizeof(dctcoef) ) ) \
         { \
             ok = 0; \
+            for( int i = 0; i < 2; i++ ) \
+            { \
+                dctcoef *d = (dctcoef*)(i ? t2 : t1); \
+                for( int j = 0; j < size; j++ ) \
+                { \
+                    for( int k = 0; k < size; k++ ) \
+                        fprintf( stderr, "%2d ", d[k+j*8] ); \
+                    fprintf( stderr, "\n" ); \
+                } \
+                fprintf( stderr, "\n" ); \
+            } \
             fprintf( stderr, #name " [FAILED]\n" ); \
         } \
     }
@@ -997,8 +1009,8 @@ static int check_dct( int cpu_ref, int cpu_new )
     for( interlace = 0; interlace <= 1; interlace++ )
     {
         ok = 1; used_asm = 0;
-        TEST_ZIGZAG_SCAN( scan_8x8, level1, level2, (void*)dct1, 64 );
-        TEST_ZIGZAG_SCAN( scan_4x4, level1, level2, dct1[0], 16  );
+        TEST_ZIGZAG_SCAN( scan_8x8, level1, level2, dct1[0], 8 );
+        TEST_ZIGZAG_SCAN( scan_4x4, level1, level2, dct1[0], 4 );
         TEST_ZIGZAG_SUB( sub_4x4, level1, level2, 16 );
         TEST_ZIGZAG_SUBAC( sub_4x4ac, level1, level2 );
         report( interlace ? "zigzag_field :" : "zigzag_frame :" );
