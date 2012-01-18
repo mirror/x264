@@ -691,7 +691,8 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
     {
         int cost_sig = x264_cabac_size_decision_noup2( &cabac_state_sig[0], 1 )
                      + x264_cabac_size_decision_noup2( &cabac_state_last[0], 1 );
-        return dct[0] = trellis_dc_shortcut( orig_coefs[0], quant_coefs[0], unquant_mf[0], coef_weight2[0], lambda2, cabac_state, cost_sig );
+        dct[0] = trellis_dc_shortcut( orig_coefs[0], quant_coefs[0], unquant_mf[0], coef_weight2[0], lambda2, cabac_state, cost_sig );
+        return !!dct[0];
     }
 
 #if HAVE_MMX && ARCH_X86_64

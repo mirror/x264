@@ -261,9 +261,7 @@ cglobal %1, 4,15,9
     inc    iiq
     jle .writeback_loop
 
-%if dc
     mov eax, 1
-%endif
 .return:
     ADD rsp, pad
     RET
@@ -724,6 +722,7 @@ TRELLIS_COEF0 1
     mov [nodes_curq + node_cabac_state(node_ctx) + (coeff_abs_level1_offs>>2)], r11b ; delayed from x264_cabac_size_decision2
 %endif
 %if %1 && node_ctx == 7
+    mov  r6d, levelgt1_ctxm
     mov [nodes_curq + node_cabac_state(node_ctx) + coeff_abs_levelgt1_offs-6], r10b
 %endif
     mov  r6d, [nodes_prevq + node_level_idx(j)]
@@ -786,8 +785,8 @@ TRELLIS_COEF0 1
     add  bitsd, r5d ; bs_size_ue_big from COEFN_SUFFIX
     ; n.cabac_state[levelgt1_ctx]
 %if j == 7 ; && compiling support for 4:2:2
-    mov    r5d, levelgt1_ctxm
-    %define coeff_abs_levelgt1_offs r5
+    mov    r6d, levelgt1_ctxm
+    %define coeff_abs_levelgt1_offs r6
 %endif
 %if j == 7
     movzx  r10, byte [nodes_prevq + node_cabac_state(j) + coeff_abs_levelgt1_offs-6] ; -6 because node only stores ctx 8 and 9
