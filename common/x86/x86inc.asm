@@ -554,6 +554,8 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %assign cpuflags_avx      (1<<9) | cpuflags_sse42
 %assign cpuflags_xop      (1<<10)| cpuflags_avx
 %assign cpuflags_fma4     (1<<11)| cpuflags_avx
+%assign cpuflags_avx2     (1<<12)| cpuflags_avx
+%assign cpuflags_fma3     (1<<13)| cpuflags_avx
 
 %assign cpuflags_cache32  (1<<16)
 %assign cpuflags_cache64  (1<<17)
@@ -561,6 +563,9 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %assign cpuflags_lzcnt    (1<<19)
 %assign cpuflags_misalign (1<<20)
 %assign cpuflags_aligned  (1<<21) ; not a cpu feature, but a function variant
+%assign cpuflags_bmi1     (1<<22)
+%assign cpuflags_bmi2     (1<<23)|cpuflags_bmi1
+%assign cpuflags_tbm      (1<<24)|cpuflags_bmi1
 
 %define    cpuflag(x) ((cpuflags & (cpuflags_ %+ x)) == (cpuflags_ %+ x))
 %define notcpuflag(x) ((cpuflags & (cpuflags_ %+ x)) != (cpuflags_ %+ x))
@@ -822,10 +827,10 @@ INIT_XMM
 ;%4 == number of operands given
 ;%5+: operands
 %macro RUN_AVX_INSTR 6-7+
-    %ifid %5
-        %define %%sizeofreg sizeof%5
-    %elifid %6
+    %ifid %6
         %define %%sizeofreg sizeof%6
+    %elifid %5
+        %define %%sizeofreg sizeof%5
     %else
         %define %%sizeofreg mmsize
     %endif
@@ -948,6 +953,9 @@ AVX_INSTR mulsd, 1, 0, 1
 AVX_INSTR mulss, 1, 0, 1
 AVX_INSTR orpd, 1, 0, 1
 AVX_INSTR orps, 1, 0, 1
+AVX_INSTR pabsb, 0, 0, 0
+AVX_INSTR pabsw, 0, 0, 0
+AVX_INSTR pabsd, 0, 0, 0
 AVX_INSTR packsswb, 0, 0, 0
 AVX_INSTR packssdw, 0, 0, 0
 AVX_INSTR packuswb, 0, 0, 0
@@ -999,6 +1007,7 @@ AVX_INSTR pminsd, 0, 0, 1
 AVX_INSTR pminub, 0, 0, 1
 AVX_INSTR pminuw, 0, 0, 1
 AVX_INSTR pminud, 0, 0, 1
+AVX_INSTR pmovmskb, 0, 0, 0
 AVX_INSTR pmulhuw, 0, 0, 1
 AVX_INSTR pmulhrsw, 0, 0, 1
 AVX_INSTR pmulhw, 0, 0, 1
@@ -1009,6 +1018,9 @@ AVX_INSTR pmuldq, 0, 0, 1
 AVX_INSTR por, 0, 0, 1
 AVX_INSTR psadbw, 0, 0, 1
 AVX_INSTR pshufb, 0, 0, 0
+AVX_INSTR pshufd, 0, 1, 0
+AVX_INSTR pshufhw, 0, 1, 0
+AVX_INSTR pshuflw, 0, 1, 0
 AVX_INSTR psignb, 0, 0, 0
 AVX_INSTR psignw, 0, 0, 0
 AVX_INSTR psignd, 0, 0, 0
@@ -1030,6 +1042,7 @@ AVX_INSTR psubsb, 0, 0, 0
 AVX_INSTR psubsw, 0, 0, 0
 AVX_INSTR psubusb, 0, 0, 0
 AVX_INSTR psubusw, 0, 0, 0
+AVX_INSTR ptest, 0, 0, 0
 AVX_INSTR punpckhbw, 0, 0, 0
 AVX_INSTR punpckhwd, 0, 0, 0
 AVX_INSTR punpckhdq, 0, 0, 0

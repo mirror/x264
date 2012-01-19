@@ -127,6 +127,11 @@ typedef struct
                                              * aren't used. */
 #define X264_CPU_XOP             0x0800000  /* AMD XOP */
 #define X264_CPU_FMA4            0x1000000  /* AMD FMA4 */
+#define X264_CPU_AVX2            0x2000000  /* AVX2 */
+#define X264_CPU_FMA3            0x4000000  /* Intel FMA3 */
+#define X264_CPU_BMI1            0x8000000  /* BMI1 */
+#define X264_CPU_BMI2           0x10000000  /* BMI2 */
+#define X264_CPU_TBM            0x20000000  /* AMD TBM */
 
 /* Analyse flags
  */

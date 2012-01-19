@@ -62,14 +62,21 @@ const x264_cpu_name_t x264_cpu_names[] =
     {"SSE4.1",      SSE2|X264_CPU_SSE3|X264_CPU_SSSE3|X264_CPU_SSE4},
     {"SSE4",        SSE2|X264_CPU_SSE3|X264_CPU_SSSE3|X264_CPU_SSE4},
     {"SSE4.2",      SSE2|X264_CPU_SSE3|X264_CPU_SSSE3|X264_CPU_SSE4|X264_CPU_SSE42},
-    {"AVX",         SSE2|X264_CPU_SSE3|X264_CPU_SSSE3|X264_CPU_SSE4|X264_CPU_SSE42|X264_CPU_AVX},
-    {"XOP",         SSE2|X264_CPU_SSE3|X264_CPU_SSSE3|X264_CPU_SSE4|X264_CPU_SSE42|X264_CPU_AVX|X264_CPU_XOP},
-    {"FMA4",        SSE2|X264_CPU_SSE3|X264_CPU_SSSE3|X264_CPU_SSE4|X264_CPU_SSE42|X264_CPU_AVX|X264_CPU_FMA4},
+#define AVX SSE2|X264_CPU_SSE3|X264_CPU_SSSE3|X264_CPU_SSE4|X264_CPU_SSE42|X264_CPU_AVX
+    {"AVX",         AVX},
+    {"XOP",         AVX|X264_CPU_XOP},
+    {"FMA4",        AVX|X264_CPU_FMA4},
+    {"AVX2",        AVX|X264_CPU_AVX2},
+    {"FMA3",        AVX|X264_CPU_FMA3},
+#undef AVX
 #undef SSE2
     {"Cache32",         X264_CPU_CACHELINE_32},
     {"Cache64",         X264_CPU_CACHELINE_64},
     {"SSEMisalign",     X264_CPU_SSE_MISALIGN},
     {"LZCNT",           X264_CPU_LZCNT},
+    {"BMI1",            X264_CPU_BMI1},
+    {"BMI2",            X264_CPU_BMI1|X264_CPU_BMI2},
+    {"TBM",             X264_CPU_TBM},
     {"Slow_mod4_stack", X264_CPU_STACK_MOD4},
     {"ARMv6",           X264_CPU_ARMV6},
     {"NEON",            X264_CPU_NEON},
@@ -143,7 +150,22 @@ uint32_t x264_cpu_detect( void )
         /* Check for OS support */
         x264_cpu_xgetbv( 0, &eax, &edx );
         if( (eax&0x6) == 0x6 )
+        {
             cpu |= X264_CPU_AVX;
+            if( ecx&0x00001000 )
+                cpu |= X264_CPU_FMA3;
+        }
+    }
+
+    x264_cpu_cpuid( 7, &eax, &ebx, &ecx, &edx );
+    /* AVX2 requires OS support, but BMI1/2 don't. */
+    if( (cpu&X264_CPU_AVX) && (ebx&0x00000020) )
+        cpu |= X264_CPU_AVX2;
+    if( ebx&0x00000008 )
+    {
+        cpu |= X264_CPU_BMI1;
+        if( ebx&0x00000100 )
+            cpu |= X264_CPU_BMI2;
     }
 
     if( cpu & X264_CPU_SSSE3 )
@@ -185,6 +207,9 @@ uint32_t x264_cpu_detect( void )
                 if( ecx&0x00010000 ) /* FMA4 */
                     cpu |= X264_CPU_FMA4;
             }
+
+            if( ecx&0x00200000 )
+                cpu |= X264_CPU_TBM;
         }
     }
 

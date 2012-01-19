@@ -164,6 +164,8 @@ static void print_bench(void)
             if( k < j )
                 continue;
             printf( "%s_%s%s: %"PRId64"\n", benchs[i].name,
+                    b->cpu&X264_CPU_AVX2 ? "avx2" :
+                    b->cpu&X264_CPU_FMA3 ? "fma3" :
                     b->cpu&X264_CPU_FMA4 ? "fma4" :
                     b->cpu&X264_CPU_XOP ? "xop" :
                     b->cpu&X264_CPU_AVX ? "avx" :
@@ -182,6 +184,9 @@ static void print_bench(void)
                     b->cpu&X264_CPU_SHUFFLE_IS_FAST && !(b->cpu&X264_CPU_SSE4) ? "_fastshuffle" :
                     b->cpu&X264_CPU_SSE_MISALIGN ? "_misalign" :
                     b->cpu&X264_CPU_LZCNT ? "_lzcnt" :
+                    b->cpu&X264_CPU_BMI2 ? "_bmi2" :
+                    b->cpu&X264_CPU_TBM ? "_tbm" :
+                    b->cpu&X264_CPU_BMI1 ? "_bmi1" :
                     b->cpu&X264_CPU_FAST_NEON_MRC ? "_fast_mrc" :
                     b->cpu&X264_CPU_SLOW_CTZ ? "_slow_ctz" :
                     b->cpu&X264_CPU_SLOW_ATOM ? "_slow_atom" : "",
@@ -2405,7 +2410,32 @@ static int check_all_flags( void )
     if( x264_cpu_detect() & X264_CPU_XOP )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_XOP, "XOP" );
     if( x264_cpu_detect() & X264_CPU_FMA4 )
+    {
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_FMA4, "FMA4" );
+        cpu1 &= ~X264_CPU_FMA4;
+    }
+    if( x264_cpu_detect() & X264_CPU_FMA3 )
+    {
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_FMA3, "FMA3" );
+        cpu1 &= ~X264_CPU_FMA3;
+    }
+    if( x264_cpu_detect() & X264_CPU_BMI1 )
+    {
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_BMI1, "BMI1" );
+        if( x264_cpu_detect() & X264_CPU_TBM )
+        {
+            ret |= add_flags( &cpu0, &cpu1, X264_CPU_TBM, "TBM" );
+            cpu1 &= ~X264_CPU_TBM;
+        }
+        if( x264_cpu_detect() & X264_CPU_BMI2 )
+        {
+            ret |= add_flags( &cpu0, &cpu1, X264_CPU_BMI2, "BMI2" );
+            cpu1 &= ~X264_CPU_BMI2;
+        }
+        cpu1 &= ~X264_CPU_BMI1;
+    }
+    if( x264_cpu_detect() & X264_CPU_AVX2 )
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_AVX2, "AVX2" );
 #elif ARCH_PPC
     if( x264_cpu_detect() & X264_CPU_ALTIVEC )
     {
