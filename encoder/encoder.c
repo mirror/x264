@@ -643,6 +643,8 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.b_intra_refresh = 0;
         h->param.i_frame_reference = X264_MIN( h->param.i_frame_reference, 6 );
         h->param.i_dpb_size = X264_MIN( h->param.i_dpb_size, 6 );
+        /* Don't use I-frames, because Blu-ray treats them the same as IDR. */
+        h->param.i_keyint_min = 1;
         /* Due to the proliferation of broken players that don't handle dupes properly. */
         h->param.analyse.i_weighted_pred = X264_MIN( h->param.analyse.i_weighted_pred, X264_WEIGHTP_SIMPLE );
         if( h->param.b_fake_interlaced )
