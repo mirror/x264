@@ -153,6 +153,8 @@ static int convert_csp_to_pix_fmt( int csp )
         case X264_CSP_BGRA: return csp&X264_CSP_HIGH_DEPTH ? PIX_FMT_BGRA64    : PIX_FMT_BGRA;
         /* the next csp has no equivalent 16bit depth in swscale */
         case X264_CSP_NV12: return csp&X264_CSP_HIGH_DEPTH ? PIX_FMT_NONE      : PIX_FMT_NV12;
+        /* the next csp is no supported by swscale at all */
+        case X264_CSP_NV16:
         default:            return PIX_FMT_NONE;
     }
 }
@@ -195,9 +197,9 @@ static int pick_closest_supported_csp( int csp )
         if( pix_desc->nb_components == 1 || pix_desc->nb_components == 2 ) // no chroma
             ret = X264_CSP_I420;
         else if( pix_desc->log2_chroma_w && pix_desc->log2_chroma_h ) // reduced chroma width & height
-            ret = (pix_desc->nb_components == pix_number_of_planes( pix_desc )) ? X264_CSP_I420 : X264_CSP_NV12;
+            ret = (pix_number_of_planes( pix_desc ) == 2) ? X264_CSP_NV12 : X264_CSP_I420;
         else if( pix_desc->log2_chroma_w ) // reduced chroma width only
-            ret = (pix_desc->nb_components == pix_number_of_planes( pix_desc )) ? X264_CSP_I422 : X264_CSP_NV16;
+            ret = X264_CSP_I422; // X264_CSP_NV16 is not supported by swscale so don't use it
         else
             ret = X264_CSP_I444;
     }
