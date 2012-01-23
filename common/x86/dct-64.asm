@@ -89,7 +89,7 @@ cextern hsub_mul
 
 %macro IDCT8_1D 11
     SUMSUB_BA %1, %6, %2, %10 ; %5=a0, %1=a2
-    
+
     psra%1   m%10, m%3, 1
     padd%1   m%10, m%3
     padd%1   m%10, m%5

@@ -461,6 +461,7 @@ cglobal hpel_filter_c, 3,3,9
 %else
     %define tpw_32 [pw_32]
 %endif
+; This doesn't seem to be faster (with AVX) on Sandy Bridge or Bulldozer...
 %if cpuflag(misalign)
 .loop:
     movu    m4, [src-4]
@@ -559,11 +560,11 @@ cglobal hpel_filter_h_sse2, 3,3,8
     jl .loop
     REP_RET
 
-%if ARCH_X86_64 == 0
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_h( uint8_t *dst, uint8_t *src, int width );
 ;-----------------------------------------------------------------------------
-cglobal hpel_filter_h_ssse3, 3,3
+%macro HPEL_H 0
+cglobal hpel_filter_h, 3,3
     add r0, r2
     add r1, r2
     neg r2
@@ -573,6 +574,9 @@ cglobal hpel_filter_h_ssse3, 3,3
     mova      m7, [pw_16]
 .loop:
     mova      m2, [src+16]
+    ; Using unaligned loads instead of palignr is marginally slower on SB and significantly
+    ; slower on Bulldozer, despite their fast load units -- even though it would let us avoid
+    ; the repeated loads of constants for pmaddubsw.
     palignr   m3, m1, m0, 14
     palignr   m4, m1, m0, 15
     palignr   m0, m2, m1, 2
@@ -596,7 +600,7 @@ cglobal hpel_filter_h_ssse3, 3,3
     add r2, 16
     jl .loop
     REP_RET
-%endif ; !ARCH_X86_64
+%endmacro
 
 INIT_MMX mmx2
 HPEL_V 0
@@ -610,9 +614,11 @@ HPEL_C
 INIT_XMM ssse3
 HPEL_C
 HPEL_V 0
+HPEL_H
 INIT_XMM avx
 HPEL_C
 HPEL_V 0
+HPEL_H
 %endif
 
 %if ARCH_X86_64
