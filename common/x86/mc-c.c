@@ -164,6 +164,8 @@ LOWRES(mmx2)
 LOWRES(cache32_mmx2)
 LOWRES(sse2)
 LOWRES(ssse3)
+LOWRES(avx)
+LOWRES(xop)
 
 #define PIXEL_AVG_W(width,cpu)\
 void x264_pixel_avg2_w##width##_##cpu( pixel *, int, pixel *, int, pixel *, int );
@@ -610,6 +612,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( !(cpu&X264_CPU_AVX) )
         return;
 
+    pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx;
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx;
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_avx;
     pf->plane_copy_interleave        = x264_plane_copy_interleave_avx;
@@ -618,6 +621,9 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_avx;
+
+    if( cpu&X264_CPU_XOP )
+        pf->frame_init_lowres_core = x264_frame_init_lowres_core_xop;
 #else // !HIGH_BIT_DEPTH
 
 #if ARCH_X86 // all x86_64 cpus with cacheline split issues use sse2 instead
@@ -736,10 +742,14 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( !(cpu&X264_CPU_AVX) )
         return;
 
+    pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx;
     pf->integral_init8h = x264_integral_init8h_avx;
     pf->hpel_filter = x264_hpel_filter_avx;
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_avx;
+
+    if( cpu&X264_CPU_XOP )
+        pf->frame_init_lowres_core = x264_frame_init_lowres_core_xop;
 #endif // HIGH_BIT_DEPTH
 
     if( !(cpu&X264_CPU_AVX) )

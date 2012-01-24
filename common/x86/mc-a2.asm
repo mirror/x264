@@ -37,6 +37,13 @@ filt_mul15: times 8 db 1, -5
 filt_mul51: times 8 db -5, 1
 hpel_shuf: db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
 deinterleave_shuf: db 0,2,4,6,8,10,12,14,1,3,5,7,9,11,13,15
+%if HIGH_BIT_DEPTH
+deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
+deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
+%else
+deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
+deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
+%endif
 
 pd_16: times 4 dd 16
 pd_0f: times 4 dd 0xffff
@@ -1391,12 +1398,17 @@ cglobal integral_init4v_ssse3, 3,5
     pavgb     %4, [r0+r5*2+%7]
     PALIGNR   %1, %3, 1, m6
     PALIGNR   %2, %4, 1, m6
+%if cpuflag(xop)
+    pavgb     %1, %3
+    pavgb     %2, %4
+%else
     pavgb     %1, %3
     pavgb     %2, %4
     psrlw     %5, %1, 8
     psrlw     %6, %2, 8
     pand      %1, m7
     pand      %2, m7
+%endif
 %endmacro
 
 %macro FILT16x2 4
@@ -1408,12 +1420,17 @@ cglobal integral_init4v_ssse3, 3,5
     pavgb     %1, m3
     PALIGNR   m3, m2, 1, m6
     pavgb     m3, m2
+%if cpuflag(xop)
+    vpperm    m5, m3, %1, m7
+    vpperm    m3, m3, %1, m6
+%else
     psrlw     m5, m3, 8
     psrlw     m4, %1, 8
     pand      m3, m7
     pand      %1, m7
     packuswb  m3, %1
     packuswb  m5, m4
+%endif
     mova    [%2], m3
     mova    [%3], m5
     mova      %1, m2
@@ -1470,12 +1487,17 @@ cglobal integral_init4v_ssse3, 3,5
     pavgw     %1, m3
     PALIGNR   m3, m2, 2, m6
     pavgw     m3, m2
+%if cpuflag(xop)
+    vpperm    m5, m3, %1, m7
+    vpperm    m3, m3, %1, m6
+%else
     psrld     m5, m3, 16
     psrld     m4, %1, 16
     pand      m3, m7
     pand      %1, m7
     packssdw  m3, %1
     packssdw  m5, m4
+%endif
     mova    [%2], m3
     mova    [%3], m5
     mova      %1, m2
@@ -1521,8 +1543,13 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
     PUSH      r6
     %define src_gap [rsp]
 %if HIGH_BIT_DEPTH
+%if cpuflag(xop)
+    mova      m6, [deinterleave_shuf32a]
+    mova      m7, [deinterleave_shuf32b]
+%else
     pcmpeqw   m7, m7
     psrld     m7, 16
+%endif
 .vloop:
     mov      r6d, r7m
 %ifnidn cpuname, mmx2
@@ -1557,8 +1584,13 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
     sub       r4, r6
     add  dst_gap, r6d
 %endif ; mmsize
+%if cpuflag(xop)
+    mova      m6, [deinterleave_shuf32a]
+    mova      m7, [deinterleave_shuf32b]
+%else
     pcmpeqb   m7, m7
     psrlw     m7, 8
+%endif
 .vloop:
     mov      r6d, r7m
 %ifnidn cpuname, mmx2
@@ -1572,12 +1604,22 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
     jz .hloop
     sub       r0, 16
     FILT8x4   m0, m1, m2, m3, m4, m5, 0
+%if cpuflag(xop)
+    mova      m4, m0
+    vpperm    m0, m4, m1, m6
+    vpperm    m1, m4, m1, m7
+    movq    [r1], m0
+    movq    [r2], m1
+    movhps  [r3], m0
+    movhps  [r4], m1
+%else
     packuswb  m0, m4
     packuswb  m1, m5
     movq    [r1], m0
     movhps  [r2], m0
     movq    [r3], m1
     movhps  [r4], m1
+%endif
     mova      m0, m2
     mova      m1, m3
     sub      r6d, 8
@@ -1594,10 +1636,17 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
     mova      m8, m0
     mova      m9, m1
     FILT8x4   m2, m3, m0, m1, m4, m5, 0
+%if cpuflag(xop)
+    vpperm    m4, m2, m8, m7
+    vpperm    m2, m2, m8, m6
+    vpperm    m5, m3, m9, m7
+    vpperm    m3, m3, m9, m6
+%else
     packuswb  m2, m8
     packuswb  m3, m9
     packuswb  m4, m10
     packuswb  m5, m11
+%endif
     mova    [r1], m2
     mova    [r2], m4
     mova    [r3], m3
@@ -1635,6 +1684,10 @@ FRAME_INIT_LOWRES
 INIT_XMM sse2
 FRAME_INIT_LOWRES
 INIT_XMM ssse3
+FRAME_INIT_LOWRES
+INIT_XMM avx
+FRAME_INIT_LOWRES
+INIT_XMM xop
 FRAME_INIT_LOWRES
 
 ;-----------------------------------------------------------------------------
