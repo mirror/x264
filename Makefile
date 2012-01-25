@@ -87,12 +87,13 @@ X86SRC = $(X86SRC0:%=common/x86/%)
 ifeq ($(ARCH),X86)
 ARCH_X86 = yes
 ASMSRC   = $(X86SRC) common/x86/pixel-32.asm
+ASFLAGS += -DARCH_X86_64=0
 endif
 
 ifeq ($(ARCH),X86_64)
 ARCH_X86 = yes
 ASMSRC   = $(X86SRC:-32.asm=-64.asm) common/x86/trellis-64.asm
-ASFLAGS += -DARCH_X86_64
+ASFLAGS += -DARCH_X86_64=1
 endif
 
 ifdef ARCH_X86

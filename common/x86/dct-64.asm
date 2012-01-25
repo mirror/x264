@@ -137,11 +137,11 @@ cextern hsub_mul
     SWAP  %4, %9, %8
 %endmacro
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 
 %macro SUB8x8_DCT8 0
 cglobal sub8x8_dct8, 3,3,14
-%ifdef WIN64
+%if WIN64
     call .skip_prologue
     RET
 %endif
@@ -194,7 +194,7 @@ SUB8x8_DCT8
 %macro ADD8x8_IDCT8 0
 cglobal add8x8_idct8, 2,2,16
     add r1, 128
-%ifdef WIN64
+%if WIN64
     call .skip_prologue
     RET
 %endif
@@ -260,7 +260,7 @@ cglobal sub8x8_dct, 3,3,10
 %if cpuflag(ssse3)
     mova m7, [hsub_mul]
 %endif
-%ifdef WIN64
+%if WIN64
     call .skip_prologue
     RET
 %endif
@@ -287,7 +287,7 @@ cglobal sub8x8_dct8, 3,3,11
 %if cpuflag(ssse3)
     mova m7, [hsub_mul]
 %endif
-%ifdef WIN64
+%if WIN64
     call .skip_prologue
     RET
 %endif
@@ -330,7 +330,7 @@ DCT_SUB8
 cglobal add8x8_idct8, 2,2,11
     add r0, 4*FDEC_STRIDE
     pxor m7, m7
-%ifdef WIN64
+%if WIN64
     call .skip_prologue
     RET
 %endif
@@ -369,7 +369,7 @@ ADD8x8_IDCT8
 cglobal add8x8_idct, 2,2,11
     add  r0, 4*FDEC_STRIDE
     pxor m7, m7
-%ifdef WIN64
+%if WIN64
     call .skip_prologue
     RET
 %endif

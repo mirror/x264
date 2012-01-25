@@ -29,7 +29,7 @@ SECTION_RODATA
 
 error_message: db "failed to preserve register", 0
 
-%ifdef WIN64
+%if WIN64
 ; just random numbers to reduce the chance of incidental match
 ALIGN 16
 x6:  ddq 0x79445c159ce790641a1b2550a612b48c
@@ -60,7 +60,7 @@ cextern_naked puts
 ; (max_args % 4) must equal 3 for stack alignment
 %define max_args 15
 
-%ifdef WIN64
+%if WIN64
 
 ;-----------------------------------------------------------------------------
 ; intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... )
@@ -117,7 +117,7 @@ cglobal checkasm_call, 4,15,16
     ADD  rsp, max_args*8
     RET
 
-%elifndef ARCH_X86_64
+%elif ARCH_X86_64 == 0
 
 ; just random numbers to reduce the chance of incidental match
 %define n3 dword 0x6549315c

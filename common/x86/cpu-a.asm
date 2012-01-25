@@ -65,7 +65,7 @@ cglobal cpu_xgetbv, 3,7
     mov [rsi], edx
     RET
 
-%ifndef ARCH_X86_64
+%if ARCH_X86_64 == 0
 
 ;-----------------------------------------------------------------------------
 ; int cpu_cpuid_test( void )

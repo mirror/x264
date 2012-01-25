@@ -236,7 +236,7 @@ SAD_XMM  8,  8
     HADDW    m1, m4
     HADDW    m2, m5
 %endif
-%ifdef UNIX64
+%if UNIX64
     movd [r5+0], m0
     movd [r5+4], m1
     movd [r5+8], m2
@@ -408,7 +408,7 @@ PIXEL_VSAD
 cglobal pixel_sad_x%1_%2x%3, 6,7,XMM_REGS
     %assign regnum %1+1
     %xdefine STRIDE r %+ regnum
-%ifdef WIN64
+%if WIN64
     movsxd STRIDE, STRIDE %+ d
 %endif
     mov     r6, %3/2-1

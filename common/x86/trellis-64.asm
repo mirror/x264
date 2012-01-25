@@ -86,7 +86,7 @@ SECTION .text
 %if cpuflag(ssse3)
     pabsd   m%1, m%1
     pmuludq m%1, m%1
-%elifdef HIGH_BIT_DEPTH
+%elif HIGH_BIT_DEPTH
     ABSD    m%2, m%1
     SWAP     %1, %2
     pmuludq m%1, m%1
@@ -113,7 +113,7 @@ cglobal %1, 4,15,9
     %assign pad 96 + level_tree_size + 16*SIZEOF_NODE + 16-gprsize-(stack_offset&15)
     SUB  rsp, pad
     DEFINE_ARGS unquant_mf, zigzag, lambda2, ii, orig_coefs, quant_coefs, dct, cabac_state_sig, cabac_state_last
-%ifdef WIN64
+%if WIN64
     %define level_statem rsp+stack_offset+80 ; r9m, except that we need to index into it (and r10m) as an array
 %else
     %define level_statem rsp+stack_offset+32
@@ -137,7 +137,7 @@ cglobal %1, 4,15,9
     %define zigzagm   [stack+8]
     mov     last_nnzm, iid
     mov     zigzagm,   zigzagq
-%ifndef WIN64
+%if WIN64 == 0
     %define orig_coefsm  [stack+16]
     %define quant_coefsm [stack+24]
     mov     orig_coefsm,  orig_coefsq
@@ -232,7 +232,7 @@ cglobal %1, 4,15,9
     movzx   r0, word [level_tree + r0*4]
     psrld   m0, 16
     movd    m1, [dctq + r2*SIZEOF_DCTCOEF]
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     psignd  m0, m1
     movd [dctq + r2*SIZEOF_DCTCOEF], m0
 %else
@@ -242,7 +242,7 @@ cglobal %1, 4,15,9
 %endif
 %else
     mov    r5d, [level_tree + r0*4]
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     mov    r4d, dword [dctq + r2*SIZEOF_DCTCOEF]
 %else
     movsx  r4d, word [dctq + r2*SIZEOF_DCTCOEF]
@@ -252,7 +252,7 @@ cglobal %1, 4,15,9
     shr    r5d, 16
     xor    r5d, r4d
     sub    r5d, r4d
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     mov  [dctq + r2*SIZEOF_DCTCOEF], r5d
 %else
     mov  [dctq + r2*SIZEOF_DCTCOEF], r5w
@@ -271,7 +271,7 @@ cglobal %1, 4,15,9
     pxor       m0, m0
     mova [r10+ 0], m0
     mova [r10+16], m0
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     mova [r10+32], m0
     mova [r10+48], m0
 %endif
@@ -285,7 +285,7 @@ cglobal %1, 4,15,9
 .i_loop%1:
     ; if( !quant_coefs[i] )
     mov   r6, quant_coefsm
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     mov   abs_leveld, dword [r6 + iiq*SIZEOF_DCTCOEF]
 %else
     movsx abs_leveld, word [r6 + iiq*SIZEOF_DCTCOEF]
@@ -332,7 +332,7 @@ cglobal %1, 4,15,9
     movzx   zigzagid, byte [zigzagq+iiq]
     movd    m0, abs_leveld
     mov     r6, orig_coefsm
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     movd    m1, [r6 + zigzagiq*SIZEOF_DCTCOEF]
 %else
     movd    m1, [r6 + zigzagiq*SIZEOF_DCTCOEF - 2]
@@ -433,7 +433,7 @@ cglobal %1, 4,15,9
     ; int psy_weight = dct_weight_tab[zigzag[i]] * h->mb.i_psy_trellis;
     ; ssd1[k] -= psy_weight * psy_value;
     mov     r6, fenc_dctm
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     movd    m3, [r6 + zigzagiq*SIZEOF_DCTCOEF]
 %else
     movd    m3, [r6 + zigzagiq*SIZEOF_DCTCOEF - 2]

@@ -34,10 +34,10 @@ cextern cabac_transition
 cextern cabac_renorm_shift
 
 ; t3 must be ecx, since it's used for shift.
-%ifdef WIN64
+%if WIN64
     DECLARE_REG_TMP 3,1,2,0,6,5,4,2
     %define pointer resq
-%elifdef ARCH_X86_64
+%elif ARCH_X86_64
     DECLARE_REG_TMP 0,1,2,3,4,5,6,6
     %define pointer resq
 %else
@@ -81,7 +81,7 @@ cglobal cabac_encode_decision_asm, 0,7
     and   t4d, t6d
     shr   t5d, 6
     movifnidn t2d, r2m
-%ifdef WIN64
+%if WIN64
     PUSH r7
 %endif
     LOAD_GLOBAL t5d, cabac_range_lps-4, t5, t4*2
@@ -98,7 +98,7 @@ cglobal cabac_encode_decision_asm, 0,7
     mov   t4d, t3d
     shr   t3d, 3
     LOAD_GLOBAL t3d, cabac_renorm_shift, 0, t3
-%ifdef WIN64
+%if WIN64
     POP r7
 %endif
     shl   t4d, t3b
@@ -119,7 +119,7 @@ cglobal cabac_encode_bypass_asm, 0,3
     lea       t7d, [t7*2+t3]
     mov       t3d, [t0+cb.queue]
     inc       t3d
-%ifdef UNIX64 ; .putbyte compiles to nothing but a jmp
+%if UNIX64 ; .putbyte compiles to nothing but a jmp
     jge cabac_putbyte
 %else
     jge .putbyte
@@ -153,7 +153,7 @@ cglobal cabac_encode_terminal_asm, 0,3
 
 cabac_putbyte:
     ; alive: t0=cb t3=queue t6=low
-%ifdef WIN64
+%if WIN64
     DECLARE_REG_TMP 3,6,1,0,2,5,4
 %endif
     mov   t1d, -1

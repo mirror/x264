@@ -82,7 +82,7 @@ cextern pw_pmpmpmpm
     SWAP      %1, %3
 %endmacro
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 ;-----------------------------------------------------------------------------
 ; void dct4x4dc( dctcoef d[4][4] )
 ;-----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ cglobal dct4x4dc, 1,1
     RET
 %endif ; HIGH_BIT_DEPTH
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 ;-----------------------------------------------------------------------------
 ; void idct4x4dc( int32_t d[4][4] )
 ;-----------------------------------------------------------------------------
@@ -179,7 +179,7 @@ cglobal idct4x4dc, 1,1
     RET
 %endif ; HIGH_BIT_DEPTH
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 ;-----------------------------------------------------------------------------
 ; void sub4x4_dct( dctcoef dct[4][4], pixel *pix1, pixel *pix2 )
 ;-----------------------------------------------------------------------------
@@ -236,7 +236,7 @@ INIT_MMX ssse3
 SUB_DCT4
 %endif ; HIGH_BIT_DEPTH
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 ;-----------------------------------------------------------------------------
 ; void add4x4_idct( pixel *p_dst, dctcoef dct[4][4] )
 ;-----------------------------------------------------------------------------
@@ -357,7 +357,7 @@ INIT_MMX
 ;-----------------------------------------------------------------------------
 %macro SUB_NxN_DCT 7
 cglobal %1, 3,3,%7
-%ifndef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH == 0
 %if mmsize == 8
     pxor m7, m7
 %else
@@ -378,7 +378,7 @@ cglobal %1, 3,3,%7
     add  r0, %3
     add  r1, %4-%5-%6*FENC_STRIDE
     add  r2, %4-%5-%6*FDEC_STRIDE
-%ifdef WIN64
+%if WIN64
     call %2.skip_prologue
     RET
 %else
@@ -390,7 +390,7 @@ cglobal %1, 3,3,%7
 ; void add8x8_idct( uint8_t *pix, int16_t dct[4][4][4] )
 ;-----------------------------------------------------------------------------
 %macro ADD_NxN_IDCT 6-7
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 cglobal %1, 2,2,%7
 %if %3==256
     add r1, 128
@@ -412,7 +412,7 @@ cglobal %1, 2,2,11
     call %2.skip_prologue
     add  r0, %4-%5-%6*FDEC_STRIDE
     add  r1, %3
-%ifdef WIN64
+%if WIN64
     call %2.skip_prologue
     RET
 %else
@@ -420,7 +420,7 @@ cglobal %1, 2,2,11
 %endif
 %endmacro
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 INIT_MMX
 SUB_NxN_DCT  sub8x8_dct_mmx,     sub4x4_dct_mmx,   64,  8, 0, 0, 0
 SUB_NxN_DCT  sub16x16_dct_mmx,   sub8x8_dct_mmx,   64, 16, 8, 8, 0
@@ -440,7 +440,7 @@ SUB_NxN_DCT  sub16x16_dct8_sse2, sub8x8_dct8_sse2, 256, 16, 0, 0, 14
 SUB_NxN_DCT  sub16x16_dct8_sse4, sub8x8_dct8_sse4, 256, 16, 0, 0, 14
 SUB_NxN_DCT  sub16x16_dct8_avx,  sub8x8_dct8_avx,  256, 16, 0, 0, 14
 %else ; !HIGH_BIT_DEPTH
-%ifndef ARCH_X86_64
+%if ARCH_X86_64 == 0
 INIT_MMX
 SUB_NxN_DCT  sub8x8_dct_mmx,     sub4x4_dct_mmx,   32, 4, 0, 0, 0
 ADD_NxN_IDCT add8x8_idct_mmx,    add4x4_idct_mmx,  32, 4, 0, 0
@@ -481,7 +481,7 @@ SUB_NxN_DCT  sub16x16_dct8_ssse3, sub8x8_dct8_ssse3, 128, 8, 0, 0, 11
 SUB_NxN_DCT  sub16x16_dct8_avx,   sub8x8_dct8_avx,   128, 8, 0, 0, 11
 %endif ; HIGH_BIT_DEPTH
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 ;-----------------------------------------------------------------------------
 ; void add8x8_idct_dc( pixel *p_dst, dctcoef *dct2x2 )
 ;-----------------------------------------------------------------------------
@@ -669,7 +669,7 @@ INIT_XMM
 cglobal add16x16_idct_dc_sse2, 2,2,8
     call .loop
     add       r0, FDEC_STRIDE*4
-%ifdef WIN64
+%if WIN64
     call .loop
     RET
 %endif
@@ -701,7 +701,7 @@ cglobal add16x16_idct_dc_sse2, 2,2,8
 cglobal add16x16_idct_dc, 2,2,8
     call .loop
     add       r0, FDEC_STRIDE*4
-%ifdef WIN64
+%if WIN64
     call .loop
     RET
 %endif
@@ -769,7 +769,7 @@ ADD16x16
     psubw     m0, m1         ; d02-d13 s02-s13 d02+d13 s02+s13
 %endmacro
 
-%ifndef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH == 0
 INIT_MMX
 cglobal sub8x8_dct_dc_mmx2, 3,3
     DCTDC_2ROW_MMX m0, m4, 0, 0
@@ -874,7 +874,7 @@ SUB8x16_DCT_DC
     paddw      %1, m0
 %endmacro
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 %macro SUB8x8_DCT_DC_10 0
 cglobal sub8x8_dct_dc, 3,3,3
     DCTDC_4ROW_SSE2 m1, 0
@@ -1042,7 +1042,7 @@ cglobal zigzag_scan_8x8_frame, 2,2,8
     RET
 %endmacro
 
-%ifndef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH == 0
 INIT_XMM sse2
 SCAN_8x8
 INIT_XMM ssse3
@@ -1137,7 +1137,7 @@ cglobal zigzag_scan_8x8_frame, 2,2,8
     RET
 %endmacro
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 INIT_XMM sse2
 SCAN_8x8_FRAME 4 , dq, qdq, dq, d
 INIT_XMM avx
@@ -1178,7 +1178,7 @@ cglobal zigzag_scan_4x4_frame, 2,2,8*(mmsize)/16
     RET
 %endmacro
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 INIT_XMM sse2
 SCAN_4x4 4 , dq, qdq, dq
 INIT_XMM avx
@@ -1221,7 +1221,7 @@ cglobal zigzag_scan_4x4_frame, 2,2
     RET
 %endif ; !HIGH_BIT_DEPTH
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 ;-----------------------------------------------------------------------------
 ; void zigzag_scan_4x4_field( int32_t level[16], int32_t dct[4][4] )
 ;-----------------------------------------------------------------------------
@@ -1348,7 +1348,7 @@ cglobal zigzag_scan_8x8_field, 2,3,8
     mova [r0+60*SIZEOF_DCTCOEF], m7
     RET
 %endmacro
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 INIT_XMM sse4
 SCAN_8x8 d, dq, qdq, dq, 4
 INIT_XMM avx
@@ -1417,7 +1417,7 @@ cglobal zigzag_sub_4x4%1_%2, 3,3,8
     RET
 %endmacro
 
-%ifndef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH == 0
 INIT_XMM ssse3
 ZIGZAG_SUB_4x4   , frame
 ZIGZAG_SUB_4x4 ac, frame
@@ -1459,7 +1459,7 @@ cglobal zigzag_interleave_8x8_cavlc, 3,3,8
     packsswb   m5, m6
     packsswb   m5, m5
     pxor       m0, m0
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     packsswb   m5, m5
 %endif
     pcmpeqb    m5, m0
@@ -1471,7 +1471,7 @@ cglobal zigzag_interleave_8x8_cavlc, 3,3,8
     RET
 %endmacro
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 INIT_XMM sse2
 ZIGZAG_8x8_CAVLC D
 INIT_XMM avx
@@ -1511,7 +1511,7 @@ ZIGZAG_8x8_CAVLC W
 %endif
 %endmacro
 
-%ifndef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH == 0
 %macro ZIGZAG_8x8_CAVLC 0
 cglobal zigzag_interleave_8x8_cavlc, 3,3,8
     INTERLEAVE_XMM  0

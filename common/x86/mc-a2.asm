@@ -146,14 +146,14 @@ cextern pd_ffff
 ;%define movntps movaps
 ;%define sfence
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_v( uint16_t *dst, uint16_t *src, int16_t *buf, int stride, int width );
 ;-----------------------------------------------------------------------------
 %macro HPEL_FILTER 0
 cglobal hpel_filter_v, 5,6,11
     FIX_STRIDES r3d, r4d
-%ifdef WIN64
+%if WIN64
     movsxd     r4, r4d
 %endif
     lea        r5, [r1+r3]
@@ -307,13 +307,13 @@ INIT_XMM sse2
 HPEL_FILTER
 %endif ; HIGH_BIT_DEPTH
 
-%ifndef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH == 0
 %macro HPEL_V 1
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_v( uint8_t *dst, uint8_t *src, int16_t *buf, int stride, int width );
 ;-----------------------------------------------------------------------------
 cglobal hpel_filter_v, 5,6,%1
-%ifdef WIN64
+%if WIN64
     movsxd   r4, r4d
 %endif
     lea r5, [r1+r3]
@@ -455,7 +455,7 @@ cglobal hpel_filter_c, 3,3,9
 %ifnidn cpuname, sse2
     mova    m7, [pw_32]
     %define tpw_32 m7
-%elifdef ARCH_X86_64
+%elif ARCH_X86_64
     mova    m8, [pw_32]
     %define tpw_32 m8
 %else
@@ -559,7 +559,7 @@ cglobal hpel_filter_h_sse2, 3,3,8
     jl .loop
     REP_RET
 
-%ifndef ARCH_X86_64
+%if ARCH_X86_64 == 0
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_h( uint8_t *dst, uint8_t *src, int width );
 ;-----------------------------------------------------------------------------
@@ -604,7 +604,7 @@ INIT_XMM sse2
 HPEL_V 8
 INIT_XMM sse2, misalign
 HPEL_C
-%ifndef ARCH_X86_64
+%if ARCH_X86_64 == 0
 INIT_XMM sse2
 HPEL_C
 INIT_XMM ssse3
@@ -615,7 +615,7 @@ HPEL_C
 HPEL_V 0
 %endif
 
-%ifdef ARCH_X86_64
+%if ARCH_X86_64
 %macro DO_FILT_V 5
     ;The optimum prefetch distance is difficult to determine in checkasm:
     ;any prefetch seems slower than not prefetching.
@@ -729,7 +729,7 @@ HPEL_V 0
 ;                   uint8_t *src, int stride, int width, int height)
 ;-----------------------------------------------------------------------------
 cglobal hpel_filter, 7,9,16
-%ifdef WIN64
+%if WIN64
     movsxd   r4, r4d
     movsxd   r5, r5d
 %endif
@@ -862,7 +862,7 @@ cglobal plane_copy_core_mmx2, 6,7
 
 
 %macro INTERLEAVE 4-5 ; dst, srcu, srcv, is_aligned, nt_hint
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 %assign x 0
 %rep 16/mmsize
     mov%4     m0, [%2+(x/2)*mmsize]
@@ -894,7 +894,7 @@ cglobal plane_copy_core_mmx2, 6,7
 %endmacro
 
 %macro DEINTERLEAVE 6 ; dstu, dstv, src, dstv==dstu+8, shuffle constant, is aligned
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 %assign n 0
 %rep 16/mmsize
     mova     m0, [%3+(n+0)*mmsize]
@@ -952,7 +952,7 @@ cglobal plane_copy_core_mmx2, 6,7
 ; assumes i_dst and w are multiples of 16, and i_dst>2*w
 cglobal plane_copy_interleave_core, 7,9
     FIX_STRIDES r1d, r3d, r5d, r6d
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     mov   r1m, r1d
     mov   r3m, r3d
     mov   r6m, r6d
@@ -964,7 +964,7 @@ cglobal plane_copy_interleave_core, 7,9
     lea    r0, [r0+r6*2]
     add    r2,  r6
     add    r4,  r6
-%ifdef ARCH_X86_64
+%if ARCH_X86_64
     DECLARE_REG_TMP 7,8
 %else
     DECLARE_REG_TMP 1,3
@@ -1031,7 +1031,7 @@ cglobal store_interleave_chroma, 5,5
 %endmacro ; PLANE_INTERLEAVE
 
 %macro DEINTERLEAVE_START 0
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     mova   m4, [pd_ffff]
 %elif cpuflag(ssse3)
     mova   m4, [deinterleave_shuf]
@@ -1050,7 +1050,7 @@ cglobal plane_copy_deinterleave, 6,7
     DEINTERLEAVE_START
     mov    r6d, r6m
     FIX_STRIDES r1d, r3d, r5d, r6d
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     mov    r6m, r6d
 %endif
     movsxdifnidn r1, r1d
@@ -1105,7 +1105,7 @@ cglobal load_deinterleave_chroma_fdec, 4,4
     REP_RET
 %endmacro ; PLANE_DEINTERLEAVE
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 INIT_MMX mmx2
 PLANE_INTERLEAVE
 INIT_MMX mmx
@@ -1221,7 +1221,7 @@ MEMZERO
 
 
 
-%ifndef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH == 0
 ;-----------------------------------------------------------------------------
 ; void integral_init4h( uint16_t *sum, uint8_t *pix, int stride )
 ;-----------------------------------------------------------------------------
@@ -1481,12 +1481,12 @@ cglobal integral_init4v_ssse3, 3,5
 ;-----------------------------------------------------------------------------
 %macro FRAME_INIT_LOWRES 0
 cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH, 12 otherwise
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     shl   dword r6m, 1
     FIX_STRIDES r5d
     shl   dword r7m, 1
 %endif
-%ifdef WIN64
+%if WIN64
     movsxd    r5, r5d
 %endif
     ; src += 2*(height-1)*stride + 2*width
@@ -1514,7 +1514,7 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
     shl      r6d, 1
     PUSH      r6
     %define src_gap [rsp]
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
     pcmpeqw   m7, m7
     psrld     m7, 16
 .vloop:
@@ -1622,7 +1622,7 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
 
 INIT_MMX mmx2
 FRAME_INIT_LOWRES
-%ifndef ARCH_X86_64
+%if ARCH_X86_64 == 0
 INIT_MMX cache32, mmx2
 FRAME_INIT_LOWRES
 %endif

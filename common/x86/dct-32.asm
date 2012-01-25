@@ -157,7 +157,7 @@ cextern hsub_mul
     SWAP %4, %9, %8
 %endmacro
 
-%ifdef HIGH_BIT_DEPTH
+%if HIGH_BIT_DEPTH
 
 %macro SUB8x8_DCT8 0
 cglobal sub8x8_dct8, 3,3,8

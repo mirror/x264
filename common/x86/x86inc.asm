@@ -36,11 +36,13 @@
 
 %define program_name x264
 
-%ifdef ARCH_X86_64
+%define WIN64  0
+%define UNIX64 0
+%if ARCH_X86_64
     %ifidn __OUTPUT_FORMAT__,win32
-        %define WIN64
+        %define WIN64  1
     %else
-        %define UNIX64
+        %define UNIX64 1
     %endif
 %endif
 
@@ -80,9 +82,9 @@
     %endif
 %endmacro
 
-%ifdef WIN64
+%if WIN64
     %define PIC
-%elifndef ARCH_X86_64
+%elif ARCH_X86_64 == 0
 ; x86_32 doesn't require PIC.
 ; Some distros prefer shared objects to be PIC, but nothing breaks if
 ; the code contains a few textrels, so we'll skip that complexity.
@@ -136,7 +138,7 @@ CPU intelnop
     %if %0 == 5
         %define r%1m  %3
         %define r%1mp %2
-    %elifdef ARCH_X86_64 ; memory
+    %elif ARCH_X86_64 ; memory
         %define r%1m [rsp + stack_offset + %6]
         %define r%1mp qword r %+ %1m
     %else
@@ -155,7 +157,7 @@ CPU intelnop
     %define e%1w %1
     %define r%1b %2
     %define e%1b %2
-%ifndef ARCH_X86_64
+%if ARCH_X86_64 == 0
     %define r%1  e%1
 %endif
 %endmacro
@@ -191,7 +193,7 @@ DECLARE_REG_SIZE bp, bpl
 
 DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
 
-%ifdef ARCH_X86_64
+%if ARCH_X86_64
     %define gprsize 8
 %else
     %define gprsize 4
@@ -297,7 +299,7 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
     %assign n_arg_names %0
 %endmacro
 
-%ifdef WIN64 ; Windows x64 ;=================================================
+%if WIN64 ; Windows x64 ;=================================================
 
 DECLARE_REG 0,  rcx, ecx,  cx,   cl
 DECLARE_REG 1,  rdx, edx,  dx,   dl
@@ -373,7 +375,7 @@ DECLARE_REG 14, R15, R15D, R15W, R15B, 120
     %endif
 %endmacro
 
-%elifdef ARCH_X86_64 ; *nix x64 ;=============================================
+%elif ARCH_X86_64 ; *nix x64 ;=============================================
 
 DECLARE_REG 0,  rdi, edi,  di,   dil
 DECLARE_REG 1,  rsi, esi,  si,   sil
@@ -462,7 +464,7 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 
 %endif ;======================================================================
 
-%ifndef WIN64
+%if WIN64 == 0
 %macro WIN64_SPILL_XMM 1
 %endmacro
 %macro WIN64_RESTORE_XMM 1
@@ -622,7 +624,7 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
     %define RESET_MM_PERMUTATION INIT_XMM %1
     %define mmsize 16
     %define num_mmregs 8
-    %ifdef ARCH_X86_64
+    %if ARCH_X86_64
     %define num_mmregs 16
     %endif
     %define mova movdqa
@@ -643,7 +645,7 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
     %define RESET_MM_PERMUTATION INIT_YMM %1
     %define mmsize 32
     %define num_mmregs 8
-    %ifdef ARCH_X86_64
+    %if ARCH_X86_64
     %define num_mmregs 16
     %endif
     %define mova vmovaps

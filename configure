@@ -958,7 +958,9 @@ fi
 
 if [ "$bit_depth" -gt "8" ]; then
     define HIGH_BIT_DEPTH
-    ASFLAGS="$ASFLAGS -DHIGH_BIT_DEPTH"
+    ASFLAGS="$ASFLAGS -DHIGH_BIT_DEPTH=1"
+else
+    ASFLAGS="$ASFLAGS -DHIGH_BIT_DEPTH=0"
 fi
 
 if [ "$chroma_format" != "all" ]; then
