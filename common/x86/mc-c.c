@@ -72,11 +72,6 @@ MC_WEIGHT( 8, ssse3 )
 MC_WEIGHT( 12, ssse3 )
 MC_WEIGHT( 16, ssse3 )
 MC_WEIGHT( 20, ssse3 )
-MC_WEIGHT( 4, avx )
-MC_WEIGHT( 8, avx )
-MC_WEIGHT( 12, avx )
-MC_WEIGHT( 16, avx )
-MC_WEIGHT( 20, avx )
 #undef MC_OFFSET
 #undef MC_WEIGHT
 
@@ -745,6 +740,10 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx;
     pf->integral_init8h = x264_integral_init8h_avx;
     pf->hpel_filter = x264_hpel_filter_avx;
+
+    /* ssse3 weight seems to be faster again on Sandy Bridge and Bulldozer. */
+    pf->weight_cache = x264_weight_cache_ssse3;
+    pf->weight = x264_mc_weight_wtab_ssse3;
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_avx;
 
