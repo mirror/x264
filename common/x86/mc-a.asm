@@ -301,7 +301,7 @@ AVG_WEIGHT 16, 7
 %macro WEIGHT_START 1
     mova     m3, [r4]
     mova     m4, [r4+16]
-%if notcpuflag(ssse3) || cpuflag(xop)
+%if notcpuflag(ssse3)
     movd     m5, [r4+32]
 %endif
     pxor     m2, m2

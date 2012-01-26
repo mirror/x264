@@ -90,7 +90,7 @@ cextern pd_1024
     SPLATD     m6, m6
     SPLATD     m7, m7
 %elif cpuflag(sse4) ; ssse3, but not faster on conroe
-    movdqa     m5, [pb_01]
+    mova       m5, [pb_01]
     pshufb     m6, m5
     pshufb     m7, m5
 %else
@@ -100,12 +100,10 @@ cextern pd_1024
 %endmacro
 
 %macro QUANT_END 0
+    xor      eax, eax
 %if cpuflag(sse4)
-    xor      eax, eax
     ptest     m5, m5
-    setne     al
 %else ; !sse4
-    xor      eax, eax
 %if ARCH_X86_64
 %if mmsize == 16
     packsswb  m5, m5
@@ -124,8 +122,8 @@ cextern pd_1024
     test     ecx, ecx
 %endif
 %endif
-    setne     al
 %endif ; cpuflag
+    setne     al
 %endmacro
 
 %if HIGH_BIT_DEPTH
@@ -136,9 +134,6 @@ cextern pd_1024
     paddd       m1, %3
     pmulld      m1, %2
     psrad       m1, 16
-    PSIGND      m1, m0
-    mova      [%1], m1
-    ACCUM      por, 5, 1, %4
 %else ; !sse4
     mova        m0, [%1]
     ABSD        m1, m0
@@ -150,15 +145,15 @@ cextern pd_1024
     psllq       m2, 32
     paddd       m1, m2
     psrld       m1, 16
+%endif ; cpuflag
     PSIGND      m1, m0
     mova      [%1], m1
     ACCUM     por, 5, 1, %4
-%endif ; cpuflag
 %endmacro
 
 %macro QUANT_TWO_DC 4
 %if cpuflag(sse4)
-    mova        m0, [%1]
+    mova        m0, [%1       ]
     mova        m1, [%1+mmsize]
     ABSD        m2, m0
     ABSD        m3, m1
@@ -170,8 +165,8 @@ cextern pd_1024
     psrad       m3, 16
     PSIGND      m2, m0
     PSIGND      m3, m1
-    mova      [%1], m2
-    mova      [%1+mmsize], m3
+    mova [%1       ], m2
+    mova [%1+mmsize], m3
     ACCUM      por, 5, 2, %4
     por         m5, m3
 %else ; !sse4
@@ -201,20 +196,20 @@ cextern pd_1024
 
 %macro QUANT_TWO_AC 4
 %if cpuflag(sse4)
-    mova        m0, [%1]
+    mova        m0, [%1       ]
     mova        m1, [%1+mmsize]
     ABSD        m2, m0
     ABSD        m3, m1
-    paddd       m2, [%3]
+    paddd       m2, [%3       ]
     paddd       m3, [%3+mmsize]
-    pmulld      m2, [%2]
+    pmulld      m2, [%2       ]
     pmulld      m3, [%2+mmsize]
     psrad       m2, 16
     psrad       m3, 16
     PSIGND      m2, m0
     PSIGND      m3, m1
-    mova      [%1], m2
-    mova      [%1+mmsize], m3
+    mova [%1       ], m2
+    mova [%1+mmsize], m3
     ACCUM      por, 5, 2, %4
     por         m5, m3
 %else ; !sse4
@@ -399,7 +394,7 @@ QUANT_AC quant_8x8, 8
 ;;; m4      0
     mova      m0, %1
 %if HIGH_BIT_DEPTH
-    pmadcswd   m0, m0, %2, m3
+    pmadcswd  m0, m0, %2, m3
     psrad     m0, m2
 %else
     punpckhwd m1, m0, m4

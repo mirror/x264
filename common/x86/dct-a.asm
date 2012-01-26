@@ -575,157 +575,108 @@ ADD_IDCT_DC
 
 %else ;!HIGH_BIT_DEPTH
 %macro ADD_DC 3
-    movq      mm4, [%3+FDEC_STRIDE*0]
-    movq      mm5, [%3+FDEC_STRIDE*1]
-    movq      mm6, [%3+FDEC_STRIDE*2]
-    paddusb   mm4, %1
-    paddusb   mm5, %1
-    paddusb   mm6, %1
-    paddusb    %1, [%3+FDEC_STRIDE*3]
-    psubusb   mm4, %2
-    psubusb   mm5, %2
-    psubusb   mm6, %2
-    psubusb    %1, %2
-    movq      [%3+FDEC_STRIDE*0], mm4
-    movq      [%3+FDEC_STRIDE*1], mm5
-    movq      [%3+FDEC_STRIDE*2], mm6
-    movq      [%3+FDEC_STRIDE*3], %1
+    mova    m4, [%3+FDEC_STRIDE*0]
+    mova    m5, [%3+FDEC_STRIDE*1]
+    mova    m6, [%3+FDEC_STRIDE*2]
+    paddusb m4, %1
+    paddusb m5, %1
+    paddusb m6, %1
+    paddusb %1, [%3+FDEC_STRIDE*3]
+    psubusb m4, %2
+    psubusb m5, %2
+    psubusb m6, %2
+    psubusb %1, %2
+    mova [%3+FDEC_STRIDE*0], m4
+    mova [%3+FDEC_STRIDE*1], m5
+    mova [%3+FDEC_STRIDE*2], m6
+    mova [%3+FDEC_STRIDE*3], %1
 %endmacro
 
-INIT_MMX
-cglobal add8x8_idct_dc_mmx, 2,2
-    movq      mm0, [r1]
-    pxor      mm1, mm1
-    add        r0, FDEC_STRIDE*4
-    paddw     mm0, [pw_32]
-    psraw     mm0, 6
-    psubw     mm1, mm0
-    packuswb  mm0, mm0
-    packuswb  mm1, mm1
-    punpcklbw mm0, mm0
-    punpcklbw mm1, mm1
-    pshufw    mm2, mm0, q3322
-    pshufw    mm3, mm1, q3322
-    punpcklbw mm0, mm0
-    punpcklbw mm1, mm1
-    ADD_DC    mm0, mm1, r0-FDEC_STRIDE*4
-    ADD_DC    mm2, mm3, r0
+INIT_MMX mmx2
+cglobal add8x8_idct_dc, 2,2
+    mova      m0, [r1]
+    pxor      m1, m1
+    add       r0, FDEC_STRIDE*4
+    paddw     m0, [pw_32]
+    psraw     m0, 6
+    psubw     m1, m0
+    packuswb  m0, m0
+    packuswb  m1, m1
+    punpcklbw m0, m0
+    punpcklbw m1, m1
+    pshufw    m2, m0, q3322
+    pshufw    m3, m1, q3322
+    punpcklbw m0, m0
+    punpcklbw m1, m1
+    ADD_DC    m0, m1, r0-FDEC_STRIDE*4
+    ADD_DC    m2, m3, r0
     RET
 
-cglobal add8x8_idct_dc_ssse3, 2,2
-    movq      xmm0, [r1]
-    pxor      xmm1, xmm1
-    add         r0, FDEC_STRIDE*4
-    paddw     xmm0, [pw_32]
-    psraw     xmm0, 6
-    psubw     xmm1, xmm0
-    movdqa    xmm5, [pb_idctdc_unpack]
-    packuswb  xmm0, xmm0
-    packuswb  xmm1, xmm1
-    pshufb    xmm0, xmm5
-    pshufb    xmm1, xmm5
-    movq      xmm2, [r0+FDEC_STRIDE*-4]
-    movq      xmm3, [r0+FDEC_STRIDE*-3]
-    movq      xmm4, [r0+FDEC_STRIDE*-2]
-    movq      xmm5, [r0+FDEC_STRIDE*-1]
-    movhps    xmm2, [r0+FDEC_STRIDE* 0]
-    movhps    xmm3, [r0+FDEC_STRIDE* 1]
-    movhps    xmm4, [r0+FDEC_STRIDE* 2]
-    movhps    xmm5, [r0+FDEC_STRIDE* 3]
-    paddusb   xmm2, xmm0
-    paddusb   xmm3, xmm0
-    paddusb   xmm4, xmm0
-    paddusb   xmm5, xmm0
-    psubusb   xmm2, xmm1
-    psubusb   xmm3, xmm1
-    psubusb   xmm4, xmm1
-    psubusb   xmm5, xmm1
-    movq      [r0+FDEC_STRIDE*-4], xmm2
-    movq      [r0+FDEC_STRIDE*-3], xmm3
-    movq      [r0+FDEC_STRIDE*-2], xmm4
-    movq      [r0+FDEC_STRIDE*-1], xmm5
-    movhps    [r0+FDEC_STRIDE* 0], xmm2
-    movhps    [r0+FDEC_STRIDE* 1], xmm3
-    movhps    [r0+FDEC_STRIDE* 2], xmm4
-    movhps    [r0+FDEC_STRIDE* 3], xmm5
+INIT_XMM ssse3
+cglobal add8x8_idct_dc, 2,2
+    movh     m0, [r1]
+    pxor     m1, m1
+    add      r0, FDEC_STRIDE*4
+    paddw    m0, [pw_32]
+    psraw    m0, 6
+    psubw    m1, m0
+    mova     m5, [pb_idctdc_unpack]
+    packuswb m0, m0
+    packuswb m1, m1
+    pshufb   m0, m5
+    pshufb   m1, m5
+    movh     m2, [r0+FDEC_STRIDE*-4]
+    movh     m3, [r0+FDEC_STRIDE*-3]
+    movh     m4, [r0+FDEC_STRIDE*-2]
+    movh     m5, [r0+FDEC_STRIDE*-1]
+    movhps   m2, [r0+FDEC_STRIDE* 0]
+    movhps   m3, [r0+FDEC_STRIDE* 1]
+    movhps   m4, [r0+FDEC_STRIDE* 2]
+    movhps   m5, [r0+FDEC_STRIDE* 3]
+    paddusb  m2, m0
+    paddusb  m3, m0
+    paddusb  m4, m0
+    paddusb  m5, m0
+    psubusb  m2, m1
+    psubusb  m3, m1
+    psubusb  m4, m1
+    psubusb  m5, m1
+    movh   [r0+FDEC_STRIDE*-4], m2
+    movh   [r0+FDEC_STRIDE*-3], m3
+    movh   [r0+FDEC_STRIDE*-2], m4
+    movh   [r0+FDEC_STRIDE*-1], m5
+    movhps [r0+FDEC_STRIDE* 0], m2
+    movhps [r0+FDEC_STRIDE* 1], m3
+    movhps [r0+FDEC_STRIDE* 2], m4
+    movhps [r0+FDEC_STRIDE* 3], m5
     RET
 
-cglobal add16x16_idct_dc_mmx, 2,3
+INIT_MMX mmx2
+cglobal add16x16_idct_dc, 2,3
     mov       r2, 4
 .loop:
-    movq      mm0, [r1]
-    pxor      mm1, mm1
-    paddw     mm0, [pw_32]
-    psraw     mm0, 6
-    psubw     mm1, mm0
-    packuswb  mm0, mm0
-    packuswb  mm1, mm1
-    punpcklbw mm0, mm0
-    punpcklbw mm1, mm1
-    pshufw    mm2, mm0, q3322
-    pshufw    mm3, mm1, q3322
-    punpcklbw mm0, mm0
-    punpcklbw mm1, mm1
-    ADD_DC    mm0, mm1, r0
-    ADD_DC    mm2, mm3, r0+8
+    mova      m0, [r1]
+    pxor      m1, m1
+    paddw     m0, [pw_32]
+    psraw     m0, 6
+    psubw     m1, m0
+    packuswb  m0, m0
+    packuswb  m1, m1
+    punpcklbw m0, m0
+    punpcklbw m1, m1
+    pshufw    m2, m0, q3322
+    pshufw    m3, m1, q3322
+    punpcklbw m0, m0
+    punpcklbw m1, m1
+    ADD_DC    m0, m1, r0
+    ADD_DC    m2, m3, r0+8
     add       r1, 8
     add       r0, FDEC_STRIDE*4
     dec       r2
     jg .loop
     REP_RET
 
-%macro IDCT_DC_STORE 3
-    movdqa    xmm4, [r0+%1+FDEC_STRIDE*0]
-    movdqa    xmm5, [r0+%1+FDEC_STRIDE*1]
-    movdqa    xmm6, [r0+%1+FDEC_STRIDE*2]
-    movdqa    xmm7, [r0+%1+FDEC_STRIDE*3]
-    paddusb   xmm4, %2
-    paddusb   xmm5, %2
-    paddusb   xmm6, %2
-    paddusb   xmm7, %2
-    psubusb   xmm4, %3
-    psubusb   xmm5, %3
-    psubusb   xmm6, %3
-    psubusb   xmm7, %3
-    movdqa    [r0+%1+FDEC_STRIDE*0], xmm4
-    movdqa    [r0+%1+FDEC_STRIDE*1], xmm5
-    movdqa    [r0+%1+FDEC_STRIDE*2], xmm6
-    movdqa    [r0+%1+FDEC_STRIDE*3], xmm7
-%endmacro
-
-INIT_XMM
-cglobal add16x16_idct_dc_sse2, 2,2,8
-    call .loop
-    add       r0, FDEC_STRIDE*4
-%if WIN64
-    call .loop
-    RET
-%endif
-.loop:
-    add       r0, FDEC_STRIDE*4
-    movq      xmm0, [r1+0]
-    movq      xmm2, [r1+8]
-    add       r1, 16
-    punpcklwd xmm0, xmm0
-    punpcklwd xmm2, xmm2
-    pxor      xmm3, xmm3
-    paddw     xmm0, [pw_32]
-    paddw     xmm2, [pw_32]
-    psraw     xmm0, 6
-    psraw     xmm2, 6
-    psubw     xmm1, xmm3, xmm0
-    packuswb  xmm0, xmm1
-    psubw     xmm3, xmm2
-    punpckhbw xmm1, xmm0, xmm0
-    packuswb  xmm2, xmm3
-    punpckhbw xmm3, xmm2, xmm2
-    punpcklbw xmm0, xmm0
-    punpcklbw xmm2, xmm2
-    IDCT_DC_STORE FDEC_STRIDE*-4, xmm0, xmm1
-    IDCT_DC_STORE 0, xmm2, xmm3
-    ret
-
-%macro ADD16x16 0
+INIT_XMM sse2
 cglobal add16x16_idct_dc, 2,2,8
     call .loop
     add       r0, FDEC_STRIDE*4
@@ -735,22 +686,54 @@ cglobal add16x16_idct_dc, 2,2,8
 %endif
 .loop:
     add       r0, FDEC_STRIDE*4
-    movdqa    xmm0, [r1]
+    movq      m0, [r1+0]
+    movq      m2, [r1+8]
     add       r1, 16
-    pxor      xmm1, xmm1
-    paddw     xmm0, [pw_32]
-    psraw     xmm0, 6
-    psubw     xmm1, xmm0
-    movdqa    xmm5, [ pb_idctdc_unpack]
-    movdqa    xmm6, [pb_idctdc_unpack2]
-    packuswb  xmm0, xmm0
-    packuswb  xmm1, xmm1
-    pshufb    xmm2, xmm0, xmm6
-    pshufb    xmm0, xmm5
-    pshufb    xmm3, xmm1, xmm6
-    pshufb    xmm1, xmm5
-    IDCT_DC_STORE FDEC_STRIDE*-4, xmm0, xmm1
-    IDCT_DC_STORE 0, xmm2, xmm3
+    punpcklwd m0, m0
+    punpcklwd m2, m2
+    pxor      m3, m3
+    paddw     m0, [pw_32]
+    paddw     m2, [pw_32]
+    psraw     m0, 6
+    psraw     m2, 6
+    psubw     m1, m3, m0
+    packuswb  m0, m1
+    psubw     m3, m2
+    punpckhbw m1, m0, m0
+    packuswb  m2, m3
+    punpckhbw m3, m2, m2
+    punpcklbw m0, m0
+    punpcklbw m2, m2
+    ADD_DC    m0, m1, r0+FDEC_STRIDE*-4
+    ADD_DC    m2, m3, r0
+    ret
+
+%macro ADD16x16 0
+cglobal add16x16_idct_dc, 2,2,8
+    call .loop
+    add      r0, FDEC_STRIDE*4
+%if WIN64
+    call .loop
+    RET
+%endif
+.loop:
+    add      r0, FDEC_STRIDE*4
+    mova     m0, [r1]
+    add      r1, 16
+    pxor     m1, m1
+    paddw    m0, [pw_32]
+    psraw    m0, 6
+    psubw    m1, m0
+    mova     m5, [ pb_idctdc_unpack]
+    mova     m6, [pb_idctdc_unpack2]
+    packuswb m0, m0
+    packuswb m1, m1
+    pshufb   m2, m0, m6
+    pshufb   m0, m5
+    pshufb   m3, m1, m6
+    pshufb   m1, m5
+    ADD_DC   m0, m1, r0+FDEC_STRIDE*-4
+    ADD_DC   m2, m3, r0
     ret
 %endmacro ; ADD16x16
 
@@ -766,14 +749,14 @@ ADD16x16
 ;-----------------------------------------------------------------------------
 
 %macro DCTDC_2ROW_MMX 4
-    movq      %1, [r1+FENC_STRIDE*(0+%3)]
-    movq      m1, [r1+FENC_STRIDE*(1+%3)]
-    movq      m2, [r2+FDEC_STRIDE*(0+%4)]
-    movq      m3, [r2+FDEC_STRIDE*(1+%4)]
-    movq      %2, %1
+    mova      %1, [r1+FENC_STRIDE*(0+%3)]
+    mova      m1, [r1+FENC_STRIDE*(1+%3)]
+    mova      m2, [r2+FDEC_STRIDE*(0+%4)]
+    mova      m3, [r2+FDEC_STRIDE*(1+%4)]
+    mova      %2, %1
     punpckldq %1, m1
     punpckhdq %2, m1
-    movq      m1, m2
+    mova      m1, m2
     punpckldq m2, m3
     punpckhdq m1, m3
     pxor      m3, m3
@@ -798,8 +781,8 @@ ADD16x16
 %endmacro
 
 %if HIGH_BIT_DEPTH == 0
-INIT_MMX
-cglobal sub8x8_dct_dc_mmx2, 3,3
+INIT_MMX mmx2
+cglobal sub8x8_dct_dc, 3,3
     DCTDC_2ROW_MMX m0, m4, 0, 0
     DCTDC_2ROW_MMX m5, m6, 2, 2
     paddw     m0, m5
@@ -812,34 +795,29 @@ cglobal sub8x8_dct_dc_mmx2, 3,3
     paddw     m4, m6
     punpckldq m7, m4
     DCT2x2    m0, m7
-    movq    [r0], m0
+    mova    [r0], m0
     ret
 
-INIT_XMM
 %macro DCTDC_2ROW_SSE2 4
-    movq      m1, [r1+FENC_STRIDE*(0+%1)]
-    movq      m2, [r1+FENC_STRIDE*(1+%1)]
+    movh      m1, [r1+FENC_STRIDE*(0+%1)]
+    movh      m2, [r1+FENC_STRIDE*(1+%1)]
     punpckldq m1, m2
-    movq      m2, [r2+FDEC_STRIDE*(0+%2)]
+    movh      m2, [r2+FDEC_STRIDE*(0+%2)]
     punpckldq m2, [r2+FDEC_STRIDE*(1+%2)]
     psadbw    m1, m0
     psadbw    m2, m0
-%if %3
-    paddd     %4, m1
-    psubd     %4, m2
-%else
-    psubd     m1, m2
-    SWAP      %4, m1
-%endif
+    ACCUM  paddd, %4, 1, %3
+    psubd    m%4, m2
 %endmacro
 
-cglobal sub8x8_dct_dc_sse2, 3,3
+INIT_XMM sse2
+cglobal sub8x8_dct_dc, 3,3
     pxor     m0, m0
-    DCTDC_2ROW_SSE2 0, 0, 0, m3
-    DCTDC_2ROW_SSE2 2, 2, 1, m3
+    DCTDC_2ROW_SSE2 0, 0, 0, 3
+    DCTDC_2ROW_SSE2 2, 2, 1, 3
     add      r2, FDEC_STRIDE*4
-    DCTDC_2ROW_SSE2 4, 0, 0, m4
-    DCTDC_2ROW_SSE2 6, 2, 1, m4
+    DCTDC_2ROW_SSE2 4, 0, 0, 4
+    DCTDC_2ROW_SSE2 6, 2, 1, 4
     packssdw m3, m3
     packssdw m4, m4
     DCT2x2   m3, m4
@@ -849,18 +827,18 @@ cglobal sub8x8_dct_dc_sse2, 3,3
 %macro SUB8x16_DCT_DC 0
 cglobal sub8x16_dct_dc, 3,3
     pxor       m0, m0
-    DCTDC_2ROW_SSE2 0, 0, 0, m3
-    DCTDC_2ROW_SSE2 2, 2, 1, m3
+    DCTDC_2ROW_SSE2 0, 0, 0, 3
+    DCTDC_2ROW_SSE2 2, 2, 1, 3
     add        r1, FENC_STRIDE*8
     add        r2, FDEC_STRIDE*8
-    DCTDC_2ROW_SSE2 -4, -4, 0, m4
-    DCTDC_2ROW_SSE2 -2, -2, 1, m4
+    DCTDC_2ROW_SSE2 -4, -4, 0, 4
+    DCTDC_2ROW_SSE2 -2, -2, 1, 4
     shufps     m3, m4, q2020
-    DCTDC_2ROW_SSE2 0, 0, 0, m5
-    DCTDC_2ROW_SSE2 2, 2, 1, m5
+    DCTDC_2ROW_SSE2 0, 0, 0, 5
+    DCTDC_2ROW_SSE2 2, 2, 1, 5
     add        r2, FDEC_STRIDE*4
-    DCTDC_2ROW_SSE2 4, 0, 0, m4
-    DCTDC_2ROW_SSE2 6, 2, 1, m4
+    DCTDC_2ROW_SSE2 4, 0, 0, 4
+    DCTDC_2ROW_SSE2 6, 2, 1, 4
     shufps     m5, m4, q2020
 %if cpuflag(ssse3)
     %define %%sign psignw
@@ -1188,38 +1166,35 @@ SCAN_8x8_FRAME 16, q , dq , wd, w
 ; void zigzag_scan_4x4_frame( dctcoef level[16], dctcoef dct[4][4] )
 ;-----------------------------------------------------------------------------
 %macro SCAN_4x4 4
-cglobal zigzag_scan_4x4_frame, 2,2,8*(mmsize)/16
-    mova       m0, [r1]
-    mova       m1, [r1+ 4*SIZEOF_DCTCOEF]
-    mova       m2, [r1+ 8*SIZEOF_DCTCOEF]
-    mova       m3, [r1+12*SIZEOF_DCTCOEF]
-    punpckl%4  m4, m0, m1
-    mova       m5, m1
-    mova       m6, m2
-    mova       m7, m3
-    psll%2     m3, %1
-    psrl%2     m0, %1
-    punpckl%3  m2, m2
-    punpckh%3  m1, m1
-    punpckl%4  m5, m3
-    punpckl%3  m4, m0
-    punpckh%4  m5, m2
-    punpckh%4  m0, m6
-    punpckh%4  m6, m7
-    punpckl%4  m1, m0
-    punpckh%3  m3, m6
-    mova     [r0], m4
-    mova  [r0+ 4*SIZEOF_DCTCOEF], m5
-    mova  [r0+ 8*SIZEOF_DCTCOEF], m1
-    mova  [r0+12*SIZEOF_DCTCOEF], m3
+cglobal zigzag_scan_4x4_frame, 2,2,6
+    mova      m0, [r1+ 0*SIZEOF_DCTCOEF]
+    mova      m1, [r1+ 4*SIZEOF_DCTCOEF]
+    mova      m2, [r1+ 8*SIZEOF_DCTCOEF]
+    mova      m3, [r1+12*SIZEOF_DCTCOEF]
+    punpckl%4 m4, m0, m1
+    psrl%2    m0, %1
+    punpckl%3 m4, m0
+    mova  [r0+ 0*SIZEOF_DCTCOEF], m4
+    punpckh%4 m0, m2
+    punpckh%4 m4, m2, m3
+    psll%2    m3, %1
+    punpckl%3 m2, m2
+    punpckl%4 m5, m1, m3
+    punpckh%3 m1, m1
+    punpckh%4 m5, m2
+    punpckl%4 m1, m0
+    punpckh%3 m3, m4
+    mova [r0+ 4*SIZEOF_DCTCOEF], m5
+    mova [r0+ 8*SIZEOF_DCTCOEF], m1
+    mova [r0+12*SIZEOF_DCTCOEF], m3
     RET
 %endmacro
 
 %if HIGH_BIT_DEPTH
 INIT_XMM sse2
-SCAN_4x4 4 , dq, qdq, dq
+SCAN_4x4  4, dq, qdq, dq
 INIT_XMM avx
-SCAN_4x4 4 , dq, qdq, dq
+SCAN_4x4  4, dq, qdq, dq
 %else
 INIT_MMX mmx
 SCAN_4x4 16, q , dq , wd
@@ -1229,16 +1204,16 @@ SCAN_4x4 16, q , dq , wd
 ;-----------------------------------------------------------------------------
 %macro SCAN_4x4_FRAME 0
 cglobal zigzag_scan_4x4_frame, 2,2
-    movdqa    xmm1, [r1+16]
-    movdqa    xmm0, [r1]
-    pshufb    xmm1, [pb_scan4frameb]
-    pshufb    xmm0, [pb_scan4framea]
-    psrldq    xmm2, xmm1, 6
-    palignr   xmm1, xmm0, 6
-    pslldq    xmm0, 10
-    palignr   xmm2, xmm0, 10
-    movdqa    [r0], xmm1
-    movdqa [r0+16], xmm2
+    mova    m1, [r1+16]
+    mova    m0, [r1+ 0]
+    pshufb  m1, [pb_scan4frameb]
+    pshufb  m0, [pb_scan4framea]
+    psrldq  m2, m1, 6
+    palignr m1, m0, 6
+    pslldq  m0, 10
+    palignr m2, m0, 10
+    mova [r0+ 0], m1
+    mova [r0+16], m2
     RET
 %endmacro
 
@@ -1262,13 +1237,13 @@ cglobal zigzag_scan_4x4_frame, 2,2
 ;-----------------------------------------------------------------------------
 ; void zigzag_scan_4x4_field( int32_t level[16], int32_t dct[4][4] )
 ;-----------------------------------------------------------------------------
-INIT_XMM
-cglobal zigzag_scan_4x4_field_sse2, 2,3
-    movu       m4, [r1+8]
+INIT_XMM sse2
+cglobal zigzag_scan_4x4_field, 2,3
+    movu       m4, [r1+ 8]
     pshufd     m0, m4, q3102
     mova       m1, [r1+32]
     mova       m2, [r1+48]
-    movu   [r0+8], m0
+    movu  [r0+ 8], m0
     mova  [r0+32], m1
     mova  [r0+48], m2
     movq      mm0, [r1]
@@ -1281,14 +1256,14 @@ cglobal zigzag_scan_4x4_field_sse2, 2,3
 ; void zigzag_scan_4x4_field( int16_t level[16], int16_t dct[4][4] )
 ;-----------------------------------------------------------------------------
 ; sse2 is only 1 cycle faster, and ssse3/pshufb is slower on core2
-INIT_MMX
-cglobal zigzag_scan_4x4_field_mmx2, 2,3
-    pshufw     mm0, [r1+4], q3102
-    movq       mm1, [r1+16]
-    movq       mm2, [r1+24]
-    movq    [r0+4], mm0
-    movq   [r0+16], mm1
-    movq   [r0+24], mm2
+INIT_MMX mmx2
+cglobal zigzag_scan_4x4_field, 2,3
+    pshufw      m0, [r1+4], q3102
+    mova        m1, [r1+16]
+    mova        m2, [r1+24]
+    movu    [r0+4], m0
+    mova   [r0+16], m1
+    mova   [r0+24], m2
     mov        r2d, [r1]
     mov       [r0], r2d
     mov        r2d, [r1+12]
@@ -1404,53 +1379,47 @@ cglobal zigzag_sub_4x4%1_%2, 4,4,8
 %else
 cglobal zigzag_sub_4x4%1_%2, 3,3,8
 %endif
-    movd      xmm0, [r1+0*FENC_STRIDE]
-    movd      xmm1, [r1+1*FENC_STRIDE]
-    movd      xmm2, [r1+2*FENC_STRIDE]
-    movd      xmm3, [r1+3*FENC_STRIDE]
-    movd      xmm4, [r2+0*FDEC_STRIDE]
-    movd      xmm5, [r2+1*FDEC_STRIDE]
-    movd      xmm6, [r2+2*FDEC_STRIDE]
-    movd      xmm7, [r2+3*FDEC_STRIDE]
-    movd      [r2+0*FDEC_STRIDE], xmm0
-    movd      [r2+1*FDEC_STRIDE], xmm1
-    movd      [r2+2*FDEC_STRIDE], xmm2
-    movd      [r2+3*FDEC_STRIDE], xmm3
-    punpckldq xmm0, xmm1
-    punpckldq xmm2, xmm3
-    punpckldq xmm4, xmm5
-    punpckldq xmm6, xmm7
-    punpcklqdq xmm0, xmm2
-    punpcklqdq xmm4, xmm6
-%ifidn %2, frame
-    movdqa    xmm7, [pb_sub4frame]
-%else
-    movdqa    xmm7, [pb_sub4field]
-%endif
-    pshufb    xmm0, xmm7
-    pshufb    xmm4, xmm7
-    pxor      xmm6, xmm6
-    punpckhbw xmm1, xmm0, xmm6
-    punpckhbw xmm5, xmm4, xmm6
-    punpcklbw xmm0, xmm6
-    punpcklbw xmm4, xmm6
-    psubw     xmm0, xmm4
-    psubw     xmm1, xmm5
+    movd      m0, [r1+0*FENC_STRIDE]
+    movd      m1, [r1+1*FENC_STRIDE]
+    movd      m2, [r1+2*FENC_STRIDE]
+    movd      m3, [r1+3*FENC_STRIDE]
+    movd      m4, [r2+0*FDEC_STRIDE]
+    movd      m5, [r2+1*FDEC_STRIDE]
+    movd      m6, [r2+2*FDEC_STRIDE]
+    movd      m7, [r2+3*FDEC_STRIDE]
+    movd [r2+0*FDEC_STRIDE], m0
+    movd [r2+1*FDEC_STRIDE], m1
+    movd [r2+2*FDEC_STRIDE], m2
+    movd [r2+3*FDEC_STRIDE], m3
+    punpckldq  m0, m1
+    punpckldq  m2, m3
+    punpckldq  m4, m5
+    punpckldq  m6, m7
+    punpcklqdq m0, m2
+    punpcklqdq m4, m6
+    mova      m7, [pb_sub4%2]
+    pshufb    m0, m7
+    pshufb    m4, m7
+    mova      m7, [hsub_mul]
+    punpckhbw m1, m0, m4
+    punpcklbw m0, m4
+    pmaddubsw m1, m7
+    pmaddubsw m0, m7
 %ifidn %1, ac
-    movd       r2d, xmm0
-    pand      xmm0, [pb_subacmask]
+    movd     r2d, m0
+    pand      m0, [pb_subacmask]
 %endif
-    movdqa    [r0], xmm0
-    pxor      xmm2, xmm2
-    movdqa [r0+16], xmm1
-    por       xmm0, xmm1
-    pcmpeqb   xmm0, xmm2
-    pmovmskb   eax, xmm0
+    mova [r0+ 0], m0
+    por       m0, m1
+    pxor      m2, m2
+    mova [r0+16], m1
+    pcmpeqb   m0, m2
+    pmovmskb eax, m0
 %ifidn %1, ac
-    mov       [r3], r2w
+    mov     [r3], r2w
 %endif
-    sub        eax, 0xffff
-    shr        eax, 31
+    sub      eax, 0xffff
+    shr      eax, 31
     RET
 %endmacro
 
@@ -1619,25 +1588,18 @@ ZIGZAG_8x8_CAVLC W
     SBUTTERFLY wd, 4, 5, 7
     SBUTTERFLY wd, 0, 1, 6
     SBUTTERFLY wd, 4, 5, 7
-    movq   [r0+%1+  0], m0
+    movh   [r0+%1+  0], m0
     movhps [r0+%1+ 32], m0
-    movq   [r0+%1+ 64], m1
+    movh   [r0+%1+ 64], m1
     movhps [r0+%1+ 96], m1
-    movq   [r0+%1+  8], m4
+    movh   [r0+%1+  8], m4
     movhps [r0+%1+ 40], m4
-    movq   [r0+%1+ 72], m5
+    movh   [r0+%1+ 72], m5
     movhps [r0+%1+104], m5
-%if %1
-    por    m2, m0
-    por    m3, m1
+    ACCUM por, 2, 0, %1
+    ACCUM por, 3, 1, %1
     por    m2, m4
     por    m3, m5
-%else
-    SWAP 0,2
-    SWAP 3,1
-    por    m2, m4
-    por    m3, m5
-%endif
 %endmacro
 
 %if HIGH_BIT_DEPTH == 0

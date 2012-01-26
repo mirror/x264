@@ -1136,7 +1136,6 @@ static int check_mc( int cpu_ref, int cpu_new )
 
 #define MC_TEST_AVG( name, weight ) \
 { \
-    ok = 1, used_asm = 0; \
     for( int i = 0; i < 12; i++ ) \
     { \
         memcpy( pbuf3, pbuf1+320, 320 * sizeof(pixel) ); \
@@ -1158,13 +1157,13 @@ static int check_mc( int cpu_ref, int cpu_new )
     } \
 }
 
+    ok = 1, used_asm = 0;
     for( int w = -63; w <= 127 && ok; w++ )
         MC_TEST_AVG( avg, w );
     report( "mc wpredb :" );
 
 #define MC_TEST_WEIGHT( name, weight, aligned ) \
     int align_off = (aligned ? 0 : rand()%16); \
-    ok = 1, used_asm = 0; \
     for( int i = 1; i <= 5; i++ ) \
     { \
         ALIGNED_16( pixel buffC[640] ); \
@@ -1453,11 +1452,11 @@ static int check_mc( int cpu_ref, int cpu_new )
 
     if( mc_a.mbtree_propagate_cost != mc_ref.mbtree_propagate_cost )
     {
+        ok = 1; used_asm = 1;
         x264_emms();
         for( int i = 0; i < 10; i++ )
         {
             float fps_factor = (rand()&65535) / 256.;
-            ok = 1; used_asm = 1;
             set_func_name( "mbtree_propagate" );
             int *dsta = (int*)buf3;
             int *dstc = dsta+400;

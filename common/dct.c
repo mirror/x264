@@ -608,8 +608,6 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
     {
         dctf->sub4x4_dct    = x264_sub4x4_dct_mmx;
         dctf->add4x4_idct   = x264_add4x4_idct_mmx;
-        dctf->add8x8_idct_dc = x264_add8x8_idct_dc_mmx;
-        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_mmx;
         dctf->dct4x4dc      = x264_dct4x4dc_mmx;
         dctf->idct4x4dc     = x264_idct4x4dc_mmx;
         dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_mmx2;
@@ -625,6 +623,12 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->add8x8_idct8  = x264_add8x8_idct8_mmx;
         dctf->add16x16_idct8= x264_add16x16_idct8_mmx;
 #endif
+    }
+
+    if( cpu&X264_CPU_MMX2 )
+    {
+        dctf->add8x8_idct_dc   = x264_add8x8_idct_dc_mmx2;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_mmx2;
     }
 
     if( cpu&X264_CPU_SSE2 )
