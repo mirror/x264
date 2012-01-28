@@ -168,10 +168,10 @@ cabac_putbyte:
     cmp   t2b, 0xff ; FIXME is a 32bit op faster?
     jz    .postpone
     mov    t1, [t0+cb.p]
-    add   [t1-1], dh ; t2h
-    dec   dh
+    add   [t1-1], t2h
+    dec   t2h
 .loop_outstanding:
-    mov   [t1], dh
+    mov   [t1], t2h
     inc   t1
     dec   t5d
     jge .loop_outstanding

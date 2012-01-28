@@ -127,34 +127,38 @@ CPU intelnop
 ; registers:
 ; rN and rNq are the native-size register holding function argument N
 ; rNd, rNw, rNb are dword, word, and byte size
+; rNh is the high 8 bits of the word size
 ; rNm is the original location of arg N (a register or on the stack), dword
 ; rNmp is native size
 
-%macro DECLARE_REG 5-6
+%macro DECLARE_REG 2-3
     %define r%1q %2
-    %define r%1d %3
-    %define r%1w %4
-    %define r%1b %5
-    %if %0 == 5
-        %define r%1m  %3
+    %define r%1d %2d
+    %define r%1w %2w
+    %define r%1b %2b
+    %define r%1h %2h
+    %if %0 == 2
+        %define r%1m  %2d
         %define r%1mp %2
     %elif ARCH_X86_64 ; memory
-        %define r%1m [rsp + stack_offset + %6]
+        %define r%1m [rsp + stack_offset + %3]
         %define r%1mp qword r %+ %1m
     %else
-        %define r%1m [esp + stack_offset + %6]
+        %define r%1m [esp + stack_offset + %3]
         %define r%1mp dword r %+ %1m
     %endif
     %define r%1  %2
 %endmacro
 
-%macro DECLARE_REG_SIZE 2
+%macro DECLARE_REG_SIZE 3
     %define r%1q r%1
     %define e%1q r%1
     %define r%1d e%1
     %define e%1d e%1
     %define r%1w %1
     %define e%1w %1
+    %define r%1h %3
+    %define e%1h %3
     %define r%1b %2
     %define e%1b %2
 %if ARCH_X86_64 == 0
@@ -162,13 +166,13 @@ CPU intelnop
 %endif
 %endmacro
 
-DECLARE_REG_SIZE ax, al
-DECLARE_REG_SIZE bx, bl
-DECLARE_REG_SIZE cx, cl
-DECLARE_REG_SIZE dx, dl
-DECLARE_REG_SIZE si, sil
-DECLARE_REG_SIZE di, dil
-DECLARE_REG_SIZE bp, bpl
+DECLARE_REG_SIZE ax, al, ah
+DECLARE_REG_SIZE bx, bl, bh
+DECLARE_REG_SIZE cx, cl, ch
+DECLARE_REG_SIZE dx, dl, dh
+DECLARE_REG_SIZE si, sil, null
+DECLARE_REG_SIZE di, dil, null
+DECLARE_REG_SIZE bp, bpl, null
 
 ; t# defines for when per-arch register allocation is more complex than just function arguments
 
@@ -186,6 +190,7 @@ DECLARE_REG_SIZE bp, bpl
         %define t%1q t%1 %+ q
         %define t%1d t%1 %+ d
         %define t%1w t%1 %+ w
+        %define t%1h t%1 %+ h
         %define t%1b t%1 %+ b
         %rotate 1
     %endrep
@@ -275,6 +280,7 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
             CAT_UNDEF arg_name %+ %%i, q
             CAT_UNDEF arg_name %+ %%i, d
             CAT_UNDEF arg_name %+ %%i, w
+            CAT_UNDEF arg_name %+ %%i, h
             CAT_UNDEF arg_name %+ %%i, b
             CAT_UNDEF arg_name %+ %%i, m
             CAT_UNDEF arg_name, %%i
@@ -289,6 +295,7 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
         %xdefine %1q r %+ %%i %+ q
         %xdefine %1d r %+ %%i %+ d
         %xdefine %1w r %+ %%i %+ w
+        %xdefine %1h r %+ %%i %+ h
         %xdefine %1b r %+ %%i %+ b
         %xdefine %1m r %+ %%i %+ m
         CAT_XDEFINE arg_name, %%i, %1
@@ -301,21 +308,21 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
 
 %if WIN64 ; Windows x64 ;=================================================
 
-DECLARE_REG 0,  rcx, ecx,  cx,   cl
-DECLARE_REG 1,  rdx, edx,  dx,   dl
-DECLARE_REG 2,  R8,  R8D,  R8W,  R8B
-DECLARE_REG 3,  R9,  R9D,  R9W,  R9B
-DECLARE_REG 4,  R10, R10D, R10W, R10B, 40
-DECLARE_REG 5,  R11, R11D, R11W, R11B, 48
-DECLARE_REG 6,  rax, eax,  ax,   al,   56
-DECLARE_REG 7,  rdi, edi,  di,   dil,  64
-DECLARE_REG 8,  rsi, esi,  si,   sil,  72
-DECLARE_REG 9,  rbx, ebx,  bx,   bl,   80
-DECLARE_REG 10, rbp, ebp,  bp,   bpl,  88
-DECLARE_REG 11, R12, R12D, R12W, R12B, 96
-DECLARE_REG 12, R13, R13D, R13W, R13B, 104
-DECLARE_REG 13, R14, R14D, R14W, R14B, 112
-DECLARE_REG 14, R15, R15D, R15W, R15B, 120
+DECLARE_REG 0,  rcx
+DECLARE_REG 1,  rdx
+DECLARE_REG 2,  R8
+DECLARE_REG 3,  R9
+DECLARE_REG 4,  R10, 40
+DECLARE_REG 5,  R11, 48
+DECLARE_REG 6,  rax, 56
+DECLARE_REG 7,  rdi, 64
+DECLARE_REG 8,  rsi, 72
+DECLARE_REG 9,  rbx, 80
+DECLARE_REG 10, rbp, 88
+DECLARE_REG 11, R12, 96
+DECLARE_REG 12, R13, 104
+DECLARE_REG 13, R14, 112
+DECLARE_REG 14, R15, 120
 
 %macro PROLOGUE 2-4+ 0 ; #args, #regs, #xmm_regs, arg_names...
     %assign num_args %1
@@ -377,21 +384,21 @@ DECLARE_REG 14, R15, R15D, R15W, R15B, 120
 
 %elif ARCH_X86_64 ; *nix x64 ;=============================================
 
-DECLARE_REG 0,  rdi, edi,  di,   dil
-DECLARE_REG 1,  rsi, esi,  si,   sil
-DECLARE_REG 2,  rdx, edx,  dx,   dl
-DECLARE_REG 3,  rcx, ecx,  cx,   cl
-DECLARE_REG 4,  R8,  R8D,  R8W,  R8B
-DECLARE_REG 5,  R9,  R9D,  R9W,  R9B
-DECLARE_REG 6,  rax, eax,  ax,   al,   8
-DECLARE_REG 7,  R10, R10D, R10W, R10B, 16
-DECLARE_REG 8,  R11, R11D, R11W, R11B, 24
-DECLARE_REG 9,  rbx, ebx,  bx,   bl,   32
-DECLARE_REG 10, rbp, ebp,  bp,   bpl,  40
-DECLARE_REG 11, R12, R12D, R12W, R12B, 48
-DECLARE_REG 12, R13, R13D, R13W, R13B, 56
-DECLARE_REG 13, R14, R14D, R14W, R14B, 64
-DECLARE_REG 14, R15, R15D, R15W, R15B, 72
+DECLARE_REG 0,  rdi
+DECLARE_REG 1,  rsi
+DECLARE_REG 2,  rdx
+DECLARE_REG 3,  rcx
+DECLARE_REG 4,  R8
+DECLARE_REG 5,  R9
+DECLARE_REG 6,  rax, 8
+DECLARE_REG 7,  R10, 16
+DECLARE_REG 8,  R11, 24
+DECLARE_REG 9,  rbx, 32
+DECLARE_REG 10, rbp, 40
+DECLARE_REG 11, R12, 48
+DECLARE_REG 12, R13, 56
+DECLARE_REG 13, R14, 64
+DECLARE_REG 14, R15, 72
 
 %macro PROLOGUE 2-4+ ; #args, #regs, #xmm_regs, arg_names...
     %assign num_args %1
@@ -418,13 +425,13 @@ DECLARE_REG 14, R15, R15D, R15W, R15B, 72
 
 %else ; X86_32 ;==============================================================
 
-DECLARE_REG 0, eax, eax, ax, al,   4
-DECLARE_REG 1, ecx, ecx, cx, cl,   8
-DECLARE_REG 2, edx, edx, dx, dl,   12
-DECLARE_REG 3, ebx, ebx, bx, bl,   16
-DECLARE_REG 4, esi, esi, si, null, 20
-DECLARE_REG 5, edi, edi, di, null, 24
-DECLARE_REG 6, ebp, ebp, bp, null, 28
+DECLARE_REG 0, eax, 4
+DECLARE_REG 1, ecx, 8
+DECLARE_REG 2, edx, 12
+DECLARE_REG 3, ebx, 16
+DECLARE_REG 4, esi, 20
+DECLARE_REG 5, edi, 24
+DECLARE_REG 6, ebp, 28
 %define rsp esp
 
 %macro DECLARE_ARG 1-*
