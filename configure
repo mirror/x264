@@ -200,6 +200,28 @@ as_check() {
     return $res
 }
 
+rc_check() {
+    log_check "whether $RC works"
+    echo "$1" > conftest.rc
+    if $RC conftest.rc -o conftest.o >conftest.log 2>&1; then
+        res=$?
+        log_ok
+    else
+        res=$?
+        log_fail
+        log_msg "Failed commandline was:"
+        log_msg "--------------------------------------------------"
+        log_msg "$RC conftest.rc -o conftest.o"
+        cat conftest.log >> config.log
+        log_msg "--------------------------------------------------"
+        log_msg "Failed program was:"
+        log_msg "--------------------------------------------------"
+        cat conftest.rc >> config.log
+        log_msg "--------------------------------------------------"
+    fi
+    return $res
+}
+
 define() {
     echo "#define $1$([ -n "$2" ] && echo " $2" || echo " 1")" >> config.h
 }
@@ -605,6 +627,14 @@ case $host_cpu in
         ARCH="$(echo $host_cpu | tr a-z A-Z)"
         ;;
 esac
+
+RC=""
+if [ $SYS = WINDOWS ]; then
+    RC="${cross_prefix}windres"
+    if ! rc_check "0 RCDATA {0}" ; then
+        RC=""
+    fi
+fi
 
 log_msg "x264 configure script"
 if [ -n "$*" ]; then
@@ -1021,6 +1051,7 @@ RANLIB=$RANLIB
 STRIP=$STRIP
 AS=$AS
 ASFLAGS=$ASFLAGS
+RC=$RC
 EXE=$EXE
 HAVE_GETOPT_LONG=$HAVE_GETOPT_LONG
 DEVNULL=$DEVNULL

@@ -4,8 +4,11 @@ git rev-list HEAD | sort > config.git-hash
 LOCALVER=`wc -l config.git-hash | awk '{print $1}'`
 if [ $LOCALVER \> 1 ] ; then
     VER=`git rev-list origin/master | sort | join config.git-hash - | wc -l | awk '{print $1}'`
-    if [ $VER != $LOCALVER ] ; then
-        VER="$VER+$(($LOCALVER-$VER))"
+    VER_DIFF=$(($LOCALVER-$VER))
+    echo "#define X264_REV $VER"
+    echo "#define X264_REV_DIFF $VER_DIFF"
+    if [ $VER_DIFF != 0 ] ; then
+        VER="$VER+$VER_DIFF"
     fi
     if git status | grep -q "modified:" ; then
         VER="${VER}M"
