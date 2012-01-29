@@ -173,7 +173,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     if( colorspace == X264_CSP_NONE )
         colorspace = X264_CSP_I420;
 
-    FAIL_IF_ERROR( colorspace <= X264_CSP_NONE && colorspace >= X264_CSP_MAX, "colorspace unhandled\n" )
+    FAIL_IF_ERROR( colorspace <= X264_CSP_NONE || colorspace >= X264_CSP_MAX, "colorspace unhandled\n" )
 
     info->thread_safe = 1;
     info->num_frames  = 0;
