@@ -505,7 +505,7 @@ static void x264_slicetype_mb_cost( x264_t *h, x264_mb_analysis_t *a,
         } \
         else \
         { \
-            int stride1 = 16, stride2 = 16; \
+            intptr_t stride1 = 16, stride2 = 16; \
             pixel *src1, *src2; \
             src1 = h->mc.get_ref( pix1, &stride1, m[0].p_fref, m[0].i_stride[0], \
                                   (mv0)[0], (mv0)[1], 8, 8, w ); \

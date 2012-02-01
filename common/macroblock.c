@@ -121,7 +121,7 @@ static NOINLINE void x264_mb_mc_01xywh( x264_t *h, int x, int y, int width, int 
     int mvy0   = x264_clip3( h->mb.cache.mv[0][i8][1], h->mb.mv_min[1], h->mb.mv_max[1] ) + 4*4*y;
     int mvy1   = x264_clip3( h->mb.cache.mv[1][i8][1], h->mb.mv_min[1], h->mb.mv_max[1] ) + 4*4*y;
     int i_mode = x264_size2pixel[height][width];
-    int i_stride0 = 16, i_stride1 = 16;
+    intptr_t i_stride0 = 16, i_stride1 = 16;
     ALIGNED_ARRAY_16( pixel, tmp0,[16*16] );
     ALIGNED_ARRAY_16( pixel, tmp1,[16*16] );
     pixel *src0, *src1;

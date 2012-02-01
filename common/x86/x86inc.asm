@@ -52,11 +52,6 @@
     %define mangle(x) x
 %endif
 
-; FIXME: All of the 64bit asm functions that take a stride as an argument
-; via register, assume that the high dword of that register is filled with 0.
-; This is true in practice (since we never do any 64bit arithmetic on strides,
-; and x264's strides are all positive), but is not guaranteed by the ABI.
-
 ; Name of the .rodata section.
 ; Kludge: Something on OS X fails to align .rodata even given an align attribute,
 ; so use a different read-only section.

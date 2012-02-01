@@ -759,6 +759,7 @@ OPTIMIZE_CHROMA_2x2_DC
 %macro DENOISE_DCT 0
 cglobal denoise_dct, 4,4,8
     pxor      m6, m6
+    movsxdifnidn r3, r3d
 .loop:
     mova      m2, [r0+r3*4-2*mmsize]
     mova      m3, [r0+r3*4-1*mmsize]
@@ -804,6 +805,7 @@ DENOISE_DCT
 %macro DENOISE_DCT 0
 cglobal denoise_dct, 4,4,7
     pxor      m6, m6
+    movsxdifnidn r3, r3d
 .loop:
     mova      m2, [r0+r3*2-2*mmsize]
     mova      m3, [r0+r3*2-1*mmsize]

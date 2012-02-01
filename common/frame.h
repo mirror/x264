@@ -178,8 +178,8 @@ typedef struct
    x264_pthread_cond_t      cv_empty; /* event signaling that the list became emptier */
 } x264_sync_frame_list_t;
 
-typedef void (*x264_deblock_inter_t)( pixel *pix, int stride, int alpha, int beta, int8_t *tc0 );
-typedef void (*x264_deblock_intra_t)( pixel *pix, int stride, int alpha, int beta );
+typedef void (*x264_deblock_inter_t)( pixel *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
+typedef void (*x264_deblock_intra_t)( pixel *pix, intptr_t stride, int alpha, int beta );
 typedef struct
 {
     x264_deblock_inter_t deblock_luma[2];
@@ -232,7 +232,7 @@ x264_frame_t *x264_frame_shift( x264_frame_t **list );
 void          x264_frame_push_unused( x264_t *h, x264_frame_t *frame );
 void          x264_frame_push_blank_unused( x264_t *h, x264_frame_t *frame );
 x264_frame_t *x264_frame_pop_blank_unused( x264_t *h );
-void x264_weight_scale_plane( x264_t *h, pixel *dst, int i_dst_stride, pixel *src, int i_src_stride,
+void x264_weight_scale_plane( x264_t *h, pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i_src_stride,
                               int i_width, int i_height, x264_weight_t *w );
 x264_frame_t *x264_frame_pop_unused( x264_t *h, int b_fdec );
 void          x264_frame_delete_list( x264_frame_t **list );
