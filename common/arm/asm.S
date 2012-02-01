@@ -48,6 +48,7 @@ ELF     .eabi_attribute 25, \val
 
         .macro function name
         .global EXTERN_ASM\name
+        .align  2
 EXTERN_ASM\name:
 ELF     .hidden \name
 ELF     .type   \name, %function
