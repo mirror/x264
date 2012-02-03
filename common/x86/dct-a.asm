@@ -406,12 +406,7 @@ cglobal %1, 3,3,%7
     add  r0, %3
     add  r1, %4-%5-%6*FENC_STRIDE
     add  r2, %4-%5-%6*FDEC_STRIDE
-%if WIN64
-    call %2.skip_prologue
-    RET
-%else
-    jmp  %2.skip_prologue
-%endif
+    TAIL_CALL %2.skip_prologue, 1
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -440,12 +435,7 @@ cglobal %1, 2,2,11
     call %2.skip_prologue
     add  r0, %4-%5-%6*FDEC_STRIDE
     add  r1, %3
-%if WIN64
-    call %2.skip_prologue
-    RET
-%else
-    jmp  %2.skip_prologue
-%endif
+    TAIL_CALL %2.skip_prologue, 1
 %endmacro
 
 %if HIGH_BIT_DEPTH
@@ -680,10 +670,7 @@ INIT_XMM sse2
 cglobal add16x16_idct_dc, 2,2,8
     call .loop
     add       r0, FDEC_STRIDE*4
-%if WIN64
-    call .loop
-    RET
-%endif
+    TAIL_CALL .loop, 0
 .loop:
     add       r0, FDEC_STRIDE*4
     movq      m0, [r1+0]
@@ -712,10 +699,7 @@ cglobal add16x16_idct_dc, 2,2,8
 cglobal add16x16_idct_dc, 2,2,8
     call .loop
     add      r0, FDEC_STRIDE*4
-%if WIN64
-    call .loop
-    RET
-%endif
+    TAIL_CALL .loop, 0
 .loop:
     add      r0, FDEC_STRIDE*4
     mova     m0, [r1]

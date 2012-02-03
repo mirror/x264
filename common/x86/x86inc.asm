@@ -368,18 +368,12 @@ DECLARE_REG 14, R15, 120
     %assign xmm_regs_used 0
 %endmacro
 
+%define has_epilogue regs_used > 7 || xmm_regs_used > 6
+
 %macro RET 0
     WIN64_RESTORE_XMM_INTERNAL rsp
     POP_IF_USED 14, 13, 12, 11, 10, 9, 8, 7
     ret
-%endmacro
-
-%macro REP_RET 0
-    %if regs_used > 7 || xmm_regs_used > 6
-        RET
-    %else
-        rep ret
-    %endif
 %endmacro
 
 %elif ARCH_X86_64 ; *nix x64 ;=============================================
@@ -410,17 +404,11 @@ DECLARE_REG 14, R15, 72
     DEFINE_ARGS %4
 %endmacro
 
+%define has_epilogue regs_used > 9
+
 %macro RET 0
     POP_IF_USED 14, 13, 12, 11, 10, 9
     ret
-%endmacro
-
-%macro REP_RET 0
-    %if regs_used > 9
-        RET
-    %else
-        rep ret
-    %endif
 %endmacro
 
 %else ; X86_32 ;==============================================================
@@ -456,17 +444,11 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
     DEFINE_ARGS %4
 %endmacro
 
+%define has_epilogue regs_used > 3
+
 %macro RET 0
     POP_IF_USED 6, 5, 4, 3
     ret
-%endmacro
-
-%macro REP_RET 0
-    %if regs_used > 3
-        RET
-    %else
-        rep ret
-    %endif
 %endmacro
 
 %endif ;======================================================================
@@ -477,6 +459,23 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 %macro WIN64_RESTORE_XMM 1
 %endmacro
 %endif
+
+%macro REP_RET 0
+    %if has_epilogue
+        RET
+    %else
+        rep ret
+    %endif
+%endmacro
+
+%macro TAIL_CALL 2 ; callee, is_nonadjacent
+    %if has_epilogue
+        call %1
+        RET
+    %elif %2
+        jmp %1
+    %endif
+%endmacro
 
 ;=============================================================================
 ; arch-independent part

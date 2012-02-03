@@ -141,10 +141,7 @@ cextern hsub_mul
 
 %macro SUB8x8_DCT8 0
 cglobal sub8x8_dct8, 3,3,14
-%if WIN64
-    call .skip_prologue
-    RET
-%endif
+    TAIL_CALL .skip_prologue, 0
 global current_function %+ .skip_prologue
 .skip_prologue:
     LOAD_DIFF8x4 0,1,2,3, none,none, r1, r2
@@ -194,10 +191,7 @@ SUB8x8_DCT8
 %macro ADD8x8_IDCT8 0
 cglobal add8x8_idct8, 2,2,16
     add r1, 128
-%if WIN64
-    call .skip_prologue
-    RET
-%endif
+    TAIL_CALL .skip_prologue, 0
 global current_function %+ .skip_prologue
 .skip_prologue:
     mova     m0, [r1-128]
@@ -260,10 +254,7 @@ cglobal sub8x8_dct, 3,3,10
 %if cpuflag(ssse3)
     mova m7, [hsub_mul]
 %endif
-%if WIN64
-    call .skip_prologue
-    RET
-%endif
+    TAIL_CALL .skip_prologue, 0
 global current_function %+ .skip_prologue
 .skip_prologue:
     SWAP 7, 9
@@ -287,10 +278,7 @@ cglobal sub8x8_dct8, 3,3,11
 %if cpuflag(ssse3)
     mova m7, [hsub_mul]
 %endif
-%if WIN64
-    call .skip_prologue
-    RET
-%endif
+    TAIL_CALL .skip_prologue, 0
 global current_function %+ .skip_prologue
 .skip_prologue:
     SWAP 7, 10
@@ -330,10 +318,7 @@ DCT_SUB8
 cglobal add8x8_idct8, 2,2,11
     add r0, 4*FDEC_STRIDE
     pxor m7, m7
-%if WIN64
-    call .skip_prologue
-    RET
-%endif
+    TAIL_CALL .skip_prologue, 0
 global current_function %+ .skip_prologue
 .skip_prologue:
     SWAP 7, 9
@@ -369,10 +354,7 @@ ADD8x8_IDCT8
 cglobal add8x8_idct, 2,2,11
     add  r0, 4*FDEC_STRIDE
     pxor m7, m7
-%if WIN64
-    call .skip_prologue
-    RET
-%endif
+    TAIL_CALL .skip_prologue, 0
 global current_function %+ .skip_prologue
 .skip_prologue:
     SWAP 7, 9

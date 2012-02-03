@@ -1142,12 +1142,7 @@ cglobal pixel_avg2_w16_cache64_ssse3
 %else
     lea    r6, [avg_w16_addr + r6]
 %endif
-%if UNIX64
-    jmp    r6
-%else
-    call   r6
-    RET
-%endif
+    TAIL_CALL r6, 1
 
 %assign j 0
 %assign k 1
