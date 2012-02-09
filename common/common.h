@@ -434,6 +434,34 @@ typedef struct x264_left_table_t
     uint8_t ref[4];
 } x264_left_table_t;
 
+/* Current frame stats */
+typedef struct
+{
+    /* MV bits (MV+Ref+Block Type) */
+    int i_mv_bits;
+    /* Texture bits (DCT coefs) */
+    int i_tex_bits;
+    /* ? */
+    int i_misc_bits;
+    /* MB type counts */
+    int i_mb_count[19];
+    int i_mb_count_i;
+    int i_mb_count_p;
+    int i_mb_count_skip;
+    int i_mb_count_8x8dct[2];
+    int i_mb_count_ref[2][X264_REF_MAX*2];
+    int i_mb_partition[17];
+    int i_mb_cbp[6];
+    int i_mb_pred_mode[4][13];
+    int i_mb_field[3];
+    /* Adaptive direct mv pred */
+    int i_direct_score[2];
+    /* Metrics */
+    int64_t i_ssd[3];
+    double f_ssim;
+    int i_ssim_cnt;
+} x264_frame_stat_t;
+
 struct x264_t
 {
     /* encoder parameters */
@@ -832,32 +860,7 @@ struct x264_t
     struct
     {
         /* Current frame stats */
-        struct
-        {
-            /* MV bits (MV+Ref+Block Type) */
-            int i_mv_bits;
-            /* Texture bits (DCT coefs) */
-            int i_tex_bits;
-            /* ? */
-            int i_misc_bits;
-            /* MB type counts */
-            int i_mb_count[19];
-            int i_mb_count_i;
-            int i_mb_count_p;
-            int i_mb_count_skip;
-            int i_mb_count_8x8dct[2];
-            int i_mb_count_ref[2][X264_REF_MAX*2];
-            int i_mb_partition[17];
-            int i_mb_cbp[6];
-            int i_mb_pred_mode[4][13];
-            int i_mb_field[3];
-            /* Adaptive direct mv pred */
-            int i_direct_score[2];
-            /* Metrics */
-            int64_t i_ssd[3];
-            double f_ssim;
-            int i_ssim_cnt;
-        } frame;
+        x264_frame_stat_t frame;
 
         /* Cumulated stats */
 

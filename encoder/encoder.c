@@ -2052,16 +2052,72 @@ static inline void x264_slice_init( x264_t *h, int i_nal_type, int i_global_qp )
     x264_macroblock_slice_init( h );
 }
 
+typedef struct
+{
+    int skip;
+    uint8_t cabac_prevbyte;
+    bs_t bs;
+    x264_cabac_t cabac;
+    x264_frame_stat_t stat;
+} x264_bs_bak_t;
+
+static ALWAYS_INLINE void x264_bitstream_backup( x264_t *h, x264_bs_bak_t *bak, int i_skip, int full )
+{
+    if( full )
+        bak->stat = h->stat.frame;
+    else
+    {
+        bak->stat.i_mv_bits = h->stat.frame.i_mv_bits;
+        bak->stat.i_tex_bits = h->stat.frame.i_tex_bits;
+    }
+    /* In the per-MB backup, we don't need the contexts because flushing the CABAC
+     * encoder has no context dependency and in this case, a slice is ended (and
+     * thus the content of all contexts are thrown away). */
+    if( h->param.b_cabac )
+    {
+        if( full )
+            memcpy( &bak->cabac, &h->cabac, sizeof(x264_cabac_t) );
+        else
+            memcpy( &bak->cabac, &h->cabac, offsetof(x264_cabac_t, f8_bits_encoded) );
+        /* x264's CABAC writer modifies the previous byte during carry, so it has to be
+         * backed up. */
+        bak->cabac_prevbyte = h->cabac.p[-1];
+    }
+    else
+    {
+        bak->bs = h->out.bs;
+        bak->skip = i_skip;
+    }
+}
+
+static ALWAYS_INLINE void x264_bitstream_restore( x264_t *h, x264_bs_bak_t *bak, int *skip, int full )
+{
+    if( full )
+        h->stat.frame = bak->stat;
+    else
+    {
+        h->stat.frame.i_mv_bits = bak->stat.i_mv_bits;
+        h->stat.frame.i_tex_bits = bak->stat.i_tex_bits;
+    }
+    if( h->param.b_cabac )
+    {
+        if( full )
+            memcpy( &h->cabac, &bak->cabac, sizeof(x264_cabac_t) );
+        else
+            memcpy( &h->cabac, &bak->cabac, offsetof(x264_cabac_t, f8_bits_encoded) );
+        h->cabac.p[-1] = bak->cabac_prevbyte;
+    }
+    else
+    {
+        h->out.bs = bak->bs;
+        *skip = bak->skip;
+    }
+}
+
 static int x264_slice_write( x264_t *h )
 {
     int i_skip;
     int mb_xy, i_mb_x, i_mb_y;
-    int i_skip_bak = 0; /* Shut up GCC. */
-    bs_t UNINIT(bs_bak);
-    x264_cabac_t cabac_bak;
-    uint8_t cabac_prevbyte_bak = 0; /* Shut up GCC. */
-    int mv_bits_bak = 0;
-    int tex_bits_bak = 0;
     /* NALUs other than the first use a 3-byte startcode.
      * Add one extra byte for the rbsp, and one more for the final CABAC putbyte.
      * Then add an extra 5 bytes just in case, to account for random NAL escapes and
@@ -2073,6 +2129,7 @@ static int x264_slice_write( x264_t *h )
     int b_deblock = h->sh.i_disable_deblocking_filter_idc != 1;
     int b_hpel = h->fdec->b_kept_as_ref;
     uint8_t *last_emu_check;
+    x264_bs_bak_t bs_bak[1];
     b_deblock &= b_hpel || h->param.psz_dump_yuv;
     bs_realign( &h->out.bs );
 
@@ -2124,25 +2181,7 @@ static int x264_slice_write( x264_t *h )
                 return -1;
 
             if( back_up_bitstream )
-            {
-                mv_bits_bak = h->stat.frame.i_mv_bits;
-                tex_bits_bak = h->stat.frame.i_tex_bits;
-                /* We don't need the contexts because flushing the CABAC encoder has no context
-                 * dependency and macroblocks are only re-encoded in the case where a slice is
-                 * ended (and thus the content of all contexts are thrown away). */
-                if( h->param.b_cabac )
-                {
-                    memcpy( &cabac_bak, &h->cabac, offsetof(x264_cabac_t, f8_bits_encoded) );
-                    /* x264's CABAC writer modifies the previous byte during carry, so it has to be
-                     * backed up. */
-                    cabac_prevbyte_bak = h->cabac.p[-1];
-                }
-                else
-                {
-                    bs_bak = h->out.bs;
-                    i_skip_bak = i_skip;
-                }
-            }
+                x264_bitstream_backup( h, &bs_bak[0], i_skip, 0 );
         }
 
         if( i_mb_x == 0 && !h->mb.b_reencode_mb )
@@ -2209,10 +2248,7 @@ reencode:
                     h->mb.i_skip_intra = 0;
                     h->mb.b_skip_mc = 0;
                     h->mb.b_overflow = 0;
-                    h->out.bs = bs_bak;
-                    i_skip = i_skip_bak;
-                    h->stat.frame.i_mv_bits = mv_bits_bak;
-                    h->stat.frame.i_tex_bits = tex_bits_bak;
+                    x264_bitstream_restore( h, &bs_bak[0], &i_skip, 0 );
                     goto reencode;
                 }
             }
@@ -2239,18 +2275,7 @@ reencode:
             {
                 if( mb_xy-SLICE_MBAFF*h->mb.i_mb_stride != h->sh.i_first_mb )
                 {
-                    h->stat.frame.i_mv_bits = mv_bits_bak;
-                    h->stat.frame.i_tex_bits = tex_bits_bak;
-                    if( h->param.b_cabac )
-                    {
-                        memcpy( &h->cabac, &cabac_bak, offsetof(x264_cabac_t, f8_bits_encoded) );
-                        h->cabac.p[-1] = cabac_prevbyte_bak;
-                    }
-                    else
-                    {
-                        h->out.bs = bs_bak;
-                        i_skip = i_skip_bak;
-                    }
+                    x264_bitstream_restore( h, &bs_bak[0], &i_skip, 0 );
                     h->mb.b_reencode_mb = 1;
                     if( SLICE_MBAFF )
                     {
