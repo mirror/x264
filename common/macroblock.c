@@ -360,13 +360,11 @@ int x264_macroblock_thread_allocate( x264_t *h, int b_lookahead )
 {
     if( !b_lookahead )
     {
-        for( int i = 0; i <= 4*PARAM_INTERLACED; i++ )
+        for( int i = 0; i < (PARAM_INTERLACED ? 5 : 2); i++ )
             for( int j = 0; j < (CHROMA444 ? 3 : 2); j++ )
             {
                 CHECKED_MALLOC( h->intra_border_backup[i][j], (h->sps->i_mb_width*16+32) * sizeof(pixel) );
                 h->intra_border_backup[i][j] += 16;
-                if( !PARAM_INTERLACED )
-                    h->intra_border_backup[1][j] = h->intra_border_backup[i][j];
             }
         for( int i = 0; i <= PARAM_INTERLACED; i++ )
         {
@@ -404,7 +402,7 @@ void x264_macroblock_thread_free( x264_t *h, int b_lookahead )
     {
         for( int i = 0; i <= PARAM_INTERLACED; i++ )
             x264_free( h->deblock_strength[i] );
-        for( int i = 0; i <= 4*PARAM_INTERLACED; i++ )
+        for( int i = 0; i < (PARAM_INTERLACED ? 5 : 2); i++ )
             for( int j = 0; j < (CHROMA444 ? 3 : 2); j++ )
                 x264_free( h->intra_border_backup[i][j] - 16 );
     }
@@ -563,7 +561,7 @@ static void ALWAYS_INLINE x264_macroblock_load_pic_pointers( x264_t *h, int mb_x
                      ? 16 * mb_x + height * (mb_y&~1) * i_stride + (mb_y&1) * i_stride
                      : 16 * mb_x + height * mb_y * i_stride;
     pixel *plane_fdec = &h->fdec->plane[i][i_pix_offset];
-    int fdec_idx = b_mbaff ? (mb_interlaced ? (3 + (mb_y&1)) : (mb_y&1) ? 2 : 4) : 0;
+    int fdec_idx = b_mbaff ? (mb_interlaced ? (3 + (mb_y&1)) : (mb_y&1) ? 2 : 4) : !(mb_y&1);
     pixel *intra_fdec = &h->intra_border_backup[fdec_idx][i][mb_x*16];
     int ref_pix_offset[2] = { i_pix_offset, i_pix_offset };
     /* ref_pix_offset[0] references the current field and [1] the opposite field. */
@@ -576,20 +574,16 @@ static void ALWAYS_INLINE x264_macroblock_load_pic_pointers( x264_t *h, int mb_x
         h->mc.load_deinterleave_chroma_fenc( h->mb.pic.p_fenc[1], h->mb.pic.p_fenc_plane[1], i_stride2, height );
         memcpy( h->mb.pic.p_fdec[1]-FDEC_STRIDE, intra_fdec, 8*sizeof(pixel) );
         memcpy( h->mb.pic.p_fdec[2]-FDEC_STRIDE, intra_fdec+8, 8*sizeof(pixel) );
-        if( b_mbaff )
-        {
-            h->mb.pic.p_fdec[1][-FDEC_STRIDE-1] = intra_fdec[-1-8];
-            h->mb.pic.p_fdec[2][-FDEC_STRIDE-1] = intra_fdec[-1];
-        }
+        h->mb.pic.p_fdec[1][-FDEC_STRIDE-1] = intra_fdec[-1-8];
+        h->mb.pic.p_fdec[2][-FDEC_STRIDE-1] = intra_fdec[-1];
     }
     else
     {
         h->mc.copy[PIXEL_16x16]( h->mb.pic.p_fenc[i], FENC_STRIDE, h->mb.pic.p_fenc_plane[i], i_stride2, 16 );
         memcpy( h->mb.pic.p_fdec[i]-FDEC_STRIDE, intra_fdec, 24*sizeof(pixel) );
-        if( b_mbaff )
-            h->mb.pic.p_fdec[i][-FDEC_STRIDE-1] = intra_fdec[-1];
+        h->mb.pic.p_fdec[i][-FDEC_STRIDE-1] = intra_fdec[-1];
     }
-    if( b_mbaff )
+    if( b_mbaff || h->mb.b_reencode_mb )
     {
         for( int j = 0; j < height; j++ )
             if( b_chroma )
@@ -1638,7 +1632,7 @@ static void ALWAYS_INLINE x264_macroblock_backup_intra( x264_t *h, int mb_x, int
      * For progressive mbs this is the bottom two rows, and for interlaced the
      * bottom row of each field. We also store samples needed for the next
      * mbpair in intra_border_backup[2]. */
-    int backup_dst = !b_mbaff ? 0 : (mb_y&1) ? 1 : MB_INTERLACED ? 0 : 2;
+    int backup_dst = !b_mbaff ? (mb_y&1) : (mb_y&1) ? 1 : MB_INTERLACED ? 0 : 2;
     memcpy( &h->intra_border_backup[backup_dst][0][mb_x*16  ], h->mb.pic.p_fdec[0]+FDEC_STRIDE*15, 16*sizeof(pixel) );
     if( CHROMA444 )
     {
@@ -1671,14 +1665,6 @@ static void ALWAYS_INLINE x264_macroblock_backup_intra( x264_t *h, int mb_x, int
                 memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16+8], h->mb.pic.p_fdec[2]+backup_src,  8*sizeof(pixel) );
             }
         }
-    }
-    else
-    {
-        /* In progressive we update intra_border_backup in-place, so the topleft neighbor will
-         * no longer exist there when load_pic_pointers wants it. Move it within p_fdec instead. */
-        h->mb.pic.p_fdec[0][-FDEC_STRIDE-1] = h->mb.pic.p_fdec[0][-FDEC_STRIDE+15];
-        h->mb.pic.p_fdec[1][-FDEC_STRIDE-1] = h->mb.pic.p_fdec[1][-FDEC_STRIDE+(15>>CHROMA_H_SHIFT)];
-        h->mb.pic.p_fdec[2][-FDEC_STRIDE-1] = h->mb.pic.p_fdec[2][-FDEC_STRIDE+(15>>CHROMA_H_SHIFT)];
     }
 }
 

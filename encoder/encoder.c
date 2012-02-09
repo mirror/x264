@@ -334,17 +334,17 @@ static void x264_slice_header_write( bs_t *s, x264_slice_header_t *sh, int i_nal
 }
 
 /* If we are within a reasonable distance of the end of the memory allocated for the bitstream, */
-/* reallocate, adding an arbitrary amount of space (100 kilobytes). */
+/* reallocate, adding an arbitrary amount of space. */
 static int x264_bitstream_check_buffer( x264_t *h )
 {
     uint8_t *bs_bak = h->out.p_bitstream;
-    int max_mb_size = 2500 << SLICE_MBAFF;
-    if( (h->param.b_cabac && (h->cabac.p_end - h->cabac.p < max_mb_size)) ||
-        (h->out.bs.p_end - h->out.bs.p < max_mb_size) )
+    int max_row_size = (2500 << SLICE_MBAFF) * h->mb.i_mb_width;
+    if( (h->param.b_cabac && (h->cabac.p_end - h->cabac.p < max_row_size)) ||
+        (h->out.bs.p_end - h->out.bs.p < max_row_size) )
     {
-        h->out.i_bitstream += 100000;
+        h->out.i_bitstream += max_row_size;
         CHECKED_MALLOC( h->out.p_bitstream, h->out.i_bitstream );
-        h->mc.memcpy_aligned( h->out.p_bitstream, bs_bak, (h->out.i_bitstream - 100000) & ~15 );
+        h->mc.memcpy_aligned( h->out.p_bitstream, bs_bak, (h->out.i_bitstream - max_row_size) & ~15 );
         intptr_t delta = h->out.p_bitstream - bs_bak;
 
         h->out.bs.p_start += delta;
@@ -580,7 +580,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
     }
     h->param.rc.i_qp_max = x264_clip3( h->param.rc.i_qp_max, 0, QP_MAX );
     h->param.rc.i_qp_min = x264_clip3( h->param.rc.i_qp_min, 0, h->param.rc.i_qp_max );
-    h->param.rc.i_qp_step = x264_clip3( h->param.rc.i_qp_step, 0, QP_MAX );
+    h->param.rc.i_qp_step = x264_clip3( h->param.rc.i_qp_step, 2, QP_MAX );
     h->param.rc.i_bitrate = x264_clip3( h->param.rc.i_bitrate, 0, 2000000 );
     h->param.rc.i_vbv_buffer_size = x264_clip3( h->param.rc.i_vbv_buffer_size, 0, 2000000 );
     h->param.rc.i_vbv_max_bitrate = x264_clip3( h->param.rc.i_vbv_max_bitrate, 0, 2000000 );
@@ -2059,12 +2059,20 @@ typedef struct
     bs_t bs;
     x264_cabac_t cabac;
     x264_frame_stat_t stat;
+    int last_qp;
+    int last_dqp;
+    int field_decoding_flag;
 } x264_bs_bak_t;
 
 static ALWAYS_INLINE void x264_bitstream_backup( x264_t *h, x264_bs_bak_t *bak, int i_skip, int full )
 {
     if( full )
+    {
         bak->stat = h->stat.frame;
+        bak->last_qp = h->mb.i_last_qp;
+        bak->last_dqp = h->mb.i_last_dqp;
+        bak->field_decoding_flag = h->mb.field_decoding_flag;
+    }
     else
     {
         bak->stat.i_mv_bits = h->stat.frame.i_mv_bits;
@@ -2093,7 +2101,12 @@ static ALWAYS_INLINE void x264_bitstream_backup( x264_t *h, x264_bs_bak_t *bak, 
 static ALWAYS_INLINE void x264_bitstream_restore( x264_t *h, x264_bs_bak_t *bak, int *skip, int full )
 {
     if( full )
+    {
         h->stat.frame = bak->stat;
+        h->mb.i_last_qp = bak->last_qp;
+        h->mb.i_last_dqp = bak->last_dqp;
+        h->mb.field_decoding_flag = bak->field_decoding_flag;
+    }
     else
     {
         h->stat.frame.i_mv_bits = bak->stat.i_mv_bits;
@@ -2128,8 +2141,9 @@ static int x264_slice_write( x264_t *h )
     int starting_bits = bs_pos(&h->out.bs);
     int b_deblock = h->sh.i_disable_deblocking_filter_idc != 1;
     int b_hpel = h->fdec->b_kept_as_ref;
+    int orig_last_mb = h->sh.i_last_mb;
     uint8_t *last_emu_check;
-    x264_bs_bak_t bs_bak[1];
+    x264_bs_bak_t bs_bak[2];
     b_deblock &= b_hpel || h->param.psz_dump_yuv;
     bs_realign( &h->out.bs );
 
@@ -2175,17 +2189,18 @@ static int x264_slice_write( x264_t *h )
         mb_xy = i_mb_x + i_mb_y * h->mb.i_mb_width;
         int mb_spos = bs_pos(&h->out.bs) + x264_cabac_pos(&h->cabac);
 
-        if( !(i_mb_y & SLICE_MBAFF) )
+        if( i_mb_x == 0 )
         {
             if( x264_bitstream_check_buffer( h ) )
                 return -1;
-
-            if( back_up_bitstream )
-                x264_bitstream_backup( h, &bs_bak[0], i_skip, 0 );
+            if( !(i_mb_y & SLICE_MBAFF) && h->param.rc.i_vbv_buffer_size )
+                x264_bitstream_backup( h, &bs_bak[1], i_skip, 1 );
+            if( !h->mb.b_reencode_mb )
+                x264_fdec_filter_row( h, i_mb_y, 1 );
         }
 
-        if( i_mb_x == 0 && !h->mb.b_reencode_mb )
-            x264_fdec_filter_row( h, i_mb_y, 1 );
+        if( !(i_mb_y & SLICE_MBAFF) && back_up_bitstream )
+            x264_bitstream_backup( h, &bs_bak[0], i_skip, 0 );
 
         if( PARAM_INTERLACED )
         {
@@ -2290,14 +2305,10 @@ reencode:
                     break;
                 }
                 else
-                {
                     h->sh.i_last_mb = mb_xy;
-                    h->mb.b_reencode_mb = 0;
-                }
             }
-            else
-                h->mb.b_reencode_mb = 0;
         }
+        h->mb.b_reencode_mb = 0;
 
 #if HAVE_VISUALIZE
         if( h->param.b_visualize )
@@ -2306,6 +2317,17 @@ reencode:
 
         /* save cache */
         x264_macroblock_cache_save( h );
+
+        if( x264_ratecontrol_mb( h, mb_size ) < 0 )
+        {
+            x264_bitstream_restore( h, &bs_bak[1], &i_skip, 1 );
+            h->mb.b_reencode_mb = 1;
+            i_mb_x = 0;
+            i_mb_y = i_mb_y - SLICE_MBAFF;
+            h->mb.i_mb_prev_xy = i_mb_y * h->mb.i_mb_stride - 1;
+            h->sh.i_last_mb = orig_last_mb;
+            continue;
+        }
 
         /* accumulate mb stats */
         h->stat.frame.i_mb_count[h->mb.i_type]++;
@@ -2380,8 +2402,6 @@ reencode:
         /* calculate deblock strength values (actual deblocking is done per-row along with hpel) */
         if( b_deblock )
             x264_macroblock_deblock_strength( h );
-
-        x264_ratecontrol_mb( h, mb_size );
 
         if( mb_xy == h->sh.i_last_mb )
             break;
