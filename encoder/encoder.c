@@ -3231,26 +3231,28 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
         };
         int luma_size = h->param.i_width * h->param.i_height;
         int chroma_size = CHROMA_SIZE( luma_size );
-        double psnr_y = x264_psnr( ssd[0], luma_size );
-        double psnr_u = x264_psnr( ssd[1], chroma_size );
-        double psnr_v = x264_psnr( ssd[2], chroma_size );
+        pic_out->prop.f_psnr[0] = x264_psnr( ssd[0], luma_size );
+        pic_out->prop.f_psnr[1] = x264_psnr( ssd[1], chroma_size );
+        pic_out->prop.f_psnr[2] = x264_psnr( ssd[2], chroma_size );
+        pic_out->prop.f_psnr_avg = x264_psnr( ssd[0] + ssd[1] + ssd[2], luma_size + chroma_size*2 );
 
         h->stat.f_ssd_global[h->sh.i_type]   += dur * (ssd[0] + ssd[1] + ssd[2]);
-        h->stat.f_psnr_average[h->sh.i_type] += dur * x264_psnr( ssd[0] + ssd[1] + ssd[2], luma_size + chroma_size*2 );
-        h->stat.f_psnr_mean_y[h->sh.i_type]  += dur * psnr_y;
-        h->stat.f_psnr_mean_u[h->sh.i_type]  += dur * psnr_u;
-        h->stat.f_psnr_mean_v[h->sh.i_type]  += dur * psnr_v;
+        h->stat.f_psnr_average[h->sh.i_type] += dur * pic_out->prop.f_psnr_avg;
+        h->stat.f_psnr_mean_y[h->sh.i_type]  += dur * pic_out->prop.f_psnr[0];
+        h->stat.f_psnr_mean_u[h->sh.i_type]  += dur * pic_out->prop.f_psnr[1];
+        h->stat.f_psnr_mean_v[h->sh.i_type]  += dur * pic_out->prop.f_psnr[2];
 
-        snprintf( psz_message, 80, " PSNR Y:%5.2f U:%5.2f V:%5.2f", psnr_y, psnr_u, psnr_v );
+        snprintf( psz_message, 80, " PSNR Y:%5.2f U:%5.2f V:%5.2f", pic_out->prop.f_psnr[0],
+                                                                    pic_out->prop.f_psnr[1],
+                                                                    pic_out->prop.f_psnr[2] );
     }
 
     if( h->param.analyse.b_ssim )
     {
-        double ssim_y = h->stat.frame.f_ssim
-                      / h->stat.frame.i_ssim_cnt;
-        h->stat.f_ssim_mean_y[h->sh.i_type] += ssim_y * dur;
+        pic_out->prop.f_ssim = h->stat.frame.f_ssim / h->stat.frame.i_ssim_cnt;
+        h->stat.f_ssim_mean_y[h->sh.i_type] += pic_out->prop.f_ssim * dur;
         snprintf( psz_message + strlen(psz_message), 80 - strlen(psz_message),
-                  " SSIM Y:%.5f", ssim_y );
+                  " SSIM Y:%.5f", pic_out->prop.f_ssim );
     }
     psz_message[79] = '\0';
 
