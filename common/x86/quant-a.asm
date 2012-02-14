@@ -1311,9 +1311,9 @@ cglobal coeff_last64, 1,4
     shl r0d, 16
     or  r1d, r2d
     or  r3d, r0d
-    shl r3,  32
-    or  r1,  r3
-    not r1
+    shl  r3, 32
+    or   r1, r3
+    not  r1
     BSR rax, r1, 0x3f
     RET
 %endif
@@ -1348,14 +1348,14 @@ cglobal coeff_level_run%1,0,7
     pxor    m2, m2
     LAST_MASK %1, t5d, t0-(%1&1)*SIZEOF_DCTCOEF, t4d
 %if %1==15
-    shr   t5d, 1
+    shr    t5d, 1
 %elif %1==8
-    and   t5d, 0xff
+    and    t5d, 0xff
 %elif %1==4
-    and   t5d, 0xf
+    and    t5d, 0xf
 %endif
-    xor   t5d, (1<<%1)-1
-    mov   [t1+4], t5d
+    xor    t5d, (1<<%1)-1
+    mov [t1+4], t5d
     shl    t5d, 32-%1
     mov    t4d, %1-1
     LZCOUNT t3d, t5d, 0x1f

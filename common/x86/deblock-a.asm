@@ -2218,10 +2218,9 @@ cglobal deblock_h_chroma_intra_mbaff, 4,6,8
 %endmacro
 
 %macro LOAD_BYTES_XMM 1
-    movu      m0, [%1-4] ; FIXME could be aligned if we changed nnz's allocation
+    movu      m2, [%1-4] ; FIXME could be aligned if we changed nnz's allocation
     movu      m1, [%1+12]
-    mova      m2, m0
-    pslldq    m0, 1
+    pslldq    m0, m2, 1
     shufps    m2, m1, q3131 ; cur nnz, all rows
     pslldq    m1, 1
     shufps    m0, m1, q3131 ; left neighbors
@@ -2278,7 +2277,7 @@ cglobal deblock_strength, 6,6
     RET
 
 %macro DEBLOCK_STRENGTH_XMM 0
-cglobal deblock_strength, 6,6,8
+cglobal deblock_strength, 6,6,7
     ; Prepare mv comparison register
     shl      r4d, 8
     add      r4d, 3 - (1<<8)
@@ -2308,9 +2307,9 @@ cglobal deblock_strength, 6,6,8
     mova      m2, [mv+4*8*2]
     mova      m1, [mv+4*8*3]
     palignr   m3, m2, [mv+4*8*2-16], 12
-    palignr   m7, m1, [mv+4*8*3-16], 12
     psubw     m2, m3
-    psubw     m1, m7
+    palignr   m3, m1, [mv+4*8*3-16], 12
+    psubw     m1, m3
     packsswb  m2, m1
 %else
     movu      m0, [mv-4+4*8*0]
