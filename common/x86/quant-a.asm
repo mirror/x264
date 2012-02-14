@@ -1368,15 +1368,16 @@ cglobal coeff_level_run%1,0,7
     LZCOUNT t3d, t5d, 0x1f
 %if HIGH_BIT_DEPTH
     mov    t2d, [t0+t4*4]
-    mov   [t1+t6+8+16*4], t3b
-    mov   [t1+t6*4+ 8], t2d
 %else
     mov    t2w, [t0+t4*2]
-    mov   [t1+t6+8+16*2], t3b
-    mov   [t1+t6*2+ 8], t2w
 %endif
     inc    t3d
     shl    t5d, t3b
+%if HIGH_BIT_DEPTH
+    mov   [t1+t6*4+ 8], t2d
+%else
+    mov   [t1+t6*2+ 8], t2w
+%endif
     inc    t6d
     sub    t4d, t3d
     jge .loop
