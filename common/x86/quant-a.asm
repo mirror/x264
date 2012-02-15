@@ -912,7 +912,7 @@ cextern decimate_table8
 
 %macro DECIMATE4x4 1
 
-;A LUT is faster than bsf on AMD processors.
+;A LUT is faster than bsf on older AMD processors.
 ;This is not true for score64.
 cglobal decimate_score%1, 1,3
 %ifdef PIC
@@ -947,7 +947,7 @@ cglobal decimate_score%1, 1,3
     add    al, byte [mask_table + rdx]
 %else
 .loop:
-    bsf   ecx, edx
+    tzcnt ecx, edx
     shr   edx, cl
     add    al, byte [table + rcx]
     shr   edx, 1
@@ -1011,7 +1011,7 @@ cglobal decimate_score64, 1,5
     add   eax, r3d
     jne  .ret9
 .loop:
-    bsf   rcx, r1
+    tzcnt rcx, r1
     shr   r1, cl
     add   al, byte [table + rcx]
     shr   r1, 1
@@ -1047,7 +1047,7 @@ cglobal decimate_score64, 1,5
     add   r0, r2
     jne  .ret9      ;r0 is zero at this point, so we don't need to zero it
 .loop:
-    bsf   ecx, r3
+    tzcnt ecx, r3
     test  r3, r3
     je   .largerun
     shrd  r3, r4, cl
@@ -1073,7 +1073,7 @@ cglobal decimate_score64, 1,5
 .largerun:
     mov   r3, r4
     xor   r4, r4
-    bsf   ecx, r3
+    tzcnt ecx, r3
     shr   r3, cl
     shr   r3, 1
     jne  .loop
