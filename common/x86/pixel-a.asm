@@ -2007,9 +2007,14 @@ cglobal intra_satd_x3_16x16, 0,5
     inc         r4
     jl  .loop_x
 %if HIGH_BIT_DEPTH
-    mova        m7, [pw_1]
-    pmaddwd     m4, m7
-    pmaddwd     m0, m7
+    psrld       m7, m4, 16
+    pslld       m4, 16
+    psrld       m4, 16
+    paddd       m4, m7
+    psrld       m7, m0, 16
+    pslld       m0, 16
+    psrld       m0, 16
+    paddd       m0, m7
     paddd       m4, [sums+32]
     paddd       m0, [sums+24]
     mova [sums+32], m4
