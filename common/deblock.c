@@ -395,7 +395,7 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
         int mb_xy = h->mb.i_mb_xy;
         int transform_8x8 = h->mb.mb_transform_size[h->mb.i_mb_xy];
         int intra_cur = IS_INTRA( h->mb.type[mb_xy] );
-        uint8_t (*bs)[8][4] = h->deblock_strength[mb_y&1][mb_x];
+        uint8_t (*bs)[8][4] = h->deblock_strength[mb_y&1][h->param.b_sliced_threads?mb_xy:mb_x];
 
         pixel *pixy = h->fdec->plane[0] + 16*mb_y*stridey  + 16*mb_x;
         pixel *pixuv = h->fdec->plane[1] + chroma_height*mb_y*strideuv + 16*mb_x;
@@ -592,7 +592,7 @@ void x264_macroblock_deblock( x264_t *h )
     if( (h->mb.i_partition == D_16x16 && !h->mb.i_cbp_luma && !intra_cur) || qp <= qp_thresh )
         return;
 
-    uint8_t (*bs)[8][4] = h->deblock_strength[h->mb.i_mb_y&1][h->mb.i_mb_x];
+    uint8_t (*bs)[8][4] = h->mb.cache.deblock_strength;
     if( intra_cur )
     {
         memset( &bs[0][1], 3, 3*4*sizeof(uint8_t) );

@@ -470,9 +470,13 @@ struct x264_t
     x264_t          *thread[X264_THREAD_MAX+1];
     int             b_thread_active;
     int             i_thread_phase; /* which thread to use for the next frame */
+    int             i_thread_idx;   /* which thread this is */
     int             i_threadslice_start; /* first row in this thread slice */
     int             i_threadslice_end; /* row after the end of this thread slice */
+    int             i_threadslice_pass; /* which pass of encoding we are on */
     x264_threadpool_t *threadpool;
+    x264_pthread_mutex_t mutex;
+    x264_pthread_cond_t cv;
 
     /* bitstream output */
     struct
@@ -823,6 +827,9 @@ struct x264_t
             /* extra data required for mbaff in mv prediction */
             int16_t topright_mv[2][3][2];
             int8_t  topright_ref[2][3];
+
+            /* current mb deblock strength */
+            uint8_t (*deblock_strength)[8][4];
         } cache;
 
         /* */

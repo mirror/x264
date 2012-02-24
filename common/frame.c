@@ -480,9 +480,12 @@ static void ALWAYS_INLINE plane_expand_border( pixel *pix, int i_stride, int i_w
 #undef PPIXEL
 }
 
-void x264_frame_expand_border( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )
+void x264_frame_expand_border( x264_t *h, x264_frame_t *frame, int mb_y )
 {
-    int b_start = !mb_y;
+    int pad_top = mb_y == 0;
+    int pad_bot = mb_y == h->mb.i_mb_height - (1 << SLICE_MBAFF);
+    int b_start = mb_y == h->i_threadslice_start;
+    int b_end   = mb_y == h->i_threadslice_end - (1 << SLICE_MBAFF);
     if( mb_y & SLICE_MBAFF )
         return;
     for( int i = 0; i < frame->i_plane; i++ )
@@ -491,30 +494,31 @@ void x264_frame_expand_border( x264_t *h, x264_frame_t *frame, int mb_y, int b_e
         int v_shift = i && CHROMA_V_SHIFT;
         int stride = frame->i_stride[i];
         int width = 16*h->mb.i_mb_width;
-        int height = (b_end ? 16*(h->mb.i_mb_height - mb_y) >> SLICE_MBAFF : 16) >> v_shift;
+        int height = (pad_bot ? 16*(h->mb.i_mb_height - mb_y) >> SLICE_MBAFF : 16) >> v_shift;
         int padh = PADH;
         int padv = PADV >> v_shift;
         // buffer: 2 chroma, 3 luma (rounded to 4) because deblocking goes beyond the top of the mb
         if( b_end && !b_start )
             height += 4 >> (v_shift + SLICE_MBAFF);
         pixel *pix;
+        int starty = 16*mb_y - 4*!b_start;
         if( SLICE_MBAFF )
         {
             // border samples for each field are extended separately
-            pix = frame->plane_fld[i] + X264_MAX(0, (16*mb_y-4)*stride >> v_shift);
-            plane_expand_border( pix, stride*2, width, height, padh, padv, b_start, b_end, h_shift );
-            plane_expand_border( pix+stride, stride*2, width, height, padh, padv, b_start, b_end, h_shift );
+            pix = frame->plane_fld[i] + (starty*stride >> v_shift);
+            plane_expand_border( pix, stride*2, width, height, padh, padv, pad_top, pad_bot, h_shift );
+            plane_expand_border( pix+stride, stride*2, width, height, padh, padv, pad_top, pad_bot, h_shift );
 
-            height = (b_end ? 16*(h->mb.i_mb_height - mb_y) : 32) >> v_shift;
+            height = (pad_bot ? 16*(h->mb.i_mb_height - mb_y) : 32) >> v_shift;
             if( b_end && !b_start )
                 height += 4 >> v_shift;
-            pix = frame->plane[i] + X264_MAX(0, (16*mb_y-4)*stride >> v_shift);
-            plane_expand_border( pix, stride, width, height, padh, padv, b_start, b_end, h_shift );
+            pix = frame->plane[i] + (starty*stride >> v_shift);
+            plane_expand_border( pix, stride, width, height, padh, padv, pad_top, pad_bot, h_shift );
         }
         else
         {
-            pix = frame->plane[i] + X264_MAX(0, (16*mb_y-4)*stride >> v_shift);
-            plane_expand_border( pix, stride, width, height, padh, padv, b_start, b_end, h_shift );
+            pix = frame->plane[i] + (starty*stride >> v_shift);
+            plane_expand_border( pix, stride, width, height, padh, padv, pad_top, pad_bot, h_shift );
         }
     }
 }
@@ -617,6 +621,23 @@ void x264_frame_cond_wait( x264_frame_t *frame, int i_lines_completed )
     while( frame->i_lines_completed < i_lines_completed )
         x264_pthread_cond_wait( &frame->cv, &frame->mutex );
     x264_pthread_mutex_unlock( &frame->mutex );
+}
+
+void x264_threadslice_cond_broadcast( x264_t *h, int pass )
+{
+    x264_pthread_mutex_lock( &h->mutex );
+    h->i_threadslice_pass = pass;
+    if( pass > 0 )
+        x264_pthread_cond_broadcast( &h->cv );
+    x264_pthread_mutex_unlock( &h->mutex );
+}
+
+void x264_threadslice_cond_wait( x264_t *h, int pass )
+{
+    x264_pthread_mutex_lock( &h->mutex );
+    while( h->i_threadslice_pass < pass )
+        x264_pthread_cond_wait( &h->cv, &h->mutex );
+    x264_pthread_mutex_unlock( &h->mutex );
 }
 
 /* list operators */

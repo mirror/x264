@@ -368,7 +368,17 @@ int x264_macroblock_thread_allocate( x264_t *h, int b_lookahead )
             }
         for( int i = 0; i <= PARAM_INTERLACED; i++ )
         {
-            CHECKED_MALLOC( h->deblock_strength[i], sizeof(**h->deblock_strength) * h->mb.i_mb_width );
+            if( h->param.b_sliced_threads )
+            {
+                /* Only allocate the first one, and allocate it for the whole frame, because we
+                 * won't be deblocking until after the frame is fully encoded. */
+                if( h == h->thread[0] && !i )
+                    CHECKED_MALLOC( h->deblock_strength[0], sizeof(**h->deblock_strength) * h->mb.i_mb_count );
+                else
+                    h->deblock_strength[i] = h->thread[0]->deblock_strength[0];
+            }
+            else
+                CHECKED_MALLOC( h->deblock_strength[i], sizeof(**h->deblock_strength) * h->mb.i_mb_width );
             h->deblock_strength[1] = h->deblock_strength[i];
         }
     }
@@ -401,7 +411,8 @@ void x264_macroblock_thread_free( x264_t *h, int b_lookahead )
     if( !b_lookahead )
     {
         for( int i = 0; i <= PARAM_INTERLACED; i++ )
-            x264_free( h->deblock_strength[i] );
+            if( !h->param.b_sliced_threads || (h == h->thread[0] && !i) )
+                x264_free( h->deblock_strength[i] );
         for( int i = 0; i < (PARAM_INTERLACED ? 5 : 2); i++ )
             for( int j = 0; j < (CHROMA444 ? 3 : 2); j++ )
                 x264_free( h->intra_border_backup[i][j] - 16 );
@@ -857,6 +868,8 @@ static void ALWAYS_INLINE x264_macroblock_cache_load( x264_t *h, int mb_x, int m
     int16_t *cbp = h->mb.cbp;
 
     const x264_left_table_t *left_index_table = h->mb.left_index_table;
+
+    h->mb.cache.deblock_strength = h->deblock_strength[mb_y&1][h->param.b_sliced_threads?h->mb.i_mb_xy:mb_x];
 
     /* load cache */
     if( h->mb.i_neighbour & MB_TOP )
@@ -1432,7 +1445,7 @@ static void x264_macroblock_deblock_strength_mbaff( x264_t *h, uint8_t (*bs)[8][
 
 void x264_macroblock_deblock_strength( x264_t *h )
 {
-    uint8_t (*bs)[8][4] = h->deblock_strength[h->mb.i_mb_y&1][h->mb.i_mb_x];
+    uint8_t (*bs)[8][4] = h->mb.cache.deblock_strength;
     if( IS_INTRA( h->mb.i_type ) )
     {
         memset( bs[0][1], 3, 3*4*sizeof(uint8_t) );
