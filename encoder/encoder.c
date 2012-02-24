@@ -921,6 +921,9 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.i_nal_hrd = X264_NAL_HRD_VBR;
     }
 
+    if( h->param.psz_dump_yuv )
+        h->param.b_full_recon = 1;
+
     /* ensure the booleans are 0 or 1 so they can be used in math */
 #define BOOLIFY(x) h->param.x = !!h->param.x
     BOOLIFY( b_cabac );
@@ -941,6 +944,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
     BOOLIFY( b_fake_interlaced );
     BOOLIFY( b_open_gop );
     BOOLIFY( b_bluray_compat );
+    BOOLIFY( b_full_recon );
     BOOLIFY( analyse.b_transform_8x8 );
     BOOLIFY( analyse.b_weighted_bipred );
     BOOLIFY( analyse.b_chroma_me );
@@ -1839,7 +1843,7 @@ static void x264_fdec_filter_row( x264_t *h, int mb_y, int b_inloop )
      * above each MB, as bS=4 doesn't happen for the top of interlaced mbpairs. */
     int minpix_y = min_y*16 - 4 * !b_start;
     int maxpix_y = mb_y*16 - 4 * !b_end;
-    b_deblock &= b_hpel || h->param.psz_dump_yuv;
+    b_deblock &= b_hpel || h->param.b_full_recon;
     if( h->param.b_sliced_threads && b_start && min_y && !b_inloop )
     {
         b_deblock = 0;         /* We already deblocked on the inloop pass. */
@@ -2144,7 +2148,7 @@ static int x264_slice_write( x264_t *h )
     int orig_last_mb = h->sh.i_last_mb;
     uint8_t *last_emu_check;
     x264_bs_bak_t bs_bak[2];
-    b_deblock &= b_hpel || h->param.psz_dump_yuv;
+    b_deblock &= b_hpel || h->param.b_full_recon;
     bs_realign( &h->out.bs );
 
     /* Slice */
