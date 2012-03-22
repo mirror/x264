@@ -579,7 +579,6 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
  *  support analysis partitions smaller than 16x16
  *  deblock chroma for 4:2:0/4:2:2
  *  handle duplicate refs correctly
- *  handle cavlc+8x8dct correctly
  */
 void x264_macroblock_deblock( x264_t *h )
 {
