@@ -327,7 +327,7 @@ static int get_plane_ptr( x264_t *h, x264_picture_t *src, uint8_t **pix, int *st
 int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
 {
     int i_csp = src->img.i_csp & X264_CSP_MASK;
-    if( i_csp <= X264_CSP_NONE || i_csp >= X264_CSP_MAX )
+    if( dst->i_csp != x264_frame_internal_csp( i_csp ) )
     {
         x264_log( h, X264_LOG_ERROR, "Invalid input colorspace\n" );
         return -1;
