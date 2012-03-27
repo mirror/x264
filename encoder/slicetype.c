@@ -1067,7 +1067,8 @@ static void x264_calculate_durations( x264_t *h, x264_frame_t *cur_frame, x264_f
             prev_frame->i_cpb_duration += cur_frame->i_dpb_output_delay;
     }
 
-    if( cur_frame->b_keyframe )
+    // don't reset cpb delay for IDR frames when using intra-refresh
+    if( cur_frame->b_keyframe && !h->param.b_intra_refresh )
         *i_cpb_delay = 0;
 
     *i_cpb_delay += cur_frame->i_duration;

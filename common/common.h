@@ -513,6 +513,7 @@ struct x264_t
     int64_t         i_cpb_delay_lookahead;
 
     int64_t         i_cpb_delay_pir_offset;
+    int64_t         i_cpb_delay_pir_offset_next;
 
     int             b_queued_intra_refresh;
     int64_t         i_last_idr_pts;
