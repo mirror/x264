@@ -210,6 +210,8 @@ static x264_frame_t *x264_frame_new( x264_t *h, int b_fdec )
         }
         if( PARAM_INTERLACED )
             CHECKED_MALLOC( frame->field, i_mb_count * sizeof(uint8_t) );
+        if( h->param.analyse.b_mb_info )
+            CHECKED_MALLOC( frame->effective_qp, i_mb_count * sizeof(uint8_t) );
     }
     else /* fenc frame */
     {
@@ -289,6 +291,7 @@ void x264_frame_delete( x264_frame_t *frame )
         x264_free( frame->f_row_qp );
         x264_free( frame->f_row_qscale );
         x264_free( frame->field );
+        x264_free( frame->effective_qp );
         x264_free( frame->mb_type );
         x264_free( frame->mb_partition );
         x264_free( frame->mv[0] );
@@ -354,6 +357,8 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
     dst->i_pic_struct = src->i_pic_struct;
     dst->extra_sei  = src->extra_sei;
     dst->opaque     = src->opaque;
+    dst->mb_info    = src->prop.mb_info;
+    dst->mb_info_free = src->prop.mb_info_free;
 
     uint8_t *pix[3];
     int stride[3];

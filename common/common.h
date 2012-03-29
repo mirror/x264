@@ -385,6 +385,7 @@ typedef struct
     } ref_pic_list_order[2][X264_REF_MAX];
 
     /* P-frame weighting */
+    int b_weighted_pred;
     x264_weight_t weight[X264_REF_MAX*2][3];
 
     int i_mmco_remove_from_end;

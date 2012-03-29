@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 123
+#define X264_BUILD 124
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -363,6 +363,8 @@ typedef struct x264_param_t
         float        f_psy_rd; /* Psy RD strength */
         float        f_psy_trellis; /* Psy trellis strength */
         int          b_psy; /* Toggle all psy optimizations */
+
+        int          b_mb_info; /* Use input mb_info data in x264_picture_t */
 
         /* the deadzone size that will be used in luma quantization */
         int          i_luma_deadzone[2]; /* {inter, intra} */
@@ -689,18 +691,36 @@ typedef struct
 
 typedef struct
 {
+    /* All arrays of data here are ordered as follows:
+     * each array contains one offset per macroblock, in raster scan order.  In interlaced
+     * mode, top-field MBs and bottom-field MBs are interleaved at the row level.
+     * Macroblocks are 16x16 blocks of pixels (with respect to the luma plane).  For the
+     * purposes of calculating the number of macroblocks, width and height are rounded up to
+     * the nearest 16.  If in interlaced mode, height is rounded up to the nearest 32 instead. */
+
     /* In: an array of quantizer offsets to be applied to this image during encoding.
      *     These are added on top of the decisions made by x264.
      *     Offsets can be fractional; they are added before QPs are rounded to integer.
      *     Adaptive quantization must be enabled to use this feature.  Behavior if quant
-     *     offsets differ between encoding passes is undefined.
-     *
-     *     Array contains one offset per macroblock, in raster scan order.  In interlaced
-     *     mode, top-field MBs and bottom-field MBs are interleaved at the row level. */
+     *     offsets differ between encoding passes is undefined. */
     float *quant_offsets;
     /* In: optional callback to free quant_offsets when used.
      *     Useful if one wants to use a different quant_offset array for each frame. */
     void (*quant_offsets_free)( void* );
+
+    /* In: optional array of flags for each macroblock.
+     *     Allows specifying additional information for the encoder such as which macroblocks
+     *     remain unchanged.  Usable flags are listed below.
+     *     x264_param_t.analyse.b_mb_info must be set to use this, since x264 needs to track
+     *     extra data internally to make full use of this information. */
+    uint8_t *mb_info;
+    /* In: optional callback to free mb_info when used. */
+    void (*mb_info_free)( void* );
+
+    /* The macroblock is constant and remains unchanged from the previous frame. */
+    #define X264_MBINFO_CONSTANT   (1<<0)
+    /* More flags may be added in the future. */
+
     /* Out: SSIM of the the frame luma (if x264_param_t.b_ssim is set) */
     double f_ssim;
     /* Out: Average PSNR of the frame (if x264_param_t.b_psnr is set) */

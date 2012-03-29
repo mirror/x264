@@ -280,8 +280,10 @@ static void x264_slice_header_write( bs_t *s, x264_slice_header_t *sh, int i_nal
         }
     }
 
+    sh->b_weighted_pred = 0;
     if( sh->pps->b_weighted_pred && sh->i_type == SLICE_TYPE_P )
     {
+        sh->b_weighted_pred = sh->weight[0][0].weightfn || sh->weight[0][1].weightfn || sh->weight[0][2].weightfn;
         /* pred_weight_table() */
         bs_write_ue( s, sh->weight[0][0].i_denom );
         bs_write_ue( s, sh->weight[0][1].i_denom );
@@ -3196,6 +3198,10 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
     }
 
     x264_emms();
+
+    if( h->fdec->mb_info_free )
+        h->fdec->mb_info_free( h->fdec->mb_info );
+
     /* generate buffering period sei and insert it into place */
     if( h->i_thread_frames > 1 && h->fenc->b_keyframe && h->sps->vui.b_nal_hrd_parameters_present )
     {
