@@ -41,7 +41,18 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 122
+#define X264_BUILD 123
+
+/* Application developers planning to link against a shared library version of
+ * libx264 from a Microsoft Visual Studio or similar development environment
+ * will need to define X264_API_IMPORTS before including this header.
+ * This clause does not apply to MinGW, similar development environments, or non
+ * Windows platforms. */
+#ifdef X264_API_IMPORTS
+#define X264_API __declspec(dllimport)
+#else
+#define X264_API
+#endif
 
 /* x264_t:
  *      opaque handler for encoder */
@@ -516,7 +527,7 @@ typedef struct
 } x264_level_t;
 
 /* all of the levels defined in the standard, terminated by .level_idc=0 */
-extern const x264_level_t x264_levels[];
+X264_API extern const x264_level_t x264_levels[];
 
 /****************************************************************************
  * Basic parameter handling functions
@@ -613,14 +624,14 @@ int     x264_param_apply_profile( x264_param_t *, const char *profile );
  *      (16-x264_bit_depth) bits to be zero.
  *      Note: The flag X264_CSP_HIGH_DEPTH must be used to specify the
  *      colorspace depth as well. */
-extern const int x264_bit_depth;
+X264_API extern const int x264_bit_depth;
 
 /* x264_chroma_format:
  *      Specifies the chroma formats that x264 supports encoding. When this
  *      value is non-zero, then it represents a X264_CSP_* that is the only
  *      chroma format that x264 supports encoding. If the value is 0 then
  *      there are no restrictions. */
-extern const int x264_chroma_format;
+X264_API extern const int x264_chroma_format;
 
 enum pic_struct_e
 {

@@ -1091,7 +1091,10 @@ if [ "$shared" = "yes" ]; then
             # MSVC link does not act similarly, so it is required to make an export definition out of x264.h and use it at link time
             echo "SOFLAGS=-dll -def:x264.def -implib:\$(IMPLIBNAME) $SOFLAGS" >> config.mak
             echo "EXPORTS" > x264.def
-            grep "^\(int\|void\|x264_t\|extern\).*x264.*[\[(;]" ${SRCPATH}/x264.h | sed -e "s/.*\(x264.*\)[\[(].*/\1/;s/.*\(x264.*\);/\1/;s/open/open_$API/g" >> x264.def
+            # export API functions
+            grep "^\(int\|void\|x264_t\).*x264" ${SRCPATH}/x264.h | sed -e "s/.*\(x264.*\)(.*/\1/;s/open/open_$API/g" >> x264.def
+            # export API variables/data. must be flagged with the DATA keyword
+            grep "extern.*x264" ${SRCPATH}/x264.h | sed -e "s/.*\(x264\w*\)\W.*/\1 DATA/;" >> x264.def
         else
             echo 'IMPLIBNAME=libx264.dll.a' >> config.mak
             echo "SOFLAGS=-shared -Wl,--out-implib,\$(IMPLIBNAME) -Wl,--enable-auto-image-base $SOFLAGS" >> config.mak
