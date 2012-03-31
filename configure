@@ -537,6 +537,8 @@ case $host_cpu in
             if [[ "$asm" == auto && "$CFLAGS" != *-mfpmath* ]]; then
                 CFLAGS="$CFLAGS -mfpmath=sse -msse"
             fi
+            CFLAGS="-m32 $CFLAGS"
+            LDFLAGS="-m32 $LDFLAGS"
         else
             # icc on linux has various degrees of mod16 stack support
             if [ $SYS = LINUX ]; then
@@ -565,6 +567,7 @@ case $host_cpu in
     x86_64)
         ARCH="X86_64"
         AS="yasm"
+        [ $compiler = GNU ] && CFLAGS="-m64 $CFLAGS" && LDFLAGS="-m64 $LDFLAGS"
         if [ "$SYS" = MACOSX ]; then
             ASFLAGS="$ASFLAGS -f macho64 -m amd64 -DPIC -DPREFIX"
             if cc_check '' "-arch x86_64"; then
