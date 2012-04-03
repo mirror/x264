@@ -732,7 +732,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         x264_log( h, X264_LOG_WARNING, "lookaheadless mb-tree requires intra refresh or infinite keyint\n" );
         h->param.rc.b_mb_tree = 0;
     }
-    if( h->param.rc.b_stat_read )
+    if( b_open && h->param.rc.b_stat_read )
         h->param.rc.i_lookahead = 0;
 #if HAVE_THREAD
     if( h->param.i_sync_lookahead < 0 )
