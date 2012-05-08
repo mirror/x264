@@ -401,6 +401,9 @@ int x264_macroblock_thread_allocate( x264_t *h, int b_lookahead )
     else
         h->scratch_buffer = NULL;
 
+    int buf_lookahead_threads = (h->mb.i_mb_height + (4 + 32) * h->param.i_lookahead_threads) * sizeof(int) * 2;
+    CHECKED_MALLOC( h->scratch_buffer2, buf_lookahead_threads );
+
     return 0;
 fail:
     return -1;
@@ -418,6 +421,7 @@ void x264_macroblock_thread_free( x264_t *h, int b_lookahead )
                 x264_free( h->intra_border_backup[i][j] - 16 );
     }
     x264_free( h->scratch_buffer );
+    x264_free( h->scratch_buffer2 );
 }
 
 void x264_macroblock_slice_init( x264_t *h )

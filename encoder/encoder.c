@@ -395,6 +395,15 @@ static void x264_encoder_thread_init( x264_t *h )
         x264_cpu_mask_misalign_sse();
 #endif
 }
+
+static void x264_lookahead_thread_init( x264_t *h )
+{
+#if HAVE_MMX
+    /* Misalign mask has to be set separately for each thread. */
+    if( h->param.cpu&X264_CPU_SSE_MISALIGN )
+        x264_cpu_mask_misalign_sse();
+#endif
+}
 #endif
 
 /****************************************************************************
@@ -494,6 +503,9 @@ static int x264_validate_parameters( x264_t *h, int b_open )
 
     if( h->param.i_threads == X264_THREADS_AUTO )
         h->param.i_threads = x264_cpu_num_processors() * (h->param.b_sliced_threads?2:3)/2;
+    if( h->param.i_lookahead_threads == X264_THREADS_AUTO )
+        h->param.i_lookahead_threads = h->param.i_threads / (h->param.b_sliced_threads?1:6);
+    int max_sliced_threads = X264_MAX( 1, (h->param.i_height+15)/16 / 4 );
     if( h->param.i_threads > 1 )
     {
 #if !HAVE_THREAD
@@ -503,14 +515,15 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         /* Avoid absurdly small thread slices as they can reduce performance
          * and VBV compliance.  Capped at an arbitrary 4 rows per thread. */
         if( h->param.b_sliced_threads )
-        {
-            int max_threads = (h->param.i_height+15)/16 / 4;
-            h->param.i_threads = X264_MIN( h->param.i_threads, max_threads );
-        }
+            h->param.i_threads = X264_MIN( h->param.i_threads, max_sliced_threads );
     }
     h->param.i_threads = x264_clip3( h->param.i_threads, 1, X264_THREAD_MAX );
+    h->param.i_lookahead_threads = x264_clip3( h->param.i_lookahead_threads, 1, X264_MIN( max_sliced_threads, X264_LOOKAHEAD_THREAD_MAX ) );
     if( h->param.i_threads == 1 )
+    {
         h->param.b_sliced_threads = 0;
+        h->param.i_lookahead_threads = 1;
+    }
     h->i_thread_frames = h->param.b_sliced_threads ? 1 : h->param.i_threads;
     if( h->i_thread_frames > 1 )
         h->param.nalu_process = NULL;
@@ -1271,10 +1284,19 @@ x264_t *x264_encoder_open( x264_param_t *param )
     if( h->param.i_threads > 1 &&
         x264_threadpool_init( &h->threadpool, h->param.i_threads, (void*)x264_encoder_thread_init, h ) )
         goto fail;
+    if( h->param.i_lookahead_threads > 1 &&
+        x264_threadpool_init( &h->lookaheadpool, h->param.i_lookahead_threads, (void*)x264_lookahead_thread_init, h ) )
+        goto fail;
 
     h->thread[0] = h;
     for( int i = 1; i < h->param.i_threads + !!h->param.i_sync_lookahead; i++ )
         CHECKED_MALLOC( h->thread[i], sizeof(x264_t) );
+    if( h->param.i_lookahead_threads > 1 )
+        for( int i = 0; i < h->param.i_lookahead_threads; i++ )
+        {
+            CHECKED_MALLOC( h->lookahead_thread[i], sizeof(x264_t) );
+            *h->lookahead_thread[i] = *h;
+        }
 
     for( int i = 0; i < h->param.i_threads; i++ )
     {
@@ -3457,6 +3479,8 @@ void    x264_encoder_close  ( x264_t *h )
         x264_threadpool_wait_all( h );
     if( h->param.i_threads > 1 )
         x264_threadpool_delete( h->threadpool );
+    if( h->param.i_lookahead_threads > 1 )
+        x264_threadpool_delete( h->lookaheadpool );
     if( h->i_thread_frames > 1 )
     {
         for( int i = 0; i < h->i_thread_frames; i++ )
@@ -3765,6 +3789,10 @@ void    x264_encoder_close  ( x264_t *h )
             for( int j = 0; j < h->thread[i]->i_ref[0]; j++ )
                 if( h->thread[i]->fref[0][j] && h->thread[i]->fref[0][j]->b_duplicate )
                     x264_frame_delete( h->thread[i]->fref[0][j] );
+
+    if( h->param.i_lookahead_threads > 1 )
+        for( int i = 0; i < h->param.i_lookahead_threads; i++ )
+            x264_free( h->lookahead_thread[i] );
 
     for( int i = h->param.i_threads - 1; i >= 0; i-- )
     {

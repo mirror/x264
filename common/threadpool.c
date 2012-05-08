@@ -66,7 +66,7 @@ static void x264_threadpool_thread( x264_threadpool_t *pool )
         x264_pthread_mutex_unlock( &pool->run.mutex );
         if( !job )
             continue;
-        job->ret = job->func( job->arg ); /* execute the function */
+        job->ret = (void*)x264_stack_align( job->func, job->arg ); /* execute the function */
         x264_sync_frame_list_push( &pool->done, (void*)job );
     }
 }
@@ -83,7 +83,7 @@ int x264_threadpool_init( x264_threadpool_t **p_pool, int threads,
 
     pool->init_func = init_func;
     pool->init_arg  = init_arg;
-    pool->threads   = X264_MIN( threads, X264_THREAD_MAX );
+    pool->threads   = threads;
 
     CHECKED_MALLOC( pool->thread_handle, pool->threads * sizeof(x264_pthread_t) );
 
