@@ -3199,8 +3199,8 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
 
     x264_emms();
 
-    if( h->fdec->mb_info_free )
-        h->fdec->mb_info_free( h->fdec->mb_info );
+    if( h->fenc->mb_info_free )
+        h->fenc->mb_info_free( h->fenc->mb_info );
 
     /* generate buffering period sei and insert it into place */
     if( h->i_thread_frames > 1 && h->fenc->b_keyframe && h->sps->vui.b_nal_hrd_parameters_present )
