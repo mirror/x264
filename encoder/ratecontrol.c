@@ -62,6 +62,7 @@ typedef struct
 
 typedef struct
 {
+    float coeff_min;
     float coeff;
     float count;
     float decay;
@@ -689,17 +690,19 @@ int x264_ratecontrol_new( x264_t *h )
         rc->lmax[i] = qp2qscale( h->param.rc.i_qp_max );
         for( int j = 0; j < num_preds; j++ )
         {
-            rc->pred[i+j*5].coeff= 2.0;
-            rc->pred[i+j*5].count= 1.0;
-            rc->pred[i+j*5].decay= 0.5;
-            rc->pred[i+j*5].offset= 0.0;
+            rc->pred[i+j*5].coeff_min = 2.0 / 4;
+            rc->pred[i+j*5].coeff = 2.0;
+            rc->pred[i+j*5].count = 1.0;
+            rc->pred[i+j*5].decay = 0.5;
+            rc->pred[i+j*5].offset = 0.0;
         }
         for( int j = 0; j < 2; j++ )
         {
-            rc->row_preds[i][j].coeff= .25;
-            rc->row_preds[i][j].count= 1.0;
-            rc->row_preds[i][j].decay= 0.5;
-            rc->row_preds[i][j].offset= 0.0;
+            rc->row_preds[i][j].coeff_min = .25 / 4;
+            rc->row_preds[i][j].coeff = .25;
+            rc->row_preds[i][j].count = 1.0;
+            rc->row_preds[i][j].decay = 0.5;
+            rc->row_preds[i][j].offset = 0.0;
         }
     }
     *rc->pred_b_from_p = rc->pred[0];
@@ -1922,7 +1925,7 @@ static void update_predictor( predictor_t *p, float q, float var, float bits )
     if( var < 10 )
         return;
     float old_coeff = p->coeff / p->count;
-    float new_coeff = bits*q / var;
+    float new_coeff = X264_MAX( bits*q / var, p->coeff_min );
     float new_coeff_clipped = x264_clip3f( new_coeff, old_coeff/range, old_coeff*range );
     float new_offset = bits*q - new_coeff_clipped * var;
     if( new_offset >= 0 )
