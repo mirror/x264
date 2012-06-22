@@ -693,8 +693,16 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         else
         {
             float fps = atof(value);
-            p->i_fps_num = (int)(fps * 1000 + .5);
-            p->i_fps_den = 1000;
+            if( fps > 0 && fps <= INT_MAX/1000 )
+            {
+                p->i_fps_num = (int)(fps * 1000 + .5);
+                p->i_fps_den = 1000;
+            }
+            else
+            {
+                p->i_fps_num = atoi(value);
+                p->i_fps_den = 1;
+            }
         }
     }
     OPT2("ref", "frameref")

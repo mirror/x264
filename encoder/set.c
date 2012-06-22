@@ -778,7 +778,7 @@ int x264_validate_levels( x264_t *h, int verbose )
 
 #define CHECK( name, limit, val ) \
     if( (val) > (limit) ) \
-        ERROR( name " (%d) > level limit (%d)\n", (int)(val), (limit) );
+        ERROR( name " (%"PRId64") > level limit (%d)\n", (int64_t)(val), (limit) );
 
     CHECK( "VBV bitrate", (l->bitrate * cbp_factor) / 4, h->param.rc.i_vbv_max_bitrate );
     CHECK( "VBV buffer", (l->cpb * cbp_factor) / 4, h->param.rc.i_vbv_buffer_size );
