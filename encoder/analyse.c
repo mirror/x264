@@ -2851,8 +2851,15 @@ static inline void x264_mb_analyse_transform( x264_t *h )
 
 static inline void x264_mb_analyse_transform_rd( x264_t *h, x264_mb_analysis_t *a, int *i_satd, int *i_rd )
 {
-    if( x264_mb_transform_8x8_allowed( h ) && h->param.analyse.b_transform_8x8 )
+    if( h->param.analyse.b_transform_8x8 && h->pps->b_transform_8x8_mode )
     {
+        uint32_t subpart_bak = M32( h->mb.i_sub_partition );
+        /* Try switching the subpartitions to 8x8 so that we can use 8x8 transform mode */
+        if( h->mb.i_type == P_8x8 )
+            M32( h->mb.i_sub_partition ) = D_L0_8x8*0x01010101;
+        else if( !x264_transform_allowed[h->mb.i_type] )
+            return;
+
         x264_analyse_update_cache( h, a );
         h->mb.b_transform_8x8 ^= 1;
         /* FIXME only luma is needed for 4:2:0, but the score for comparison already includes chroma */
@@ -2865,7 +2872,10 @@ static inline void x264_mb_analyse_transform_rd( x264_t *h, x264_mb_analysis_t *
             *i_rd = i_rd8;
         }
         else
+        {
             h->mb.b_transform_8x8 ^= 1;
+            M32( h->mb.i_sub_partition ) = subpart_bak;
+        }
     }
 }
 
