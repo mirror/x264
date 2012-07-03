@@ -280,12 +280,13 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
             CAT_UNDEF arg_name %+ %%i, h
             CAT_UNDEF arg_name %+ %%i, b
             CAT_UNDEF arg_name %+ %%i, m
+            CAT_UNDEF arg_name %+ %%i, mp
             CAT_UNDEF arg_name, %%i
             %assign %%i %%i+1
         %endrep
     %endif
 
-    %assign %%stack_offset stack_offset
+    %xdefine %%stack_offset stack_offset
     %undef stack_offset ; so that the current value of stack_offset doesn't get baked in by xdefine
     %assign %%i 0
     %rep %0
@@ -295,11 +296,12 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
         %xdefine %1h r %+ %%i %+ h
         %xdefine %1b r %+ %%i %+ b
         %xdefine %1m r %+ %%i %+ m
+        %xdefine %1mp r %+ %%i %+ mp
         CAT_XDEFINE arg_name, %%i, %1
         %assign %%i %%i+1
         %rotate 1
     %endrep
-    %assign stack_offset %%stack_offset
+    %xdefine stack_offset %%stack_offset
     %assign n_arg_names %0
 %endmacro
 
@@ -327,16 +329,17 @@ DECLARE_REG 14, R15, 120
     ASSERT regs_used >= num_args
     ASSERT regs_used <= 15
     PUSH_IF_USED 7, 8, 9, 10, 11, 12, 13, 14
-    WIN64_SPILL_XMM %3
+    %if mmsize == 8
+        %assign xmm_regs_used 0
+    %else
+        WIN64_SPILL_XMM %3
+    %endif
     LOAD_IF_USED 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
     DEFINE_ARGS %4
 %endmacro
 
 %macro WIN64_SPILL_XMM 1
     %assign xmm_regs_used %1
-    %if mmsize == 8
-        %assign xmm_regs_used 0
-    %endif
     ASSERT xmm_regs_used <= 16
     %if xmm_regs_used > 6
         SUB rsp, (xmm_regs_used-6)*16+16
@@ -541,18 +544,20 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 
 %assign cpuflags_mmx      (1<<0)
 %assign cpuflags_mmx2     (1<<1) | cpuflags_mmx
-%assign cpuflags_sse      (1<<2) | cpuflags_mmx2
-%assign cpuflags_sse2     (1<<3) | cpuflags_sse
-%assign cpuflags_sse2slow (1<<4) | cpuflags_sse2
-%assign cpuflags_sse3     (1<<5) | cpuflags_sse2
-%assign cpuflags_ssse3    (1<<6) | cpuflags_sse3
-%assign cpuflags_sse4     (1<<7) | cpuflags_ssse3
-%assign cpuflags_sse42    (1<<8) | cpuflags_sse4
-%assign cpuflags_avx      (1<<9) | cpuflags_sse42
-%assign cpuflags_xop      (1<<10)| cpuflags_avx
-%assign cpuflags_fma4     (1<<11)| cpuflags_avx
-%assign cpuflags_avx2     (1<<12)| cpuflags_avx
-%assign cpuflags_fma3     (1<<13)| cpuflags_avx
+%assign cpuflags_3dnow    (1<<2) | cpuflags_mmx
+%assign cpuflags_3dnow2   (1<<3) | cpuflags_3dnow
+%assign cpuflags_sse      (1<<4) | cpuflags_mmx2
+%assign cpuflags_sse2     (1<<5) | cpuflags_sse
+%assign cpuflags_sse2slow (1<<6) | cpuflags_sse2
+%assign cpuflags_sse3     (1<<7) | cpuflags_sse2
+%assign cpuflags_ssse3    (1<<8) | cpuflags_sse3
+%assign cpuflags_sse4     (1<<9) | cpuflags_ssse3
+%assign cpuflags_sse42    (1<<10)| cpuflags_sse4
+%assign cpuflags_avx      (1<<11)| cpuflags_sse42
+%assign cpuflags_xop      (1<<12)| cpuflags_avx
+%assign cpuflags_fma4     (1<<13)| cpuflags_avx
+%assign cpuflags_avx2     (1<<14)| cpuflags_avx
+%assign cpuflags_fma3     (1<<15)| cpuflags_avx
 
 %assign cpuflags_cache32  (1<<16)
 %assign cpuflags_cache64  (1<<17)
@@ -560,9 +565,10 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %assign cpuflags_lzcnt    (1<<19)
 %assign cpuflags_misalign (1<<20)
 %assign cpuflags_aligned  (1<<21) ; not a cpu feature, but a function variant
-%assign cpuflags_bmi1     (1<<22)
-%assign cpuflags_bmi2     (1<<23)|cpuflags_bmi1
-%assign cpuflags_tbm      (1<<24)|cpuflags_bmi1
+%assign cpuflags_atom     (1<<22)
+%assign cpuflags_bmi1     (1<<23)
+%assign cpuflags_bmi2     (1<<24)|cpuflags_bmi1
+%assign cpuflags_tbm      (1<<25)|cpuflags_bmi1
 
 %define    cpuflag(x) ((cpuflags & (cpuflags_ %+ x)) == (cpuflags_ %+ x))
 %define notcpuflag(x) ((cpuflags & (cpuflags_ %+ x)) != (cpuflags_ %+ x))
@@ -581,6 +587,11 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
         %xdefine SUFFIX _ %+ cpuname
         %if cpuflag(avx)
             %assign avx_enabled 1
+        %endif
+        %if mmsize == 16 && notcpuflag(sse2)
+            %define mova movaps
+            %define movu movups
+            %define movnta movntps
         %endif
         %if cpuflag(aligned)
             %define movu mova
@@ -659,7 +670,7 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
     %define mova vmovaps
     %define movu vmovups
     %undef movh
-    %undef movnta
+    %define movnta vmovntps
     %assign %%i 0
     %rep num_mmregs
     CAT_XDEFINE m, %%i, ymm %+ %%i
@@ -820,7 +831,7 @@ INIT_XMM
 
 ;%1 == instruction
 ;%2 == 1 if float, 0 if int
-;%3 == 1 if 4-operand (xmm, xmm, xmm, imm), 0 if 3-operand (xmm, xmm, xmm)
+;%3 == 1 if 4-operand (xmm, xmm, xmm, imm), 0 if 2- or 3-operand (xmm, xmm, xmm)
 ;%4 == number of operands given
 ;%5+: operands
 %macro RUN_AVX_INSTR 6-7+
@@ -889,7 +900,7 @@ INIT_XMM
 
 ;%1 == instruction
 ;%2 == 1 if float, 0 if int
-;%3 == 1 if 4-operand (xmm, xmm, xmm, imm), 0 if 3-operand (xmm, xmm, xmm)
+;%3 == 1 if 4-operand (xmm, xmm, xmm, imm), 0 if 2- or 3-operand (xmm, xmm, xmm)
 ;%4 == 1 if symmetric (i.e. doesn't matter which src arg is which), 0 if not
 %macro AVX_INSTR 4
     %macro %1 2-9 fnord, fnord, fnord, %1, %2, %3, %4
@@ -923,6 +934,8 @@ AVX_INSTR cmppd, 1, 0, 0
 AVX_INSTR cmpps, 1, 0, 0
 AVX_INSTR cmpsd, 1, 0, 0
 AVX_INSTR cmpss, 1, 0, 0
+AVX_INSTR cvtdq2ps, 1, 0, 0
+AVX_INSTR cvtps2dq, 1, 0, 0
 AVX_INSTR divpd, 1, 0, 0
 AVX_INSTR divps, 1, 0, 0
 AVX_INSTR divsd, 1, 0, 0
@@ -941,6 +954,8 @@ AVX_INSTR minpd, 1, 0, 1
 AVX_INSTR minps, 1, 0, 1
 AVX_INSTR minsd, 1, 0, 1
 AVX_INSTR minss, 1, 0, 1
+AVX_INSTR movhlps, 1, 0, 0
+AVX_INSTR movlhps, 1, 0, 0
 AVX_INSTR movsd, 1, 0, 0
 AVX_INSTR movss, 1, 0, 0
 AVX_INSTR mpsadbw, 0, 1, 0
