@@ -300,6 +300,16 @@ void x264_frame_delete( x264_frame_t *frame )
             x264_free( frame->mv16x16-1 );
         x264_free( frame->ref[0] );
         x264_free( frame->ref[1] );
+        if( frame->param && frame->param->param_free )
+            frame->param->param_free( frame->param );
+        if( frame->mb_info_free )
+            frame->mb_info_free( frame->mb_info );
+        if( frame->extra_sei.sei_free )
+        {
+            for( int i = 0; i < frame->extra_sei.num_payloads; i++ )
+                frame->extra_sei.sei_free( frame->extra_sei.payloads[i].payload );
+            frame->extra_sei.sei_free( frame->extra_sei.payloads );
+        }
         x264_pthread_mutex_destroy( &frame->mutex );
         x264_pthread_cond_destroy( &frame->cv );
     }

@@ -2878,7 +2878,10 @@ int     x264_encoder_encode( x264_t *h,
     {
         x264_encoder_reconfig( h, h->fenc->param );
         if( h->fenc->param->param_free )
+        {
             h->fenc->param->param_free( h->fenc->param );
+            h->fenc->param = NULL;
+        }
     }
 
     // ok to call this before encoding any frames, since the initial values of fdec have b_kept_as_ref=0
@@ -3098,12 +3101,19 @@ int     x264_encoder_encode( x264_t *h,
         if( x264_nal_end( h ) )
             return -1;
         overhead += h->out.nal[h->out.i_nal-1].i_payload + NALU_OVERHEAD - (h->param.b_annexb && h->out.i_nal-1);
-        if( h->fenc->extra_sei.sei_free && h->fenc->extra_sei.payloads[i].payload )
+        if( h->fenc->extra_sei.sei_free )
+        {
             h->fenc->extra_sei.sei_free( h->fenc->extra_sei.payloads[i].payload );
+            h->fenc->extra_sei.payloads[i].payload = NULL;
+        }
     }
 
-    if( h->fenc->extra_sei.sei_free && h->fenc->extra_sei.payloads )
+    if( h->fenc->extra_sei.sei_free )
+    {
         h->fenc->extra_sei.sei_free( h->fenc->extra_sei.payloads );
+        h->fenc->extra_sei.payloads = NULL;
+        h->fenc->extra_sei.sei_free = NULL;
+    }
 
     if( h->fenc->b_keyframe )
     {
@@ -3232,7 +3242,11 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
     x264_emms();
 
     if( h->fenc->mb_info_free )
+    {
         h->fenc->mb_info_free( h->fenc->mb_info );
+        h->fenc->mb_info = NULL;
+        h->fenc->mb_info_free = NULL;
+    }
 
     /* generate buffering period sei and insert it into place */
     if( h->i_thread_frames > 1 && h->fenc->b_keyframe && h->sps->vui.b_nal_hrd_parameters_present )
