@@ -1786,5 +1786,4 @@ cglobal mbtree_propagate_cost, 7,7,8
     vmovdqu [r0+r6*2], ymm1
     add            r6, 16
     jl .loop
-    vzeroupper
-    RET
+    REP_RET

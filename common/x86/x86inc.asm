@@ -368,11 +368,14 @@ DECLARE_REG 14, R15, 120
     %assign xmm_regs_used 0
 %endmacro
 
-%define has_epilogue regs_used > 7 || xmm_regs_used > 6
+%define has_epilogue regs_used > 7 || xmm_regs_used > 6 || mmsize == 32
 
 %macro RET 0
     WIN64_RESTORE_XMM_INTERNAL rsp
     POP_IF_USED 14, 13, 12, 11, 10, 9, 8, 7
+%if mmsize == 32
+    vzeroupper
+%endif
     ret
 %endmacro
 
@@ -404,10 +407,13 @@ DECLARE_REG 14, R15, 72
     DEFINE_ARGS %4
 %endmacro
 
-%define has_epilogue regs_used > 9
+%define has_epilogue regs_used > 9 || mmsize == 32
 
 %macro RET 0
     POP_IF_USED 14, 13, 12, 11, 10, 9
+%if mmsize == 32
+    vzeroupper
+%endif
     ret
 %endmacro
 
@@ -444,10 +450,13 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
     DEFINE_ARGS %4
 %endmacro
 
-%define has_epilogue regs_used > 3
+%define has_epilogue regs_used > 3 || mmsize == 32
 
 %macro RET 0
     POP_IF_USED 6, 5, 4, 3
+%if mmsize == 32
+    vzeroupper
+%endif
     ret
 %endmacro
 
