@@ -1787,6 +1787,7 @@ int x264_ratecontrol_end( x264_t *h, int bits, int *filler )
 
     h->fdec->f_qp_avg_rc = rc->qpa_rc /= h->mb.i_mb_count;
     h->fdec->f_qp_avg_aq = (float)rc->qpa_aq / h->mb.i_mb_count;
+    h->fdec->f_crf_avg = h->param.rc.f_rf_constant + h->fdec->f_qp_avg_rc - rc->qp_novbv;
 
     if( h->param.rc.b_stat_write )
     {
@@ -2429,6 +2430,7 @@ static float rate_estimate_qscale( x264_t *h )
                 double w = x264_clip3f( cur_time*100, 0.0, 1.0 );
                 q *= pow( (double)total_bits / rcc->expected_bits_sum, w );
             }
+            rcc->qp_novbv = qscale2qp( q );
             if( rcc->b_vbv )
             {
                 /* Do not overflow vbv */

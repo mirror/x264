@@ -3306,6 +3306,7 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
         return -1;
 
     pic_out->hrd_timing = h->fenc->hrd_timing;
+    pic_out->prop.f_crf_avg = h->fdec->f_crf_avg;
 
     while( filler > 0 )
     {

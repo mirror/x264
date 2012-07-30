@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 125
+#define X264_BUILD 126
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -728,6 +728,9 @@ typedef struct
     double f_psnr_avg;
     /* Out: PSNR of Y, U, and V (if x264_param_t.b_psnr is set) */
     double f_psnr[3];
+
+    /* Out: Average effective CRF of the encoded frame */
+    double f_crf_avg;
 } x264_image_properties_t;
 
 typedef struct
