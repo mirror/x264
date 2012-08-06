@@ -3048,10 +3048,21 @@ intra_analysis:
         {
             /* Special fast-skip logic using information from mb_info. */
             if( h->fenc->mb_info && !SLICE_MBAFF && (h->fenc->mb_info[h->mb.i_mb_xy]&X264_MBINFO_CONSTANT) &&
-                !M32(h->mb.cache.pskip_mv) && (h->fenc->i_frame - h->fref[0][0]->i_frame) == 1 && !h->sh.b_weighted_pred &&
+                 (h->fenc->i_frame - h->fref[0][0]->i_frame) == 1 && !h->sh.b_weighted_pred &&
                 h->fref[0][0]->effective_qp[h->mb.i_mb_xy] <= h->mb.i_qp )
             {
-                b_skip = 1;
+                /* Use the P-SKIP MV if we can... */
+                if( !M32(h->mb.cache.pskip_mv) )
+                    b_skip = 1;
+                /* Otherwise, just force a 16x16 block. */
+                else
+                {
+                    h->mb.i_type = P_L0;
+                    h->mb.i_partition = D_16x16;
+                    analysis.l0.me16x16.i_ref = 0;
+                    M32( analysis.l0.me16x16.mv ) = 0;
+                    goto skip_analysis;
+                }
             }
             else
             {
@@ -3083,6 +3094,7 @@ intra_analysis:
             h->mb.i_type = P_SKIP;
             h->mb.i_partition = D_16x16;
             assert( h->mb.cache.pskip_mv[1] <= h->mb.mv_max_spel[1] || h->i_thread_frames == 1 );
+skip_analysis:
             /* Set up MVs for future predictors */
             for( int i = 0; i < h->mb.pic.i_fref[0]; i++ )
                 M32( h->mb.mvr[0][i][h->mb.i_mb_xy] ) = 0;
