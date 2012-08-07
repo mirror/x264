@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 126
+#define X264_BUILD 127
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -502,8 +502,13 @@ typedef struct x264_param_t
      * the calling application is expected to acquire all output NALs through the callback.
      *
      * It is generally sensible to combine this callback with a use of slice-max-mbs or
-     * slice-max-size. */
-    void (*nalu_process) ( x264_t *h, x264_nal_t *nal );
+     * slice-max-size.
+     *
+     * The opaque pointer is the opaque pointer from the input frame associated with this
+     * NAL unit. This helps distinguish between nalu_process calls from different sources,
+     * e.g. if doing multiple encodes in one process.
+     */
+    void (*nalu_process) ( x264_t *h, x264_nal_t *nal, void *opaque );
 } x264_param_t;
 
 void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );

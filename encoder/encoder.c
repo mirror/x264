@@ -1533,7 +1533,7 @@ static int x264_nal_end( x264_t *h )
      * While undefined padding wouldn't actually affect the output, it makes valgrind unhappy. */
     memset( end, 0xff, 32 );
     if( h->param.nalu_process )
-        h->param.nalu_process( h, nal );
+        h->param.nalu_process( h, nal, h->fenc->opaque );
     h->out.i_nal++;
 
     return x264_nal_check_buffer( h );
