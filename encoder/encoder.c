@@ -2542,6 +2542,14 @@ reencode:
                 x264_fdec_filter_row( h, h->i_threadslice_start + (1 << SLICE_MBAFF), 2 );
             }
         }
+
+        /* Free mb info after the last thread's done using it */
+        if( h->fdec->mb_info_free && (!h->param.b_sliced_threads || h->i_thread_idx == (h->param.i_threads-1)) )
+        {
+            h->fdec->mb_info_free( h->fdec->mb_info );
+            h->fdec->mb_info = NULL;
+            h->fdec->mb_info_free = NULL;
+        }
     }
 
     return 0;
@@ -2966,6 +2974,11 @@ int     x264_encoder_encode( x264_t *h,
     h->fenc->b_kept_as_ref =
     h->fdec->b_kept_as_ref = i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE && h->param.i_keyint_max > 1;
 
+    h->fdec->mb_info = h->fenc->mb_info;
+    h->fdec->mb_info_free = h->fenc->mb_info_free;
+    h->fenc->mb_info = NULL;
+    h->fenc->mb_info_free = NULL;
+
     h->fdec->i_pts = h->fenc->i_pts;
     if( h->frames.i_bframe_delay )
     {
@@ -3240,13 +3253,6 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
     }
 
     x264_emms();
-
-    if( h->fenc->mb_info_free )
-    {
-        h->fenc->mb_info_free( h->fenc->mb_info );
-        h->fenc->mb_info = NULL;
-        h->fenc->mb_info_free = NULL;
-    }
 
     /* generate buffering period sei and insert it into place */
     if( h->i_thread_frames > 1 && h->fenc->b_keyframe && h->sps->vui.b_nal_hrd_parameters_present )

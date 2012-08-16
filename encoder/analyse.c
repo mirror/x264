@@ -3047,8 +3047,8 @@ intra_analysis:
         else
         {
             /* Special fast-skip logic using information from mb_info. */
-            if( h->fenc->mb_info && !SLICE_MBAFF && (h->fenc->mb_info[h->mb.i_mb_xy]&X264_MBINFO_CONSTANT) &&
-                 (h->fenc->i_frame - h->fref[0][0]->i_frame) == 1 && !h->sh.b_weighted_pred &&
+            if( h->fdec->mb_info && !SLICE_MBAFF && (h->fdec->mb_info[h->mb.i_mb_xy]&X264_MBINFO_CONSTANT) &&
+                 (h->fdec->i_frame - h->fref[0][0]->i_frame) == 1 && !h->sh.b_weighted_pred &&
                 h->fref[0][0]->effective_qp[h->mb.i_mb_xy] <= h->mb.i_qp )
             {
                 /* Use the P-SKIP MV if we can... */
