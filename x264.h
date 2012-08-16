@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 127
+#define X264_BUILD 128
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -365,7 +365,8 @@ typedef struct x264_param_t
         float        f_psy_trellis; /* Psy trellis strength */
         int          b_psy; /* Toggle all psy optimizations */
 
-        int          b_mb_info; /* Use input mb_info data in x264_picture_t */
+        int          b_mb_info;            /* Use input mb_info data in x264_picture_t */
+        int          b_mb_info_update; /* Update the values in mb_info according to the results of encoding. */
 
         /* the deadzone size that will be used in luma quantization */
         int          i_luma_deadzone[2]; /* {inter, intra} */
@@ -718,7 +719,20 @@ typedef struct
      *     Allows specifying additional information for the encoder such as which macroblocks
      *     remain unchanged.  Usable flags are listed below.
      *     x264_param_t.analyse.b_mb_info must be set to use this, since x264 needs to track
-     *     extra data internally to make full use of this information. */
+     *     extra data internally to make full use of this information.
+     *
+     * Out: if b_mb_info_update is set, x264 will update this array as a result of encoding.
+     *
+     *      For "MBINFO_CONSTANT", it will remove this flag on any macroblock whose decoded
+     *      pixels have changed.  This can be useful for e.g. noting which areas of the
+     *      frame need to actually be blitted. Note: this intentionally ignores the effects
+     *      of deblocking for the current frame, which should be fine unless one needs exact
+     *      pixel-perfect accuracy.
+     *
+     *      Results for MBINFO_CONSTANT are currently only set for P-frames, and are not
+     *      guaranteed to enumerate all blocks which haven't changed.  (There may be false
+     *      negatives, but no false positives.)
+     */
     uint8_t *mb_info;
     /* In: optional callback to free mb_info when used. */
     void (*mb_info_free)( void* );
