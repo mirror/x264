@@ -764,9 +764,6 @@ if [ "$thread" = "auto" ]; then
                 thread="win32"
             fi
             ;;
-        OPENBSD)
-            cc_check pthread.h -pthread && thread="posix" && libpthread="-pthread"
-            ;;
         *)
             cc_check pthread.h -lpthread && thread="posix" && libpthread="-lpthread"
             ;;
