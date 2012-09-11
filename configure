@@ -448,6 +448,7 @@ else
     fi
 fi
 
+libm=""
 case $host_os in
     beos*)
         SYS="BEOS"
@@ -456,37 +457,37 @@ case $host_os in
     darwin*)
         SYS="MACOSX"
         CFLAGS="$CFLAGS -falign-loops=16"
-        LDFLAGS="$LDFLAGS -lm"
+        libm="-lm"
         if [ "$pic" = "no" ]; then
             cc_check "" -mdynamic-no-pic && CFLAGS="$CFLAGS -mdynamic-no-pic"
         fi
         ;;
     freebsd*)
         SYS="FREEBSD"
-        LDFLAGS="$LDFLAGS -lm"
+        libm="-lm"
         ;;
     kfreebsd*-gnu)
         SYS="FREEBSD"
         define HAVE_MALLOC_H
-        LDFLAGS="$LDFLAGS -lm"
+        libm="-lm"
         ;;
     netbsd*)
         SYS="NETBSD"
-        LDFLAGS="$LDFLAGS -lm"
+        libm="-lm"
         ;;
     openbsd*)
         SYS="OPENBSD"
-        LDFLAGS="$LDFLAGS -lm"
+        libm="-lm"
         ;;
     *linux*)
         SYS="LINUX"
         define HAVE_MALLOC_H
-        LDFLAGS="$LDFLAGS -lm"
+        libm="-lm"
         ;;
     gnu*)
         SYS="HURD"
         define HAVE_MALLOC_H
-        LDFLAGS="$LDFLAGS -lm"
+        libm="-lm"
         ;;
     cygwin*)
         EXE=".exe"
@@ -512,7 +513,7 @@ case $host_os in
     sunos*|solaris*)
         SYS="SunOS"
         define HAVE_MALLOC_H
-        LDFLAGS="$LDFLAGS -lm"
+        libm="-lm"
         if cc_check "" /usr/lib/64/values-xpg6.o; then
             LDFLAGS="$LDFLAGS /usr/lib/64/values-xpg6.o"
         else
@@ -524,6 +525,8 @@ case $host_os in
         die "Unknown system $host, edit the configure"
         ;;
 esac
+
+LDFLAGS="$LDFLAGS $libm"
 
 case $host_cpu in
     i*86)
