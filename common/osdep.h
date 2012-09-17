@@ -108,8 +108,10 @@
     ALIGNED_16( type name sub1 __VA_ARGS__ )
 #endif
 
-#define ALIGNED_ARRAY_32( ... ) ALIGNED_ARRAY_EMU( 31, __VA_ARGS__ )
-#define ALIGNED_ARRAY_64( ... ) ALIGNED_ARRAY_EMU( 63, __VA_ARGS__ )
+#define EXPAND(x) x
+
+#define ALIGNED_ARRAY_32( ... ) EXPAND( ALIGNED_ARRAY_EMU( 31, __VA_ARGS__ ) )
+#define ALIGNED_ARRAY_64( ... ) EXPAND( ALIGNED_ARRAY_EMU( 63, __VA_ARGS__ ) )
 
 #define UNINIT(x) x=x
 
