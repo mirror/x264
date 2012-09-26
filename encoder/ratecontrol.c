@@ -1018,6 +1018,7 @@ int x264_ratecontrol_new( x264_t *h )
 
         /* read stats */
         p = stats_in;
+        double total_qp_aq = 0;
         for( int i = 0; i < rc->num_entries; i++ )
         {
             ratecontrol_entry_t *rce;
@@ -1025,7 +1026,7 @@ int x264_ratecontrol_new( x264_t *h )
             char pict_type;
             int e;
             char *next;
-            float qp;
+            float qp_rc, qp_aq;
             int ref;
 
             next= strchr(p, ';');
@@ -1041,8 +1042,8 @@ int x264_ratecontrol_new( x264_t *h )
             rce = &rc->entry[frame_number];
             rce->direct_mode = 0;
 
-            e += sscanf( p, " in:%*d out:%*d type:%c dur:%"SCNd64" cpbdur:%"SCNd64" q:%f tex:%d mv:%d misc:%d imb:%d pmb:%d smb:%d d:%c",
-                   &pict_type, &rce->i_duration, &rce->i_cpb_duration, &qp, &rce->tex_bits,
+            e += sscanf( p, " in:%*d out:%*d type:%c dur:%"SCNd64" cpbdur:%"SCNd64" q:%f aq:%f tex:%d mv:%d misc:%d imb:%d pmb:%d smb:%d d:%c",
+                   &pict_type, &rce->i_duration, &rce->i_cpb_duration, &qp_rc, &qp_aq, &rce->tex_bits,
                    &rce->mv_bits, &rce->misc_bits, &rce->i_count, &rce->p_count,
                    &rce->s_count, &rce->direct_mode );
             rce->tex_bits  *= res_factor_bits;
@@ -1107,15 +1108,17 @@ int x264_ratecontrol_new( x264_t *h )
                     break;
                 default:  e = -1; break;
             }
-            if( e < 12 )
+            if( e < 13 )
             {
 parse_error:
                 x264_log( h, X264_LOG_ERROR, "statistics are damaged at line %d, parser out=%d\n", i, e );
                 return -1;
             }
-            rce->qscale = qp2qscale( qp );
+            rce->qscale = qp2qscale( qp_rc );
+            total_qp_aq += qp_aq;
             p = next;
         }
+        h->pps->i_pic_init_qp = SPEC_QP( (int)(total_qp_aq / rc->num_entries + 0.5) );
 
         x264_free( stats_buf );
 
@@ -1801,10 +1804,11 @@ int x264_ratecontrol_end( x264_t *h, int bits, int *filler )
                           dir_avg>0 ? 's' : dir_avg<0 ? 't' : '-' )
                         : '-';
         if( fprintf( rc->p_stat_file_out,
-                 "in:%d out:%d type:%c dur:%"PRId64" cpbdur:%"PRId64" q:%.2f tex:%d mv:%d misc:%d imb:%d pmb:%d smb:%d d:%c ref:",
+                 "in:%d out:%d type:%c dur:%"PRId64" cpbdur:%"PRId64" q:%.2f aq:%.2f tex:%d mv:%d misc:%d imb:%d pmb:%d smb:%d d:%c ref:",
                  h->fenc->i_frame, h->i_frame,
                  c_type, h->fenc->i_duration,
-                 h->fenc->i_cpb_duration, rc->qpa_rc,
+                 h->fenc->i_cpb_duration,
+                 rc->qpa_rc, h->fdec->f_qp_avg_aq,
                  h->stat.frame.i_tex_bits,
                  h->stat.frame.i_mv_bits,
                  h->stat.frame.i_misc_bits,
