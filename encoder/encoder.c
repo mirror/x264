@@ -2236,14 +2236,10 @@ static int x264_slice_write( x264_t *h )
     /* Slice header */
     x264_macroblock_thread_init( h );
 
-    /* If this isn't the first slice in the threadslice, set the slice QP
-     * equal to the last QP in the previous slice for more accurate
-     * CABAC initialization. */
-    if( h->sh.i_first_mb != h->i_threadslice_start * h->mb.i_mb_width )
-    {
-        h->sh.i_qp = h->mb.i_last_qp;
-        h->sh.i_qp_delta = h->sh.i_qp - h->pps->i_pic_init_qp;
-    }
+    /* Set the QP equal to the first QP in the slice for more accurate CABAC initialization. */
+    h->mb.i_mb_xy = h->sh.i_first_mb;
+    h->sh.i_qp = x264_ratecontrol_mb_qp( h );
+    h->sh.i_qp_delta = h->sh.i_qp - h->pps->i_pic_init_qp;
 
     x264_slice_header_write( &h->out.bs, &h->sh, h->i_nal_ref_idc );
     if( h->param.b_cabac )
