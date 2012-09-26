@@ -1149,8 +1149,6 @@ echo "CLI_LIBX264 = $CLI_LIBX264" >> config.mak
 
 ${SRCPATH}/version.sh "${SRCPATH}" >> x264_config.h
 
-pclibs="-L$libdir -lx264 $libpthread"
-
 cat > x264.pc << EOF
 prefix=$prefix
 exec_prefix=$exec_prefix
@@ -1160,7 +1158,8 @@ includedir=$includedir
 Name: x264
 Description: H.264 (MPEG4 AVC) encoder library
 Version: $(grep POINTVER < x264_config.h | sed -e 's/.* "//; s/".*//')
-Libs: $pclibs
+Libs: -L$libdir -lx264
+Libs.private: $libpthread $libm
 Cflags: -I$includedir
 EOF
 
