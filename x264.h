@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 128
+#define X264_BUILD 129
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -523,7 +523,7 @@ typedef struct
     int level_idc;
     int mbps;        /* max macroblock processing rate (macroblocks/sec) */
     int frame_size;  /* max frame size (macroblocks) */
-    int dpb;         /* max decoded picture buffer (bytes) */
+    int dpb;         /* max decoded picture buffer (mbs) */
     int bitrate;     /* max bitrate (kbit/sec) */
     int cpb;         /* max vbv buffer (kbit) */
     int mv_range;    /* max vertical mv component range (pixels) */

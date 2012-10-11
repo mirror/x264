@@ -1616,11 +1616,8 @@ generic_option:
         for( int i = 0; x264_levels[i].level_idc != 0; i++ )
             if( param->i_level_idc == x264_levels[i].level_idc )
             {
-                while( mbs * 384 * param->i_frame_reference > x264_levels[i].dpb &&
-                       param->i_frame_reference > 1 )
-                {
+                while( mbs * param->i_frame_reference > x264_levels[i].dpb && param->i_frame_reference > 1 )
                     param->i_frame_reference--;
-                }
                 break;
             }
     }
