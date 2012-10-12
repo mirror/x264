@@ -577,7 +577,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.rc.i_qp_constant = h->param.rc.f_rf_constant + QP_BD_OFFSET;
         h->param.rc.i_bitrate = 0;
     }
-    if( (h->param.rc.i_rc_method == X264_RC_CQP || h->param.rc.i_rc_method == X264_RC_CRF)
+    if( b_open && (h->param.rc.i_rc_method == X264_RC_CQP || h->param.rc.i_rc_method == X264_RC_CRF)
         && h->param.rc.i_qp_constant == 0 )
     {
         h->mb.b_lossless = 1;
