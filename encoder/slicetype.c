@@ -1124,6 +1124,7 @@ static void x264_macroblock_tree( x264_t *h, x264_mb_analysis_t *a, x264_frame_t
 
     if( !h->param.rc.i_lookahead )
     {
+        x264_slicetype_frame_cost( h, a, frames, 0, last_nonb, last_nonb, 0 );
         x264_macroblock_tree_propagate( h, frames, average_duration, 0, last_nonb, last_nonb, 1 );
         XCHG( uint16_t*, frames[last_nonb]->i_propagate_cost, frames[0]->i_propagate_cost );
     }
