@@ -2922,7 +2922,7 @@ static inline void x264_mb_analyse_qp_rd( x264_t *h, x264_mb_analysis_t *a )
         {
             if( !origcbp )
             {
-                h->mb.i_qp = X264_MAX( h->mb.i_qp - threshold - 1, h->param.rc.i_qp_min );
+                h->mb.i_qp = X264_MAX( h->mb.i_qp - threshold - 1, SPEC_QP( h->param.rc.i_qp_min ) );
                 h->mb.i_chroma_qp = h->chroma_qp_table[h->mb.i_qp];
                 already_checked_cost = x264_rd_cost_mb( h, a->i_lambda2 );
                 if( !h->mb.cbp[h->mb.i_mb_xy] )

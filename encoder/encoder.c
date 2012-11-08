@@ -2239,6 +2239,7 @@ static int x264_slice_write( x264_t *h )
     /* Set the QP equal to the first QP in the slice for more accurate CABAC initialization. */
     h->mb.i_mb_xy = h->sh.i_first_mb;
     h->sh.i_qp = x264_ratecontrol_mb_qp( h );
+    h->sh.i_qp = SPEC_QP( h->sh.i_qp );
     h->sh.i_qp_delta = h->sh.i_qp - h->pps->i_pic_init_qp;
 
     x264_slice_header_write( &h->out.bs, &h->sh, h->i_nal_ref_idc );

@@ -241,7 +241,7 @@ int x264_cqm_init( x264_t *h )
 
     if( !h->mb.b_lossless )
     {
-        while( h->chroma_qp_table[h->param.rc.i_qp_min] <= max_chroma_qp_err )
+        while( h->chroma_qp_table[SPEC_QP(h->param.rc.i_qp_min)] <= max_chroma_qp_err )
             h->param.rc.i_qp_min++;
         if( min_qp_err <= h->param.rc.i_qp_max )
             h->param.rc.i_qp_max = min_qp_err-1;
