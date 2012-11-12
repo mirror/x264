@@ -1702,7 +1702,7 @@ cglobal mbtree_propagate_cost, 7,7,7
 %if cpuflag(fma4)
     cvtdq2ps  xmm0, xmm0
     cvtdq2ps  xmm1, xmm1
-    vfmaddps  xmm0, xmm0, xmm6, xmm1
+    fmaddps   xmm0, xmm0, xmm6, xmm1
     cvtdq2ps  xmm1, xmm2
     psubd     xmm2, xmm3
     cvtdq2ps  xmm2, xmm2
@@ -1710,7 +1710,7 @@ cglobal mbtree_propagate_cost, 7,7,7
     mulps     xmm1, xmm3
     mulps     xmm0, xmm2
     addps     xmm2, xmm3, xmm3
-    vfnmaddps xmm3, xmm1, xmm3, xmm2
+    fnmaddps  xmm3, xmm1, xmm3, xmm2
     mulps     xmm0, xmm3
 %else
     cvtdq2ps  xmm0, xmm0
@@ -1742,14 +1742,18 @@ INIT_XMM fma4
 MBTREE
 
 %macro INT16_TO_FLOAT 1
+%if cpuflag(avx2)
+    vpmovzxwd   ymm%1, xmm%1
+%else
     vpunpckhwd   xmm4, xmm%1, xmm7
     vpunpcklwd  xmm%1, xmm7
     vinsertf128 ymm%1, ymm%1, xmm4, 1
+%endif
     vcvtdq2ps   ymm%1, ymm%1
 %endmacro
 
 ; FIXME: align loads/stores to 16 bytes
-INIT_YMM avx
+%macro MBTREE_AVX 0
 cglobal mbtree_propagate_cost, 7,7,8
     add           r6d, r6d
     lea            r0, [r0+r6*2]
@@ -1761,7 +1765,9 @@ cglobal mbtree_propagate_cost, 7,7,8
     vmovdqa      xmm5, [pw_3fff]
     vbroadcastss ymm6, [r5]
     vmulps       ymm6, ymm6, [pf_inv256]
+%if notcpuflag(avx2)
     vpxor        xmm7, xmm7
+%endif
 .loop:
     vmovdqu      xmm0, [r2+r6]       ; intra
     vmovdqu      xmm1, [r4+r6]       ; invq
@@ -1771,6 +1777,17 @@ cglobal mbtree_propagate_cost, 7,7,8
     INT16_TO_FLOAT 1
     INT16_TO_FLOAT 2
     INT16_TO_FLOAT 3
+%if cpuflag(fma3)
+    vmulps       ymm1, ymm1, ymm0
+    vsubps       ymm4, ymm0, ymm3
+    fmaddps      ymm1, ymm1, ymm6, ymm2
+    vrcpps       ymm3, ymm0
+    vmulps       ymm2, ymm0, ymm3
+    vmulps       ymm1, ymm1, ymm4
+    vaddps       ymm4, ymm3, ymm3
+    fnmaddps     ymm4, ymm2, ymm3, ymm4
+    vmulps       ymm1, ymm1, ymm4
+%else
     vmulps       ymm1, ymm1, ymm0
     vsubps       ymm4, ymm0, ymm3
     vmulps       ymm1, ymm1, ymm6    ; intra*invq*fps_factor>>8
@@ -1782,8 +1799,15 @@ cglobal mbtree_propagate_cost, 7,7,8
     vaddps       ymm3, ymm3, ymm3    ; 2 * (1/intra 1st approx)
     vsubps       ymm3, ymm3, ymm2    ; 2nd approximation for 1/intra
     vmulps       ymm1, ymm1, ymm3    ; / intra
+%endif
     vcvtps2dq    ymm1, ymm1
     vmovdqu [r0+r6*2], ymm1
     add            r6, 16
     jl .loop
     RET
+%endmacro
+
+INIT_YMM avx
+MBTREE_AVX
+INIT_YMM avx2,fma3
+MBTREE_AVX

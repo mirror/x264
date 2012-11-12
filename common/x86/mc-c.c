@@ -139,6 +139,8 @@ void x264_mbtree_propagate_cost_avx ( int *dst, uint16_t *propagate_in, uint16_t
                                       uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
 void x264_mbtree_propagate_cost_fma4( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                       uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+void x264_mbtree_propagate_cost_avx2_fma3( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+                                           uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
 
 #define MC_CHROMA(cpu)\
 void x264_mc_chroma_##cpu( pixel *dstu, pixel *dstv, intptr_t i_dst, pixel *src, intptr_t i_src,\
@@ -754,7 +756,12 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         return;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx;
 
-    if( !(cpu&X264_CPU_FMA4) )
+    if( cpu&X264_CPU_FMA4 )
+        pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_fma4;
+
+    if( !(cpu&X264_CPU_AVX2) )
         return;
-    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_fma4;
+
+    if( cpu&X264_CPU_FMA3 )
+        pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2_fma3;
 }
