@@ -86,7 +86,7 @@ static void x264_lookahead_slicetype_decide( x264_t *h )
     x264_pthread_mutex_unlock( &h->lookahead->ofbuf.mutex );
 }
 
-static void x264_lookahead_thread( x264_t *h )
+static void *x264_lookahead_thread( x264_t *h )
 {
     int shift;
 #if HAVE_MMX
@@ -123,6 +123,7 @@ static void x264_lookahead_thread( x264_t *h )
     h->lookahead->b_thread_active = 0;
     x264_pthread_cond_broadcast( &h->lookahead->ofbuf.cv_fill );
     x264_pthread_mutex_unlock( &h->lookahead->ofbuf.mutex );
+    return NULL;
 }
 #endif
 

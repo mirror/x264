@@ -36,6 +36,7 @@ typedef struct
     void *handle;
     void *(*func)( void* arg );
     void *arg;
+    void **p_ret;
     void *ret;
 } x264_pthread_t;
 #define x264_pthread_attr_t int

@@ -47,7 +47,7 @@ struct x264_threadpool_t
     x264_sync_frame_list_t done;   /* list of jobs that have finished processing */
 };
 
-static void x264_threadpool_thread( x264_threadpool_t *pool )
+static void *x264_threadpool_thread( x264_threadpool_t *pool )
 {
     if( pool->init_func )
         pool->init_func( pool->init_arg );
@@ -69,6 +69,7 @@ static void x264_threadpool_thread( x264_threadpool_t *pool )
         job->ret = (void*)x264_stack_align( job->func, job->arg ); /* execute the function */
         x264_sync_frame_list_push( &pool->done, (void*)job );
     }
+    return NULL;
 }
 
 int x264_threadpool_init( x264_threadpool_t **p_pool, int threads,
