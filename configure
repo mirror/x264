@@ -904,7 +904,7 @@ if [ "$gpac" = "auto" ] ; then
 fi
 if [ "$gpac" = "yes" ] ; then
     define HAVE_GPAC
-    if cc_check gpac/isomedia.h "-Werror $GPAC_LIBS" "gf_malloc(1); gf_free(NULL);" ; then
+    if cc_check gpac/isomedia.h "-Werror $GPAC_LIBS" "void *p; p = gf_malloc(1); gf_free(p);" ; then
         define HAVE_GF_MALLOC
     fi
     LDFLAGSCLI="$GPAC_LIBS $LDFLAGSCLI"
