@@ -87,7 +87,7 @@ cextern pd_32
     lea  t0, [t0+t1*2*SIZEOF_PIXEL]
     sub eax, 2
     jg .height_loop
-    REP_RET
+    RET
 %endmacro
 
 %if HIGH_BIT_DEPTH
@@ -415,7 +415,7 @@ cglobal mc_weight_w%1, 6,6,8
     lea  r2, [r2+r3*2]
     sub r5d, 2
     jg .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_MMX mmx2
@@ -495,7 +495,7 @@ cglobal mc_offset%2_w%1, 6,6
     lea  r2, [r2+r3*2]
     sub r5d, 2
     jg .loop
-    REP_RET
+    RET
 %endmacro
 
 %macro OFFSETPN 1
@@ -672,7 +672,7 @@ cglobal pixel_avg2_w%1, 6,7,4
     lea     r0, [r0+r1*4]
     sub    r5d, 2
     jg .height_loop
-    REP_RET
+    RET
 %endmacro
 
 %macro AVG2_W_TWO 3
@@ -707,7 +707,7 @@ cglobal pixel_avg2_w%1, 6,7,8
     lea     r0, [r0+r1*4]
     sub    r5d, 2
     jg .height_loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_MMX mmx2
@@ -745,7 +745,7 @@ cglobal pixel_avg2_w10_mmx2, 6,7
     lea     r0, [r0+r1*2*2]
     sub    r5d, 2
     jg .height_loop
-    REP_RET
+    RET
 
 cglobal pixel_avg2_w16_mmx2, 6,7
     sub     r4, r2
@@ -779,7 +779,7 @@ cglobal pixel_avg2_w16_mmx2, 6,7
     lea     r0, [r0+r1*2*2]
     sub    r5d, 2
     jg .height_loop
-    REP_RET
+    RET
 
 cglobal pixel_avg2_w18_mmx2, 6,7
     sub     r4, r2
@@ -803,7 +803,7 @@ cglobal pixel_avg2_w18_mmx2, 6,7
     lea     r0, [r0+r1*2]
     dec    r5d
     jg .height_loop
-    REP_RET
+    RET
 
 INIT_XMM
 cglobal pixel_avg2_w18_sse2, 6,7,6
@@ -825,7 +825,7 @@ cglobal pixel_avg2_w18_sse2, 6,7,6
     lea     r0, [r0+r1*2]
     dec    r5d
     jg .height_loop
-    REP_RET
+    RET
 %endif ; HIGH_BIT_DEPTH
 
 %if HIGH_BIT_DEPTH == 0
@@ -849,7 +849,7 @@ cglobal pixel_avg2_w%1_mmx2, 6,7
     lea    r0, [r0+r1*2]
     sub    r5d, 2
     jg     .height_loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_MMX
@@ -877,7 +877,7 @@ cglobal pixel_avg2_w%1_mmx2, 6,7
     lea    r0, [r0+r1*2]
     sub    r5d, 2
     jg     .height_loop
-    REP_RET
+    RET
 %endmacro
 
 AVG2_W16 12, movd
@@ -909,7 +909,7 @@ cglobal pixel_avg2_w20_mmx2, 6,7
     lea    r0, [r0+r1*2]
     sub    r5d, 2
     jg     .height_loop
-    REP_RET
+    RET
 
 cglobal pixel_avg2_w16_sse2, 6,7
     sub    r4, r2
@@ -927,7 +927,7 @@ cglobal pixel_avg2_w16_sse2, 6,7
     lea    r0, [r0+r1*2]
     sub    r5d, 2
     jg     .height_loop
-    REP_RET
+    RET
 
 %macro AVG2_W20 1
 cglobal pixel_avg2_w20_%1, 6,7
@@ -959,7 +959,7 @@ cglobal pixel_avg2_w20_%1, 6,7
     lea    r0, [r0+r1*2]
     sub    r5d, 2
     jg     .height_loop
-    REP_RET
+    RET
 %endmacro
 
 AVG2_W20 sse2
@@ -1022,7 +1022,7 @@ pixel_avg2_w%1_cache_mmx2:
     add    r0, r1
     dec    r5d
     jg .height_loop
-    REP_RET
+    RET
 %endmacro
 
 %macro AVG_CACHELINE_CHECK 3 ; width, cacheline, instruction set
@@ -1226,7 +1226,7 @@ cglobal mc_copy_w%1, 5,7,8*(%%w/2)
     lea     r0, [r0+r1*4]
     sub    r4d, 4
     jg .height_loop
-    REP_RET
+    RET
 %endif
 %endmacro
 
@@ -1506,7 +1506,7 @@ ALIGN 4
     add        r1, r2
     dec       r5d
     jg .loop2
-    REP_RET
+    RET
 
 %if mmsize==8
 .width4:
@@ -1626,11 +1626,11 @@ ALIGN 4
     dec       r5d
     jg .loop4
 %if mmsize!=8
-    REP_RET
+    RET
 %else
     sub dword r7m, 4
     jg .width8
-    REP_RET
+    RET
 .width8:
 %if ARCH_X86_64
     lea        r3, [t2+8*SIZEOF_PIXEL]
@@ -1766,7 +1766,7 @@ ALIGN 4
     add        r1, r2
     dec       r5d
     jg .loop1d_w4
-    REP_RET
+    RET
 .mc1d_w8:
     sub       r2, 4*SIZEOF_PIXEL
     sub       r4, 8*SIZEOF_PIXEL
@@ -1848,7 +1848,7 @@ cglobal mc_chroma
     lea        r1, [r1+r2*2]
     sub       r5d, 2
     jg .loop4
-    REP_RET
+    RET
 
 .width8:
     movu       m0, [r3]
@@ -1909,7 +1909,7 @@ cglobal mc_chroma
     lea        r1, [r1+r2*2]
     sub       r5d, 2
     jg .loop8
-    REP_RET
+    RET
 %endmacro
 
 %if HIGH_BIT_DEPTH

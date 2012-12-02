@@ -416,7 +416,7 @@ QUANT_AC quant_8x8, 8
     %1 [r0+(t0+8*%3)*SIZEOF_PIXEL], [r1+t0*2+16*%3], [r1+t0*2+24*%3]
     sub t0d, 16*%3
     jge %%loop
-    REP_RET
+    RET
 %else
     %1 [r0+(8*%3)*SIZEOF_PIXEL], [r1+16*%3], [r1+24*%3]
     %1 [r0+(0   )*SIZEOF_PIXEL], [r1+0    ], [r1+ 8*%3]
@@ -738,7 +738,7 @@ cglobal optimize_chroma_2x2_dc, 0,%%regs,7
     PSIGND    m5, m2, m1
     test     t3d, t3d
     jnz .outer_loop_0
-    REP_RET
+    RET
 %endmacro
 
 %if HIGH_BIT_DEPTH == 0
@@ -783,7 +783,7 @@ cglobal denoise_dct, 4,4,8
     mova      [r1+r3*4-1*mmsize], m5
     sub       r3, mmsize/2
     jg .loop
-    REP_RET
+    RET
 %endmacro
 
 %if ARCH_X86_64 == 0
@@ -831,7 +831,7 @@ cglobal denoise_dct, 4,4,7
     mova      [r1+r3*4-1*mmsize], m1
     sub       r3, mmsize
     jg .loop
-    REP_RET
+    RET
 %endmacro
 
 %if ARCH_X86_64 == 0
@@ -954,7 +954,7 @@ cglobal decimate_score%1, 1,3
     jne  .loop
 %endif
 .ret:
-    RET
+    REP_RET
 .ret9:
     mov   eax, 9
     RET
@@ -1066,7 +1066,7 @@ cglobal decimate_score64, 1,5
 .tryret:
     xor   r4, -1
     jne  .cont
-    REP_RET
+    RET
 .ret9:
     mov   eax, 9
     RET
@@ -1077,7 +1077,7 @@ cglobal decimate_score64, 1,5
     shr   r3, cl
     shr   r3, 1
     jne  .loop
-    REP_RET
+    RET
 %endif ; ARCH
 
 %endmacro
@@ -1381,7 +1381,7 @@ cglobal coeff_level_run%1,0,7
     inc    t6d
     sub    t4d, t3d
     jge .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_MMX mmx2

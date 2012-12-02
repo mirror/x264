@@ -210,7 +210,7 @@ cglobal hpel_filter_v, 5,6,11
     mova      [r0+r4+mmsize], m4
     add        r4, 2*mmsize
     jl .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_c( uint16_t *dst, int16_t *buf, intptr_t width );
@@ -259,7 +259,7 @@ cglobal hpel_filter_c, 3,3,10
     mova  [r0+r2], m1
     add        r2, mmsize
     jl .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_h( uint16_t *dst, uint16_t *src, intptr_t width );
@@ -302,7 +302,7 @@ cglobal hpel_filter_h, 3,4,8
     mova      [r0+r2+mmsize], m4
     add        r2, mmsize*2
     jl .loop
-    REP_RET
+    RET
 %endmacro ; HPEL_FILTER
 
 INIT_MMX mmx2
@@ -365,7 +365,7 @@ cglobal hpel_filter_v, 5,6,%1
     add r5, mmsize
     add r4, mmsize
     jl .loop
-    REP_RET
+    RET
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -396,7 +396,7 @@ cglobal hpel_filter_c_mmx2, 3,3
     movntq [r0+r2], m1
     add r2, 8
     jl .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_h( uint8_t *dst, uint8_t *src, intptr_t width );
@@ -440,7 +440,7 @@ cglobal hpel_filter_h_mmx2, 3,3
     movntq     [r0+r2], m1
     add r2, 8
     jl .loop
-    REP_RET
+    RET
 
 INIT_XMM
 
@@ -510,7 +510,7 @@ cglobal hpel_filter_c, 3,3,9
     movntps [r0+r2], m4
     add r2, 16
     jl .loop
-    REP_RET
+    RET
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -559,7 +559,7 @@ cglobal hpel_filter_h_sse2, 3,3,8
     movntps    [r0+r2], m1
     add r2, 16
     jl .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_h( uint8_t *dst, uint8_t *src, intptr_t width );
@@ -600,7 +600,7 @@ cglobal hpel_filter_h, 3,3
     movntps [r0+r2], m3
     add r2, 16
     jl .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_MMX mmx2
@@ -1026,7 +1026,7 @@ cglobal store_interleave_chroma, 5,5
     lea    r0, [r0+r1*2]
     sub   r4d, 2
     jg .loop
-    REP_RET
+    RET
 %endmacro ; PLANE_INTERLEAVE
 
 %macro DEINTERLEAVE_START 0
@@ -1068,7 +1068,7 @@ cglobal plane_copy_deinterleave, 6,7
     add    r4, r5
     dec dword r7m
     jg .loopy
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void load_deinterleave_chroma_fenc( pixel *dst, pixel *src, intptr_t i_src, int height )
@@ -1083,7 +1083,7 @@ cglobal load_deinterleave_chroma_fenc, 4,4
     lea    r1, [r1+r2*2]
     sub   r3d, 2
     jg .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void load_deinterleave_chroma_fdec( pixel *dst, pixel *src, intptr_t i_src, int height )
@@ -1098,7 +1098,7 @@ cglobal load_deinterleave_chroma_fdec, 4,4
     lea    r1, [r1+r2*2]
     sub   r3d, 2
     jg .loop
-    REP_RET
+    RET
 %endmacro ; PLANE_DEINTERLEAVE
 
 %if HIGH_BIT_DEPTH
@@ -1155,7 +1155,7 @@ cglobal memcpy_aligned_mmx, 3,3
     sub  r2d, 32
     jg .copy32
 .ret
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void *memcpy_aligned( void *dst, const void *src, size_t n );
@@ -1207,7 +1207,7 @@ cglobal memzero_aligned, 2,2
 %endrep
     add r1, mmsize*8
     jl .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_MMX mmx
@@ -1239,7 +1239,7 @@ cglobal integral_init4h_sse4, 3,4
     movdqa  [r3+r2*2+16], m1
     add     r2, 16
     jl .loop
-    REP_RET
+    RET
 
 %macro INTEGRAL_INIT8H 0
 cglobal integral_init8h, 3,4
@@ -1263,7 +1263,7 @@ cglobal integral_init8h, 3,4
     movdqa  [r3+r2*2+16], m1
     add     r2, 16
     jl .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_XMM sse4
@@ -1290,7 +1290,7 @@ cglobal integral_init8v, 3,3
     mova  [r0+r1+mmsize], m1
     add   r1, 2*mmsize
     jl .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_MMX mmx
@@ -1321,7 +1321,7 @@ cglobal integral_init4v_mmx, 3,5
     mova  [r1+r2-8], m3
     sub   r2, 8
     jge .loop
-    REP_RET
+    RET
 
 INIT_XMM
 cglobal integral_init4v_sse2, 3,5
@@ -1347,7 +1347,7 @@ cglobal integral_init4v_sse2, 3,5
     mova  [r1+r2], m3
     add     r2, 16
     jl .loop
-    REP_RET
+    RET
 
 cglobal integral_init4v_ssse3, 3,5
     shl     r2, 1
@@ -1372,7 +1372,7 @@ cglobal integral_init4v_ssse3, 3,5
     mova  [r1+r2], m3
     add     r2, 16
     jl .loop
-    REP_RET
+    RET
 
 %macro FILT8x4 7
     mova      %3, [r0+%7]
@@ -1732,7 +1732,7 @@ cglobal mbtree_propagate_cost, 7,7,7
     movdqa [r0+r6*2], xmm0
     add         r6, 8
     jl .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_XMM sse2
@@ -1786,4 +1786,4 @@ cglobal mbtree_propagate_cost, 7,7,8
     vmovdqu [r0+r6*2], ymm1
     add            r6, 16
     jl .loop
-    REP_RET
+    RET

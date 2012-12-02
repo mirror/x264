@@ -555,7 +555,7 @@ cglobal add16x16_idct_dc, 2,3,8
     add         r0, 4*FDEC_STRIDEB
     dec         r2
     jg .loop
-    REP_RET
+    RET
 %endmacro ; ADD_IDCT_DC
 
 INIT_XMM sse2
@@ -664,7 +664,7 @@ cglobal add16x16_idct_dc, 2,3
     add       r0, FDEC_STRIDE*4
     dec       r2
     jg .loop
-    REP_RET
+    RET
 
 INIT_XMM sse2
 cglobal add16x16_idct_dc, 2,2,8

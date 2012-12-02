@@ -199,7 +199,7 @@ cglobal checkasm_call, 1,7
     mov  dword [r1], 0
     mov  eax, r3
 .ok:
-    RET
+    REP_RET
 
 %endif ; ARCH_X86_64
 

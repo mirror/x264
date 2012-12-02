@@ -139,13 +139,13 @@ cglobal cabac_encode_terminal_asm, 0,3
 ; can only be 0 or 1 and is zero over 99% of the time.
     test dword [t0+cb.range], 0x100
     je .renorm
-    REP_RET
+    RET
 .renorm:
     shl  dword [t0+cb.low], 1
     shl  dword [t0+cb.range], 1
     inc  dword [t0+cb.queue]
     jge .putbyte
-    REP_RET
+    RET
 .putbyte:
     PROLOGUE 0,7
     mov t3d, [t0+cb.queue]

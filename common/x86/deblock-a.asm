@@ -378,7 +378,7 @@ cglobal deblock_v_luma, 5,5,15
     add         r4, 2
     dec         r3
     jg .loop
-    REP_RET
+    RET
 
 cglobal deblock_h_luma, 5,7,15
     add         r1, r1
@@ -416,7 +416,7 @@ cglobal deblock_h_luma, 5,7,15
     lea         r5, [r5+r1*8]
     dec         r6
     jg .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_XMM sse2
@@ -650,7 +650,7 @@ cglobal deblock_v_luma_intra, 4,7,16
     add     r4, mmsize
     dec     r6
     jg .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void deblock_h_luma_intra( uint16_t *pix, intptr_t stride, int alpha, int beta )
@@ -1497,7 +1497,7 @@ cglobal deblock_%1_luma_intra, 4,6,16,ARCH_X86_64*0x50-0x50
     LUMA_INTRA_SWAP_PQ
     LUMA_INTRA_P012 [r0], [r0+r1], [r0+2*r1], [r0+r5]
 .end:
-    RET
+    REP_RET
 
 INIT_MMX cpuname
 %if ARCH_X86_64
@@ -1687,7 +1687,7 @@ cglobal deblock_v_chroma, 5,7,8
     add         r4, mmsize/8
     dec         r6
     jg .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void deblock_h_chroma( uint16_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
@@ -1706,7 +1706,7 @@ cglobal deblock_h_chroma, 5,7,8
     add         r4, mmsize/8
     dec         r5
     jg .loop
-    REP_RET
+    RET
 
 
 cglobal deblock_intra_body
@@ -1734,7 +1734,7 @@ cglobal deblock_v_chroma_intra, 4,6,8
     add         r4, mmsize
     dec         r5
     jg .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void deblock_h_chroma_intra( uint16_t *pix, intptr_t stride, int alpha, int beta )
@@ -1752,7 +1752,7 @@ cglobal deblock_h_chroma_intra, 4,6,8
     lea         r0, [r0+r1*(mmsize/4)]
     dec         r4
     jg .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void deblock_h_chroma_intra_mbaff( uint16_t *pix, intptr_t stride, int alpha, int beta )
@@ -1775,7 +1775,7 @@ cglobal deblock_h_chroma_intra_mbaff, 4,6,8
     dec         r4
     jg .loop
 %endif
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void deblock_h_chroma_mbaff( uint16_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
@@ -1803,7 +1803,7 @@ cglobal deblock_h_chroma_mbaff, 5,7,8
     dec         r5
     jg .loop
 %endif
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void deblock_h_chroma_422_intra( uint16_t *pix, intptr_t stride, int alpha, int beta )
@@ -1821,7 +1821,7 @@ cglobal deblock_h_chroma_422_intra, 4,6,8
     lea         r0, [r0+r1*(mmsize/4)]
     dec         r4
     jg .loop
-    REP_RET
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void deblock_h_chroma_422( uint16_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
@@ -1852,7 +1852,7 @@ cglobal deblock_h_chroma_422, 5,7,8
 %endif
     dec         r5
     jg .loop
-    REP_RET
+    RET
 %endmacro ; DEBLOCK_CHROMA
 
 %if ARCH_X86_64 == 0
@@ -2020,7 +2020,7 @@ cglobal deblock_h_chroma_422, 5,8,8
     add   r4, mmsize/8
     dec   cntr
     jg .loop
-    REP_RET
+    RET
 %endmacro
 
 INIT_MMX mmx2
@@ -2101,7 +2101,7 @@ cglobal deblock_h_chroma_422_intra, 4,7,8
     lea   t5, [t5+r1*(mmsize/2)]
     dec  r6d
     jg .loop
-    REP_RET
+    RET
 %endmacro ; DEBLOCK_CHROMA_INTRA
 
 INIT_XMM sse2
