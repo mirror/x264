@@ -528,6 +528,7 @@ esac
 
 LDFLAGS="$LDFLAGS $libm"
 
+aligned_stack=1
 case $host_cpu in
     i*86)
         ARCH="X86"
@@ -548,6 +549,7 @@ case $host_cpu in
                 # < 11 is completely incapable of keeping a mod16 stack
                 if cpp_check "" "" "__INTEL_COMPILER < 1100" ; then
                     define BROKEN_STACK_ALIGNMENT
+                    aligned_stack=0
                 # 11 <= x < 12 is capable of keeping a mod16 stack, but defaults to not doing so.
                 elif cpp_check "" "" "__INTEL_COMPILER < 1200" ; then
                     CFLAGS="$CFLAGS -falign-stack=assume-16-byte"
@@ -555,7 +557,7 @@ case $host_cpu in
                 # >= 12 defaults to a mod16 stack
             fi
             # icl on windows has no mod16 stack support
-            [ $SYS = WINDOWS ] && define BROKEN_STACK_ALIGNMENT
+            [ $SYS = WINDOWS ] && define BROKEN_STACK_ALIGNMENT && aligned_stack=0
         fi
         if [ "$SYS" = MACOSX ]; then
             ASFLAGS="$ASFLAGS -f macho -DPREFIX"
@@ -648,6 +650,7 @@ case $host_cpu in
         ARCH="$(echo $host_cpu | tr a-z A-Z)"
         ;;
 esac
+ASFLAGS="$ASFLAGS -DHAVE_ALIGNED_STACK=${aligned_stack}"
 
 if [ $SYS = WINDOWS ]; then
     if ! rc_check "0 RCDATA {0}" ; then
