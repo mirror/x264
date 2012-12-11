@@ -171,7 +171,7 @@ cglobal deblock_v_luma, 5,5,8
     %define bm  [rsp+mmsize*4]
     SUB        rsp, pad
     add         r1, r1
-    LOAD_AB     m4, m5, r2, r3
+    LOAD_AB     m4, m5, r2d, r3d
     mov         r3, 32/mmsize
     mov         r2, r0
     sub         r0, r1
@@ -227,7 +227,7 @@ cglobal deblock_h_luma, 5,6,8
     %define bm  [rsp+mmsize*6]
     SUB        rsp, pad
     add         r1, r1
-    LOAD_AB     m4, m5, r2, r3
+    LOAD_AB     m4, m5, r2d, r3d
     mov         r3, r1
     mova        am, m4
     add         r3, r1
@@ -355,7 +355,7 @@ cglobal deblock_v_luma, 5,5,15
     %define mask1 m10
     %define mask2 m11
     add         r1, r1
-    LOAD_AB    m12, m13, r2, r3
+    LOAD_AB    m12, m13, r2d, r3d
     mov         r2, r0
     sub         r0, r1
     sub         r0, r1
@@ -382,7 +382,7 @@ cglobal deblock_v_luma, 5,5,15
 
 cglobal deblock_h_luma, 5,7,15
     add         r1, r1
-    LOAD_AB    m12, m13, r2, r3
+    LOAD_AB    m12, m13, r2d, r3d
     mov         r2, r1
     add         r2, r1
     add         r2, r1
@@ -1216,7 +1216,7 @@ cglobal deblock_%1_luma, 5,5,8,2*%2
     mova    m1, [r4+2*r1] ; p0
     mova    m2, [r0]      ; q0
     mova    m3, [r0+r1]   ; q1
-    LOAD_MASK r2, r3
+    LOAD_MASK r2d, r3d
 
     mov     r3, r4mp
     movd    m4, [r3] ; tc0
@@ -1660,7 +1660,7 @@ DEBLOCK_LUMA_INTRA v8
 
 %macro DEBLOCK_CHROMA 0
 cglobal deblock_inter_body
-    LOAD_AB     m4, m5, r2, r3
+    LOAD_AB     m4, m5, r2d, r3d
     LOAD_MASK   m0, m1, m2, m3, m4, m5, m7, m6, m4
     pxor        m4, m4
     LOAD_TC     m6, r4
@@ -1710,7 +1710,7 @@ cglobal deblock_h_chroma, 5,7,8
 
 
 cglobal deblock_intra_body
-    LOAD_AB     m4, m5, r2, r3
+    LOAD_AB     m4, m5, r2d, r3d
     LOAD_MASK   m0, m1, m2, m3, m4, m5, m7, m6, m4
     CHROMA_DEBLOCK_P0_Q0_INTRA m1, m2, m0, m3, m7, m5, m6
     ret
@@ -1721,7 +1721,7 @@ cglobal deblock_intra_body
 cglobal deblock_v_chroma_intra, 4,6,8
     add         r1, r1
     mov         r5, 32/mmsize
-    movd        m5, r3
+    movd        m5, r3d
     mov         r4, r0
     sub         r0, r1
     sub         r0, r1
@@ -1766,7 +1766,7 @@ cglobal deblock_h_chroma_intra_mbaff, 4,6,8
     lea         r5, [r1*3]
 %endif
     CHROMA_H_LOAD r5
-    LOAD_AB     m4, m5, r2, r3
+    LOAD_AB     m4, m5, r2d, r3d
     LOAD_MASK   m0, m1, m2, m3, m4, m5, m7, m6, m4
     CHROMA_DEBLOCK_P0_Q0_INTRA m1, m2, m0, m3, m7, m5, m6
     CHROMA_H_STORE r5
@@ -1788,7 +1788,7 @@ cglobal deblock_h_chroma_mbaff, 5,7,8
 .loop:
 %endif
     CHROMA_H_LOAD r6
-    LOAD_AB     m4, m5, r2, r3
+    LOAD_AB     m4, m5, r2d, r3d
     LOAD_MASK   m0, m1, m2, m3, m4, m5, m7, m6, m4
     movd      m6, [r4]
     punpcklbw m6, m6
@@ -1832,7 +1832,7 @@ cglobal deblock_h_chroma_422, 5,7,8
     lea         r6, [r1*3]
 .loop:
     CHROMA_H_LOAD r6
-    LOAD_AB     m4, m5, r2m, r3
+    LOAD_AB     m4, m5, r2m, r3d
     LOAD_MASK   m0, m1, m2, m3, m4, m5, m7, m6, m4
     pxor        m4, m4
     movd        m6, [r4-1]

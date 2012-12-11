@@ -1274,7 +1274,7 @@ cglobal zigzag_scan_8x8_field, 2,3,8
     mova       m1, [r1+ 4*SIZEOF_DCTCOEF]       ; 07 06 05 04
     mova       m2, [r1+ 8*SIZEOF_DCTCOEF]       ; 11 10 09 08
     pshuf%1    m3, m0, q3333                    ; 03 03 03 03
-    movd       r2, m2                           ; 09 08
+    movd      r2d, m2                           ; 09 08
     pshuf%1    m2, m2, q0321                    ; 08 11 10 09
     punpckl%2  m3, m1                           ; 05 03 04 03
     pinsr%1    m0, r2d, 3                       ; 08 02 01 00
