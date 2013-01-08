@@ -1,7 +1,7 @@
 /*****************************************************************************
  * macroblock.c: macroblock common functions
  *****************************************************************************
- * Copyright (C) 2003-2012 x264 project
+ * Copyright (C) 2003-2013 x264 project
  *
  * Authors: Fiona Glaser <fiona@x264.com>
  *          Laurent Aimar <fenrir@via.ecp.fr>
