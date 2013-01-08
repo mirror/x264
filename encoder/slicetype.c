@@ -1651,7 +1651,10 @@ void x264_slicetype_decide( x264_t *h )
             if( warn && h->param.b_open_gop )
                 warn &= frm->i_type != X264_TYPE_I;
             if( warn )
+            {
                 x264_log( h, X264_LOG_WARNING, "specified frame type (%d) at %d is not compatible with keyframe interval\n", frm->i_type, frm->i_frame );
+                frm->i_type = h->param.b_open_gop && h->lookahead->i_last_keyframe >= 0 ? X264_TYPE_I : X264_TYPE_IDR;
+            }
         }
         if( frm->i_type == X264_TYPE_I && frm->i_frame - h->lookahead->i_last_keyframe >= h->param.i_keyint_min )
         {
