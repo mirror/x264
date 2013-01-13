@@ -35,7 +35,7 @@ cextern cabac_renorm_shift
 
 ; t3 must be ecx, since it's used for shift.
 %if WIN64
-    DECLARE_REG_TMP 3,1,2,0,6,5,4,2
+    DECLARE_REG_TMP 3,1,2,0,5,6,4,4
     %define pointer resq
 %elif ARCH_X86_64
     DECLARE_REG_TMP 0,1,2,3,4,5,6,6
@@ -58,24 +58,24 @@ struc cb
     .state: resb 1024
 endstruc
 
-%macro LOAD_GLOBAL 4
+%macro LOAD_GLOBAL 3-5 0 ; dst, base, off1, off2, tmp
 %ifdef PIC
-    ; this would be faster if the arrays were declared in asm, so that I didn't have to duplicate the lea
-    lea   r7, [%2]
-    %ifnidn %3, 0
-    add   r7, %3
+    %ifidn %4, 0
+        movzx %1, byte [%2+%3+r7-$$]
+    %else
+        lea   %5, [r7+%4]
+        movzx %1, byte [%2+%3+%5-$$]
     %endif
-    movzx %1, byte [r7+%4]
 %else
     movzx %1, byte [%2+%3+%4]
 %endif
 %endmacro
 
-cglobal cabac_encode_decision_asm, 0,7
-    movifnidn t0,  r0mp
+cglobal cabac_encode_decision_asm, 1,7
     movifnidn t1d, r1m
-    mov   t5d, [t0+cb.range]
-    movzx t6d, byte [t0+cb.state+t1]
+    mov   t5d, [r0+cb.range]
+    movzx t6d, byte [r0+cb.state+t1]
+    movifnidn t0,  r0 ; WIN64
     mov   t4d, ~1
     mov   t3d, t5d
     and   t4d, t6d
@@ -84,8 +84,11 @@ cglobal cabac_encode_decision_asm, 0,7
 %if WIN64
     PUSH r7
 %endif
-    LOAD_GLOBAL t5d, cabac_range_lps-4, t5, t4*2
-    LOAD_GLOBAL t4d, cabac_transition, t2, t6*2
+%ifdef PIC
+    lea    r7, [$$]
+%endif
+    LOAD_GLOBAL t5d, cabac_range_lps-4, t5, t4*2, t4
+    LOAD_GLOBAL t4d, cabac_transition, t2, t6*2, t4
     and   t6d, 1
     sub   t3d, t5d
     cmp   t6d, t2d
@@ -97,7 +100,7 @@ cglobal cabac_encode_decision_asm, 0,7
 ;cabac_encode_renorm
     mov   t4d, t3d
     shr   t3d, 3
-    LOAD_GLOBAL t3d, cabac_renorm_shift, 0, t3
+    LOAD_GLOBAL t3d, cabac_renorm_shift, t3
 %if WIN64
     POP r7
 %endif
@@ -111,15 +114,14 @@ cglobal cabac_encode_decision_asm, 0,7
     mov   [t0+cb.queue], t3d
     RET
 
-cglobal cabac_encode_bypass_asm, 0,3
-    movifnidn  t0, r0mp
-    movifnidn t3d, r1m
-    mov       t7d, [t0+cb.low]
-    and       t3d, [t0+cb.range]
-    lea       t7d, [t7*2+t3]
-    mov       t3d, [t0+cb.queue]
+cglobal cabac_encode_bypass_asm, 2,3
+    mov       t7d, [r0+cb.low]
+    and       r1d, [r0+cb.range]
+    lea       t7d, [t7*2+r1]
+    movifnidn  t0, r0 ; WIN64
+    mov       t3d, [r0+cb.queue]
     inc       t3d
-%if UNIX64 ; .putbyte compiles to nothing but a jmp
+%if ARCH_X86_64 ; .putbyte compiles to nothing but a jmp
     jge cabac_putbyte
 %else
     jge .putbyte
@@ -127,28 +129,30 @@ cglobal cabac_encode_bypass_asm, 0,3
     mov   [t0+cb.low], t7d
     mov   [t0+cb.queue], t3d
     RET
+%if ARCH_X86_64 == 0
 .putbyte:
     PROLOGUE 0,7
     movifnidn t6d, t7d
     jmp cabac_putbyte
+%endif
 
-cglobal cabac_encode_terminal_asm, 0,3
-    movifnidn  t0, r0mp
-    sub  dword [t0+cb.range], 2
+cglobal cabac_encode_terminal_asm, 1,3
+    sub  dword [r0+cb.range], 2
 ; shortcut: the renormalization shift in terminal
 ; can only be 0 or 1 and is zero over 99% of the time.
-    test dword [t0+cb.range], 0x100
+    test dword [r0+cb.range], 0x100
     je .renorm
     RET
 .renorm:
-    shl  dword [t0+cb.low], 1
-    shl  dword [t0+cb.range], 1
-    inc  dword [t0+cb.queue]
+    shl  dword [r0+cb.low], 1
+    shl  dword [r0+cb.range], 1
+    inc  dword [r0+cb.queue]
     jge .putbyte
     RET
 .putbyte:
     PROLOGUE 0,7
-    mov t3d, [t0+cb.queue]
+    movifnidn t0, r0 ; WIN64
+    mov t3d, [r0+cb.queue]
     mov t6d, [t0+cb.low]
 
 cabac_putbyte:
