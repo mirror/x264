@@ -834,7 +834,13 @@ x264_t *x264_encoder_open( x264_param_t * );
  *      due to delay, this may not be the next frame passed to encoder_encode.
  *      if the change should apply to some particular frame, use x264_picture_t->param instead.
  *      returns 0 on success, negative on parameter validation error.
- *      not all parameters can be changed; see the actual function for a detailed breakdown. */
+ *      not all parameters can be changed; see the actual function for a detailed breakdown.
+ *
+ *      since not all parameters can be changed, moving from preset to preset may not always
+ *      fully copy all relevant parameters, but should still work usably in practice. however,
+ *      more so than for other presets, many of the speed shortcuts used in ultrafast cannot be
+ *      switched out of; using reconfig to switch between ultrafast and other presets is not
+ *      recommended without a more fine-grained breakdown of parameters to take this into account. */
 int     x264_encoder_reconfig( x264_t *, x264_param_t * );
 /* x264_encoder_parameters:
  *      copies the current internal set of parameters to the pointer provided
