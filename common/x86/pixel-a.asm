@@ -136,6 +136,7 @@ cextern pw_ppppmmmm
 cextern pw_ppmmppmm
 cextern pw_pmpmpmpm
 cextern pw_pmmpzzzz
+cextern pd_1
 cextern hsub_mul
 
 ;=============================================================================
@@ -1718,6 +1719,157 @@ cglobal pixel_sa8d_16x16, 4,7
     RET
 %endif ; !ARCH_X86_64
 %endmacro ; SA8D
+
+;=============================================================================
+; SA8D_SATD
+;=============================================================================
+
+; %1-%4: sa8d output regs (m0,m1,m2,m3,m4,m5,m8,m9)
+; m10: satd result
+; m6, m11-15: tmp regs
+%macro SA8D_SATD_8x4 4
+%if HIGH_BIT_DEPTH == 0 && cpuflag(ssse3)
+    LOAD_SUMSUB_8x4P_SSSE3 %1, %2, %3, %4, 6, 11, 7, r0, r2, 1
+    HADAMARD4_V %1, %2, %3, %4, 6
+
+    pabsw    m12, m%1 ; doing the abs first is a slight advantage
+    pabsw    m14, m%3
+    pabsw    m13, m%2
+    pabsw    m15, m%4
+    HADAMARD 1, max, 12, 14, 6, 11
+    paddw    m10, m12
+    HADAMARD 1, max, 13, 15, 6, 11
+    paddw    m10, m13
+%else
+    LOAD_DIFF_8x4P %1, %2, %3, %4, 6, 11, 7, r0, r2, 1
+    HADAMARD   0, sumsub, %1, %2, 6
+    HADAMARD   0, sumsub, %3, %4, 6
+    SBUTTERFLY        wd, %1, %2, 6
+    SBUTTERFLY        wd, %3, %4, 6
+    HADAMARD2_2D  %1, %3, %2, %4, 6, dq
+
+    mova   m12, m%1
+    mova   m13, m%2
+    mova   m14, m%3
+    mova   m15, m%4
+    HADAMARD 0, sumsub, %1, %2, 6
+    HADAMARD 0, sumsub, %3, %4, 6
+    SBUTTERFLY     qdq, 12, 13, 6
+    HADAMARD   0, amax, 12, 13, 6
+    SBUTTERFLY     qdq, 14, 15, 6
+    paddw m10, m12
+    HADAMARD   0, amax, 14, 15, 6
+    paddw m10, m14
+%endif
+%endmacro ; SA8D_SATD_8x4
+
+; %1: add spilled regs?
+; %2: spill regs?
+%macro SA8D_SATD_ACCUM 2
+%if HIGH_BIT_DEPTH
+    pmaddwd m10, [pw_1]
+    HADDUWD  m0, m1
+%if %1
+    paddd   m10, temp1
+    paddd    m0, temp0
+%endif
+%if %2
+    mova  temp1, m10
+    pxor    m10, m10
+%endif
+%elif %1
+    paddw    m0, temp0
+%endif
+%if %2
+    mova  temp0, m0
+%endif
+%endmacro
+
+%macro SA8D_SATD 0
+cglobal pixel_sa8d_satd_8x8_internal
+    SA8D_SATD_8x4 0, 1, 2, 3
+    SA8D_SATD_8x4 4, 5, 8, 9
+
+    ; complete sa8d
+%if HIGH_BIT_DEPTH == 0 && cpuflag(ssse3)
+    SUMSUB_BADC w, 0, 4, 1, 5, 12
+    HADAMARD 2, sumsub, 0, 4, 12, 11
+    HADAMARD 2, sumsub, 1, 5, 12, 11
+    SUMSUB_BADC w, 2, 8, 3, 9, 12
+    HADAMARD 2, sumsub, 2, 8, 12, 11
+    HADAMARD 2, sumsub, 3, 9, 12, 11
+    HADAMARD 1, amax, 0, 4, 12, 11
+    HADAMARD 1, amax, 1, 5, 12, 4
+    HADAMARD 1, amax, 2, 8, 12, 4
+    HADAMARD 1, amax, 3, 9, 12, 4
+%else ; sse2
+    HADAMARD2_2D 0, 4, 2, 8, 6, qdq, amax
+    HADAMARD2_2D 1, 5, 3, 9, 6, qdq, amax
+%endif
+
+    ; create sa8d sub results
+    paddw    m1, m2
+    paddw    m0, m3
+    paddw    m0, m1
+
+    SAVE_MM_PERMUTATION
+    ret
+
+;-------------------------------------------------------------------------------
+; uint64_t pixel_sa8d_satd_16x16( pixel *, intptr_t, pixel *, intptr_t )
+;-------------------------------------------------------------------------------
+cglobal pixel_sa8d_satd_16x16, 4,8,16,SIZEOF_PIXEL*mmsize
+    %define temp0 [rsp+0*mmsize]
+    %define temp1 [rsp+1*mmsize]
+    FIX_STRIDES r1, r3
+%if HIGH_BIT_DEPTH == 0 && cpuflag(ssse3)
+    mova     m7, [hmul_8p]
+%endif
+    lea      r4, [3*r1]
+    lea      r5, [3*r3]
+    lea      r6, [r2+8*SIZEOF_PIXEL]
+    lea      r7, [r0+8*SIZEOF_PIXEL]
+    pxor    m10, m10
+
+    call pixel_sa8d_satd_8x8_internal
+    SA8D_SATD_ACCUM 0, 1
+    call pixel_sa8d_satd_8x8_internal
+    SA8D_SATD_ACCUM 1, 1
+
+    mov      r0, r7
+    mov      r2, r6
+
+    call pixel_sa8d_satd_8x8_internal
+    SA8D_SATD_ACCUM 1, 1
+    call pixel_sa8d_satd_8x8_internal
+    SA8D_SATD_ACCUM 1, 0
+
+; xop already has fast horizontal sums
+%if cpuflag(sse4) && notcpuflag(xop) && HIGH_BIT_DEPTH==0
+    pmaddwd m10, [pw_1]
+    HADDUWD  m0, m1
+    phaddd   m0, m10       ;  sa8d1  sa8d2  satd1  satd2
+    pshufd   m1, m0, q2301 ;  sa8d2  sa8d1  satd2  satd1
+    paddd    m0, m1        ;   sa8d   sa8d   satd   satd
+    movd    r0d, m0
+    pextrd  eax, m0, 2
+%else
+%if HIGH_BIT_DEPTH
+    HADDD    m0, m1
+    HADDD   m10, m2
+%else
+    HADDUW   m0, m1
+    HADDW   m10, m2
+%endif
+    movd    r0d, m0
+    movd    eax, m10
+%endif
+    add     r0d, 1
+    shl     rax, 32
+    shr     r0d, 1
+    or      rax, r0
+    RET
+%endmacro ; SA8D_SATD
 
 ;=============================================================================
 ; INTRA SATD
@@ -3817,6 +3969,9 @@ SA8D
 INIT_XMM sse2
 SA8D
 SATDS_SSE2
+%if ARCH_X86_64
+SA8D_SATD
+%endif
 %if HIGH_BIT_DEPTH == 0
 INTRA_SA8D_SSE2
 %endif
@@ -3836,6 +3991,9 @@ INIT_XMM ssse3
 SATDS_SSE2
 SA8D
 HADAMARD_AC_SSE2
+%if ARCH_X86_64
+SA8D_SATD
+%endif
 %if HIGH_BIT_DEPTH == 0
 INTRA_X9
 INTRA8_X9
@@ -3854,6 +4012,9 @@ INIT_XMM sse4
 SATDS_SSE2
 SA8D
 HADAMARD_AC_SSE2
+%if ARCH_X86_64
+SA8D_SATD
+%endif
 %if HIGH_BIT_DEPTH == 0
 INTRA_X9
 INTRA8_X9
@@ -3862,6 +4023,9 @@ INTRA8_X9
 INIT_XMM avx
 SATDS_SSE2
 SA8D
+%if ARCH_X86_64
+SA8D_SATD
+%endif
 %if HIGH_BIT_DEPTH == 0
 INTRA_X9
 INTRA8_X9
@@ -3872,6 +4036,9 @@ HADAMARD_AC_SSE2
 INIT_XMM xop
 SATDS_SSE2
 SA8D
+%if ARCH_X86_64
+SA8D_SATD
+%endif
 %if HIGH_BIT_DEPTH == 0
 INTRA_X9
 ; no xop INTRA8_X9. it's slower than avx on bulldozer. dunno why.

@@ -90,6 +90,7 @@ typedef struct
     x264_pixel_cmp_t sad_aligned[8]; /* Aligned SAD for mbcmp */
     int (*vsad)( pixel *, intptr_t, int );
     int (*asd8)( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
+    uint64_t (*sa8d_satd[1])( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
 
     uint64_t (*var[4])( pixel *pix, intptr_t stride );
     int (*var2[4])( pixel *pix1, intptr_t stride1,

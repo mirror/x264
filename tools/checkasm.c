@@ -338,6 +338,43 @@ static int check_pixel( int cpu_ref, int cpu_new )
     TEST_PIXEL( satd, 0 );
     TEST_PIXEL( sa8d, 1 );
 
+    ok = 1, used_asm = 0;
+    if( pixel_asm.sa8d_satd[PIXEL_16x16] != pixel_ref.sa8d_satd[PIXEL_16x16] )
+    {
+        set_func_name( "sa8d_satd_%s", pixel_names[PIXEL_16x16] );
+        used_asm = 1;
+        for( int j = 0; j < 64; j++ )
+        {
+            uint32_t cost8_c = pixel_c.sa8d[PIXEL_16x16]( pbuf1, 16, pbuf2, 64 );
+            uint32_t cost4_c = pixel_c.satd[PIXEL_16x16]( pbuf1, 16, pbuf2, 64 );
+            uint64_t res_a = call_a( pixel_asm.sa8d_satd[PIXEL_16x16], pbuf1, (intptr_t)16, pbuf2, (intptr_t)64 );
+            uint32_t cost8_a = res_a;
+            uint32_t cost4_a = res_a >> 32;
+            if( cost8_a != cost8_c || cost4_a != cost4_c )
+            {
+                ok = 0;
+                fprintf( stderr, "sa8d_satd [%d]: (%d,%d) != (%d,%d) [FAILED]\n", PIXEL_16x16,
+                         cost8_c, cost4_c, cost8_a, cost4_a );
+                break;
+            }
+        }
+        for( int j = 0; j < 0x1000 && ok; j += 256 ) \
+        {
+            uint32_t cost8_c = pixel_c.sa8d[PIXEL_16x16]( pbuf3+j, 16, pbuf4+j, 16 );
+            uint32_t cost4_c = pixel_c.satd[PIXEL_16x16]( pbuf3+j, 16, pbuf4+j, 16 );
+            uint64_t res_a = pixel_asm.sa8d_satd[PIXEL_16x16]( pbuf3+j, 16, pbuf4+j, 16 );
+            uint32_t cost8_a = res_a;
+            uint32_t cost4_a = res_a >> 32;
+            if( cost8_a != cost8_c || cost4_a != cost4_c )
+            {
+                ok = 0;
+                fprintf( stderr, "sa8d_satd [%d]: overflow (%d,%d) != (%d,%d) [FAILED]\n", PIXEL_16x16,
+                         cost8_c, cost4_c, cost8_a, cost4_a );
+            }
+        }
+    }
+    report( "pixel sa8d_satd :" );
+
 #define TEST_PIXEL_X( N ) \
     ok = 1; used_asm = 0; \
     for( int i = 0; i < 7; i++ ) \

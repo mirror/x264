@@ -294,16 +294,24 @@
 %endif
 %endmacro
 
+%macro HADDUWD 2
+%if cpuflag(xop)
+    vphadduwd %1, %1
+%else
+    psrld %2, %1, 16
+    pslld %1, 16
+    psrld %1, 16
+    paddd %1, %2
+%endif
+%endmacro
+
 %macro HADDUW 2
 %if cpuflag(xop) && mmsize == 16
     vphadduwq %1, %1
     movhlps   %2, %1
     paddd     %1, %2
 %else
-    psrld %2, %1, 16
-    pslld %1, 16
-    psrld %1, 16
-    paddd %1, %2
+    HADDUWD %1, %2
     HADDD %1, %2
 %endif
 %endmacro

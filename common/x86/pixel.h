@@ -162,6 +162,11 @@ int  x264_pixel_vsad_xop  ( pixel *src, intptr_t stride, int height );
 int x264_pixel_asd8_sse2 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
 int x264_pixel_asd8_ssse3( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
 int x264_pixel_asd8_xop  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
+uint64_t x264_pixel_sa8d_satd_16x16_sse2 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_ssse3( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_sse4 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_avx  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_xop  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
 
 #define DECL_ADS( size, suffix ) \
 int x264_pixel_ads##size##_##suffix( int enc_dc[size], uint16_t *sums, int delta,\

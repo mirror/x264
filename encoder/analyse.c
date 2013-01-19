@@ -2836,12 +2836,28 @@ static inline void x264_mb_analyse_transform( x264_t *h )
 
         int plane_count = CHROMA444 && h->mb.b_chroma_me ? 3 : 1;
         int i_cost8 = 0, i_cost4 = 0;
-        for( int p = 0; p < plane_count; p++ )
+        /* Not all platforms have a merged SATD function */
+        if( h->pixf.sa8d_satd[PIXEL_16x16] )
         {
-            i_cost8 += h->pixf.sa8d[PIXEL_16x16]( h->mb.pic.p_fenc[p], FENC_STRIDE,
-                                                  h->mb.pic.p_fdec[p], FDEC_STRIDE );
-            i_cost4 += h->pixf.satd[PIXEL_16x16]( h->mb.pic.p_fenc[p], FENC_STRIDE,
-                                                  h->mb.pic.p_fdec[p], FDEC_STRIDE );
+            uint64_t cost = 0;
+            for( int p = 0; p < plane_count; p++ )
+            {
+                cost += h->pixf.sa8d_satd[PIXEL_16x16]( h->mb.pic.p_fenc[p], FENC_STRIDE,
+                                                        h->mb.pic.p_fdec[p], FDEC_STRIDE );
+
+            }
+            i_cost8 = (uint32_t)cost;
+            i_cost4 = (uint32_t)(cost >> 32);
+        }
+        else
+        {
+            for( int p = 0; p < plane_count; p++ )
+            {
+                i_cost8 += h->pixf.sa8d[PIXEL_16x16]( h->mb.pic.p_fenc[p], FENC_STRIDE,
+                                                      h->mb.pic.p_fdec[p], FDEC_STRIDE );
+                i_cost4 += h->pixf.satd[PIXEL_16x16]( h->mb.pic.p_fenc[p], FENC_STRIDE,
+                                                      h->mb.pic.p_fdec[p], FDEC_STRIDE );
+            }
         }
 
         h->mb.b_transform_8x8 = i_cost8 < i_cost4;
