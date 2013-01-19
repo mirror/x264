@@ -291,17 +291,6 @@ static ALWAYS_INLINE uint16_t x264_cabac_mvd_sum( uint8_t *mvdleft, uint8_t *mvd
     return amvd0 + (amvd1<<8);
 }
 
-static void ALWAYS_INLINE x264_predictor_roundclip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int mv_x_min, int mv_x_max, int mv_y_min, int mv_y_max )
-{
-    for( int i = 0; i < i_mvc; i++ )
-    {
-        int mx = (mvc[i][0] + 2) >> 2;
-        int my = (mvc[i][1] + 2) >> 2;
-        dst[i][0] = x264_clip3( mx, mv_x_min, mv_x_max );
-        dst[i][1] = x264_clip3( my, mv_y_min, mv_y_max );
-    }
-}
-
 extern const uint8_t x264_exp2_lut[64];
 extern const float x264_log2_lut[128];
 extern const float x264_log2_lz_lut[32];
@@ -671,8 +660,7 @@ struct x264_t
         int     mv_miny_spel_row[3];
         int     mv_maxy_spel_row[3];
         /* Fullpel MV range for motion search */
-        int     mv_min_fpel[2];
-        int     mv_max_fpel[2];
+        ALIGNED_8( int16_t mv_limit_fpel[2][2] ); /* min_x, min_y, max_x, max_y */
         int     mv_miny_fpel_row[3];
         int     mv_maxy_fpel_row[3];
 
@@ -951,6 +939,39 @@ struct x264_t
 
 // included at the end because it needs x264_t
 #include "macroblock.h"
+
+static int ALWAYS_INLINE x264_predictor_roundclip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
+{
+    int cnt = 0;
+    for( int i = 0; i < i_mvc; i++ )
+    {
+        int mx = (mvc[i][0] + 2) >> 2;
+        int my = (mvc[i][1] + 2) >> 2;
+        uint32_t mv = pack16to32_mask(mx, my);
+        if( !mv || mv == pmv ) continue;
+        dst[cnt][0] = x264_clip3( mx, mv_limit[0][0], mv_limit[1][0] );
+        dst[cnt][1] = x264_clip3( my, mv_limit[0][1], mv_limit[1][1] );
+        cnt++;
+    }
+    return cnt;
+}
+
+static int ALWAYS_INLINE x264_predictor_clip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
+{
+    int cnt = 0;
+    int qpel_limit[4] = {mv_limit[0][0] << 2, mv_limit[0][1] << 2, mv_limit[1][0] << 2, mv_limit[1][1] << 2};
+    for( int i = 0; i < i_mvc; i++ )
+    {
+        uint32_t mv = M32( mvc[i] );
+        int mx = mvc[i][0];
+        int my = mvc[i][1];
+        if( !mv || mv == pmv ) continue;
+        dst[cnt][0] = x264_clip3( mx, qpel_limit[0], qpel_limit[2] );
+        dst[cnt][1] = x264_clip3( my, qpel_limit[1], qpel_limit[3] );
+        cnt++;
+    }
+    return cnt;
+}
 
 #if ARCH_X86 || ARCH_X86_64
 #include "x86/util.h"
