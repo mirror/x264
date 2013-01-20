@@ -564,6 +564,7 @@ case $host_cpu in
         elif [ "$SYS" = WINDOWS -o "$SYS" = CYGWIN ]; then
             ASFLAGS="$ASFLAGS -f win32 -DPREFIX"
             LDFLAGS="$LDFLAGS -Wl,--large-address-aware"
+            [ $compiler = GNU ] && LDFLAGS="$LDFLAGS -Wl,--nxcompat -Wl,--dynamicbase"
             [ $compiler = GNU ] && RCFLAGS="--target=pe-i386 $RCFLAGS"
         else
             ASFLAGS="$ASFLAGS -f elf"
@@ -583,6 +584,7 @@ case $host_cpu in
             ASFLAGS="$ASFLAGS -f win32 -m amd64"
             # only the GNU toolchain is inconsistent in prefixing function names with _
             [ $compiler = GNU ] && cc_check "" "-S" && grep -q "_main:" conftest && ASFLAGS="$ASFLAGS -DPREFIX"
+            [ $compiler = GNU ] && LDFLAGS="$LDFLAGS -Wl,--nxcompat -Wl,--dynamicbase"
             [ $compiler = GNU ] && RCFLAGS="--target=pe-x86-64 $RCFLAGS"
         else
             ASFLAGS="$ASFLAGS -f elf -m amd64"
