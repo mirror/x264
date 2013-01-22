@@ -219,8 +219,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
     if( h->mb.i_subpel_refine >= 3 )
     {
         pmv = pack16to32_mask(bmx,bmy);
-        if( i_mvc )
-            COST_MV_HPEL( bmx, bmy );
+        COST_MV_HPEL( bmx, bmy );
         for( int i = 0; i < i_mvc; i++ )
         {
             if( M32( mvc[i] ) && (pmv != M32( mvc[i] )) )
@@ -270,8 +269,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
         }
     }
 
-    if( pmv )
-        COST_MV( 0, 0 );
+    COST_MV( 0, 0 );
 
     switch( h->mb.i_me_method )
     {
