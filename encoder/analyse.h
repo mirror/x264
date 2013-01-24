@@ -34,7 +34,7 @@ void x264_analyse_weight_frame( x264_t *h, int end );
 void x264_macroblock_analyse( x264_t *h );
 void x264_slicetype_decide( x264_t *h );
 
-void x264_slicetype_analyse( x264_t *h, int keyframe );
+void x264_slicetype_analyse( x264_t *h, int intra_minigop );
 
 int x264_weighted_reference_duplicate( x264_t *h, int i_ref, const x264_weight_t *w );
 

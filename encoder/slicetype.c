@@ -1393,7 +1393,7 @@ static int scenecut( x264_t *h, x264_mb_analysis_t *a, x264_frame_t **frames, in
     return scenecut_internal( h, a, frames, p0, p1, real_scenecut );
 }
 
-void x264_slicetype_analyse( x264_t *h, int keyframe )
+void x264_slicetype_analyse( x264_t *h, int intra_minigop )
 {
     x264_mb_analysis_t a;
     x264_frame_t *frames[X264_LOOKAHEAD_MAX+3] = { NULL, };
@@ -1402,8 +1402,13 @@ void x264_slicetype_analyse( x264_t *h, int keyframe )
     int cost1p0, cost2p0, cost1b1, cost2p1;
     int i_max_search = X264_MIN( h->lookahead->next.i_size, X264_LOOKAHEAD_MAX );
     int vbv_lookahead = h->param.rc.i_vbv_buffer_size && h->param.rc.i_lookahead;
+    /* For determinism we should limit the search to the number of frames lookahead has for sure
+     * in h->lookahead->next.list buffer, except at the end of stream.
+     * For normal calls with (intra_minigop == 0) that is h->lookahead->i_slicetype_length + 1 frames.
+     * And for I-frame calls (intra_minigop != 0) we already removed intra_minigop frames from there. */
     if( h->param.b_deterministic )
-        i_max_search = X264_MIN( i_max_search, h->lookahead->i_slicetype_length + !keyframe );
+        i_max_search = X264_MIN( i_max_search, h->lookahead->i_slicetype_length + 1 - intra_minigop );
+    int keyframe = !!intra_minigop;
 
     assert( h->frames.b_have_lowres );
 
