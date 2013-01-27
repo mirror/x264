@@ -176,6 +176,7 @@ static void print_bench(void)
                     /* print sse2slow only if there's also a sse2fast version of the same func */
                     b->cpu&X264_CPU_SSE2_IS_SLOW && j<MAX_CPUS-1 && b[1].cpu&X264_CPU_SSE2_IS_FAST && !(b[1].cpu&X264_CPU_SSE3) ? "sse2slow" :
                     b->cpu&X264_CPU_SSE2 ? "sse2" :
+                    b->cpu&X264_CPU_SSE ? "sse" :
                     b->cpu&X264_CPU_MMX ? "mmx" :
                     b->cpu&X264_CPU_ALTIVEC ? "altivec" :
                     b->cpu&X264_CPU_NEON ? "neon" :
@@ -2394,9 +2395,11 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_CTZ, "MMX SlowCTZ" );
         cpu1 &= ~X264_CPU_SLOW_CTZ;
     }
+    if( x264_cpu_detect() & X264_CPU_SSE )
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE, "SSE" );
     if( x264_cpu_detect() & X264_CPU_SSE2 )
     {
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE | X264_CPU_SSE2 | X264_CPU_SSE2_IS_SLOW, "SSE2Slow" );
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE2 | X264_CPU_SSE2_IS_SLOW, "SSE2Slow" );
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE2_IS_FAST, "SSE2Fast" );
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_CACHELINE_64, "SSE2Fast Cache64" );
         cpu1 &= ~X264_CPU_CACHELINE_64;

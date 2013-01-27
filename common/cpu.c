@@ -51,7 +51,7 @@ const x264_cpu_name_t x264_cpu_names[] =
 //  {"MMX",         X264_CPU_MMX}, // we don't support asm on mmx1 cpus anymore
     {"MMX2",        X264_CPU_MMX|X264_CPU_MMX2},
     {"MMXEXT",      X264_CPU_MMX|X264_CPU_MMX2},
-//  {"SSE",         X264_CPU_MMX|X264_CPU_MMX2|X264_CPU_SSE}, // there are no sse1 functions in x264
+    {"SSE",         X264_CPU_MMX|X264_CPU_MMX2|X264_CPU_SSE},
 #define SSE2 X264_CPU_MMX|X264_CPU_MMX2|X264_CPU_SSE|X264_CPU_SSE2
     {"SSE2Slow",    SSE2|X264_CPU_SSE2_IS_SLOW},
     {"SSE2",        SSE2},

@@ -1233,10 +1233,10 @@ cglobal mc_copy_w%1, 5,7,8*(%%w/2)
 INIT_MMX mmx
 MC_COPY  8
 MC_COPY 16
-INIT_XMM sse2
+INIT_XMM sse
 MC_COPY  8
 MC_COPY 16
-INIT_XMM aligned, sse2
+INIT_XMM aligned, sse
 MC_COPY 16
 
 

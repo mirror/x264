@@ -528,6 +528,7 @@ void x264_intra_##mbcmp##_x3_8x8##cpu( pixel *fenc, pixel edge[36], int res[3] )
 INTRA_MBCMP_8x8( sad,, _c )
 INTRA_MBCMP_8x8(sa8d,, _c )
 #if HIGH_BIT_DEPTH && HAVE_MMX
+#define x264_predict_8x8_v_sse2 x264_predict_8x8_v_sse
 INTRA_MBCMP_8x8( sad, _mmx2,  _c )
 INTRA_MBCMP_8x8(sa8d, _sse2,  _sse2 )
 #endif
@@ -554,6 +555,9 @@ INTRA_MBCMP(satd, 16x16,  v, h, dc,  ,, _c )
 
 #if HAVE_MMX
 #if HIGH_BIT_DEPTH
+#define x264_predict_8x8c_v_sse2 x264_predict_8x8c_v_sse
+#define x264_predict_8x16c_v_sse2 x264_predict_8x16c_v_sse
+#define x264_predict_16x16_v_sse2 x264_predict_16x16_v_sse
 INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _mmx2, _c )
 INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _mmx2, _c )
 INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _mmx2, _mmx2 )

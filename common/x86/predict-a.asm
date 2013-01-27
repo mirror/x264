@@ -760,7 +760,7 @@ cglobal predict_8x8_v, 2,2
 %endmacro
 
 %if HIGH_BIT_DEPTH
-INIT_XMM sse2
+INIT_XMM sse
 PREDICT_8x8_V
 %else
 INIT_MMX mmx2
@@ -1630,7 +1630,7 @@ cglobal predict_8x8c_v, 1,1
 %endmacro
 
 %if HIGH_BIT_DEPTH
-INIT_XMM sse2
+INIT_XMM sse
 PREDICT_8x8C_V
 %else
 INIT_MMX mmx
@@ -1664,7 +1664,7 @@ cglobal predict_8x16c_v, 1,1
 %endmacro
 
 %if HIGH_BIT_DEPTH
-INIT_XMM sse2
+INIT_XMM sse
 PREDICT_8x16C_V
 %else
 INIT_MMX mmx
@@ -1997,8 +1997,8 @@ cglobal predict_16x16_v_mmx2, 1,2
     mova        m3, [r0 - FDEC_STRIDEB+24]
     STORE16x16  m0, m1, m2, m3
     RET
-INIT_XMM
-cglobal predict_16x16_v_sse2, 2,2
+INIT_XMM sse
+cglobal predict_16x16_v, 1,2
     mova      m0, [r0 - FDEC_STRIDEB+ 0]
     mova      m1, [r0 - FDEC_STRIDEB+16]
     STORE16x16_SSE2 m0, m1
@@ -2010,10 +2010,10 @@ cglobal predict_16x16_v_mmx2, 1,2
     movq        m1, [r0 - FDEC_STRIDE + 8]
     STORE16x16  m0, m1
     RET
-INIT_XMM
-cglobal predict_16x16_v_sse2, 1,1
-    movdqa      xmm0, [r0 - FDEC_STRIDE]
-    STORE16x16_SSE2 xmm0
+INIT_XMM sse
+cglobal predict_16x16_v, 1,1
+    mova        m0, [r0 - FDEC_STRIDE]
+    STORE16x16_SSE2 m0
     RET
 %endif
 

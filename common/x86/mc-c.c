@@ -75,12 +75,12 @@ MC_WEIGHT( 20, ssse3 )
 #undef MC_OFFSET
 #undef MC_WEIGHT
 
-void x264_mc_copy_w4_mmx  ( pixel *, intptr_t, pixel *, intptr_t, int );
-void x264_mc_copy_w8_mmx  ( pixel *, intptr_t, pixel *, intptr_t, int );
-void x264_mc_copy_w8_sse2 ( pixel *, intptr_t, pixel *, intptr_t, int );
-void x264_mc_copy_w16_mmx ( pixel *, intptr_t, pixel *, intptr_t, int );
-void x264_mc_copy_w16_sse2( pixel *, intptr_t, pixel *, intptr_t, int );
-void x264_mc_copy_w16_aligned_sse2( pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_mc_copy_w4_mmx ( pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_mc_copy_w8_mmx ( pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_mc_copy_w8_sse ( pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_mc_copy_w16_mmx( pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_mc_copy_w16_sse( pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_mc_copy_w16_aligned_sse( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_prefetch_fenc_420_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_prefetch_fenc_422_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_prefetch_ref_mmx2( pixel *, intptr_t, int );
@@ -121,10 +121,10 @@ void x264_load_deinterleave_chroma_fdec_mmx ( pixel *dst, pixel *src, intptr_t i
 void x264_load_deinterleave_chroma_fdec_sse2( pixel *dst, pixel *src, intptr_t i_src, int height );
 void x264_load_deinterleave_chroma_fdec_ssse3( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
 void x264_load_deinterleave_chroma_fdec_avx( uint16_t *dst, uint16_t *src, intptr_t i_src, int height );
-void *x264_memcpy_aligned_mmx ( void *dst, const void *src, size_t n );
-void *x264_memcpy_aligned_sse2( void *dst, const void *src, size_t n );
-void x264_memzero_aligned_mmx ( void *dst, size_t n );
-void x264_memzero_aligned_sse2( void *dst, size_t n );
+void *x264_memcpy_aligned_mmx( void *dst, const void *src, size_t n );
+void *x264_memcpy_aligned_sse( void *dst, const void *src, size_t n );
+void x264_memzero_aligned_mmx( void *dst, size_t n );
+void x264_memzero_aligned_sse( void *dst, size_t n );
 void x264_integral_init4h_sse4( uint16_t *sum, uint8_t *pix, intptr_t stride );
 void x264_integral_init8h_sse4( uint16_t *sum, uint8_t *pix, intptr_t stride );
 void x264_integral_init8h_avx ( uint16_t *sum, uint8_t *pix, intptr_t stride );
@@ -228,9 +228,9 @@ static void (* const x264_mc_copy_wtab_##instr[5])( pixel *, intptr_t, pixel *, 
 
 MC_COPY_WTAB(mmx,mmx,mmx,mmx)
 #if HIGH_BIT_DEPTH
-MC_COPY_WTAB(sse2,mmx,sse2,sse2)
+MC_COPY_WTAB(sse,mmx,sse,sse)
 #else
-MC_COPY_WTAB(sse2,mmx,mmx,sse2)
+MC_COPY_WTAB(sse,mmx,mmx,sse)
 #endif
 
 #define MC_WEIGHT_WTAB(function, instr, name1, name2, w12version)\
@@ -357,14 +357,14 @@ static void mc_luma_##name( pixel *dst,    intptr_t i_dst_stride,\
 }
 
 MC_LUMA(mmx2,mmx2,mmx)
-MC_LUMA(sse2,sse2,sse2)
+MC_LUMA(sse2,sse2,sse)
 #if !HIGH_BIT_DEPTH
 #if ARCH_X86
 MC_LUMA(cache32_mmx2,cache32_mmx2,mmx)
 MC_LUMA(cache64_mmx2,cache64_mmx2,mmx)
 #endif
-MC_LUMA(cache64_sse2,cache64_sse2,sse2)
-MC_LUMA(cache64_ssse3,cache64_ssse3,sse2)
+MC_LUMA(cache64_sse2,cache64_sse2,sse)
+MC_LUMA(cache64_ssse3,cache64_ssse3,sse)
 #endif // !HIGH_BIT_DEPTH
 
 #define GET_REF(name)\
@@ -545,6 +545,12 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_mmx2;
 
+    if( cpu&X264_CPU_SSE )
+    {
+        pf->memcpy_aligned  = x264_memcpy_aligned_sse;
+        pf->memzero_aligned = x264_memzero_aligned_sse;
+    }
+
 #if HIGH_BIT_DEPTH
 #if ARCH_X86 // all x86_64 cpus with cacheline split issues use sse2 instead
     if( cpu&(X264_CPU_CACHELINE_32|X264_CPU_CACHELINE_64) )
@@ -569,8 +575,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->hpel_filter = x264_hpel_filter_sse2;
     }
 
-    pf->memcpy_aligned  = x264_memcpy_aligned_sse2;
-    pf->memzero_aligned = x264_memzero_aligned_sse2;
     pf->integral_init4v = x264_integral_init4v_sse2;
     pf->integral_init8v = x264_integral_init8v_sse2;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
@@ -591,7 +595,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_sse2;
     pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_sse2;
 
-    pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse2;
+    pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
     pf->weight = x264_mc_weight_wtab_sse2;
 
     if( !(cpu&X264_CPU_STACK_MOD4) )
@@ -640,8 +644,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( !(cpu&X264_CPU_SSE2) )
         return;
 
-    pf->memcpy_aligned = x264_memcpy_aligned_sse2;
-    pf->memzero_aligned = x264_memzero_aligned_sse2;
     pf->integral_init4v = x264_integral_init4v_sse2;
     pf->integral_init8v = x264_integral_init8v_sse2;
     pf->hpel_filter = x264_hpel_filter_sse2_amd;
@@ -657,7 +659,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->offsetsub = x264_mc_offsetsub_wtab_sse2;
     }
 
-    pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse2;
+    pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
     pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_sse2;
     pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_sse2;
     pf->avg[PIXEL_8x16] = x264_pixel_avg_8x16_sse2;

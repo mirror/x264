@@ -1131,65 +1131,45 @@ PLANE_DEINTERLEAVE
 ;-----------------------------------------------------------------------------
 ; void *memcpy_aligned( void *dst, const void *src, size_t n );
 ;-----------------------------------------------------------------------------
-INIT_MMX
-cglobal memcpy_aligned_mmx, 3,3
+%macro MEMCPY 0
+cglobal memcpy_aligned, 3,3
+%if mmsize == 16
     test r2d, 16
-    jz .copy32start
-    movq mm0, [r1 + r2 - 16]
-    movq mm1, [r1 + r2 -  8]
-    movq [r0 + r2 - 16], mm0
-    movq [r0 + r2 -  8], mm1
+    jz .copy2
+    mova  m0, [r1+r2-16]
+    mova [r0+r2-16], m0
     sub  r2d, 16
-.copy32start
+.copy2:
+%endif
+    test r2d, 2*mmsize
+    jz .copy4start
+    mova  m0, [r1+r2-1*mmsize]
+    mova  m1, [r1+r2-2*mmsize]
+    mova [r0+r2-1*mmsize], m0
+    mova [r0+r2-2*mmsize], m1
+    sub  r2d, 2*mmsize
+.copy4start:
     test r2d, r2d
     jz .ret
-.copy32:
-    movq mm0, [r1 + r2 - 32]
-    movq mm1, [r1 + r2 - 24]
-    movq mm2, [r1 + r2 - 16]
-    movq mm3, [r1 + r2 -  8]
-    movq [r0 + r2 - 32], mm0
-    movq [r0 + r2 - 24], mm1
-    movq [r0 + r2 - 16], mm2
-    movq [r0 + r2 -  8], mm3
-    sub  r2d, 32
-    jg .copy32
-.ret
-    RET
-
-;-----------------------------------------------------------------------------
-; void *memcpy_aligned( void *dst, const void *src, size_t n );
-;-----------------------------------------------------------------------------
-cglobal memcpy_aligned_sse2, 3,3
-    test r2d, 16
-    jz .copy32
-    movdqa xmm0, [r1 + r2 - 16]
-    movdqa [r0 + r2 - 16], xmm0
-    sub  r2d, 16
-.copy32:
-    test r2d, 32
-    jz .copy64start
-    movdqa xmm0, [r1 + r2 - 32]
-    movdqa [r0 + r2 - 32], xmm0
-    movdqa xmm1, [r1 + r2 - 16]
-    movdqa [r0 + r2 - 16], xmm1
-    sub  r2d, 32
-.copy64start
-    test r2d, r2d
-    jz .ret
-.copy64:
-    movdqa xmm0, [r1 + r2 - 64]
-    movdqa [r0 + r2 - 64], xmm0
-    movdqa xmm1, [r1 + r2 - 48]
-    movdqa [r0 + r2 - 48], xmm1
-    movdqa xmm2, [r1 + r2 - 32]
-    movdqa [r0 + r2 - 32], xmm2
-    movdqa xmm3, [r1 + r2 - 16]
-    movdqa [r0 + r2 - 16], xmm3
-    sub  r2d, 64
-    jg .copy64
+.copy4:
+    mova  m0, [r1+r2-1*mmsize]
+    mova  m1, [r1+r2-2*mmsize]
+    mova  m2, [r1+r2-3*mmsize]
+    mova  m3, [r1+r2-4*mmsize]
+    mova [r0+r2-1*mmsize], m0
+    mova [r0+r2-2*mmsize], m1
+    mova [r0+r2-3*mmsize], m2
+    mova [r0+r2-4*mmsize], m3
+    sub  r2d, 4*mmsize
+    jg .copy4
 .ret:
     REP_RET
+%endmacro
+
+INIT_MMX mmx
+MEMCPY
+INIT_XMM sse
+MEMCPY
 
 ;-----------------------------------------------------------------------------
 ; void *memzero_aligned( void *dst, size_t n );
@@ -1198,7 +1178,11 @@ cglobal memcpy_aligned_sse2, 3,3
 cglobal memzero_aligned, 2,2
     add  r0, r1
     neg  r1
+%if mmsize == 8
     pxor m0, m0
+%else
+    xorps m0, m0
+%endif
 .loop:
 %assign i 0
 %rep 8
@@ -1212,7 +1196,7 @@ cglobal memzero_aligned, 2,2
 
 INIT_MMX mmx
 MEMZERO
-INIT_XMM sse2
+INIT_XMM sse
 MEMZERO
 
 
