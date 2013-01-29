@@ -1021,7 +1021,7 @@ VAR2_8x8_SSSE3 16, 7
     DIFF_SUMSUB_SSSE3 %1, %3, %2, %4, %5
 %endmacro
 
-%macro LOAD_SUMSUB_8x4P_SSSE3 7-10 r0, r2, 0
+%macro LOAD_SUMSUB_8x4P_SSSE3 7-11 r0, r2, 0, 0
 ; 4x dest, 2x tmp, 1x mul, [2* ptr], [increment?]
     LOAD_SUMSUB_8x2P %1, %2, %5, %6, %7, [%8], [%9], [%8+r1], [%9+r3]
     LOAD_SUMSUB_8x2P %3, %4, %5, %6, %7, [%8+2*r1], [%9+2*r3], [%8+r4], [%9+r5]
@@ -1079,7 +1079,7 @@ VAR2_8x8_SSSE3 16, 7
 %endmacro
 
 %macro SATD_8x4_SSE 8-9
-%ifidn %1, sse2
+%if %1
     HADAMARD4_2D_SSE %2, %3, %4, %5, %6, amax
 %else
     HADAMARD4_V %2, %3, %4, %5, %6
@@ -1093,7 +1093,7 @@ VAR2_8x8_SSSE3 16, 7
 %else
     SWAP %8, %2
 %endif
-%ifidn %1, sse2
+%if %1
     paddw m%8, m%4
 %else
     HADAMARD 1, max, %3, %5, %6, %7
@@ -1248,8 +1248,11 @@ cglobal pixel_satd_4x4, 4,6
     SATD_4x4_MMX m0, 0, 0
     SATD_END_MMX
 
-%macro SATD_START_SSE2 2
-%if cpuflag(ssse3)
+%macro SATD_START_SSE2 2-3 0
+    FIX_STRIDES r1, r3
+%if HIGH_BIT_DEPTH && %3
+    pxor    %2, %2
+%elif cpuflag(ssse3)
     mova    %2, [hmul_8p]
 %endif
     lea     r4, [3*r1]
@@ -1257,10 +1260,25 @@ cglobal pixel_satd_4x4, 4,6
     pxor    %1, %1
 %endmacro
 
-%macro SATD_END_SSE2 1
+%macro SATD_END_SSE2 1-2
+%if HIGH_BIT_DEPTH
+    HADDUW  %1, m0
+%if %0 == 2
+    paddd   %1, %2
+%endif
+%else
     HADDW   %1, m7
+%endif
     movd   eax, %1
     RET
+%endmacro
+
+%macro SATD_ACCUM 3
+%if HIGH_BIT_DEPTH
+    HADDUW %1, %2
+    paddd  %3, %1
+    pxor   %1, %1
+%endif
 %endmacro
 
 %macro BACKUP_POINTERS 0
@@ -1275,20 +1293,44 @@ cglobal pixel_satd_4x4, 4,6
 
 %macro RESTORE_AND_INC_POINTERS 0
 %if ARCH_X86_64
-    lea     r0, [r6+8]
-    lea     r2, [r7+8]
+    lea     r0, [r6+8*SIZEOF_PIXEL]
+    lea     r2, [r7+8*SIZEOF_PIXEL]
 %if WIN64
     POP r7
 %endif
 %else
     mov     r0, r0mp
     mov     r2, r2mp
-    add     r0, 8
-    add     r2, 8
+    add     r0, 8*SIZEOF_PIXEL
+    add     r2, 8*SIZEOF_PIXEL
 %endif
 %endmacro
 
 %macro SATD_4x8_SSE 2
+%if HIGH_BIT_DEPTH
+    movh    m0, [r0+0*r1]
+    movh    m4, [r2+0*r3]
+    movh    m1, [r0+1*r1]
+    movh    m5, [r2+1*r3]
+    movhps  m0, [r0+4*r1]
+    movhps  m4, [r2+4*r3]
+    movh    m2, [r0+2*r1]
+    movh    m6, [r2+2*r3]
+    psubw   m0, m4
+    movh    m3, [r0+r4]
+    movh    m4, [r2+r5]
+    lea     r0, [r0+4*r1]
+    lea     r2, [r2+4*r3]
+    movhps  m1, [r0+1*r1]
+    movhps  m5, [r2+1*r3]
+    movhps  m2, [r0+2*r1]
+    movhps  m6, [r2+2*r3]
+    psubw   m1, m5
+    movhps  m3, [r0+r4]
+    movhps  m4, [r2+r5]
+    psubw   m2, m6
+    psubw   m3, m4
+%else ; !HIGH_BIT_DEPTH
     movd m4, [r2]
     movd m5, [r2+r3]
     movd m6, [r2+2*r3]
@@ -1329,7 +1371,8 @@ cglobal pixel_satd_4x4, 4,6
 %else
     DIFFOP 2, 6, 3, 5, 7
 %endif
-    SATD_8x4_SSE cpuname, 0, 1, 2, 3, 4, 5, 7, %2
+%endif ; HIGH_BIT_DEPTH
+    SATD_8x4_SSE (HIGH_BIT_DEPTH || cpuflags == cpuflags_sse2), 0, 1, 2, 3, 4, 5, 7, %2
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -1355,43 +1398,42 @@ cglobal pixel_satd_4x4, 4, 6, 6
 
 cglobal pixel_satd_4x8, 4, 6, 8
     SATD_START_MMX
-%if cpuflag(ssse3)
-    mova m7, [hmul_4p]
+%if HIGH_BIT_DEPTH == 0 && cpuflag(ssse3)
+    mova   m7, [hmul_4p]
 %endif
     SATD_4x8_SSE 0, swap
-    HADDW m7, m1
-    movd eax, m7
+    HADDW  m7, m1
+    movd  eax, m7
     RET
 
 cglobal pixel_satd_4x16, 4, 6, 8
     SATD_START_MMX
-%if cpuflag(ssse3)
+%if HIGH_BIT_DEPTH == 0 && cpuflag(ssse3)
     mova m7, [hmul_4p]
 %endif
     SATD_4x8_SSE 0, swap
-    lea r0, [r0+r1*2]
-    lea r2, [r2+r3*2]
+    lea r0, [r0+r1*2*SIZEOF_PIXEL]
+    lea r2, [r2+r3*2*SIZEOF_PIXEL]
     SATD_4x8_SSE 1, add
     HADDW m7, m1
     movd eax, m7
     RET
 
 cglobal pixel_satd_8x8_internal
-    LOAD_SUMSUB_8x4P 0, 1, 2, 3, 4, 5, 7, r0, r2, 1
-    SATD_8x4_SSE cpuname, 0, 1, 2, 3, 4, 5, 6
+    LOAD_SUMSUB_8x4P 0, 1, 2, 3, 4, 5, 7, r0, r2, 1, 0
+    SATD_8x4_SSE (HIGH_BIT_DEPTH || cpuflags == cpuflags_sse2), 0, 1, 2, 3, 4, 5, 6
 %%pixel_satd_8x4_internal:
-    LOAD_SUMSUB_8x4P 0, 1, 2, 3, 4, 5, 7, r0, r2, 1
-    SATD_8x4_SSE cpuname, 0, 1, 2, 3, 4, 5, 6
+    LOAD_SUMSUB_8x4P 0, 1, 2, 3, 4, 5, 7, r0, r2, 1, 0
+    SATD_8x4_SSE (HIGH_BIT_DEPTH || cpuflags == cpuflags_sse2), 0, 1, 2, 3, 4, 5, 6
     ret
 
-%if UNIX64 ; 16x8 regresses on phenom win64, 16x16 is almost the same
+%if HIGH_BIT_DEPTH == 0 && UNIX64 ; 16x8 regresses on phenom win64, 16x16 is almost the same
 cglobal pixel_satd_16x4_internal
     LOAD_SUMSUB_16x4P 0, 1, 2, 3, 4, 8, 5, 9, 6, 7, r0, r2, 11
     lea  r2, [r2+4*r3]
     lea  r0, [r0+4*r1]
-    ; FIXME: this doesn't really mean ssse3, but rather selects between two different behaviors implemented with sse2?
-    SATD_8x4_SSE ssse3, 0, 1, 2, 3, 6, 11, 10
-    SATD_8x4_SSE ssse3, 4, 8, 5, 9, 6, 3, 10
+    SATD_8x4_SSE 0, 0, 1, 2, 3, 6, 11, 10
+    SATD_8x4_SSE 0, 4, 8, 5, 9, 6, 3, 10
     ret
 
 cglobal pixel_satd_16x8, 4,6,12
@@ -1422,14 +1464,15 @@ cglobal pixel_satd_16x8, 4,6,8
     SATD_END_SSE2 m6
 
 cglobal pixel_satd_16x16, 4,6,8
-    SATD_START_SSE2 m6, m7
+    SATD_START_SSE2 m6, m7, 1
     BACKUP_POINTERS
     call pixel_satd_8x8_internal
     call pixel_satd_8x8_internal
+    SATD_ACCUM m6, m0, m7
     RESTORE_AND_INC_POINTERS
     call pixel_satd_8x8_internal
     call pixel_satd_8x8_internal
-    SATD_END_SSE2 m6
+    SATD_END_SSE2 m6, m7
 %endif
 
 cglobal pixel_satd_8x16, 4,6,8
@@ -2525,7 +2568,7 @@ ALIGN 16
     psubw      m1, m9
     psubw      m2, m10
     psubw      m3, m11
-    SATD_8x4_SSE cpuname, 0, 1, 2, 3, 13, 14, 0, swap
+    SATD_8x4_SSE (cpuflags == cpuflags_sse2), 0, 1, 2, 3, 13, 14, 0, swap
     pmaddwd    m0, [pw_1]
 %if cpuflag(sse4)
     pshufd     m1, m0, q0032
@@ -2633,7 +2676,7 @@ ALIGN 16
     psubw      m2, [fenc_buf+0x20]
 .satd_8x4b:
     psubw      m3, [fenc_buf+0x30]
-    SATD_8x4_SSE cpuname, 0, 1, 2, 3, 4, 5, 0, swap
+    SATD_8x4_SSE (cpuflags == cpuflags_sse2), 0, 1, 2, 3, 4, 5, 0, swap
     pmaddwd    m0, [pw_1]
 %if cpuflag(sse4)
     pshufd     m1, m0, q0032

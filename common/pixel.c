@@ -874,6 +874,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     {
         INIT4_NAME( sad_aligned, sad, _sse2_aligned );
         INIT5( ssd, _sse2 );
+        INIT6( satd, _sse2 );
+        pixf->satd[PIXEL_4x16] = x264_pixel_satd_4x16_sse2;
 
         pixf->sa8d[PIXEL_16x16] = x264_pixel_sa8d_16x16_sse2;
         pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_sse2;
@@ -924,6 +926,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         INIT7( sad_x3, _ssse3 );
         INIT7( sad_x4, _ssse3 );
         INIT_ADS( _ssse3 );
+        INIT6( satd, _ssse3 );
+        pixf->satd[PIXEL_4x16] = x264_pixel_satd_4x16_ssse3;
 
         if( !(cpu&X264_CPU_STACK_MOD4) )
         {
@@ -941,6 +945,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     }
     if( cpu&X264_CPU_SSE4 )
     {
+        INIT6( satd, _sse4 );
+        pixf->satd[PIXEL_4x16] = x264_pixel_satd_4x16_sse4;
         if( !(cpu&X264_CPU_STACK_MOD4) )
         {
             INIT4( hadamard_ac, _sse4 );
@@ -951,6 +957,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     if( cpu&X264_CPU_AVX )
     {
         INIT_ADS( _avx );
+        INIT6( satd, _avx );
+        pixf->satd[PIXEL_4x16] = x264_pixel_satd_4x16_avx;
         if( !(cpu&X264_CPU_STACK_MOD4) )
         {
             INIT4( hadamard_ac, _avx );
