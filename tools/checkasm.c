@@ -164,6 +164,7 @@ static void print_bench(void)
             if( k < j )
                 continue;
             printf( "%s_%s%s: %"PRId64"\n", benchs[i].name,
+#if HAVE_MMX
                     b->cpu&X264_CPU_AVX2 && b->cpu&X264_CPU_FMA3 ? "avx2_fma3" :
                     b->cpu&X264_CPU_AVX2 ? "avx2" :
                     b->cpu&X264_CPU_FMA3 ? "fma3" :
@@ -178,20 +179,28 @@ static void print_bench(void)
                     b->cpu&X264_CPU_SSE2 ? "sse2" :
                     b->cpu&X264_CPU_SSE ? "sse" :
                     b->cpu&X264_CPU_MMX ? "mmx" :
+#elif ARCH_PPC
                     b->cpu&X264_CPU_ALTIVEC ? "altivec" :
+#elif ARCH_ARM
                     b->cpu&X264_CPU_NEON ? "neon" :
-                    b->cpu&X264_CPU_ARMV6 ? "armv6" : "c",
+                    b->cpu&X264_CPU_ARMV6 ? "armv6" :
+#endif
+                    "c",
+#if HAVE_MMX
                     b->cpu&X264_CPU_CACHELINE_32 ? "_c32" :
+                    b->cpu&X264_CPU_SLOW_ATOM && b->cpu&X264_CPU_CACHELINE_64 ? "_c64_atom" :
                     b->cpu&X264_CPU_CACHELINE_64 ? "_c64" :
-                    b->cpu&X264_CPU_SHUFFLE_IS_FAST && !(b->cpu&X264_CPU_SSE4) ? "_fastshuffle" :
+                    b->cpu&X264_CPU_SLOW_SHUFFLE ? "_slowshuffle" :
                     b->cpu&X264_CPU_SSE_MISALIGN ? "_misalign" :
                     b->cpu&X264_CPU_LZCNT ? "_lzcnt" :
                     b->cpu&X264_CPU_BMI2 ? "_bmi2" :
-                    b->cpu&X264_CPU_TBM ? "_tbm" :
                     b->cpu&X264_CPU_BMI1 ? "_bmi1" :
-                    b->cpu&X264_CPU_FAST_NEON_MRC ? "_fast_mrc" :
                     b->cpu&X264_CPU_SLOW_CTZ ? "_slow_ctz" :
-                    b->cpu&X264_CPU_SLOW_ATOM ? "_slow_atom" : "",
+                    b->cpu&X264_CPU_SLOW_ATOM ? "_atom" :
+#elif ARCH_ARM
+                    b->cpu&X264_CPU_FAST_NEON_MRC ? "_fast_mrc" :
+#endif
+                    "",
                     ((int64_t)10*b->cycles/b->den - nop_time)/4 );
         }
 }
@@ -2440,12 +2449,10 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE2_IS_FAST, "SSE2Fast" );
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_CACHELINE_64, "SSE2Fast Cache64" );
         cpu1 &= ~X264_CPU_CACHELINE_64;
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SHUFFLE_IS_FAST, "SSE2 FastShuffle" );
-        cpu1 &= ~X264_CPU_SHUFFLE_IS_FAST;
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_SHUFFLE, "SSE2 SlowShuffle" );
+        cpu1 &= ~X264_CPU_SLOW_SHUFFLE;
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_CTZ, "SSE2 SlowCTZ" );
         cpu1 &= ~X264_CPU_SLOW_CTZ;
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_ATOM, "SSE2 SlowAtom" );
-        cpu1 &= ~X264_CPU_SLOW_ATOM;
     }
     if( x264_cpu_detect() & X264_CPU_SSE_MISALIGN )
     {
@@ -2467,15 +2474,17 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSSE3, "SSSE3" );
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_CACHELINE_64, "SSSE3 Cache64" );
         cpu1 &= ~X264_CPU_CACHELINE_64;
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SHUFFLE_IS_FAST, "SSSE3 FastShuffle" );
-        cpu1 &= ~X264_CPU_SHUFFLE_IS_FAST;
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_SHUFFLE, "SSSE3 SlowShuffle" );
+        cpu1 &= ~X264_CPU_SLOW_SHUFFLE;
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_CTZ, "SSSE3 SlowCTZ" );
         cpu1 &= ~X264_CPU_SLOW_CTZ;
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_ATOM, "SSSE3 SlowAtom" );
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_CACHELINE_64, "SSSE3 Cache64 SlowAtom" );
+        cpu1 &= ~X264_CPU_CACHELINE_64;
         cpu1 &= ~X264_CPU_SLOW_ATOM;
     }
     if( x264_cpu_detect() & X264_CPU_SSE4 )
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE4 | X264_CPU_SHUFFLE_IS_FAST, "SSE4" );
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE4, "SSE4" );
     if( x264_cpu_detect() & X264_CPU_AVX )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_AVX, "AVX" );
     if( x264_cpu_detect() & X264_CPU_XOP )
@@ -2488,11 +2497,6 @@ static int check_all_flags( void )
     if( x264_cpu_detect() & X264_CPU_BMI1 )
     {
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_BMI1, "BMI1" );
-        if( x264_cpu_detect() & X264_CPU_TBM )
-        {
-            ret |= add_flags( &cpu0, &cpu1, X264_CPU_TBM, "TBM" );
-            cpu1 &= ~X264_CPU_TBM;
-        }
         if( x264_cpu_detect() & X264_CPU_BMI2 )
         {
             ret |= add_flags( &cpu0, &cpu1, X264_CPU_BMI2, "BMI2" );

@@ -417,17 +417,33 @@ static void x264_lookahead_thread_init( x264_t *h )
 static int x264_validate_parameters( x264_t *h, int b_open )
 {
 #if HAVE_MMX
+    if( b_open )
+    {
+        int cpuflags = x264_cpu_detect();
+        int fail = 0;
 #ifdef __SSE__
-    if( b_open && !(x264_cpu_detect() & X264_CPU_SSE) )
-    {
-        x264_log( h, X264_LOG_ERROR, "your cpu does not support SSE1, but x264 was compiled with asm support\n");
+        if( !(cpuflags & X264_CPU_SSE) )
+        {
+            x264_log( h, X264_LOG_ERROR, "your cpu does not support SSE1, but x264 was compiled with asm\n");
+            fail = 1;
+        }
 #else
-    if( b_open && !(x264_cpu_detect() & X264_CPU_MMX2) )
-    {
-        x264_log( h, X264_LOG_ERROR, "your cpu does not support MMXEXT, but x264 was compiled with asm support\n");
+        if( !(cpuflags & X264_CPU_MMX2) )
+        {
+            x264_log( h, X264_LOG_ERROR, "your cpu does not support MMXEXT, but x264 was compiled with asm\n");
+            fail = 1;
+        }
 #endif
-        x264_log( h, X264_LOG_ERROR, "to run x264, recompile without asm support (configure --disable-asm)\n");
-        return -1;
+        if( !fail && !(cpuflags & X264_CPU_CMOV) )
+        {
+            x264_log( h, X264_LOG_ERROR, "your cpu does not support CMOV, but x264 was compiled with asm\n");
+            fail = 1;
+        }
+        if( fail )
+        {
+            x264_log( h, X264_LOG_ERROR, "to run x264, recompile without asm (configure --disable-asm)\n");
+            return -1;
+        }
     }
 #endif
 
@@ -1262,6 +1278,9 @@ x264_t *x264_encoder_open( x264_param_t *param )
     p = buf + sprintf( buf, "using cpu capabilities:" );
     for( int i = 0; x264_cpu_names[i].flags; i++ )
     {
+        if( !strcmp(x264_cpu_names[i].name, "SSE")
+            && h->param.cpu & (X264_CPU_SSE2) )
+            continue;
         if( !strcmp(x264_cpu_names[i].name, "SSE2")
             && h->param.cpu & (X264_CPU_SSE2_IS_FAST|X264_CPU_SSE2_IS_SLOW) )
             continue;
@@ -1303,7 +1322,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     {
         x264_log( h, X264_LOG_ERROR, "CLZ test failed: x264 has been miscompiled!\n" );
 #if ARCH_X86 || ARCH_X86_64
-        x264_log( h, X264_LOG_ERROR, "Are you attempting to run an SSE4a-targeted build on a CPU that\n" );
+        x264_log( h, X264_LOG_ERROR, "Are you attempting to run an SSE4a/LZCNT-targeted build on a CPU that\n" );
         x264_log( h, X264_LOG_ERROR, "doesn't support it?\n" );
 #endif
         goto fail;

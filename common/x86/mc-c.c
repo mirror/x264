@@ -214,6 +214,7 @@ PIXEL_AVG_WTAB(sse2, mmx2, mmx2, sse2, sse2, sse2)
 PIXEL_AVG_WTAB(sse2_misalign, mmx2, mmx2, sse2, sse2, sse2_misalign)
 PIXEL_AVG_WTAB(cache64_sse2, mmx2, cache64_mmx2, cache64_sse2, cache64_sse2, cache64_sse2)
 PIXEL_AVG_WTAB(cache64_ssse3, mmx2, cache64_mmx2, cache64_ssse3, cache64_ssse3, cache64_sse2)
+PIXEL_AVG_WTAB(cache64_ssse3_atom, mmx2, mmx2, cache64_ssse3, cache64_ssse3, sse2)
 #endif // HIGH_BIT_DEPTH
 
 #define MC_COPY_WTAB(instr, name1, name2, name3)\
@@ -365,6 +366,7 @@ MC_LUMA(cache64_mmx2,cache64_mmx2,mmx)
 #endif
 MC_LUMA(cache64_sse2,cache64_sse2,sse)
 MC_LUMA(cache64_ssse3,cache64_ssse3,sse)
+MC_LUMA(cache64_ssse3_atom,cache64_ssse3_atom,sse)
 #endif // !HIGH_BIT_DEPTH
 
 #define GET_REF(name)\
@@ -408,6 +410,7 @@ GET_REF(cache64_mmx2)
 GET_REF(sse2_misalign)
 GET_REF(cache64_sse2)
 GET_REF(cache64_ssse3)
+GET_REF(cache64_ssse3_atom)
 #endif // !HIGH_BIT_DEPTH
 
 #define HPEL(align, cpu, cpuv, cpuc, cpuh)\
@@ -606,7 +609,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
 
-    if( (cpu&X264_CPU_SHUFFLE_IS_FAST) && !(cpu&X264_CPU_SLOW_ATOM) )
+    if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
         pf->integral_init4v = x264_integral_init4v_ssse3;
 
     if( !(cpu&X264_CPU_AVX) )
@@ -649,48 +652,48 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->hpel_filter = x264_hpel_filter_sse2_amd;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
 
-    if( cpu&X264_CPU_SSE2_IS_SLOW )
-        return;
-
-    pf->weight = x264_mc_weight_wtab_sse2;
-    if( !(cpu&X264_CPU_SLOW_ATOM) )
+    if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
     {
-        pf->offsetadd = x264_mc_offsetadd_wtab_sse2;
-        pf->offsetsub = x264_mc_offsetsub_wtab_sse2;
-    }
-
-    pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
-    pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_sse2;
-    pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_sse2;
-    pf->avg[PIXEL_8x16] = x264_pixel_avg_8x16_sse2;
-    pf->avg[PIXEL_8x8]  = x264_pixel_avg_8x8_sse2;
-    pf->avg[PIXEL_8x4]  = x264_pixel_avg_8x4_sse2;
-    pf->hpel_filter = x264_hpel_filter_sse2;
-    if( cpu&X264_CPU_SSE_MISALIGN )
-        pf->hpel_filter = x264_hpel_filter_sse2_misalign;
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_sse2;
-    if( !(cpu&X264_CPU_STACK_MOD4) )
-        pf->mc_chroma = x264_mc_chroma_sse2;
-
-    if( cpu&X264_CPU_SSE2_IS_FAST )
-    {
-        pf->store_interleave_chroma = x264_store_interleave_chroma_sse2; // FIXME sse2fast? sse2medium?
-        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_sse2;
-        pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_sse2;
-        pf->plane_copy_interleave   = x264_plane_copy_interleave_sse2;
-        pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_sse2;
-        pf->mc_luma = mc_luma_sse2;
-        pf->get_ref = get_ref_sse2;
-        if( cpu&X264_CPU_CACHELINE_64 )
+        pf->weight = x264_mc_weight_wtab_sse2;
+        if( !(cpu&X264_CPU_SLOW_ATOM) )
         {
-            pf->mc_luma = mc_luma_cache64_sse2;
-            pf->get_ref = get_ref_cache64_sse2;
+            pf->offsetadd = x264_mc_offsetadd_wtab_sse2;
+            pf->offsetsub = x264_mc_offsetsub_wtab_sse2;
         }
+
+        pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
+        pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_sse2;
+        pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_sse2;
+        pf->avg[PIXEL_8x16] = x264_pixel_avg_8x16_sse2;
+        pf->avg[PIXEL_8x8]  = x264_pixel_avg_8x8_sse2;
+        pf->avg[PIXEL_8x4]  = x264_pixel_avg_8x4_sse2;
+        pf->hpel_filter = x264_hpel_filter_sse2;
         if( cpu&X264_CPU_SSE_MISALIGN )
+            pf->hpel_filter = x264_hpel_filter_sse2_misalign;
+        pf->frame_init_lowres_core = x264_frame_init_lowres_core_sse2;
+        if( !(cpu&X264_CPU_STACK_MOD4) )
+            pf->mc_chroma = x264_mc_chroma_sse2;
+
+        if( cpu&X264_CPU_SSE2_IS_FAST )
         {
-            pf->get_ref = get_ref_sse2_misalign;
-            if( !(cpu&X264_CPU_STACK_MOD4) )
-                pf->mc_chroma = x264_mc_chroma_sse2_misalign;
+            pf->store_interleave_chroma = x264_store_interleave_chroma_sse2; // FIXME sse2fast? sse2medium?
+            pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_sse2;
+            pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_sse2;
+            pf->plane_copy_interleave   = x264_plane_copy_interleave_sse2;
+            pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_sse2;
+            pf->mc_luma = mc_luma_sse2;
+            pf->get_ref = get_ref_sse2;
+            if( cpu&X264_CPU_CACHELINE_64 )
+            {
+                pf->mc_luma = mc_luma_cache64_sse2;
+                pf->get_ref = get_ref_cache64_sse2;
+            }
+            if( cpu&X264_CPU_SSE_MISALIGN )
+            {
+                pf->get_ref = get_ref_sse2_misalign;
+                if( !(cpu&X264_CPU_STACK_MOD4) )
+                    pf->mc_chroma = x264_mc_chroma_sse2_misalign;
+            }
         }
     }
 
@@ -707,12 +710,21 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_ssse3;
     pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_ssse3;
 
-    pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_ssse3;
-    pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_ssse3;
-    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_ssse3;
+    if( !(cpu&X264_CPU_SLOW_PSHUFB) )
+    {
+        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_ssse3;
+        pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_ssse3;
+        pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_ssse3;
+    }
 
-    pf->hpel_filter = x264_hpel_filter_ssse3;
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
+    if( !(cpu&X264_CPU_SLOW_PALIGNR) )
+    {
+#if ARCH_X86_64
+        if( !(cpu&X264_CPU_SLOW_ATOM) ) /* The 64-bit version is slower, but the 32-bit version is faster? */
+#endif
+            pf->hpel_filter = x264_hpel_filter_ssse3;
+        pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
+    }
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_ssse3;
 
@@ -722,13 +734,17 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
             pf->mc_chroma = x264_mc_chroma_ssse3_cache64;
         pf->mc_luma = mc_luma_cache64_ssse3;
         pf->get_ref = get_ref_cache64_ssse3;
-
-        /* ssse3 weight is slower on Nehalem, so only assign here. */
-        pf->weight_cache = x264_weight_cache_ssse3;
-        pf->weight = x264_mc_weight_wtab_ssse3;
+        if( cpu&X264_CPU_SLOW_ATOM )
+        {
+            pf->mc_luma = mc_luma_cache64_ssse3_atom;
+            pf->get_ref = get_ref_cache64_ssse3_atom;
+        }
     }
 
-    if( (cpu&X264_CPU_SHUFFLE_IS_FAST) && !(cpu&X264_CPU_SLOW_ATOM) )
+    pf->weight_cache = x264_weight_cache_ssse3;
+    pf->weight = x264_mc_weight_wtab_ssse3;
+
+    if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
         pf->integral_init4v = x264_integral_init4v_ssse3;
 
     if( !(cpu&X264_CPU_SSE4) )
@@ -744,9 +760,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->integral_init8h = x264_integral_init8h_avx;
     pf->hpel_filter = x264_hpel_filter_avx;
 
-    /* ssse3 weight seems to be faster again on Sandy Bridge and Bulldozer. */
-    pf->weight_cache = x264_weight_cache_ssse3;
-    pf->weight = x264_mc_weight_wtab_ssse3;
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_avx;
 

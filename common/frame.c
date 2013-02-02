@@ -73,7 +73,11 @@ static x264_frame_t *x264_frame_new( x264_t *h, int b_fdec )
     int i_stride, i_width, i_lines, luma_plane_count;
     int i_padv = PADV << PARAM_INTERLACED;
     int align = h->param.cpu&X264_CPU_CACHELINE_64 ? 64 : h->param.cpu&X264_CPU_CACHELINE_32 ? 32 : 16;
-    int disalign = h->param.cpu&X264_CPU_ALTIVEC ? 1<<9 : 1<<10;
+#if ARCH_PPC
+    int disalign = 1<<9;
+#else
+    int disalign = 1<<10;
+#endif
 
     CHECKED_MALLOCZERO( frame, sizeof(x264_frame_t) );
 

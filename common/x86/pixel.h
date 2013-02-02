@@ -66,12 +66,14 @@ DECL_X1( ssd, xop )
 DECL_X1( satd, mmx2 )
 DECL_X1( satd, sse2 )
 DECL_X1( satd, ssse3 )
+DECL_X1( satd, ssse3_atom )
 DECL_X1( satd, sse4 )
 DECL_X1( satd, avx )
 DECL_X1( satd, xop )
 DECL_X1( sa8d, mmx2 )
 DECL_X1( sa8d, sse2 )
 DECL_X1( sa8d, ssse3 )
+DECL_X1( sa8d, ssse3_atom )
 DECL_X1( sa8d, sse4 )
 DECL_X1( sa8d, avx )
 DECL_X1( sa8d, xop )
@@ -91,6 +93,7 @@ DECL_PIXELS( uint64_t, var, xop,  ( pixel *pix, intptr_t i_stride ))
 DECL_PIXELS( uint64_t, hadamard_ac, mmx2,  ( pixel *pix, intptr_t i_stride ))
 DECL_PIXELS( uint64_t, hadamard_ac, sse2,  ( pixel *pix, intptr_t i_stride ))
 DECL_PIXELS( uint64_t, hadamard_ac, ssse3, ( pixel *pix, intptr_t i_stride ))
+DECL_PIXELS( uint64_t, hadamard_ac, ssse3_atom, ( pixel *pix, intptr_t i_stride ))
 DECL_PIXELS( uint64_t, hadamard_ac, sse4,  ( pixel *pix, intptr_t i_stride ))
 DECL_PIXELS( uint64_t, hadamard_ac, avx,   ( pixel *pix, intptr_t i_stride ))
 DECL_PIXELS( uint64_t, hadamard_ac, xop,   ( pixel *pix, intptr_t i_stride ))
@@ -162,11 +165,12 @@ int  x264_pixel_vsad_xop  ( pixel *src, intptr_t stride, int height );
 int x264_pixel_asd8_sse2 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
 int x264_pixel_asd8_ssse3( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
 int x264_pixel_asd8_xop  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
-uint64_t x264_pixel_sa8d_satd_16x16_sse2 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t x264_pixel_sa8d_satd_16x16_ssse3( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t x264_pixel_sa8d_satd_16x16_sse4 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t x264_pixel_sa8d_satd_16x16_avx  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t x264_pixel_sa8d_satd_16x16_xop  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_sse2      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_ssse3     ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_ssse3_atom( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_sse4      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_avx       ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t x264_pixel_sa8d_satd_16x16_xop       ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
 
 #define DECL_ADS( size, suffix ) \
 int x264_pixel_ads##size##_##suffix( int enc_dc[size], uint16_t *sums, int delta,\

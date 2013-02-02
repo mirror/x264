@@ -358,7 +358,8 @@ void x264_predict_16x16_init_mmx( int cpu, x264_predict_t pf[7] )
     pf[I_PRED_16x16_P]       = x264_predict_16x16_p_sse2;
     if( !(cpu&X264_CPU_SSSE3) )
         return;
-    pf[I_PRED_16x16_H]       = x264_predict_16x16_h_ssse3;
+    if( !(cpu&X264_CPU_SLOW_PSHUFB) )
+        pf[I_PRED_16x16_H]       = x264_predict_16x16_h_ssse3;
 #if HAVE_X86_INLINE_ASM
     pf[I_PRED_16x16_P]       = x264_predict_16x16_p_ssse3;
 #endif
@@ -530,8 +531,11 @@ void x264_predict_8x8_init_mmx( int cpu, x264_predict8x8_t pf[12], x264_predict_
     pf[I_PRED_8x8_HU]   = x264_predict_8x8_hu_sse2;
     if( !(cpu&X264_CPU_SSSE3) )
         return;
-    pf[I_PRED_8x8_DDL]  = x264_predict_8x8_ddl_ssse3;
-    pf[I_PRED_8x8_VR]   = x264_predict_8x8_vr_ssse3;
+    if( !(cpu&X264_CPU_SLOW_PALIGNR) )
+    {
+        pf[I_PRED_8x8_DDL]  = x264_predict_8x8_ddl_ssse3;
+        pf[I_PRED_8x8_VR]   = x264_predict_8x8_vr_ssse3;
+    }
     pf[I_PRED_8x8_HU]   = x264_predict_8x8_hu_ssse3;
     *predict_8x8_filter = x264_predict_8x8_filter_ssse3;
     if( !(cpu&X264_CPU_AVX) )
