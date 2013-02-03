@@ -521,6 +521,13 @@ case $host_os in
         fi
         HAVE_GETOPT_LONG=0
         ;;
+    *qnx*)
+        SYS="QNX"
+        define HAVE_MALLOC_H
+        libm="-lm"
+        HAVE_GETOPT_LONG=0
+        CFLAGS="$CFLAGS -I\$(SRCPATH)/extras"
+        ;;
     *)
         die "Unknown system $host, edit the configure"
         ;;
@@ -771,6 +778,9 @@ if [ "$thread" = "auto" ]; then
                 # default to native threading if pthread-win32 is unavailable
                 thread="win32"
             fi
+            ;;
+        QNX)
+            cc_check pthread.h -lc && thread="posix" && libpthread="-lc"
             ;;
         *)
             cc_check pthread.h -lpthread && thread="posix" && libpthread="-lpthread"

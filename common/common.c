@@ -563,6 +563,8 @@ static double x264_atof( const char *str, int *b_error )
 }
 
 #define atobool(str) ( name_was_bool = 1, x264_atobool( str, &b_error ) )
+#undef atoi
+#undef atof
 #define atoi(str) x264_atoi( str, &b_error )
 #define atof(str) x264_atof( str, &b_error )
 
