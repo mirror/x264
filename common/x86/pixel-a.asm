@@ -1431,7 +1431,9 @@ cglobal pixel_satd_8x8_internal
     SATD_8x4_SSE vertical, 0, 1, 2, 3, 4, 5, 6
     ret
 
-%if HIGH_BIT_DEPTH == 0 && UNIX64 ; 16x8 regresses on phenom win64, 16x16 is almost the same
+; 16x8 regresses on phenom win64, 16x16 is almost the same (too many spilled registers)
+; These aren't any faster on AVX systems with fast movddup (Bulldozer, Sandy Bridge)
+%if HIGH_BIT_DEPTH == 0 && UNIX64 && notcpuflag(avx)
 cglobal pixel_satd_16x4_internal
     LOAD_SUMSUB_16x4P 0, 1, 2, 3, 4, 8, 5, 9, 6, 7, r0, r2, 11
     lea  r2, [r2+4*r3]
@@ -4032,6 +4034,9 @@ INTRA_X9
 INTRA8_X9
 %endif
 
+; Sandy/Ivy Bridge and Bulldozer do movddup in the load unit, so
+; it's effectively free.
+%define LOAD_DUP_4x8P LOAD_DUP_4x8P_CONROE
 INIT_XMM avx
 SATDS_SSE2
 SA8D
