@@ -147,65 +147,63 @@ cextern hsub_mul
 ; int pixel_ssd_MxN( uint16_t *, intptr_t, uint16_t *, intptr_t )
 ;-----------------------------------------------------------------------------
 %macro SSD_ONE 2
-cglobal pixel_ssd_%1x%2, 4,5,6
-    mov     r4, %1*%2/mmsize
+cglobal pixel_ssd_%1x%2, 4,7,6
+    FIX_STRIDES r1, r3
+%if mmsize == %1*2
+    %define offset0_1 r1
+    %define offset0_2 r1*2
+    %define offset0_3 r5
+    %define offset1_1 r3
+    %define offset1_2 r3*2
+    %define offset1_3 r6
+    lea     r5, [3*r1]
+    lea     r6, [3*r3]
+%elif mmsize == %1
+    %define offset0_1 mmsize
+    %define offset0_2 r1
+    %define offset0_3 r1+mmsize
+    %define offset1_1 mmsize
+    %define offset1_2 r3
+    %define offset1_3 r3+mmsize
+%elif mmsize == %1/2
+    %define offset0_1 mmsize
+    %define offset0_2 mmsize*2
+    %define offset0_3 mmsize*3
+    %define offset1_1 mmsize
+    %define offset1_2 mmsize*2
+    %define offset1_3 mmsize*3
+%endif
+    %assign %%n %2/(2*mmsize/%1)
+%if %%n > 1
+    mov    r4d, %%n
+%endif
     pxor    m0, m0
 .loop
     mova    m1, [r0]
-%if %1 <= mmsize/2
-    mova    m3, [r0+r1*2]
-    %define offset r3*2
-    %define num_rows 2
-%else
-    mova    m3, [r0+mmsize]
-    %define offset mmsize
-    %define num_rows 1
-%endif
-    lea     r0, [r0+r1*2*num_rows]
+    mova    m2, [r0+offset0_1]
+    mova    m3, [r0+offset0_2]
+    mova    m4, [r0+offset0_3]
     psubw   m1, [r2]
-    psubw   m3, [r2+offset]
-    lea     r2, [r2+r3*2*num_rows]
+    psubw   m2, [r2+offset1_1]
+    psubw   m3, [r2+offset1_2]
+    psubw   m4, [r2+offset1_3]
+%if %%n > 1
+    lea     r0, [r0+r1*(%2/%%n)]
+    lea     r2, [r2+r3*(%2/%%n)]
+%endif
     pmaddwd m1, m1
+    pmaddwd m2, m2
     pmaddwd m3, m3
+    pmaddwd m4, m4
+    paddd   m1, m2
+    paddd   m3, m4
     paddd   m0, m1
     paddd   m0, m3
-    dec     r4
+%if %%n > 1
+    dec    r4d
     jg .loop
+%endif
     HADDD   m0, m5
-    movd   eax, m0
-    RET
-%endmacro
-
-%macro SSD_16_MMX 2
-cglobal pixel_ssd_%1x%2, 4,5
-    mov     r4, %1*%2/mmsize/2
-    pxor    m0, m0
-.loop
-    mova    m1, [r0]
-    mova    m2, [r2]
-    mova    m3, [r0+mmsize]
-    mova    m4, [r2+mmsize]
-    mova    m5, [r0+mmsize*2]
-    mova    m6, [r2+mmsize*2]
-    mova    m7, [r0+mmsize*3]
-    psubw   m1, m2
-    psubw   m3, m4
-    mova    m2, [r2+mmsize*3]
-    psubw   m5, m6
-    pmaddwd m1, m1
-    psubw   m7, m2
-    pmaddwd m3, m3
-    pmaddwd m5, m5
-    lea     r0, [r0+r1*2]
-    lea     r2, [r2+r3*2]
-    pmaddwd m7, m7
-    paddd   m1, m3
-    paddd   m5, m7
-    paddd   m0, m1
-    paddd   m0, m5
-    dec     r4
-    jg .loop
-    HADDD   m0, m7
     movd   eax, m0
     RET
 %endmacro
@@ -217,8 +215,8 @@ SSD_ONE     4, 16
 SSD_ONE     8,  4
 SSD_ONE     8,  8
 SSD_ONE     8, 16
-SSD_16_MMX 16,  8
-SSD_16_MMX 16, 16
+SSD_ONE    16,  8
+SSD_ONE    16, 16
 INIT_XMM sse2
 SSD_ONE     8,  4
 SSD_ONE     8,  8
