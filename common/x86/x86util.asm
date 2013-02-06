@@ -214,15 +214,20 @@
 %endif
 %endmacro
 
-%macro ABSD 2
+%macro ABSD 2-3
 %if cpuflag(ssse3)
     pabsd   %1, %2
 %else
-    pxor    %1, %1
-    pcmpgtd %1, %2
-    pxor    %2, %1
-    psubd   %2, %1
-    SWAP    %1, %2
+    %define %%s %2
+%if %0 == 3
+    mova    %3, %2
+    %define %%s %3
+%endif
+    pxor     %1, %1
+    pcmpgtd  %1, %%s
+    pxor    %%s, %1
+    psubd   %%s, %1
+    SWAP     %1, %%s
 %endif
 %endmacro
 

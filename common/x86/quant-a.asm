@@ -1370,18 +1370,18 @@ cglobal coeff_last64, 1, 5-mmsize/16
     add eax, 32
     RET
 %else
-cglobal coeff_last64, 1,4
+cglobal coeff_last64, 1,3
     pxor m2, m2
     LAST_MASK 16, r1d, r0+SIZEOF_DCTCOEF* 0
     LAST_MASK 16, r2d, r0+SIZEOF_DCTCOEF*16
-    LAST_MASK 16, r3d, r0+SIZEOF_DCTCOEF*32
-    LAST_MASK 16, r0d, r0+SIZEOF_DCTCOEF*48
     shl r2d, 16
-    shl r0d, 16
     or  r1d, r2d
-    or  r3d, r0d
-    shl  r3, 32
-    or   r1, r3
+    LAST_MASK 16, r2d, r0+SIZEOF_DCTCOEF*32
+    LAST_MASK 16, r0d, r0+SIZEOF_DCTCOEF*48
+    shl r0d, 16
+    or  r2d, r0d
+    shl  r2, 32
+    or   r1, r2
     not  r1
     BSR rax, r1, 0x3f
     RET

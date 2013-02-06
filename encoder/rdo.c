@@ -639,8 +639,8 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
     const uint32_t *coef_weight1 = num_coefs == 64 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
     const uint32_t *coef_weight2 = num_coefs == 64 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
     const int b_interlaced = MB_INTERLACED;
-    uint8_t *cabac_state_sig = &h->cabac.state[ significant_coeff_flag_offset[b_interlaced][ctx_block_cat] ];
-    uint8_t *cabac_state_last = &h->cabac.state[ last_coeff_flag_offset[b_interlaced][ctx_block_cat] ];
+    uint8_t *cabac_state_sig = &h->cabac.state[ x264_significant_coeff_flag_offset[b_interlaced][ctx_block_cat] ];
+    uint8_t *cabac_state_last = &h->cabac.state[ x264_last_coeff_flag_offset[b_interlaced][ctx_block_cat] ];
     int levelgt1_ctx = b_chroma && dc ? 8 : 9;
 
     if( dc )
@@ -683,7 +683,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
     }
 
     int last_nnz = h->quantf.coeff_last[ctx_block_cat]( quant_coefs+b_ac )+b_ac;
-    uint8_t *cabac_state = &h->cabac.state[ coeff_abs_level_m1_offset[ctx_block_cat] ];
+    uint8_t *cabac_state = &h->cabac.state[ x264_coeff_abs_level_m1_offset[ctx_block_cat] ];
 
     /* shortcut for dc-only blocks.
      * this doesn't affect the output, but saves some unnecessary computation. */

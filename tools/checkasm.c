@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include "common/common.h"
 #include "common/cpu.h"
+#include "encoder/cabac.c"
 
 // GCC doesn't align stack variables on ARM, so use .bss
 #if ARCH_ARM
@@ -2312,13 +2313,110 @@ DECL_CABAC(asm)
 #define run_cabac_terminal_asm run_cabac_terminal_c
 #endif
 
+static void x264_cabac_block_residual_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+{
+    x264_cabac_block_residual_internal( h, cb, ctx_block_cat, l, 0 );
+    cb->p = cb->p_start;
+}
+
+/* Wrapper to roll back the pointer to avoid running out of memory bounds during
+ * benchmark repetitions.  Introduces slight bias into the test, but not too much. */
+static void x264_cabac_block_residual_asm( void (*c)( dctcoef *, int, intptr_t, x264_cabac_t * ),
+                                           dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb )
+{
+    c( l, b_interlaced, ctx_block_cat, cb );
+    cb->p = cb->p_start;
+}
+
+void x264_cabac_block_residual_8x8_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
+void x264_cabac_block_residual_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
+
 static int check_cabac( int cpu_ref, int cpu_new )
 {
-    int ret = 0, ok, used_asm = 1;
+    int ret = 0, ok = 1, used_asm = 0;
     x264_t h;
     h.sps->i_chroma_format_idc = 3;
+
+    x264_bitstream_function_t bs_ref;
+    x264_bitstream_function_t bs_a;
+    x264_bitstream_init( cpu_ref, &bs_ref );
+    x264_bitstream_init( cpu_new, &bs_a );
+    x264_quant_init( &h, cpu_new, &h.quantf );
+    h.quantf.coeff_last[DCT_CHROMA_DC] = h.quantf.coeff_last4;
+
+#define CABAC_RESIDUAL(name, start, end, rd)\
+{\
+    static int cabac_checked = 0;\
+    if( bs_a.name##_internal && (bs_a.name##_internal != bs_ref.name##_internal || ((cpu_new&X264_CPU_SSE2) && !cabac_checked)) )\
+    {\
+        cabac_checked = 1;\
+        used_asm = 1;\
+        set_func_name( #name );\
+        for( int i = 0; i < 2; i++ )\
+        {\
+            for( intptr_t ctx_block_cat = start; ctx_block_cat <= end; ctx_block_cat++ )\
+            {\
+                for( int j = 0; j < 256; j++ )\
+                {\
+                    ALIGNED_ARRAY_16( dctcoef, dct, [2],[64] );\
+                    static const uint8_t ctx_ac[14] = {0,1,0,0,1,0,0,1,0,0,0,1,0,0};\
+                    int ac = ctx_ac[ctx_block_cat];\
+                    int nz = 0;\
+                    while( !nz )\
+                    {\
+                        for( int k = 0; k <= x264_count_cat_m1[ctx_block_cat]; k++ )\
+                        {\
+                            /* Very rough distribution that covers possible inputs */\
+                            int rnd = rand();\
+                            int coef = !(rnd&3);\
+                            coef += !(rnd&  15) * (rand()&0x0006);\
+                            coef += !(rnd&  63) * (rand()&0x0008);\
+                            coef += !(rnd& 255) * (rand()&0x00F0);\
+                            coef += !(rnd&1023) * (rand()&0x7F00);\
+                            nz |= dct[0][ac+k] = dct[1][ac+k] = coef * ((rand()&1) ? 1 : -1);\
+                        }\
+                    }\
+                    h.mb.b_interlaced = i;\
+                    x264_cabac_t cb[2];\
+                    x264_cabac_context_init( &h, &cb[0], SLICE_TYPE_P, 26, 0 );\
+                    x264_cabac_context_init( &h, &cb[1], SLICE_TYPE_P, 26, 0 );\
+                    x264_cabac_encode_init( &cb[0], buf3, buf3+0x3f0 );\
+                    x264_cabac_encode_init( &cb[1], buf4, buf4+0x3f0 );\
+                    cb[0].f8_bits_encoded = 0;\
+                    cb[1].f8_bits_encoded = 0;\
+                    if( !rd ) memcpy( buf4, buf3, 0x400 );\
+                    call_c1( x264_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
+                    call_a1( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
+                    ok = cb[0].f8_bits_encoded == cb[1].f8_bits_encoded && !memcmp(cb[0].state, cb[1].state, 1024);\
+                    if( !rd ) ok |= !memcmp( buf3, buf4, 0x400 ) && !memcmp( &cb[1], &cb[0], offsetof(x264_cabac_t, p_start) );\
+                    if( !ok )\
+                    {\
+                        fprintf( stderr, #name " :  [FAILED] ctx_block_cat %d", (int)ctx_block_cat );\
+                        if( rd && cb[0].f8_bits_encoded != cb[1].f8_bits_encoded )\
+                            fprintf( stderr, " (%d != %d)", cb[0].f8_bits_encoded, cb[1].f8_bits_encoded );\
+                        fprintf( stderr, "\n");\
+                        goto name##fail;\
+                    }\
+                    call_c2( x264_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
+                    if( rd ) call_a2( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
+                    else     call_a2( x264_cabac_block_residual_asm, bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
+                }\
+            }\
+        }\
+    }\
+}\
+name##fail:
+
+    CABAC_RESIDUAL( cabac_block_residual, 0, DCT_LUMA_8x8, 0 )
+    report( "cabac residual:" );
+
+    CABAC_RESIDUAL( cabac_block_residual_rd, 0, DCT_LUMA_8x8-1, 1 )
+    CABAC_RESIDUAL( cabac_block_residual_8x8_rd, DCT_LUMA_8x8, DCT_LUMA_8x8, 1 )
+    report( "cabac residual rd:" );
+
     if( cpu_ref || run_cabac_decision_c == run_cabac_decision_asm )
-        return 0;
+        return ret;
+    used_asm = 1;
     x264_cabac_init( &h );
 
     set_func_name( "cabac_encode_decision" );
