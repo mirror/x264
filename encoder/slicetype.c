@@ -633,15 +633,16 @@ lowres_intra_mb:
     if( !fenc->b_intra_calculated )
     {
         ALIGNED_ARRAY_16( pixel, edge,[36] );
-        pixel *pix = &pix1[8+FDEC_STRIDE - 1];
-        pixel *src = &fenc->lowres[0][i_pel_offset - 1];
+        pixel *pix = &pix1[8+FDEC_STRIDE];
+        pixel *src = &fenc->lowres[0][i_pel_offset];
         const int intra_penalty = 5 * a->i_lambda;
         int satds[3];
+        int pixoff = 4 / sizeof(pixel);
 
-        memcpy( pix-FDEC_STRIDE, src-i_stride, 17 * sizeof(pixel) );
-        for( int i = 0; i < 8; i++ )
-            pix[i*FDEC_STRIDE] = src[i*i_stride];
-        pix++;
+        /* Avoid store forwarding stalls by writing larger chunks */
+        memcpy( pix-FDEC_STRIDE, src-i_stride, 16 * sizeof(pixel) );
+        for( int i = -1; i < 8; i++ )
+            M32( &pix[i*FDEC_STRIDE-pixoff] ) = M32( &src[i*i_stride-pixoff] );
 
         h->pixf.intra_mbcmp_x3_8x8c( h->mb.pic.p_fenc[0], pix, satds );
         int i_icost = X264_MIN3( satds[0], satds[1], satds[2] );

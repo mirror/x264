@@ -4410,8 +4410,8 @@ cglobal pixel_ads4, 5,7,12
     punpckhqdq xmm5, xmm5
     punpckhqdq xmm4, xmm4
 %if ARCH_X86_64
-    pshuflw xmm8, r6m, 0
-    punpcklqdq xmm8, xmm8
+    movd    xmm8, r6m
+    SPLATW  xmm8, xmm8
     ADS_START
     movdqu  xmm10, [r1]
     movdqu  xmm11, [r1+r2]
