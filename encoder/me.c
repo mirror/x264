@@ -177,6 +177,7 @@ do\
 
 #define FPEL(mv) (((mv)+2)>>2) /* Convert subpel MV to fullpel with rounding... */
 #define SPEL(mv) ((mv)<<2)     /* ... and the reverse. */
+#define SPELx2(mv) (SPEL(mv)&0xFFFCFFFC) /* for two packed MVs */
 
 void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, int *p_halfpel_thresh )
 {
@@ -186,7 +187,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
     const int stride = m->i_stride[0];
     int i_me_range = h->param.analyse.i_me_range;
     int bmx, bmy, bcost = COST_MAX;
-    int bpred_mx = 0, bpred_my = 0, bpred_cost = COST_MAX;
+    int bpred_cost = COST_MAX;
     int omx, omy, pmx, pmy;
     pixel *p_fenc = m->p_fenc[0];
     pixel *p_fref_w = m->p_fref_w;
@@ -203,7 +204,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
 #define pack16to32_mask2(mx,my) ((mx<<16)|(my&0x7FFF))
     uint32_t mv_min = pack16to32_mask2( -mv_x_min, -mv_y_min );
     uint32_t mv_max = pack16to32_mask2( mv_x_max, mv_y_max )|0x8000;
-    uint32_t pmv;
+    uint32_t pmv, bpred_mv = 0;
 
 #define CHECK_MVRANGE(mx,my) (!(((pack16to32_mask2(mx,my) + mv_min) | (mv_max - pack16to32_mask2(mx,my))) & 0x80004000))
 
@@ -215,8 +216,8 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
     if( h->mb.i_subpel_refine >= 3 )
     {
         /* Calculate and check the MVP first */
-        bpred_mx = x264_clip3( m->mvp[0], SPEL(mv_x_min), SPEL(mv_x_max) );
-        bpred_my = x264_clip3( m->mvp[1], SPEL(mv_y_min), SPEL(mv_y_max) );
+        int bpred_mx = x264_clip3( m->mvp[0], SPEL(mv_x_min), SPEL(mv_x_max) );
+        int bpred_my = x264_clip3( m->mvp[1], SPEL(mv_y_min), SPEL(mv_y_max) );
         pmv = pack16to32_mask( bpred_mx, bpred_my );
         pmx = FPEL( bpred_mx );
         pmy = FPEL( bpred_my );
@@ -253,7 +254,8 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
          * we'll be starting the fullpel motion search. */
         bmx = FPEL( bpred_mx );
         bmy = FPEL( bpred_my );
-        if( (bpred_mx|bpred_my)&0x3 ) /* Only test if the tested predictor is actually subpel... */
+        bpred_mv = pack16to32_mask(bpred_mx, bpred_my);
+        if( bpred_mv&0x00030003 ) /* Only test if the tested predictor is actually subpel... */
             COST_MV( bmx, bmy );
         else                          /* Otherwise just copy the cost (we already know it) */
             bcost = bpred_cost;
@@ -400,19 +402,20 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
             bcost >>= 3;
     #endif
             /* square refine */
-            int dir = 0;
+            bcost <<= 4;
             COST_MV_X4_DIR(  0,-1,  0,1, -1,0, 1,0, costs );
-            COPY2_IF_LT( bcost, costs[0], dir, 1 );
-            COPY2_IF_LT( bcost, costs[1], dir, 2 );
-            COPY2_IF_LT( bcost, costs[2], dir, 3 );
-            COPY2_IF_LT( bcost, costs[3], dir, 4 );
+            COPY1_IF_LT( bcost, (costs[0]<<4)+1 );
+            COPY1_IF_LT( bcost, (costs[1]<<4)+2 );
+            COPY1_IF_LT( bcost, (costs[2]<<4)+3 );
+            COPY1_IF_LT( bcost, (costs[3]<<4)+4 );
             COST_MV_X4_DIR( -1,-1, -1,1, 1,-1, 1,1, costs );
-            COPY2_IF_LT( bcost, costs[0], dir, 5 );
-            COPY2_IF_LT( bcost, costs[1], dir, 6 );
-            COPY2_IF_LT( bcost, costs[2], dir, 7 );
-            COPY2_IF_LT( bcost, costs[3], dir, 8 );
-            bmx += square1[dir][0];
-            bmy += square1[dir][1];
+            COPY1_IF_LT( bcost, (costs[0]<<4)+5 );
+            COPY1_IF_LT( bcost, (costs[1]<<4)+6 );
+            COPY1_IF_LT( bcost, (costs[2]<<4)+7 );
+            COPY1_IF_LT( bcost, (costs[3]<<4)+8 );
+            bmx += square1[bcost&15][0];
+            bmy += square1[bcost&15][1];
+            bcost >>= 4;
             break;
         }
 
@@ -769,23 +772,21 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
     }
 
     /* -> qpel mv */
-    if( bpred_cost < bcost )
+    uint32_t bmv = pack16to32_mask(bmx,bmy);
+    uint32_t bmv_spel = SPELx2(bmv);
+    if( h->mb.i_subpel_refine < 3 )
     {
-        m->mv[0] = bpred_mx;
-        m->mv[1] = bpred_my;
-        m->cost = bpred_cost;
+        m->cost_mv = p_cost_mvx[bmx<<2] + p_cost_mvy[bmy<<2];
+        m->cost = bcost;
+        /* compute the real cost */
+        if( bmv == pmv ) m->cost += m->cost_mv;
+        M32( m->mv ) = bmv_spel;
     }
     else
     {
-        m->mv[0] = SPEL(bmx);
-        m->mv[1] = SPEL(bmy);
-        m->cost = bcost;
+        M32(m->mv) = bpred_cost < bcost ? bpred_mv : bmv_spel;
+        m->cost = X264_MIN( bpred_cost, bcost );
     }
-
-    /* compute the real cost */
-    m->cost_mv = p_cost_mvx[ m->mv[0] ] + p_cost_mvy[ m->mv[1] ];
-    if( bmx == pmx && bmy == pmy && h->mb.i_subpel_refine < 3 )
-        m->cost += m->cost_mv;
 
     /* subpel refine */
     if( h->mb.i_subpel_refine >= 2 )
@@ -880,33 +881,45 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
     int bcost = m->cost;
     int odir = -1, bdir;
 
-    /* try the subpel component of the predicted mv */
-    if( hpel_iters && h->mb.i_subpel_refine < 3 )
-    {
-        int mx = x264_clip3( m->mvp[0], h->mb.mv_min_spel[0]+2, h->mb.mv_max_spel[0]-2 );
-        int my = x264_clip3( m->mvp[1], h->mb.mv_min_spel[1]+2, h->mb.mv_max_spel[1]-2 );
-        if( (mx-bmx)|(my-bmy) )
-            COST_MV_SAD( mx, my );
-    }
-
     /* halfpel diamond search */
-    for( int i = hpel_iters; i > 0; i-- )
+    if( hpel_iters )
     {
-        int omx = bmx, omy = bmy;
-        int costs[4];
-        intptr_t stride = 64; // candidates are either all hpel or all qpel, so one stride is enough
-        pixel *src0, *src1, *src2, *src3;
-        src0 = h->mc.get_ref( pix,    &stride, m->p_fref, m->i_stride[0], omx, omy-2, bw, bh+1, &m->weight[0] );
-        src2 = h->mc.get_ref( pix+32, &stride, m->p_fref, m->i_stride[0], omx-2, omy, bw+4, bh, &m->weight[0] );
-        src1 = src0 + stride;
-        src3 = src2 + 1;
-        h->pixf.fpelcmp_x4[i_pixel]( m->p_fenc[0], src0, src1, src2, src3, stride, costs );
-        COPY2_IF_LT( bcost, costs[0] + p_cost_mvx[omx  ] + p_cost_mvy[omy-2], bmy, omy-2 );
-        COPY2_IF_LT( bcost, costs[1] + p_cost_mvx[omx  ] + p_cost_mvy[omy+2], bmy, omy+2 );
-        COPY3_IF_LT( bcost, costs[2] + p_cost_mvx[omx-2] + p_cost_mvy[omy  ], bmx, omx-2, bmy, omy );
-        COPY3_IF_LT( bcost, costs[3] + p_cost_mvx[omx+2] + p_cost_mvy[omy  ], bmx, omx+2, bmy, omy );
-        if( (bmx == omx) & (bmy == omy) )
-            break;
+        /* try the subpel component of the predicted mv */
+        if( h->mb.i_subpel_refine < 3 )
+        {
+            int mx = x264_clip3( m->mvp[0], h->mb.mv_min_spel[0]+2, h->mb.mv_max_spel[0]-2 );
+            int my = x264_clip3( m->mvp[1], h->mb.mv_min_spel[1]+2, h->mb.mv_max_spel[1]-2 );
+            if( (mx-bmx)|(my-bmy) )
+                COST_MV_SAD( mx, my );
+        }
+
+        bcost <<= 6;
+        for( int i = hpel_iters; i > 0; i-- )
+        {
+            int omx = bmx, omy = bmy;
+            int costs[4];
+            intptr_t stride = 64; // candidates are either all hpel or all qpel, so one stride is enough
+            pixel *src0, *src1, *src2, *src3;
+            src0 = h->mc.get_ref( pix,    &stride, m->p_fref, m->i_stride[0], omx, omy-2, bw, bh+1, &m->weight[0] );
+            src2 = h->mc.get_ref( pix+32, &stride, m->p_fref, m->i_stride[0], omx-2, omy, bw+4, bh, &m->weight[0] );
+            src1 = src0 + stride;
+            src3 = src2 + 1;
+            h->pixf.fpelcmp_x4[i_pixel]( m->p_fenc[0], src0, src1, src2, src3, stride, costs );
+            costs[0] += p_cost_mvx[omx  ] + p_cost_mvy[omy-2];
+            costs[1] += p_cost_mvx[omx  ] + p_cost_mvy[omy+2];
+            costs[2] += p_cost_mvx[omx-2] + p_cost_mvy[omy  ];
+            costs[3] += p_cost_mvx[omx+2] + p_cost_mvy[omy  ];
+            COPY1_IF_LT( bcost, (costs[0]<<6)+2 );
+            COPY1_IF_LT( bcost, (costs[1]<<6)+6 );
+            COPY1_IF_LT( bcost, (costs[2]<<6)+16 );
+            COPY1_IF_LT( bcost, (costs[3]<<6)+48 );
+            if( !(bcost&63) )
+                break;
+            bmx -= (bcost<<26)>>29;
+            bmy -= (bcost<<29)>>29;
+            bcost &= ~63;
+        }
+        bcost >>= 6;
     }
 
     if( !b_refine_qpel && (h->pixf.mbcmp_unaligned[0] != h->pixf.fpelcmp[0] || b_chroma_me) )
@@ -959,10 +972,18 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
         h->mc.mc_luma( pix+32, 64, m->p_fref, m->i_stride[0], omx-1, omy, bw, bh, &m->weight[0] );
         h->mc.mc_luma( pix+48, 64, m->p_fref, m->i_stride[0], omx+1, omy, bw, bh, &m->weight[0] );
         h->pixf.fpelcmp_x4[i_pixel]( m->p_fenc[0], pix, pix+16, pix+32, pix+48, 64, costs );
-        COPY2_IF_LT( bcost, costs[0] + p_cost_mvx[omx  ] + p_cost_mvy[omy-1], bmy, omy-1 );
-        COPY2_IF_LT( bcost, costs[1] + p_cost_mvx[omx  ] + p_cost_mvy[omy+1], bmy, omy+1 );
-        COPY3_IF_LT( bcost, costs[2] + p_cost_mvx[omx-1] + p_cost_mvy[omy  ], bmx, omx-1, bmy, omy );
-        COPY3_IF_LT( bcost, costs[3] + p_cost_mvx[omx+1] + p_cost_mvy[omy  ], bmx, omx+1, bmy, omy );
+        costs[0] += p_cost_mvx[omx  ] + p_cost_mvy[omy-1];
+        costs[1] += p_cost_mvx[omx  ] + p_cost_mvy[omy+1];
+        costs[2] += p_cost_mvx[omx-1] + p_cost_mvy[omy  ];
+        costs[3] += p_cost_mvx[omx+1] + p_cost_mvy[omy  ];
+        bcost <<= 4;
+        COPY1_IF_LT( bcost, (costs[0]<<4)+1 );
+        COPY1_IF_LT( bcost, (costs[1]<<4)+3 );
+        COPY1_IF_LT( bcost, (costs[2]<<4)+4 );
+        COPY1_IF_LT( bcost, (costs[3]<<4)+12 );
+        bmx -= (bcost<<28)>>30;
+        bmy -= (bcost<<30)>>30;
+        bcost >>= 4;
     }
 
     m->cost = bcost;
