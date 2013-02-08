@@ -254,6 +254,13 @@ static ALWAYS_INLINE uint16_t endian_fix16( uint16_t x )
 }
 #endif
 
+/* For values with 4 bits or less. */
+static int ALWAYS_INLINE x264_ctz_4bit( uint32_t x )
+{
+    static uint8_t lut[16] = {4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0};
+    return lut[x];
+}
+
 #if defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 3)
 #define x264_clz(x) __builtin_clz(x)
 #define x264_ctz(x) __builtin_ctz(x)

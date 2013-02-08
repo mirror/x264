@@ -1161,5 +1161,6 @@ int x264_quant_8x8_trellis( x264_t *h, dctcoef *dct, int i_quant_cat,
         h->mb.cache.non_zero_count[x264_scan8[idx*4+i]] = nz;
         nzaccum |= nz;
     }
+    STORE_8x8_NNZ( 0, idx, 0 );
     return nzaccum;
 }

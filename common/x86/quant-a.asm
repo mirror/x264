@@ -175,7 +175,7 @@ cextern pd_1024
 %endif ; cpuflag
 %endmacro
 
-%macro QUANT_ONE_AC_MMX 4
+%macro QUANT_ONE_AC_MMX 5
     mova        m0, [%1]
     mova        m2, [%2]
     ABSD        m1, m0
@@ -191,10 +191,10 @@ cextern pd_1024
     psrad       m1, 16
     PSIGND      m1, m0
     mova      [%1], m1
-    ACCUM      por, 5, 1, %4
+    ACCUM      por, %5, 1, %4
 %endmacro
 
-%macro QUANT_TWO_AC 4
+%macro QUANT_TWO_AC 5
 %if cpuflag(sse4)
     mova        m0, [%1       ]
     mova        m1, [%1+mmsize]
@@ -210,11 +210,11 @@ cextern pd_1024
     PSIGND      m3, m1
     mova [%1       ], m2
     mova [%1+mmsize], m3
-    ACCUM      por, 5, 2, %4
-    por         m5, m3
+    ACCUM      por, %5, 2, %4
+    ACCUM      por, %5, 3, %4+mmsize
 %else ; !sse4
-    QUANT_ONE_AC_MMX %1, %2, %3, %4
-    QUANT_ONE_AC_MMX %1+mmsize, %2+mmsize, %3+mmsize, %4+mmsize
+    QUANT_ONE_AC_MMX %1, %2, %3, %4, %5
+    QUANT_ONE_AC_MMX %1+mmsize, %2+mmsize, %3+mmsize, %4+mmsize, %5
 %endif ; cpuflag
 %endmacro
 
@@ -244,10 +244,35 @@ cglobal quant_%1x%2_dc, 3,3,8
 cglobal quant_%1x%2, 3,3,8
 %assign x 0
 %rep %1*%2/(mmsize/2)
-    QUANT_TWO_AC r0+x, r1+x, r2+x, x
+    QUANT_TWO_AC r0+x, r1+x, r2+x, x, 5
 %assign x x+mmsize*2
 %endrep
     QUANT_END
+    RET
+%endmacro
+
+%macro QUANT_4x4 2
+    QUANT_TWO_AC r0+%1+mmsize*0, r1+mmsize*0, r2+mmsize*0, mmsize*0, %2
+    QUANT_TWO_AC r0+%1+mmsize*2, r1+mmsize*2, r2+mmsize*2, mmsize*2, %2
+%endmacro
+
+%macro QUANT_4x4x4 0
+cglobal quant_4x4x4, 3,3,8
+    QUANT_4x4  0, 5
+    QUANT_4x4 64, 6
+    add       r0, 128
+    packssdw  m5, m6
+    QUANT_4x4  0, 6
+    QUANT_4x4 64, 7
+    packssdw  m6, m7
+    packssdw  m5, m6
+    packssdw  m5, m5  ; AA BB CC DD
+    packsswb  m5, m5  ; A B C D
+    pxor      m4, m4
+    pcmpeqb   m5, m4
+    pmovmskb eax, m5
+    not      eax
+    and      eax, 0xf
     RET
 %endmacro
 
@@ -256,18 +281,21 @@ QUANT_DC 2, 2
 QUANT_DC 4, 4
 QUANT_AC 4, 4
 QUANT_AC 8, 8
+QUANT_4x4x4
 
 INIT_XMM ssse3
 QUANT_DC 2, 2
 QUANT_DC 4, 4
 QUANT_AC 4, 4
 QUANT_AC 8, 8
+QUANT_4x4x4
 
 INIT_XMM sse4
 QUANT_DC 2, 2
 QUANT_DC 4, 4
 QUANT_AC 4, 4
 QUANT_AC 8, 8
+QUANT_4x4x4
 
 %endif ; HIGH_BIT_DEPTH
 
@@ -285,7 +313,7 @@ QUANT_AC 8, 8
     ACCUM     por, 5, 0, %4
 %endmacro
 
-%macro QUANT_TWO 7
+%macro QUANT_TWO 8
     mova       m1, %1
     mova       m3, %2
     ABSW       m0, m1, sign
@@ -298,8 +326,8 @@ QUANT_AC 8, 8
     PSIGNW     m2, m3
     mova       %1, m0
     mova       %2, m2
-    ACCUM     por, 5, 0, %7
-    por        m5, m2
+    ACCUM     por, %8, 0, %7
+    ACCUM     por, %8, 2, %7+mmsize
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -313,7 +341,7 @@ cglobal %1, 1,1,%3
 %else
 %assign x 0
 %rep %2/2
-    QUANT_TWO [r0+x], [r0+x+mmsize], m6, m6, m7, m7, x
+    QUANT_TWO [r0+x], [r0+x+mmsize], m6, m6, m7, m7, x, 5
 %assign x x+mmsize*2
 %endrep
 %endif
@@ -328,10 +356,48 @@ cglobal %1, 1,1,%3
 cglobal %1, 3,3
 %assign x 0
 %rep %2/2
-    QUANT_TWO [r0+x], [r0+x+mmsize], [r1+x], [r1+x+mmsize], [r2+x], [r2+x+mmsize], x
+    QUANT_TWO [r0+x], [r0+x+mmsize], [r1+x], [r1+x+mmsize], [r2+x], [r2+x+mmsize], x, 5
 %assign x x+mmsize*2
 %endrep
     QUANT_END
+    RET
+%endmacro
+
+%macro QUANT_4x4 2
+%if UNIX64
+    QUANT_TWO [r0+%1+mmsize*0], [r0+%1+mmsize*1], m8, m9, m10, m11, mmsize*0, %2
+%else
+    QUANT_TWO [r0+%1+mmsize*0], [r0+%1+mmsize*1], [r1+mmsize*0], [r1+mmsize*1], [r2+mmsize*0], [r2+mmsize*1], mmsize*0, %2
+%if mmsize==8
+    QUANT_TWO [r0+%1+mmsize*2], [r0+%1+mmsize*3], [r1+mmsize*2], [r1+mmsize*3], [r2+mmsize*2], [r2+mmsize*3], mmsize*2, %2
+%endif
+%endif
+%endmacro
+
+%macro QUANT_4x4x4 0
+cglobal quant_4x4x4, 3,3,7
+%if UNIX64
+    mova      m8, [r1+mmsize*0]
+    mova      m9, [r1+mmsize*1]
+    mova     m10, [r2+mmsize*0]
+    mova     m11, [r2+mmsize*1]
+%endif
+    QUANT_4x4  0, 4
+    QUANT_4x4 32, 5
+    packssdw  m4, m5
+    QUANT_4x4 64, 5
+    QUANT_4x4 96, 6
+    packssdw  m5, m6
+    packssdw  m4, m5
+%if mmsize == 16
+    packssdw  m4, m4  ; AA BB CC DD
+%endif
+    packsswb  m4, m4  ; A B C D
+    pxor      m3, m3
+    pcmpeqb   m4, m3
+    pmovmskb eax, m4
+    not      eax
+    and      eax, 0xf
     RET
 %endmacro
 
@@ -342,17 +408,20 @@ QUANT_DC quant_4x4_dc, 4
 INIT_MMX mmx
 QUANT_AC quant_4x4, 4
 QUANT_AC quant_8x8, 16
+QUANT_4x4x4
 %endif
 
 INIT_XMM sse2
 QUANT_DC quant_4x4_dc, 2, 8
 QUANT_AC quant_4x4, 2
 QUANT_AC quant_8x8, 8
+QUANT_4x4x4
 
 INIT_XMM ssse3
 QUANT_DC quant_4x4_dc, 2, 8
 QUANT_AC quant_4x4, 2
 QUANT_AC quant_8x8, 8
+QUANT_4x4x4
 
 INIT_MMX ssse3
 QUANT_DC quant_2x2_dc, 1

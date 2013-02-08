@@ -104,6 +104,10 @@ do\
     M32( &h->mb.cache.non_zero_count[x264_scan8[16*p+10]] ) = 0;\
 } while(0)
 
+/* A special for loop that iterates branchlessly over each set
+ * bit in a 4-bit input. */
+#define FOREACH_BIT(idx,start,mask) for( int idx = start, msk = mask, skip; msk && (skip = x264_ctz_4bit(msk), idx += skip, msk >>= skip+1, 1); idx++ )
+
 static ALWAYS_INLINE void x264_mb_encode_i4x4( x264_t *h, int p, int idx, int i_qp, int i_mode, int b_predict )
 {
     int nz;
