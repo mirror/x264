@@ -659,11 +659,12 @@ static const uint16_t coeff_abs_level_m1_offset[14] =
     227+0, 227+10, 227+20, 227+30, 227+39, 426, 952+0, 952+10, 952+20, 708, 982+0, 982+10, 982+20, 766
 };
 #if RDO_SKIP_BS
-extern const uint8_t x264_significant_coeff_flag_offset_8x8[2][63];
+extern const uint8_t x264_significant_coeff_flag_offset_8x8[2][64];
 extern const uint8_t x264_last_coeff_flag_offset_8x8[63];
 extern const uint8_t x264_coeff_flag_offset_chroma_422_dc[7];
 #else
-const uint8_t x264_significant_coeff_flag_offset_8x8[2][63] =
+/* Padded to [64] for easier addressing */
+const uint8_t x264_significant_coeff_flag_offset_8x8[2][64] =
 {{
     0, 1, 2, 3, 4, 5, 5, 4, 4, 3, 3, 4, 4, 4, 5, 5,
     4, 4, 4, 4, 3, 3, 6, 7, 7, 7, 8, 9,10, 9, 8, 7,
