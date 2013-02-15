@@ -597,7 +597,8 @@ static void help( x264_param_t *defaults, int longhelp )
         "                              slices and is overridden by other slicing options\n" );
     else H1( "      --slices <integer>      Number of slices per frame\n" );
     H2( "      --slice-max-size <integer> Limit the size of each slice in bytes\n");
-    H2( "      --slice-max-mbs <integer> Limit the size of each slice in macroblocks\n");
+    H2( "      --slice-max-mbs <integer> Limit the size of each slice in macroblocks (max)\n");
+    H2( "      --slice-min-mbs <integer> Limit the size of each slice in macroblocks (min)\n");
     H0( "      --tff                   Enable interlaced mode (top field first)\n" );
     H0( "      --bff                   Enable interlaced mode (bottom field first)\n" );
     H2( "      --constrained-intra     Enable constrained intra prediction.\n" );
@@ -971,6 +972,7 @@ static struct option long_options[] =
     { "no-sliced-threads", no_argument, NULL, 0 },
     { "slice-max-size",    required_argument, NULL, 0 },
     { "slice-max-mbs",     required_argument, NULL, 0 },
+    { "slice-min-mbs",     required_argument, NULL, 0 },
     { "slices",            required_argument, NULL, 0 },
     { "thread-input",      no_argument, NULL, OPT_THREAD_INPUT },
     { "sync-lookahead",    required_argument, NULL, 0 },

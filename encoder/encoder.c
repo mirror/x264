@@ -670,6 +670,22 @@ static int x264_validate_parameters( x264_t *h, int b_open )
 
     h->param.i_slice_max_size = X264_MAX( h->param.i_slice_max_size, 0 );
     h->param.i_slice_max_mbs = X264_MAX( h->param.i_slice_max_mbs, 0 );
+    h->param.i_slice_min_mbs = X264_MAX( h->param.i_slice_min_mbs, 0 );
+    if( h->param.i_slice_max_mbs )
+        h->param.i_slice_min_mbs = X264_MIN( h->param.i_slice_min_mbs, h->param.i_slice_max_mbs/2 );
+    else if( !h->param.i_slice_max_size )
+        h->param.i_slice_min_mbs = 0;
+    if( PARAM_INTERLACED && h->param.i_slice_min_mbs )
+    {
+        x264_log( h, X264_LOG_WARNING, "interlace + slice-min-mbs is not implemented\n" );
+        h->param.i_slice_min_mbs = 0;
+    }
+    int mb_width = (h->param.i_width+15)/16;
+    if( h->param.i_slice_min_mbs > mb_width )
+    {
+        x264_log( h, X264_LOG_WARNING, "slice-min-mbs > row mb size (%d) not implemented\n", mb_width );
+        h->param.i_slice_min_mbs = mb_width;
+    }
 
     int max_slices = (h->param.i_height+((16<<PARAM_INTERLACED)-1))/(16<<PARAM_INTERLACED);
     if( h->param.b_sliced_threads )
@@ -1497,6 +1513,7 @@ int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
         COPY( i_bframe_pyramid );
     COPY( i_slice_max_size );
     COPY( i_slice_max_mbs );
+    COPY( i_slice_min_mbs );
     COPY( i_slice_count );
     COPY( b_tff );
 
@@ -2269,8 +2286,12 @@ static int x264_slice_write( x264_t *h )
     int b_deblock = h->sh.i_disable_deblocking_filter_idc != 1;
     int b_hpel = h->fdec->b_kept_as_ref;
     int orig_last_mb = h->sh.i_last_mb;
+    int thread_last_mb = h->i_threadslice_end * h->mb.i_mb_width - 1;
     uint8_t *last_emu_check;
-    x264_bs_bak_t bs_bak[2];
+#define BS_BAK_SLICE_MAX_SIZE 0
+#define BS_BAK_SLICE_MIN_MBS  1
+#define BS_BAK_ROW_VBV        2
+    x264_bs_bak_t bs_bak[3];
     b_deblock &= b_hpel || h->param.b_full_recon || h->param.psz_dump_yuv;
     bs_realign( &h->out.bs );
 
@@ -2318,13 +2339,17 @@ static int x264_slice_write( x264_t *h )
             if( x264_bitstream_check_buffer( h ) )
                 return -1;
             if( !(i_mb_y & SLICE_MBAFF) && h->param.rc.i_vbv_buffer_size )
-                x264_bitstream_backup( h, &bs_bak[1], i_skip, 1 );
+                x264_bitstream_backup( h, &bs_bak[BS_BAK_ROW_VBV], i_skip, 1 );
             if( !h->mb.b_reencode_mb )
                 x264_fdec_filter_row( h, i_mb_y, 0 );
         }
 
         if( !(i_mb_y & SLICE_MBAFF) && back_up_bitstream )
-            x264_bitstream_backup( h, &bs_bak[0], i_skip, 0 );
+        {
+            x264_bitstream_backup( h, &bs_bak[BS_BAK_SLICE_MAX_SIZE], i_skip, 0 );
+            if( slice_max_size && (thread_last_mb+1-mb_xy) == h->param.i_slice_min_mbs )
+                x264_bitstream_backup( h, &bs_bak[BS_BAK_SLICE_MIN_MBS], i_skip, 0 );
+        }
 
         if( PARAM_INTERLACED )
         {
@@ -2387,7 +2412,7 @@ reencode:
                     h->mb.i_skip_intra = 0;
                     h->mb.b_skip_mc = 0;
                     h->mb.b_overflow = 0;
-                    x264_bitstream_restore( h, &bs_bak[0], &i_skip, 0 );
+                    x264_bitstream_restore( h, &bs_bak[BS_BAK_SLICE_MAX_SIZE], &i_skip, 0 );
                     goto reencode;
                 }
             }
@@ -2412,9 +2437,27 @@ reencode:
             /* We'll just re-encode this last macroblock if we go over the max slice size. */
             if( total_bits - starting_bits > slice_max_size && !h->mb.b_reencode_mb )
             {
+                /* Handle the most obnoxious slice-min-mbs edge case: we need to end the slice
+                 * because it's gone over the maximum size, but doing so would violate slice-min-mbs.
+                 * If possible, roll back to the last checkpoint and try again.
+                 * We could try raising QP, but that would break in the case where a slice spans multiple
+                 * rows, which the re-encoding infrastructure can't currently handle. */
+                if( mb_xy < thread_last_mb && (thread_last_mb+1-mb_xy) < h->param.i_slice_min_mbs )
+                {
+                    if( thread_last_mb-h->param.i_slice_min_mbs < h->sh.i_first_mb+h->param.i_slice_min_mbs )
+                    {
+                        x264_log( h, X264_LOG_WARNING, "slice-max-size violated (frame %d, cause: slice-min-mbs)\n", h->i_frame );
+                        slice_max_size = 0;
+                        goto cont;
+                    }
+                    x264_bitstream_restore( h, &bs_bak[BS_BAK_SLICE_MIN_MBS], &i_skip, 0 );
+                    h->mb.b_reencode_mb = 1;
+                    h->sh.i_last_mb = thread_last_mb-h->param.i_slice_min_mbs;
+                    break;
+                }
                 if( mb_xy-SLICE_MBAFF*h->mb.i_mb_stride != h->sh.i_first_mb )
                 {
-                    x264_bitstream_restore( h, &bs_bak[0], &i_skip, 0 );
+                    x264_bitstream_restore( h, &bs_bak[BS_BAK_SLICE_MAX_SIZE], &i_skip, 0 );
                     h->mb.b_reencode_mb = 1;
                     if( SLICE_MBAFF )
                     {
@@ -2432,6 +2475,7 @@ reencode:
                     h->sh.i_last_mb = mb_xy;
             }
         }
+cont:
         h->mb.b_reencode_mb = 0;
 
 #if HAVE_VISUALIZE
@@ -2444,7 +2488,7 @@ reencode:
 
         if( x264_ratecontrol_mb( h, mb_size ) < 0 )
         {
-            x264_bitstream_restore( h, &bs_bak[1], &i_skip, 1 );
+            x264_bitstream_restore( h, &bs_bak[BS_BAK_ROW_VBV], &i_skip, 1 );
             h->mb.b_reencode_mb = 1;
             i_mb_x = 0;
             i_mb_y = i_mb_y - SLICE_MBAFF;
@@ -2543,6 +2587,9 @@ reencode:
             i_mb_x = 0;
         }
     }
+    if( h->sh.i_last_mb < h->sh.i_first_mb )
+        return 0;
+
     h->out.nal[h->out.i_nal].i_last_mb = h->sh.i_last_mb;
 
     if( h->param.b_cabac )
@@ -2654,7 +2701,11 @@ static void *x264_slices_write( x264_t *h )
                 h->sh.i_last_mb = last_x + h->mb.i_mb_stride*last_y;
             }
             else
+            {
                 h->sh.i_last_mb = h->sh.i_first_mb + h->param.i_slice_max_mbs - 1;
+                if( h->sh.i_last_mb < last_thread_mb && last_thread_mb - h->sh.i_last_mb < h->param.i_slice_min_mbs )
+                    h->sh.i_last_mb = last_thread_mb - h->param.i_slice_min_mbs;
+            }
         }
         else if( h->param.i_slice_count && !h->param.b_sliced_threads )
         {

@@ -778,6 +778,8 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->i_slice_max_size = atoi(value);
     OPT("slice-max-mbs")
         p->i_slice_max_mbs = atoi(value);
+    OPT("slice-min-mbs")
+        p->i_slice_min_mbs = atoi(value);
     OPT("slices")
         p->i_slice_count = atoi(value);
     OPT("cabac")
@@ -1309,6 +1311,8 @@ char *x264_param2string( x264_param_t *p, int b_res )
         s += sprintf( s, " slice_max_size=%d", p->i_slice_max_size );
     if( p->i_slice_max_mbs )
         s += sprintf( s, " slice_max_mbs=%d", p->i_slice_max_mbs );
+    if( p->i_slice_min_mbs )
+        s += sprintf( s, " slice_min_mbs=%d", p->i_slice_min_mbs );
     s += sprintf( s, " nr=%d", p->analyse.i_noise_reduction );
     s += sprintf( s, " decimate=%d", p->analyse.b_dct_decimate );
     s += sprintf( s, " interlaced=%s", p->b_interlaced ? p->b_tff ? "tff" : "bff" : p->b_fake_interlaced ? "fake" : "0" );
