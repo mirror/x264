@@ -225,7 +225,7 @@ void x264_cli_printf( int i_level, const char *fmt, ... )
     va_end( arg );
 }
 
-static void print_version_info()
+static void print_version_info( void )
 {
 #ifdef X264_POINTVER
     printf( "x264 "X264_POINTVER"\n" );

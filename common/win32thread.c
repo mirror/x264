@@ -279,7 +279,7 @@ void x264_win32_threading_destroy( void )
     memset( &thread_control, 0, sizeof(x264_win32thread_control_t) );
 }
 
-int x264_pthread_num_processors_np()
+int x264_pthread_num_processors_np( void )
 {
     DWORD_PTR system_cpus, process_cpus = 0;
     int cpus = 0;
