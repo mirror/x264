@@ -696,6 +696,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         if( h->param.i_slice_max_mbs || h->param.i_slice_max_size )
             h->param.i_slice_count = 0;
     }
+    h->param.i_slice_count_max = X264_MAX( h->param.i_slice_count, h->param.i_slice_count_max );
 
     if( h->param.b_bluray_compat )
     {
@@ -1515,6 +1516,7 @@ int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
     COPY( i_slice_max_mbs );
     COPY( i_slice_min_mbs );
     COPY( i_slice_count );
+    COPY( i_slice_count_max );
     COPY( b_tff );
 
     /* VBV can't be turned on if it wasn't on to begin with */
@@ -2437,42 +2439,47 @@ reencode:
             /* We'll just re-encode this last macroblock if we go over the max slice size. */
             if( total_bits - starting_bits > slice_max_size && !h->mb.b_reencode_mb )
             {
-                /* Handle the most obnoxious slice-min-mbs edge case: we need to end the slice
-                 * because it's gone over the maximum size, but doing so would violate slice-min-mbs.
-                 * If possible, roll back to the last checkpoint and try again.
-                 * We could try raising QP, but that would break in the case where a slice spans multiple
-                 * rows, which the re-encoding infrastructure can't currently handle. */
-                if( mb_xy < thread_last_mb && (thread_last_mb+1-mb_xy) < h->param.i_slice_min_mbs )
+                if( !x264_frame_new_slice( h, h->fdec ) )
                 {
-                    if( thread_last_mb-h->param.i_slice_min_mbs < h->sh.i_first_mb+h->param.i_slice_min_mbs )
+                    /* Handle the most obnoxious slice-min-mbs edge case: we need to end the slice
+                     * because it's gone over the maximum size, but doing so would violate slice-min-mbs.
+                     * If possible, roll back to the last checkpoint and try again.
+                     * We could try raising QP, but that would break in the case where a slice spans multiple
+                     * rows, which the re-encoding infrastructure can't currently handle. */
+                    if( mb_xy < thread_last_mb && (thread_last_mb+1-mb_xy) < h->param.i_slice_min_mbs )
                     {
-                        x264_log( h, X264_LOG_WARNING, "slice-max-size violated (frame %d, cause: slice-min-mbs)\n", h->i_frame );
-                        slice_max_size = 0;
-                        goto cont;
+                        if( thread_last_mb-h->param.i_slice_min_mbs < h->sh.i_first_mb+h->param.i_slice_min_mbs )
+                        {
+                            x264_log( h, X264_LOG_WARNING, "slice-max-size violated (frame %d, cause: slice-min-mbs)\n", h->i_frame );
+                            slice_max_size = 0;
+                            goto cont;
+                        }
+                        x264_bitstream_restore( h, &bs_bak[BS_BAK_SLICE_MIN_MBS], &i_skip, 0 );
+                        h->mb.b_reencode_mb = 1;
+                        h->sh.i_last_mb = thread_last_mb-h->param.i_slice_min_mbs;
+                        break;
                     }
-                    x264_bitstream_restore( h, &bs_bak[BS_BAK_SLICE_MIN_MBS], &i_skip, 0 );
-                    h->mb.b_reencode_mb = 1;
-                    h->sh.i_last_mb = thread_last_mb-h->param.i_slice_min_mbs;
-                    break;
-                }
-                if( mb_xy-SLICE_MBAFF*h->mb.i_mb_stride != h->sh.i_first_mb )
-                {
-                    x264_bitstream_restore( h, &bs_bak[BS_BAK_SLICE_MAX_SIZE], &i_skip, 0 );
-                    h->mb.b_reencode_mb = 1;
-                    if( SLICE_MBAFF )
+                    if( mb_xy-SLICE_MBAFF*h->mb.i_mb_stride != h->sh.i_first_mb )
                     {
-                        // set to bottom of previous mbpair
-                        if( i_mb_x )
-                            h->sh.i_last_mb = mb_xy-1+h->mb.i_mb_stride*(!(i_mb_y&1));
+                        x264_bitstream_restore( h, &bs_bak[BS_BAK_SLICE_MAX_SIZE], &i_skip, 0 );
+                        h->mb.b_reencode_mb = 1;
+                        if( SLICE_MBAFF )
+                        {
+                            // set to bottom of previous mbpair
+                            if( i_mb_x )
+                                h->sh.i_last_mb = mb_xy-1+h->mb.i_mb_stride*(!(i_mb_y&1));
+                            else
+                                h->sh.i_last_mb = (i_mb_y-2+!(i_mb_y&1))*h->mb.i_mb_stride + h->mb.i_mb_width - 1;
+                        }
                         else
-                            h->sh.i_last_mb = (i_mb_y-2+!(i_mb_y&1))*h->mb.i_mb_stride + h->mb.i_mb_width - 1;
+                            h->sh.i_last_mb = mb_xy-1;
+                        break;
                     }
                     else
-                        h->sh.i_last_mb = mb_xy-1;
-                    break;
+                        h->sh.i_last_mb = mb_xy;
                 }
                 else
-                    h->sh.i_last_mb = mb_xy;
+                    slice_max_size = 0;
             }
         }
 cont:
@@ -2688,31 +2695,35 @@ static void *x264_slices_write( x264_t *h )
     while( h->sh.i_first_mb + SLICE_MBAFF*h->mb.i_mb_stride <= last_thread_mb )
     {
         h->sh.i_last_mb = last_thread_mb;
-        if( h->param.i_slice_max_mbs )
+        if( !i_slice_num || !x264_frame_new_slice( h, h->fdec ) )
         {
-            if( SLICE_MBAFF )
+            if( h->param.i_slice_max_mbs )
             {
-                // convert first to mbaff form, add slice-max-mbs, then convert back to normal form
-                int last_mbaff = 2*(h->sh.i_first_mb % h->mb.i_mb_width)
-                    + h->mb.i_mb_width*(h->sh.i_first_mb / h->mb.i_mb_width)
-                    + h->param.i_slice_max_mbs - 1;
-                int last_x = (last_mbaff % (2*h->mb.i_mb_width))/2;
-                int last_y = (last_mbaff / (2*h->mb.i_mb_width))*2 + 1;
-                h->sh.i_last_mb = last_x + h->mb.i_mb_stride*last_y;
+                if( SLICE_MBAFF )
+                {
+                    // convert first to mbaff form, add slice-max-mbs, then convert back to normal form
+                    int last_mbaff = 2*(h->sh.i_first_mb % h->mb.i_mb_width)
+                        + h->mb.i_mb_width*(h->sh.i_first_mb / h->mb.i_mb_width)
+                        + h->param.i_slice_max_mbs - 1;
+                    int last_x = (last_mbaff % (2*h->mb.i_mb_width))/2;
+                    int last_y = (last_mbaff / (2*h->mb.i_mb_width))*2 + 1;
+                    h->sh.i_last_mb = last_x + h->mb.i_mb_stride*last_y;
+                }
+                else
+                {
+                    h->sh.i_last_mb = h->sh.i_first_mb + h->param.i_slice_max_mbs - 1;
+                    if( h->sh.i_last_mb < last_thread_mb && last_thread_mb - h->sh.i_last_mb < h->param.i_slice_min_mbs )
+                        h->sh.i_last_mb = last_thread_mb - h->param.i_slice_min_mbs;
+                }
+                i_slice_num++;
             }
-            else
+            else if( h->param.i_slice_count && !h->param.b_sliced_threads )
             {
-                h->sh.i_last_mb = h->sh.i_first_mb + h->param.i_slice_max_mbs - 1;
-                if( h->sh.i_last_mb < last_thread_mb && last_thread_mb - h->sh.i_last_mb < h->param.i_slice_min_mbs )
-                    h->sh.i_last_mb = last_thread_mb - h->param.i_slice_min_mbs;
+                int height = h->mb.i_mb_height >> PARAM_INTERLACED;
+                int width = h->mb.i_mb_width << PARAM_INTERLACED;
+                i_slice_num++;
+                h->sh.i_last_mb = (height * i_slice_num + h->param.i_slice_count/2) / h->param.i_slice_count * width - 1;
             }
-        }
-        else if( h->param.i_slice_count && !h->param.b_sliced_threads )
-        {
-            int height = h->mb.i_mb_height >> PARAM_INTERLACED;
-            int width = h->mb.i_mb_width << PARAM_INTERLACED;
-            i_slice_num++;
-            h->sh.i_last_mb = (height * i_slice_num + h->param.i_slice_count/2) / h->param.i_slice_count * width - 1;
         }
         h->sh.i_last_mb = X264_MIN( h->sh.i_last_mb, last_thread_mb );
         if( x264_stack_align( x264_slice_write, h ) )

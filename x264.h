@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 131
+#define X264_BUILD 132
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -479,6 +479,8 @@ typedef struct x264_param_t
     int i_slice_max_mbs;     /* Max number of MBs per slice; overrides i_slice_count. */
     int i_slice_min_mbs;     /* Min number of MBs per slice */
     int i_slice_count;       /* Number of slices per frame: forces rectangular slices. */
+    int i_slice_count_max;   /* Absolute cap on slices per frame; stops applying slice-max-size
+                              * and slice-max-mbs if this is reached. */
 
     /* Optional callback for freeing this x264_param_t when it is done being used.
      * Only used when the x264_param_t sits in memory for an indefinite period of time,

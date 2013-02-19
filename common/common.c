@@ -782,6 +782,8 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->i_slice_min_mbs = atoi(value);
     OPT("slices")
         p->i_slice_count = atoi(value);
+    OPT("slices-max")
+        p->i_slice_count_max = atoi(value);
     OPT("cabac")
         p->b_cabac = atobool(value);
     OPT("cabac-idc")
@@ -1307,6 +1309,8 @@ char *x264_param2string( x264_param_t *p, int b_res )
     s += sprintf( s, " sliced_threads=%d", p->b_sliced_threads );
     if( p->i_slice_count )
         s += sprintf( s, " slices=%d", p->i_slice_count );
+    if( p->i_slice_count_max )
+        s += sprintf( s, " slices_max=%d", p->i_slice_count_max );
     if( p->i_slice_max_size )
         s += sprintf( s, " slice_max_size=%d", p->i_slice_max_size );
     if( p->i_slice_max_mbs )

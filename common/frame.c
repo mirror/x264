@@ -659,6 +659,21 @@ void x264_threadslice_cond_wait( x264_t *h, int pass )
     x264_pthread_mutex_unlock( &h->mutex );
 }
 
+int x264_frame_new_slice( x264_t *h, x264_frame_t *frame )
+{
+    if( h->param.i_slice_count_max )
+    {
+        int slice_count;
+        if( h->param.b_sliced_threads )
+            slice_count = x264_pthread_fetch_and_add( &frame->i_slice_count, 1, &frame->mutex );
+        else
+            slice_count = frame->i_slice_count++;
+        if( slice_count >= h->param.i_slice_count_max )
+            return -1;
+    }
+    return 0;
+}
+
 /* list operators */
 
 void x264_frame_push( x264_frame_t **list, x264_frame_t *frame )
@@ -721,6 +736,7 @@ x264_frame_t *x264_frame_pop_unused( x264_t *h, int b_fdec )
     frame->b_scenecut = 1;
     frame->b_keyframe = 0;
     frame->b_corrupt = 0;
+    frame->i_slice_count = h->param.b_sliced_threads ? h->param.i_threads : 1;
 
     memset( frame->weight, 0, sizeof(frame->weight) );
     memset( frame->f_weighted_cost_delta, 0, sizeof(frame->f_weighted_cost_delta) );
