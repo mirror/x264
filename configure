@@ -25,6 +25,7 @@ Configuration options:
   --system-libx264         use system libx264 instead of internal
   --enable-shared          build shared library
   --enable-static          build static library
+  --disable-opencl         disable OpenCL features
   --disable-gpl            disable GPL-only features
   --disable-thread         disable multithreaded encoding
   --enable-win32thread     use win32threads (windows only)
@@ -273,6 +274,7 @@ vis="no"
 bit_depth="8"
 chroma_format="all"
 compiler="GNU"
+opencl="yes"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
 LDFLAGS="$LDFLAGS"
@@ -380,6 +382,9 @@ for opt do
             ;;
         --host=*)
             host="$optarg"
+            ;;
+        --disable-opencl)
+            opencl="no"
             ;;
         --cross-prefix=*)
             cross_prefix="$optarg"
@@ -998,6 +1003,7 @@ fi
 if [ "$bit_depth" -gt "8" ]; then
     define HIGH_BIT_DEPTH
     ASFLAGS="$ASFLAGS -DHIGH_BIT_DEPTH=1"
+    opencl="no"
 else
     ASFLAGS="$ASFLAGS -DHIGH_BIT_DEPTH=0"
 fi
@@ -1104,6 +1110,60 @@ PROF_GEN_LD=$PROF_GEN_LD
 PROF_USE_CC=$PROF_USE_CC
 PROF_USE_LD=$PROF_USE_LD
 EOF
+
+if [[ $host_os != mingw* ]]; then
+    # OpenCL support is only well tested on Windows/MinGW.  If you
+    # wish to try it on an unsupported platform, swap the lines
+    # below.  If OpenCL breaks, you get to keep both halves
+    #opencl="yes"
+    opencl="no"
+fi
+if [ "$opencl" = "yes" ]; then
+    log_check "looking for perl"
+    output=$(perl -v)
+    if [ "$output" = "" ]; then
+        echo 'OpenCL support requires perl to compile.'
+        echo 'use --disable-opencl to compile without OpenCL.'
+        exit 1
+    elif [[ $cross_prefix != ""  &&  $host_os == mingw* ]] ; then
+        if cc_check "CL/cl.h" "-lOpenCL"; then
+            echo 'HAVE_OPENCL=yes' >> config.mak
+            echo 'OPENCL_LIB=OpenCL' >> config.mak
+            echo "OPENCL_INC_DIR=." >> config.mak
+            echo "OPENCL_LIB_DIR=." >> config.mak
+            define HAVE_OPENCL
+        else
+            opencl="no"
+        fi
+    elif [ "$CUDA_PATH" != "" ]; then
+        echo 'HAVE_OPENCL=yes' >> config.mak
+        echo 'OPENCL_LIB=OpenCL' >> config.mak
+        echo 'OPENCL_INC_DIR=$(CUDA_PATH)include' >> config.mak
+        if [ "$ARCH" = "X86" ]; then
+            echo 'OPENCL_LIB_DIR=$(CUDA_PATH)lib/Win32' >> config.mak
+        else
+            echo 'OPENCL_LIB_DIR=$(CUDA_PATH)lib/x64' >> config.mak
+        fi
+        define HAVE_OPENCL
+    elif [ -e "$AMDAPPSDKROOT/include/CL/cl.h" ]; then
+        if [[ $host_os = mingw* ]]; then
+            app_path=`echo "/$AMDAPPSDKROOT" | sed 's/\\\/\//g' | sed 's/://'`
+        else
+            app_path='$(AMDAPPSDKROOT)'
+       fi
+        echo 'HAVE_OPENCL=yes' >> config.mak
+        echo 'OPENCL_LIB=OpenCL' >> config.mak
+        echo OPENCL_INC_DIR=$app_path/include >> config.mak
+        if [ "$ARCH" = "X86" ]; then
+            echo OPENCL_LIB_DIR=$app_path/lib/x86 >> config.mak
+        else
+            echo OPENCL_LIB_DIR=$app_path/lib/x86_64 >> config.mak
+        fi
+        define HAVE_OPENCL
+    else
+        opencl="no"
+    fi
+fi
 
 if [ $compiler = ICL ]; then
     echo '%.o: %.c' >> config.mak
@@ -1214,6 +1274,7 @@ PIC:           $pic
 visualize:     $vis
 bit depth:     $bit_depth
 chroma format: $chroma_format
+opencl:        $opencl
 EOF
 
 echo >> config.log

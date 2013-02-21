@@ -54,6 +54,8 @@ do {\
     memset( var, 0, size );\
 } while( 0 )
 
+#define ARRAY_SIZE(array)  (sizeof(array)/sizeof(array[0]))
+
 #define X264_BFRAME_MAX 16
 #define X264_REF_MAX 16
 #define X264_THREAD_MAX 128
@@ -93,6 +95,10 @@ do {\
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
+
+#if HAVE_OPENCL
+#include "opencl.h"
+#endif
 
 #if HAVE_INTERLACED
 #   define MB_INTERLACED h->mb.b_interlaced
@@ -936,6 +942,10 @@ struct x264_t
     struct visualize_t *visualize;
 #endif
     x264_lookahead_t *lookahead;
+
+#if HAVE_OPENCL
+    x264_opencl_t opencl;
+#endif
 };
 
 // included at the end because it needs x264_t

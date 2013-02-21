@@ -172,6 +172,10 @@ typedef struct x264_frame
     /* user frame properties */
     uint8_t *mb_info;
     void (*mb_info_free)( void* );
+
+#if HAVE_OPENCL
+    x264_frame_opencl_t opencl;
+#endif
 } x264_frame_t;
 
 /* synchronized frame list */
