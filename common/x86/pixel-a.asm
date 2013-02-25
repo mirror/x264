@@ -1913,15 +1913,16 @@ cglobal hadamard_load
 ; void intra_satd_x3_4x4( uint8_t *fenc, uint8_t *fdec, int *res )
 ;-----------------------------------------------------------------------------
 cglobal intra_satd_x3_4x4, 3,3
-%if ARCH_X86_64
+%if UNIX64
     ; stack is 16 byte aligned because abi says so
     %define  top_1d  rsp-8  ; size 8
     %define  left_1d rsp-16 ; size 8
 %else
-    ; stack is 16 byte aligned at least in gcc, and we've pushed 3 regs + return address, so it's still aligned
-    SUB         esp, 16
-    %define  top_1d  esp+8
-    %define  left_1d esp
+    ; WIN64:  stack is 16 byte aligned because abi says so
+    ; X86_32: stack is 16 byte aligned at least in gcc, and we've pushed 3 regs + return address, so it's still aligned
+    SUB         rsp, 16
+    %define  top_1d  rsp+8
+    %define  left_1d rsp
 %endif
 
     call hadamard_load
@@ -1943,8 +1944,8 @@ cglobal intra_satd_x3_4x4, 3,3
     movd        [r2+0], m0 ; i4x4_v satd
     movd        [r2+4], m4 ; i4x4_h satd
     movd        [r2+8], m5 ; i4x4_dc satd
-%if ARCH_X86_64 == 0
-    ADD         esp, 16
+%if UNIX64 == 0
+    ADD         rsp, 16
 %endif
     RET
 

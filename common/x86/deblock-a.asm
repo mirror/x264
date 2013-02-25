@@ -1429,7 +1429,11 @@ DEBLOCK_LUMA v, 16
     %define t5 m11
     %define mask0 m12
     %define mask1p m13
+%if WIN64
+    %define mask1q [rsp]
+%else
     %define mask1q [rsp-24]
+%endif
     %define mpb_0 m14
     %define mpb_1 m15
 %else
@@ -1448,7 +1452,7 @@ DEBLOCK_LUMA v, 16
 ;-----------------------------------------------------------------------------
 ; void deblock_v_luma_intra( uint8_t *pix, intptr_t stride, int alpha, int beta )
 ;-----------------------------------------------------------------------------
-cglobal deblock_%1_luma_intra, 4,6,16,ARCH_X86_64*0x50-0x50
+cglobal deblock_%1_luma_intra, 4,6,16,0-(1-ARCH_X86_64)*0x50-WIN64*0x10
     lea     r4, [r1*4]
     lea     r5, [r1*3] ; 3*stride
     dec     r2d        ; alpha-1

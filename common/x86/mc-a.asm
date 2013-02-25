@@ -1514,7 +1514,11 @@ ALIGN 4
     mov        t0, r0
     mov        t1, r1
     mov        t2, r3
+%if WIN64
+    %define multy0 r4m
+%else
     %define multy0 [rsp-8]
+%endif
     mova    multy0, m5
 %else
     mov       r3m, r3
