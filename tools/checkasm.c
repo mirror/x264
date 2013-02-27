@@ -309,7 +309,7 @@ static int check_pixel( int cpu_ref, int cpu_new )
 
 #define TEST_PIXEL( name, align ) \
     ok = 1, used_asm = 0; \
-    for( int i = 0; i < 8; i++ ) \
+    for( int i = 0; i < ARRAY_ELEMS(pixel_c.name); i++ ) \
     { \
         int res_c, res_asm; \
         if( pixel_asm.name[i] != pixel_ref.name[i] ) \
@@ -1087,13 +1087,13 @@ static int check_dct( int cpu_ref, int cpu_new )
     x264_zigzag_init( cpu_new, &zigzag_asm[0], &zigzag_asm[1] );
 
     ok = 1; used_asm = 0;
-    TEST_INTERLEAVE( interleave_8x8_cavlc, level1, level2, dct1[0], 64 );
+    TEST_INTERLEAVE( interleave_8x8_cavlc, level1, level2, dct8[0], 64 );
     report( "zigzag_interleave :" );
 
     for( interlace = 0; interlace <= 1; interlace++ )
     {
         ok = 1; used_asm = 0;
-        TEST_ZIGZAG_SCAN( scan_8x8, level1, level2, dct1[0], 8 );
+        TEST_ZIGZAG_SCAN( scan_8x8, level1, level2, dct8[0], 8 );
         TEST_ZIGZAG_SCAN( scan_4x4, level1, level2, dct1[0], 4 );
         TEST_ZIGZAG_SUB( sub_4x4, level1, level2, 16 );
         TEST_ZIGZAG_SUBAC( sub_4x4ac, level1, level2 );
