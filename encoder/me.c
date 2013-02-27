@@ -194,7 +194,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
     ALIGNED_ARRAY_16( pixel, pix,[16*16] );
     ALIGNED_ARRAY_8( int16_t, mvc_temp,[16],[2] );
 
-    int costs[16];
+    ALIGNED_ARRAY_16( int, costs,[16] );
 
     int mv_x_min = h->mb.mv_limit_fpel[0][0];
     int mv_y_min = h->mb.mv_limit_fpel[0][1];
@@ -654,7 +654,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
             if( h->mb.i_me_method == X264_ME_TESA )
             {
                 // ADS threshold, then SAD threshold, then keep the best few SADs, then SATD
-                mvsad_t *mvsads = (mvsad_t *)(xs + ((width+15)&~15) + 4);
+                mvsad_t *mvsads = (mvsad_t *)(xs + ((width+31)&~31) + 4);
                 int nmvsad = 0, limit;
                 int sad_thresh = i_me_range <= 16 ? 10 : i_me_range <= 24 ? 11 : 12;
                 int bsad = h->pixf.sad[i_pixel]( p_fenc, FENC_STRIDE, p_fref_w+bmy*stride+bmx, stride )
@@ -874,7 +874,8 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
     int chroma_v_shift = CHROMA_V_SHIFT;
     int mvy_offset = chroma_v_shift & MB_INTERLACED & m->i_ref ? (h->mb.i_mb_y & 1)*4 - 2 : 0;
 
-    ALIGNED_ARRAY_16( pixel, pix,[64*18] ); // really 17x17x2, but round up for alignment
+    ALIGNED_ARRAY_N( pixel, pix,[64*18] ); // really 17x17x2, but round up for alignment
+    ALIGNED_ARRAY_16( int, costs,[4] );
 
     int bmx = m->mv[0];
     int bmy = m->mv[1];
@@ -897,7 +898,6 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
         for( int i = hpel_iters; i > 0; i-- )
         {
             int omx = bmx, omy = bmy;
-            int costs[4];
             intptr_t stride = 64; // candidates are either all hpel or all qpel, so one stride is enough
             pixel *src0, *src1, *src2, *src3;
             src0 = h->mc.get_ref( pix,    &stride, m->p_fref, m->i_stride[0], omx, omy-2, bw, bh+1, &m->weight[0] );
@@ -964,7 +964,6 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
     /* Special simplified case for subme=1 */
     else if( bmy > h->mb.mv_min_spel[1] && bmy < h->mb.mv_max_spel[1] && bmx > h->mb.mv_min_spel[0] && bmx < h->mb.mv_max_spel[0] )
     {
-        int costs[4];
         int omx = bmx, omy = bmy;
         /* We have to use mc_luma because all strides must be the same to use fpelcmp_x4 */
         h->mc.mc_luma( pix   , 64, m->p_fref, m->i_stride[0], omx, omy-1, bw, bh, &m->weight[0] );

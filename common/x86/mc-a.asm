@@ -34,7 +34,8 @@
 
 SECTION_RODATA 32
 
-ch_shuf: db 0,2,2,4,4,6,6,8,1,3,3,5,5,7,7,9
+pw_512: times 16 dw 512
+ch_shuf: times 2 db 0,2,2,4,4,6,6,8,1,3,3,5,5,7,7,9
 ch_shuf_adj: times 8 db 0
              times 8 db 2
              times 8 db 4
@@ -53,6 +54,7 @@ cextern pw_00ff
 cextern pw_pixel_max
 cextern sw_64
 cextern pd_32
+cextern deinterleave_shufd
 
 ;=============================================================================
 ; implicit weighted biprediction
@@ -141,8 +143,7 @@ cextern pd_32
     movh      m1, %2
     punpcklbw m0, m1
     pmaddubsw m0, m3
-    paddw     m0, m4
-    psraw     m0, 6
+    pmulhrsw  m0, m4
 %endmacro
 
 %macro BIWEIGHT_START_SSSE3 0
@@ -151,9 +152,13 @@ cextern pd_32
     sub    t7d, t6d
     shl    t7d, 8
     add    t6d, t7d
-    movd    m3, t6d
-    mova    m4, [pw_32]
+    mova    m4, [pw_512]
+    movd   xm3, t6d
+%if cpuflag(avx2)
+    vpbroadcastw m3, xm3
+%else
     SPLATW  m3, m3   ; weight_dst,src
+%endif
 %endmacro
 
 %if HIGH_BIT_DEPTH
@@ -244,6 +249,25 @@ AVG_WEIGHT 4
 INIT_XMM ssse3
 AVG_WEIGHT 8,  7
 AVG_WEIGHT 16, 7
+
+INIT_YMM avx2
+cglobal pixel_avg_weight_w16
+    BIWEIGHT_START
+    AVG_START 5
+.height_loop:
+    movu     xm0, [t2]
+    movu     xm1, [t4]
+    vinserti128 m0, m0, [t2+t3], 1
+    vinserti128 m1, m1, [t4+t5], 1
+    SBUTTERFLY bw, 0, 1, 2
+    pmaddubsw m0, m3
+    pmaddubsw m1, m3
+    pmulhrsw  m0, m4
+    pmulhrsw  m1, m4
+    packuswb  m0, m1
+    mova    [t0], xm0
+    vextracti128 [t0+t1], m0, 1
+    AVG_END
 %endif ;HIGH_BIT_DEPTH
 
 ;=============================================================================
@@ -274,7 +298,7 @@ AVG_WEIGHT 16, 7
 %endmacro
 
 ; src, dst, width
-%macro WEIGHT_TWO_ROW 3
+%macro WEIGHT_TWO_ROW 4
     %assign x 0
 %rep (%3+mmsize/2-1)/(mmsize/2)
 %if %3-x/2 <= 4 && mmsize == 16
@@ -298,16 +322,21 @@ AVG_WEIGHT 16, 7
 %else ; !HIGH_BIT_DEPTH
 
 %macro WEIGHT_START 1
+%if cpuflag(avx2)
+    vbroadcasti128 m3, [r4]
+    vbroadcasti128 m4, [r4+16]
+%else
     mova     m3, [r4]
     mova     m4, [r4+16]
 %if notcpuflag(ssse3)
     movd     m5, [r4+32]
 %endif
+%endif
     pxor     m2, m2
 %endmacro
 
-; src1, src2, dst1, dst2
-%macro WEIGHT_ROWx2 4
+; src1, src2, dst1, dst2, fast
+%macro WEIGHT_ROWx2 5
     movh      m0, [%1         ]
     movh      m1, [%1+mmsize/2]
     movh      m6, [%2         ]
@@ -317,10 +346,12 @@ AVG_WEIGHT 16, 7
     punpcklbw m6, m2
     punpcklbw m7, m2
 %if cpuflag(ssse3)
+%if %5==0
     psllw     m0, 7
     psllw     m1, 7
     psllw     m6, 7
     psllw     m7, 7
+%endif
     pmulhrsw  m0, m3
     pmulhrsw  m1, m3
     pmulhrsw  m6, m3
@@ -349,15 +380,54 @@ AVG_WEIGHT 16, 7
     mova    [%4], m6
 %endmacro
 
-; src1, src2, dst1, dst2, width
-%macro WEIGHT_COL 5
+; src1, src2, dst1, dst2, width, fast
+%macro WEIGHT_COL 6
+%if cpuflag(avx2)
+%if %5==16
+    movu     xm0, [%1]
+    vinserti128 m0, m0, [%2], 1
+    punpckhbw m1, m0, m2
+    punpcklbw m0, m0, m2
+%if %6==0
+    psllw     m0, 7
+    psllw     m1, 7
+%endif
+    pmulhrsw  m0, m3
+    pmulhrsw  m1, m3
+    paddw     m0, m4
+    paddw     m1, m4
+    packuswb  m0, m1
+    mova    [%3], xm0
+    vextracti128 [%4], m0, 1
+%else
+    movq     xm0, [%1]
+    vinserti128 m0, m0, [%2], 1
+    punpcklbw m0, m2
+%if %6==0
+    psllw     m0, 7
+%endif
+    pmulhrsw  m0, m3
+    paddw     m0, m4
+    packuswb  m0, m0
+    vextracti128 xm1, m0, 1
+%if %5 == 8
+    movq    [%3], xm0
+    movq    [%4], xm1
+%else
+    movd    [%3], xm0
+    movd    [%4], xm1
+%endif
+%endif
+%else
     movh      m0, [%1]
     movh      m1, [%2]
     punpcklbw m0, m2
     punpcklbw m1, m2
 %if cpuflag(ssse3)
+%if %6==0
     psllw     m0, 7
     psllw     m1, 7
+%endif
     pmulhrsw  m0, m3
     pmulhrsw  m1, m3
     paddw     m0, m4
@@ -380,18 +450,22 @@ AVG_WEIGHT 16, 7
     movd    [%3], m0    ; width 2 can write garbage for the last 2 bytes
     movd    [%4], m1
 %endif
+%endif
 %endmacro
-
 ; src, dst, width
-%macro WEIGHT_TWO_ROW 3
+%macro WEIGHT_TWO_ROW 4
 %assign x 0
 %rep %3
 %if (%3-x) >= mmsize
-    WEIGHT_ROWx2 %1+x, %1+r3+x, %2+x, %2+r1+x
+    WEIGHT_ROWx2 %1+x, %1+r3+x, %2+x, %2+r1+x, %4
     %assign x (x+mmsize)
 %else
-    WEIGHT_COL %1+x, %1+r3+x, %2+x, %2+r1+x, %3-x
-    %exitrep
+    %assign w %3-x
+%if w == 20
+    %assign w 16
+%endif
+    WEIGHT_COL %1+x, %1+r3+x, %2+x, %2+r1+x, w, %4
+    %assign x (x+w)
 %endif
 %if x >= %3
     %exitrep
@@ -409,13 +483,30 @@ AVG_WEIGHT 16, 7
 cglobal mc_weight_w%1, 6,6,8
     FIX_STRIDES r1, r3
     WEIGHT_START %1
+%if cpuflag(ssse3) && HIGH_BIT_DEPTH == 0
+    ; we can merge the shift step into the scale factor
+    ; if (m3<<7) doesn't overflow an int16_t
+    cmp byte [r4+1], 0
+    jz .fast
+%endif
 .loop:
-    WEIGHT_TWO_ROW r2, r0, %1
+    WEIGHT_TWO_ROW r2, r0, %1, 0
     lea  r0, [r0+r1*2]
     lea  r2, [r2+r3*2]
     sub r5d, 2
     jg .loop
     RET
+%if cpuflag(ssse3) && HIGH_BIT_DEPTH == 0
+.fast:
+    psllw m3, 7
+.fastloop:
+    WEIGHT_TWO_ROW r2, r0, %1, 1
+    lea  r0, [r0+r1*2]
+    lea  r2, [r2+r3*2]
+    sub r5d, 2
+    jg .fastloop
+    RET
+%endif
 %endmacro
 
 INIT_MMX mmx2
@@ -435,6 +526,10 @@ INIT_MMX ssse3
 WEIGHTER  4
 INIT_XMM ssse3
 WEIGHTER  8
+WEIGHTER 16
+WEIGHTER 20
+INIT_YMM avx2
+WEIGHTER 8
 WEIGHTER 16
 WEIGHTER 20
 %endif
@@ -531,11 +626,15 @@ cglobal pixel_avg_%1x%2
     mov eax, %2
     cmp dword r6m, 32
     jne pixel_avg_weight_w%1 %+ SUFFIX
+%if cpuflag(avx2) && %1 == 16 ; all AVX2 machines can do fast 16-byte unaligned loads
+    jmp pixel_avg_w%1_avx2
+%else
 %if mmsize == 16 && %1 == 16
     test dword r4m, 15
     jz pixel_avg_w%1_sse2
 %endif
     jmp pixel_avg_w%1_mmx2
+%endif
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -635,6 +734,10 @@ AVGH  4, 16
 AVGH  4,  8
 AVGH  4,  4
 AVGH  4,  2
+INIT_XMM avx2
+AVG_FUNC 16, movdqu, movdqa
+AVGH 16, 16
+AVGH 16,  8
 
 %endif ;HIGH_BIT_DEPTH
 
@@ -964,6 +1067,23 @@ cglobal pixel_avg2_w20_%1, 6,7
 
 AVG2_W20 sse2
 AVG2_W20 sse2_misalign
+
+INIT_YMM avx2
+cglobal pixel_avg2_w20, 6,7
+    sub    r2, r4
+    lea    r6, [r2+r3]
+.height_loop:
+    movu   m0, [r4]
+    movu   m1, [r4+r3]
+    pavgb  m0, [r4+r2]
+    pavgb  m1, [r4+r6]
+    lea    r4, [r4+r3*2]
+    mova [r0], m0
+    mova [r0+r1], m1
+    lea    r0, [r0+r1*2]
+    sub    r5d, 2
+    jg     .height_loop
+    RET
 
 ; Cacheline split code for processors with high latencies for loads
 ; split over cache lines.  See sad-a.asm for a more detailed explanation.
@@ -1785,7 +1905,11 @@ ALIGN 4
 
 %macro MC_CHROMA_SSSE3 0
 cglobal mc_chroma
+%if cpuflag(avx2)
     MC_CHROMA_START 9
+%else
+    MC_CHROMA_START 10
+%endif
     and       r5d, 7
     and       t2d, 7
     mov       t0d, r5d
@@ -1796,18 +1920,18 @@ cglobal mc_chroma
     sub       r5d, t2d
     imul      t2d, t0d ; (x*255+8)*y
     imul      r5d, t0d ; (x*255+8)*(8-y)
-    movd       m6, t2d
-    movd       m7, r5d
+    movd      xm6, t2d
+    movd      xm7, r5d
 %if cpuflag(cache64)
     mov       t0d, r3d
     and       t0d, 7
 %ifdef PIC
     lea        t1, [ch_shuf_adj]
-    movddup    m5, [t1 + t0*4]
+    movddup   xm5, [t1 + t0*4]
 %else
-    movddup    m5, [ch_shuf_adj + t0*4]
+    movddup   xm5, [ch_shuf_adj + t0*4]
 %endif
-    paddb      m5, [ch_shuf]
+    paddb     xm5, [ch_shuf]
     and        r3, ~7
 %else
     mova       m5, [ch_shuf]
@@ -1816,12 +1940,80 @@ cglobal mc_chroma
     movifnidn  r1, r1mp
     movifnidn r2d, r2m
     movifnidn r5d, r8m
+%if cpuflag(avx2)
+    vpbroadcastw m6, xm6
+    vpbroadcastw m7, xm7
+%else
     SPLATW     m6, m6
     SPLATW     m7, m7
+%endif
+%if ARCH_X86_64
+    %define shiftround m8
+    mova       m8, [pw_512]
+%else
+    %define shiftround [pw_512]
+%endif
     cmp dword r7m, 4
     jg .width8
-    movu       m0, [r3]
+
+%if cpuflag(avx2)
+.loop4:
+    movu      xm0, [r3]
+    movu      xm1, [r3+r4]
+    vinserti128 m0, m0, [r3+r4], 1
+    vinserti128 m1, m1, [r3+r4*2], 1
     pshufb     m0, m5
+    pshufb     m1, m5
+    pmaddubsw  m0, m7
+    pmaddubsw  m1, m6
+    paddw      m0, m1
+    pmulhrsw   m0, shiftround
+    packuswb   m0, m0
+    vextracti128 xm1, m0, 1
+    movd     [r0], xm0
+    movd  [r0+r2], xm1
+    psrldq    xm0, 4
+    psrldq    xm1, 4
+    movd     [r1], xm0
+    movd  [r1+r2], xm1
+    lea        r3, [r3+r4*2]
+    lea        r0, [r0+r2*2]
+    lea        r1, [r1+r2*2]
+    sub       r5d, 2
+    jg .loop4
+    RET
+.width8:
+    movu      xm0, [r3]
+    vinserti128 m0, m0, [r3+8], 1
+    pshufb     m0, m5
+.loop8:
+    movu      xm3, [r3+r4]
+    vinserti128 m3, m3, [r3+r4+8], 1
+    pshufb     m3, m5
+    pmaddubsw  m1, m0, m7
+    pmaddubsw  m2, m3, m6
+    pmaddubsw  m3, m3, m7
+
+    movu      xm0, [r3+r4*2]
+    vinserti128 m0, m0, [r3+r4*2+8], 1
+    pshufb     m0, m5
+    pmaddubsw  m4, m0, m6
+
+    paddw      m1, m2
+    paddw      m3, m4
+    pmulhrsw   m1, shiftround
+    pmulhrsw   m3, shiftround
+    packuswb   m1, m3
+    mova       m2, [deinterleave_shufd]
+    vpermd     m1, m2, m1
+    vextracti128 xm2, m1, 1
+    movq      [r0], xm1
+    movhps    [r1], xm1
+    movq   [r0+r2], xm2
+    movhps [r1+r2], xm2
+%else
+    movu       m0, [r3]
+    pshufb     m0, xm5
 .loop4:
     movu       m1, [r3+r4]
     pshufb     m1, m5
@@ -1832,16 +2024,14 @@ cglobal mc_chroma
     pmaddubsw  m2, m1, m7
     pmaddubsw  m1, m6
     pmaddubsw  m3, m6
-    paddw      m0, [pw_32]
-    paddw      m2, [pw_32]
     paddw      m1, m0
     paddw      m3, m2
+    pmulhrsw   m1, shiftround
+    pmulhrsw   m3, shiftround
     mova       m0, m4
-    psrlw      m1, 6
-    psrlw      m3, 6
     packuswb   m1, m3
     movhlps    m3, m1
-    movd     [r0], m1
+    movd     [r0], xm1
     movd  [r0+r2], m3
     psrldq     m1, 4
     psrldq     m3, 4
@@ -1853,15 +2043,14 @@ cglobal mc_chroma
     sub       r5d, 2
     jg .loop4
     RET
-
 .width8:
     movu       m0, [r3]
     pshufb     m0, m5
     movu       m1, [r3+8]
     pshufb     m1, m5
 %if ARCH_X86_64
-    SWAP        8, 6
-    %define  mult1 m8
+    SWAP        9, 6
+    %define  mult1 m9
 %else
     mova      r0m, m6
     %define  mult1 r0m
@@ -1877,12 +2066,10 @@ cglobal mc_chroma
     pmaddubsw  m1, m7
     pmaddubsw  m2, mult1
     pmaddubsw  m3, mult1
-    paddw      m0, [pw_32]
-    paddw      m1, [pw_32]
     paddw      m0, m2
     paddw      m1, m3
-    psrlw      m0, 6
-    psrlw      m1, 6
+    pmulhrsw   m0, shiftround ; x + 32 >> 6
+    pmulhrsw   m1, shiftround
     packuswb   m0, m1
     pshufd     m0, m0, q3120
     movq     [r0], m0
@@ -1898,16 +2085,15 @@ cglobal mc_chroma
     pmaddubsw  m6, m7
     pmaddubsw  m2, mult1
     pmaddubsw  m3, mult1
-    paddw      m4, [pw_32]
-    paddw      m6, [pw_32]
     paddw      m2, m4
     paddw      m3, m6
-    psrlw      m2, 6
-    psrlw      m3, 6
+    pmulhrsw   m2, shiftround
+    pmulhrsw   m3, shiftround
     packuswb   m2, m3
     pshufd     m2, m2, q3120
     movq   [r0+r2], m2
     movhps [r1+r2], m2
+%endif
     lea        r3, [r3+r4*2]
     lea        r0, [r0+r2*2]
     lea        r1, [r1+r2*2]
@@ -1936,4 +2122,6 @@ INIT_XMM ssse3, cache64
 MC_CHROMA_SSSE3
 INIT_XMM avx
 MC_CHROMA_SSSE3 ; No known AVX CPU will trigger CPU_CACHELINE_64
+INIT_YMM avx2
+MC_CHROMA_SSSE3
 %endif ; HIGH_BIT_DEPTH

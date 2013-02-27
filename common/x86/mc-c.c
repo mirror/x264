@@ -35,7 +35,8 @@
 #define DECL_SUF( func, args )\
     void func##_mmx2 args;\
     void func##_sse2 args;\
-    void func##_ssse3 args;
+    void func##_ssse3 args;\
+    void func##_avx2 args;
 
 DECL_SUF( x264_pixel_avg_16x16, ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
 DECL_SUF( x264_pixel_avg_16x8,  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
@@ -72,6 +73,9 @@ MC_WEIGHT( 8, ssse3 )
 MC_WEIGHT( 12, ssse3 )
 MC_WEIGHT( 16, ssse3 )
 MC_WEIGHT( 20, ssse3 )
+MC_WEIGHT( 8, avx2 )
+MC_WEIGHT( 16, avx2 )
+MC_WEIGHT( 20, avx2 )
 #undef MC_OFFSET
 #undef MC_WEIGHT
 
@@ -126,13 +130,17 @@ void *x264_memcpy_aligned_sse( void *dst, const void *src, size_t n );
 void x264_memzero_aligned_mmx( void *dst, size_t n );
 void x264_memzero_aligned_sse( void *dst, size_t n );
 void x264_integral_init4h_sse4( uint16_t *sum, uint8_t *pix, intptr_t stride );
+void x264_integral_init4h_avx2( uint16_t *sum, uint8_t *pix, intptr_t stride );
 void x264_integral_init8h_sse4( uint16_t *sum, uint8_t *pix, intptr_t stride );
 void x264_integral_init8h_avx ( uint16_t *sum, uint8_t *pix, intptr_t stride );
+void x264_integral_init8h_avx2( uint16_t *sum, uint8_t *pix, intptr_t stride );
 void x264_integral_init4v_mmx  ( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
 void x264_integral_init4v_sse2 ( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
 void x264_integral_init4v_ssse3( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
+void x264_integral_init4v_avx2( uint16_t *sum8, uint16_t *sum4, intptr_t stride );
 void x264_integral_init8v_mmx ( uint16_t *sum8, intptr_t stride );
 void x264_integral_init8v_sse2( uint16_t *sum8, intptr_t stride );
+void x264_integral_init8v_avx2( uint16_t *sum8, intptr_t stride );
 void x264_mbtree_propagate_cost_sse2( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                       uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
 void x264_mbtree_propagate_cost_avx ( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
@@ -151,7 +159,7 @@ MC_CHROMA(sse2_misalign)
 MC_CHROMA(ssse3)
 MC_CHROMA(ssse3_cache64)
 MC_CHROMA(avx)
-MC_CHROMA(avx_cache64)
+MC_CHROMA(avx2)
 
 #define LOWRES(cpu)\
 void x264_frame_init_lowres_core_##cpu( pixel *src0, pixel *dst0, pixel *dsth, pixel *dstv, pixel *dstc,\
@@ -162,6 +170,7 @@ LOWRES(sse2)
 LOWRES(ssse3)
 LOWRES(avx)
 LOWRES(xop)
+LOWRES(avx2)
 
 #define PIXEL_AVG_W(width,cpu)\
 void x264_pixel_avg2_w##width##_##cpu( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t );
@@ -176,6 +185,7 @@ PIXEL_AVG_WALL(cache64_sse2)
 PIXEL_AVG_WALL(sse2)
 PIXEL_AVG_WALL(sse2_misalign)
 PIXEL_AVG_WALL(cache64_ssse3)
+PIXEL_AVG_WALL(avx2)
 
 #define PIXEL_AVG_WTAB(instr, name1, name2, name3, name4, name5)\
 static void (* const x264_pixel_avg_wtab_##instr[6])( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t ) =\
@@ -215,6 +225,7 @@ PIXEL_AVG_WTAB(sse2_misalign, mmx2, mmx2, sse2, sse2, sse2_misalign)
 PIXEL_AVG_WTAB(cache64_sse2, mmx2, cache64_mmx2, cache64_sse2, cache64_sse2, cache64_sse2)
 PIXEL_AVG_WTAB(cache64_ssse3, mmx2, cache64_mmx2, cache64_ssse3, cache64_ssse3, cache64_sse2)
 PIXEL_AVG_WTAB(cache64_ssse3_atom, mmx2, mmx2, cache64_ssse3, cache64_ssse3, sse2)
+PIXEL_AVG_WTAB(avx2, mmx2, mmx2, sse2, sse2, avx2)
 #endif // HIGH_BIT_DEPTH
 
 #define MC_COPY_WTAB(instr, name1, name2, name3)\
@@ -283,6 +294,7 @@ MC_WEIGHT_WTAB(weight,sse2,mmx2,sse2,16)
 MC_WEIGHT_WTAB(offsetadd,sse2,mmx2,mmx2,16)
 MC_WEIGHT_WTAB(offsetsub,sse2,mmx2,mmx2,16)
 MC_WEIGHT_WTAB(weight,ssse3,ssse3,ssse3,16)
+MC_WEIGHT_WTAB(weight,avx2,ssse3,avx2,16)
 
 static void x264_weight_cache_mmx2( x264_t *h, x264_weight_t *w )
 {
@@ -411,6 +423,7 @@ GET_REF(sse2_misalign)
 GET_REF(cache64_sse2)
 GET_REF(cache64_ssse3)
 GET_REF(cache64_ssse3_atom)
+GET_REF(avx2)
 #endif // !HIGH_BIT_DEPTH
 
 #define HPEL(align, cpu, cpuv, cpuc, cpuh)\
@@ -428,8 +441,8 @@ static void x264_hpel_filter_##cpu( pixel *dsth, pixel *dstv, pixel *dstc, pixel
     width += realign;\
     while( height-- )\
     {\
-        x264_hpel_filter_v_##cpuv( dstv, src, buf+8, stride, width );\
-        x264_hpel_filter_c_##cpuc( dstc, buf+8, width );\
+        x264_hpel_filter_v_##cpuv( dstv, src, buf+16, stride, width );\
+        x264_hpel_filter_c_##cpuc( dstc, buf+16, width );\
         x264_hpel_filter_h_##cpuh( dsth, src, width );\
         dsth += stride;\
         dstv += stride;\
@@ -453,6 +466,7 @@ HPEL(16, sse2, sse2, sse2, sse2)
 HPEL(16, ssse3, ssse3, ssse3, ssse3)
 HPEL(16, avx, avx, avx, avx)
 #endif
+HPEL(32, avx2, avx2, avx2, avx2)
 HPEL(16, sse2_misalign, sse2, sse2_misalign, sse2)
 #endif // HIGH_BIT_DEPTH
 
@@ -765,6 +779,21 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     if( cpu&X264_CPU_XOP )
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_xop;
+
+    if( cpu&X264_CPU_AVX2 )
+    {
+        pf->hpel_filter = x264_hpel_filter_avx2;
+        pf->mc_chroma = x264_mc_chroma_avx2;
+        pf->weight = x264_mc_weight_wtab_avx2;
+        pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_avx2;
+        pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_avx2;
+        pf->get_ref = get_ref_avx2;
+        pf->integral_init8v = x264_integral_init8v_avx2;
+        pf->integral_init4v = x264_integral_init4v_avx2;
+        pf->integral_init8h = x264_integral_init8h_avx2;
+        pf->integral_init4h = x264_integral_init4h_avx2;
+        pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx2;
+    }
 #endif // HIGH_BIT_DEPTH
 
     if( !(cpu&X264_CPU_AVX) )

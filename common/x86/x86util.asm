@@ -30,10 +30,14 @@
 %assign SIZEOF_PIXEL 1
 %assign SIZEOF_DCTCOEF 2
 %define pixel byte
+%define vpbroadcastdct vpbroadcastw
+%define vpbroadcastpix vpbroadcastb
 %if HIGH_BIT_DEPTH
     %assign SIZEOF_PIXEL 2
     %assign SIZEOF_DCTCOEF 4
     %define pixel word
+    %define vpbroadcastdct vpbroadcastd
+    %define vpbroadcastpix vpbroadcastw
 %endif
 
 %assign FENC_STRIDEB SIZEOF_PIXEL*FENC_STRIDE
@@ -52,7 +56,10 @@
 
 
 %macro SBUTTERFLY 4
-%if avx_enabled && mmsize == 16
+%ifidn %1, dqqq
+    vperm2i128  m%4, m%2, m%3, q0301 ; punpckh
+    vinserti128 m%2, m%2, xm%3, 1    ; punpckl
+%elif avx_enabled && mmsize >= 16
     punpckh%1 m%4, m%2, m%3
     punpckl%1 m%2, m%3
 %else
@@ -280,7 +287,7 @@
 %endmacro
 
 %macro HADDD 2 ; sum junk
-%if mmsize == 16
+%if mmsize >= 16
     movhlps %2, %1
     paddd   %1, %2
 %endif
@@ -289,7 +296,7 @@
 %endmacro
 
 %macro HADDW 2 ; reg, tmp
-%if cpuflag(xop) && mmsize == 16
+%if cpuflag(xop) && mmsize >= 16
     vphaddwq  %1, %1
     movhlps   %2, %1
     paddd     %1, %2
@@ -311,7 +318,7 @@
 %endmacro
 
 %macro HADDUW 2
-%if cpuflag(xop) && mmsize == 16
+%if cpuflag(xop) && mmsize >= 16
     vphadduwq %1, %1
     movhlps   %2, %1
     paddd     %1, %2
@@ -488,7 +495,7 @@
 %endif
 %elifidn %1, q
     shufps m%5, m%3, m%4, q3131
-    shufps m%3, m%4, q2020
+    shufps m%3, m%3, m%4, q2020
     SWAP    %4, %5
 %endif
 %endmacro
@@ -511,22 +518,24 @@
 ; %5(%6): tmpregs
 %if %1!=0 ; have to reorder stuff for horizontal op
     %ifidn %2, sumsub
-         %define ORDER ord
-         ; sumsub needs order because a-b != b-a unless a=b
+        %define ORDER ord
+        ; sumsub needs order because a-b != b-a unless a=b
     %else
-         %define ORDER unord
-         ; if we just max, order doesn't matter (allows pblendw+or in sse4)
+        %define ORDER unord
+        ; if we just max, order doesn't matter (allows pblendw+or in sse4)
     %endif
     %if %1==1
-         TRANS d, ORDER, %3, %4, %5, %6
+        TRANS d, ORDER, %3, %4, %5, %6
     %elif %1==2
-         %if mmsize==8
-             SBUTTERFLY dq, %3, %4, %5
-         %else
-             TRANS q, ORDER, %3, %4, %5, %6
-         %endif
+        %if mmsize==8
+            SBUTTERFLY dq, %3, %4, %5
+        %else
+            TRANS q, ORDER, %3, %4, %5, %6
+        %endif
     %elif %1==4
-         SBUTTERFLY qdq, %3, %4, %5
+        SBUTTERFLY qdq, %3, %4, %5
+    %elif %1==8
+        SBUTTERFLY dqqq, %3, %4, %5
     %endif
 %endif
 %ifidn %2, sumsub
@@ -772,6 +781,16 @@
     lea %8, [%8+4*r1]
     lea %9, [%9+4*r3]
 %endif
+%endmacro
+
+; 2xdst, 2xtmp, 2xsrcrow
+%macro LOAD_DIFF16x2_AVX2 6
+    pmovzxbw m%1, [r1+%5*FENC_STRIDE]
+    pmovzxbw m%2, [r1+%6*FENC_STRIDE]
+    pmovzxbw m%3, [r2+(%5-4)*FDEC_STRIDE]
+    pmovzxbw m%4, [r2+(%6-4)*FDEC_STRIDE]
+    psubw    m%1, m%3
+    psubw    m%2, m%4
 %endmacro
 
 %macro DIFFx2 6-7

@@ -690,6 +690,17 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->sub8x8_dct       = x264_sub8x8_dct_xop;
         dctf->sub16x16_dct     = x264_sub16x16_dct_xop;
     }
+
+    if( cpu&X264_CPU_AVX2 )
+    {
+        dctf->add8x8_idct      = x264_add8x8_idct_avx2;
+        dctf->add16x16_idct    = x264_add16x16_idct_avx2;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_avx2;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_avx2;
+#if ARCH_X86_64
+        dctf->sub16x16_dct8    = x264_sub16x16_dct8_avx2;
+#endif
+    }
 #endif //HAVE_MMX
 
 #if HAVE_ALTIVEC
@@ -1023,6 +1034,12 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     {
         pf_interlaced->interleave_8x8_cavlc =
         pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx;
+    }
+
+    if( cpu&X264_CPU_AVX2 )
+    {
+        pf_interlaced->interleave_8x8_cavlc =
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx2;
     }
 #endif // HIGH_BIT_DEPTH
 #endif

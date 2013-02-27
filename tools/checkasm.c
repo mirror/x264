@@ -744,8 +744,8 @@ static int check_pixel( int cpu_ref, int cpu_new )
         {
             ALIGNED_16( uint16_t sums[72] );
             ALIGNED_16( int dc[4] );
-            ALIGNED_16( int16_t mvs_a[32] );
-            ALIGNED_16( int16_t mvs_c[32] );
+            ALIGNED_16( int16_t mvs_a[48] );
+            ALIGNED_16( int16_t mvs_c[48] );
             int mvn_a, mvn_c;
             int thresh = rand() & 0x3fff;
             set_func_name( "esa_ads" );
@@ -780,10 +780,10 @@ static int check_dct( int cpu_ref, int cpu_new )
     x264_dct_function_t dct_asm;
     x264_quant_function_t qf;
     int ret = 0, ok, used_asm, interlace = 0;
-    ALIGNED_16( dctcoef dct1[16][16] );
-    ALIGNED_16( dctcoef dct2[16][16] );
-    ALIGNED_16( dctcoef dct4[16][16] );
-    ALIGNED_16( dctcoef dct8[4][64] );
+    ALIGNED_ARRAY_N( dctcoef, dct1, [16],[16] );
+    ALIGNED_ARRAY_N( dctcoef, dct2, [16],[16] );
+    ALIGNED_ARRAY_N( dctcoef, dct4, [16],[16] );
+    ALIGNED_ARRAY_N( dctcoef, dct8, [4],[64] );
     ALIGNED_16( dctcoef dctdc[2][8] );
     x264_t h_buf;
     x264_t *h = &h_buf;
@@ -1078,7 +1078,7 @@ static int check_dct( int cpu_ref, int cpu_new )
             call_a( zigzag_asm[interlace].name, t2, dct, buf4 ); \
             if( memcmp( t1, t2, size*sizeof(dctcoef) ) || memcmp( buf3, buf4, 10 ) ) \
             { \
-                ok = 0; \
+                ok = 0; printf("%d: %d %d %d %d\n%d %d %d %d\n\n",memcmp( t1, t2, size*sizeof(dctcoef) ),buf3[0], buf3[1], buf3[8], buf3[9], buf4[0], buf4[1], buf4[8], buf4[9]);break;\
             } \
         } \
     }
@@ -1275,8 +1275,12 @@ static int check_mc( int cpu_ref, int cpu_new )
                     fprintf( stderr, #name "[%d]: [FAILED] s:%d o:%d d%d\n", i, s, o, d ); \
                     break; \
                 } \
-            call_c2( mc_c.weight[i],     buffC, (intptr_t)32, pbuf2+align_off, (intptr_t)32, &weight, 16 ); \
-            call_a2( weight.weightfn[i], buffA, (intptr_t)32, pbuf2+align_off, (intptr_t)32, &weight, 16 ); \
+            /* omit unlikely high scales for benchmarking */ \
+            if( (s << (8-d)) < 512 ) \
+            { \
+                call_c2( mc_c.weight[i],     buffC, (intptr_t)32, pbuf2+align_off, (intptr_t)32, &weight, 16 ); \
+                call_a2( weight.weightfn[i], buffA, (intptr_t)32, pbuf2+align_off, (intptr_t)32, &weight, 16 ); \
+            } \
         } \
     }
 
@@ -1485,23 +1489,24 @@ static int check_mc( int cpu_ref, int cpu_new )
         pixel *dsta[4] = { pbuf4, pbuf4+1024, pbuf4+2048, pbuf4+3072 };
         set_func_name( "lowres_init" );
         ok = 1; used_asm = 1;
-        for( int w = 40; w <= 48; w += 8 )
+        for( int w = 96; w <= 96+24; w += 8 )
         {
-            intptr_t stride = (w+8)&~15;
-            call_c( mc_c.frame_init_lowres_core, pbuf1, dstc[0], dstc[1], dstc[2], dstc[3], (intptr_t)w*2, stride, w, 16 );
-            call_a( mc_a.frame_init_lowres_core, pbuf1, dsta[0], dsta[1], dsta[2], dsta[3], (intptr_t)w*2, stride, w, 16 );
-            for( int i = 0; i < 16; i++ )
+            intptr_t stride = (w*2+31)&~31;
+            intptr_t stride_lowres = (w+31)&~31;
+            call_c( mc_c.frame_init_lowres_core, pbuf1, dstc[0], dstc[1], dstc[2], dstc[3], stride, stride_lowres, w, 8 );
+            call_a( mc_a.frame_init_lowres_core, pbuf1, dsta[0], dsta[1], dsta[2], dsta[3], stride, stride_lowres, w, 8 );
+            for( int i = 0; i < 8; i++ )
             {
                 for( int j = 0; j < 4; j++ )
-                    if( memcmp( dstc[j]+i*stride, dsta[j]+i*stride, w * sizeof(pixel) ) )
+                    if( memcmp( dstc[j]+i*stride_lowres, dsta[j]+i*stride_lowres, w * sizeof(pixel) ) )
                     {
                         ok = 0;
                         fprintf( stderr, "frame_init_lowres differs at plane %d line %d\n", j, i );
                         for( int k = 0; k < w; k++ )
-                            printf( "%d ", dstc[j][k+i*stride] );
+                            printf( "%d ", dstc[j][k+i*stride_lowres] );
                         printf( "\n" );
                         for( int k = 0; k < w; k++ )
-                            printf( "%d ", dsta[j][k+i*stride] );
+                            printf( "%d ", dsta[j][k+i*stride_lowres] );
                         printf( "\n" );
                         break;
                     }
@@ -1513,7 +1518,7 @@ static int check_mc( int cpu_ref, int cpu_new )
 #define INTEGRAL_INIT( name, size, ... )\
     if( mc_a.name != mc_ref.name )\
     {\
-        intptr_t stride = 80;\
+        intptr_t stride = 96;\
         set_func_name( #name );\
         used_asm = 1;\
         memcpy( buf3, buf1, size*2*stride );\
@@ -1729,11 +1734,11 @@ static int check_quant( int cpu_ref, int cpu_new )
     x264_quant_function_t qf_c;
     x264_quant_function_t qf_ref;
     x264_quant_function_t qf_a;
-    ALIGNED_16( dctcoef dct1[64] );
-    ALIGNED_16( dctcoef dct2[64] );
-    ALIGNED_16( dctcoef dct3[8][16] );
-    ALIGNED_16( dctcoef dct4[8][16] );
-    ALIGNED_16( uint8_t cqm_buf[64] );
+    ALIGNED_ARRAY_N( dctcoef, dct1,[64] );
+    ALIGNED_ARRAY_N( dctcoef, dct2,[64] );
+    ALIGNED_ARRAY_N( dctcoef, dct3,[8],[16] );
+    ALIGNED_ARRAY_N( dctcoef, dct4,[8],[16] );
+    ALIGNED_ARRAY_N( uint8_t, cqm_buf,[64] );
     int ret = 0, ok, used_asm;
     int oks[3] = {1,1,1}, used_asms[3] = {0,0,0};
     x264_t h_buf;
@@ -2652,8 +2657,8 @@ int main(int argc, char *argv[])
     fprintf( stderr, "x264: using random seed %u\n", seed );
     srand( seed );
 
-    buf1 = x264_malloc( 0x1e00 + 0x2000*sizeof(pixel) + 16*BENCH_ALIGNS );
-    pbuf1 = x264_malloc( 0x1e00*sizeof(pixel) + 16*BENCH_ALIGNS );
+    buf1 = x264_malloc( 0x1e00 + 0x2000*sizeof(pixel) + 32*BENCH_ALIGNS );
+    pbuf1 = x264_malloc( 0x1e00*sizeof(pixel) + 32*BENCH_ALIGNS );
     if( !buf1 || !pbuf1 )
     {
         fprintf( stderr, "malloc failed, unable to initiate tests!\n" );
@@ -2674,14 +2679,14 @@ int main(int argc, char *argv[])
     }
     memset( buf1+0x1e00, 0, 0x2000*sizeof(pixel) );
 
-    /* 16-byte alignment is guaranteed whenever it's useful, but some functions also vary in speed depending on %64 */
+    /* 32-byte alignment is guaranteed whenever it's useful, but some functions also vary in speed depending on %64 */
     if( do_bench )
         for( int i = 0; i < BENCH_ALIGNS && !ret; i++ )
         {
             INIT_POINTER_OFFSETS;
-            ret |= x264_stack_pagealign( check_all_flags, i*16 );
-            buf1 += 16;
-            pbuf1 += 16;
+            ret |= x264_stack_pagealign( check_all_flags, i*32 );
+            buf1 += 32;
+            pbuf1 += 32;
             quiet = 1;
             fprintf( stderr, "%d/%d\r", i+1, BENCH_ALIGNS );
         }

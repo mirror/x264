@@ -83,6 +83,7 @@ cextern pd_1
 cextern pd_32
 cextern pw_ppppmmmm
 cextern pw_pmpmpmpm
+cextern deinterleave_shufd
 
 %macro WALSH4_1D 6
     SUMSUB_BADC %1, %5, %4, %3, %2, %6
@@ -377,6 +378,133 @@ INIT_XMM sse4
 ADD4x4
 INIT_XMM avx
 ADD4x4
+
+%macro STOREx2_AVX2 9
+    movq      xm%3, [r0+%5*FDEC_STRIDE]
+    vinserti128 m%3, m%3, [r0+%6*FDEC_STRIDE], 1
+    movq      xm%4, [r0+%7*FDEC_STRIDE]
+    vinserti128 m%4, m%4, [r0+%8*FDEC_STRIDE], 1
+    punpcklbw  m%3, m%9
+    punpcklbw  m%4, m%9
+    psraw      m%1, 6
+    psraw      m%2, 6
+    paddsw     m%1, m%3
+    paddsw     m%2, m%4
+    packuswb   m%1, m%2
+    vextracti128 xm%2, m%1, 1
+    movq   [r0+%5*FDEC_STRIDE], xm%1
+    movq   [r0+%6*FDEC_STRIDE], xm%2
+    movhps [r0+%7*FDEC_STRIDE], xm%1
+    movhps [r0+%8*FDEC_STRIDE], xm%2
+%endmacro
+
+INIT_YMM avx2
+cglobal add8x8_idct, 2,3,8
+    add    r0, 4*FDEC_STRIDE
+    pxor   m7, m7
+    TAIL_CALL .skip_prologue, 0
+global current_function %+ .skip_prologue
+.skip_prologue:
+    mova   m0, [r1+  0]
+    mova   m1, [r1+ 32]
+    mova   m2, [r1+ 64]
+    mova   m3, [r1+ 96]
+    ; TRANSPOSE4x4Q
+    SBUTTERFLY qdq, 0, 1, 4
+    SBUTTERFLY qdq, 2, 3, 5
+    SBUTTERFLY dqqq, 0, 2, 4
+    SBUTTERFLY dqqq, 1, 3, 5
+    IDCT4_1D w,0,1,2,3,4,5
+    TRANSPOSE2x4x4W 0,1,2,3,4
+    paddw m0, [pw_32]
+    IDCT4_1D w,0,1,2,3,4,5
+    STOREx2_AVX2 0, 1, 4, 5, -4, 0, -3, 1, 7
+    STOREx2_AVX2 2, 3, 4, 5, -2, 2, -1, 3, 7
+    ret
+
+; 2xdst, 2xtmp, 4xsrcrow, 1xzero
+%macro LOAD_DIFF8x2_AVX2 9
+    movq    xm%1, [r1+%5*FENC_STRIDE]
+    movq    xm%2, [r1+%6*FENC_STRIDE]
+    vinserti128 m%1, m%1, [r1+%7*FENC_STRIDE], 1
+    vinserti128 m%2, m%2, [r1+%8*FENC_STRIDE], 1
+    punpcklbw m%1, m%9
+    punpcklbw m%2, m%9
+    movq    xm%3, [r2+(%5-4)*FDEC_STRIDE]
+    movq    xm%4, [r2+(%6-4)*FDEC_STRIDE]
+    vinserti128 m%3, m%3, [r2+(%7-4)*FDEC_STRIDE], 1
+    vinserti128 m%4, m%4, [r2+(%8-4)*FDEC_STRIDE], 1
+    punpcklbw m%3, m%9
+    punpcklbw m%4, m%9
+    psubw    m%1, m%3
+    psubw    m%2, m%4
+%endmacro
+
+; 4x src, 1x tmp
+%macro STORE8_DCT_AVX2 5
+    SBUTTERFLY qdq, %1, %2, %5
+    SBUTTERFLY qdq, %3, %4, %5
+    mova [r0+  0], xm%1
+    mova [r0+ 16], xm%3
+    mova [r0+ 32], xm%2
+    mova [r0+ 48], xm%4
+    vextracti128 [r0+ 64], m%1, 1
+    vextracti128 [r0+ 80], m%3, 1
+    vextracti128 [r0+ 96], m%2, 1
+    vextracti128 [r0+112], m%4, 1
+%endmacro
+
+%macro STORE16_DCT_AVX2 5
+    SBUTTERFLY qdq, %1, %2, %5
+    SBUTTERFLY qdq, %3, %4, %5
+    mova [r0+ 0-128], xm%1
+    mova [r0+16-128], xm%3
+    mova [r0+32-128], xm%2
+    mova [r0+48-128], xm%4
+    vextracti128 [r0+ 0], m%1, 1
+    vextracti128 [r0+16], m%3, 1
+    vextracti128 [r0+32], m%2, 1
+    vextracti128 [r0+48], m%4, 1
+%endmacro
+
+INIT_YMM avx2
+cglobal sub8x8_dct, 3,3,7
+    pxor m6, m6
+    add r2, 4*FDEC_STRIDE
+    LOAD_DIFF8x2_AVX2 0, 1, 4, 5, 0, 1, 4, 5, 6
+    LOAD_DIFF8x2_AVX2 2, 3, 4, 5, 2, 3, 6, 7, 6
+    DCT4_1D 0, 1, 2, 3, 4
+    TRANSPOSE2x4x4W 0, 1, 2, 3, 4
+    DCT4_1D 0, 1, 2, 3, 4
+    STORE8_DCT_AVX2 0, 1, 2, 3, 4
+    RET
+
+INIT_YMM avx2
+cglobal sub16x16_dct, 3,3,6
+    add r0, 128
+    add r2, 4*FDEC_STRIDE
+    call .sub16x4_dct
+    add r0, 64
+    add r1, 4*FENC_STRIDE
+    add r2, 4*FDEC_STRIDE
+    call .sub16x4_dct
+    add r0, 256-64
+    add r1, 4*FENC_STRIDE
+    add r2, 4*FDEC_STRIDE
+    call .sub16x4_dct
+    add r0, 64
+    add r1, 4*FENC_STRIDE
+    add r2, 4*FDEC_STRIDE
+    call .sub16x4_dct
+    RET
+.sub16x4_dct:
+    LOAD_DIFF16x2_AVX2 0, 1, 4, 5, 0, 1
+    LOAD_DIFF16x2_AVX2 2, 3, 4, 5, 2, 3
+    DCT4_1D 0, 1, 2, 3, 4
+    TRANSPOSE2x4x4W 0, 1, 2, 3, 4
+    DCT4_1D 0, 1, 2, 3, 4
+    STORE16_DCT_AVX2 0, 1, 2, 3, 4
+    ret
 %endif ; HIGH_BIT_DEPTH
 
 INIT_MMX
@@ -422,7 +550,7 @@ cglobal %1, 2,2,%7
 cglobal %1, 2,2,11
     pxor m7, m7
 %endif
-%if mmsize==16 && %3!=256
+%if mmsize>=16 && %3!=256
     add  r0, 4*FDEC_STRIDE
 %endif
 .skip_prologue:
@@ -497,6 +625,9 @@ cextern sub8x8_dct8_avx.skip_prologue
 SUB_NxN_DCT  sub16x16_dct8_sse2,  sub8x8_dct8_sse2,  128, 8, 0, 0, 11
 SUB_NxN_DCT  sub16x16_dct8_ssse3, sub8x8_dct8_ssse3, 128, 8, 0, 0, 11
 SUB_NxN_DCT  sub16x16_dct8_avx,   sub8x8_dct8_avx,   128, 8, 0, 0, 11
+
+INIT_YMM
+ADD_NxN_IDCT add16x16_idct_avx2, add8x8_idct_avx2, 128, 8, 0, 0
 %endif ; HIGH_BIT_DEPTH
 
 %if HIGH_BIT_DEPTH
@@ -1608,4 +1739,42 @@ INIT_XMM sse2
 ZIGZAG_8x8_CAVLC
 INIT_XMM avx
 ZIGZAG_8x8_CAVLC
+
+INIT_YMM avx2
+cglobal zigzag_interleave_8x8_cavlc, 3,3,6
+    mova   m0, [r1+ 0]
+    mova   m1, [r1+32]
+    mova   m2, [r1+64]
+    mova   m3, [r1+96]
+    mova   m5, [deinterleave_shufd]
+    SBUTTERFLY wd, 0, 1, 4
+    SBUTTERFLY wd, 2, 3, 4
+    SBUTTERFLY wd, 0, 1, 4
+    SBUTTERFLY wd, 2, 3, 4
+    vpermd m0, m5, m0
+    vpermd m1, m5, m1
+    vpermd m2, m5, m2
+    vpermd m3, m5, m3
+    mova [r0+  0], xm0
+    mova [r0+ 16], xm2
+    vextracti128 [r0+ 32], m0, 1
+    vextracti128 [r0+ 48], m2, 1
+    mova [r0+ 64], xm1
+    mova [r0+ 80], xm3
+    vextracti128 [r0+ 96], m1, 1
+    vextracti128 [r0+112], m3, 1
+
+    packsswb m0, m2          ; nnz0, nnz1
+    packsswb m1, m3          ; nnz2, nnz3
+    packsswb m0, m1          ; {nnz0,nnz2}, {nnz1,nnz3}
+    vpermq   m0, m0, q3120   ; {nnz0,nnz1}, {nnz2,nnz3}
+    pxor     m5, m5
+    pcmpeqq  m0, m5
+    pmovmskb r0d, m0
+    not     r0d
+    and     r0d, 0x01010101
+    mov  [r2+0], r0w
+    shr     r0d, 16
+    mov  [r2+8], r0w
+    RET
 %endif ; !HIGH_BIT_DEPTH

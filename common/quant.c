@@ -456,11 +456,6 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->denoise_dct = x264_denoise_dct_mmx;
         pf->decimate_score15 = x264_decimate_score15_mmx2;
         pf->decimate_score16 = x264_decimate_score16_mmx2;
-        if( cpu&X264_CPU_SLOW_CTZ )
-        {
-            pf->decimate_score15 = x264_decimate_score15_mmx2_slowctz;
-            pf->decimate_score16 = x264_decimate_score16_mmx2_slowctz;
-        }
         pf->decimate_score64 = x264_decimate_score64_mmx2;
         pf->coeff_last8 = x264_coeff_last8_mmx2;
         pf->coeff_last[  DCT_LUMA_AC] = x264_coeff_last15_mmx2;
@@ -489,11 +484,6 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->decimate_score15 = x264_decimate_score15_sse2;
         pf->decimate_score16 = x264_decimate_score16_sse2;
         pf->decimate_score64 = x264_decimate_score64_sse2;
-        if( cpu&X264_CPU_SLOW_CTZ )
-        {
-            pf->decimate_score15 = x264_decimate_score15_sse2_slowctz;
-            pf->decimate_score16 = x264_decimate_score16_sse2_slowctz;
-        }
         pf->coeff_last8 = x264_coeff_last8_sse2;
         pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_sse2;
         pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_sse2;
@@ -523,11 +513,6 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->denoise_dct = x264_denoise_dct_ssse3;
         pf->decimate_score15 = x264_decimate_score15_ssse3;
         pf->decimate_score16 = x264_decimate_score16_ssse3;
-        if( cpu&X264_CPU_SLOW_CTZ )
-        {
-            pf->decimate_score15 = x264_decimate_score15_ssse3_slowctz;
-            pf->decimate_score16 = x264_decimate_score16_ssse3_slowctz;
-        }
         pf->decimate_score64 = x264_decimate_score64_ssse3;
         INIT_TRELLIS( ssse3 );
     }
@@ -581,11 +566,6 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->quant_4x4_dc = x264_quant_4x4_dc_mmx2;
         pf->decimate_score15 = x264_decimate_score15_mmx2;
         pf->decimate_score16 = x264_decimate_score16_mmx2;
-        if( cpu&X264_CPU_SLOW_CTZ )
-        {
-            pf->decimate_score15 = x264_decimate_score15_mmx2_slowctz;
-            pf->decimate_score16 = x264_decimate_score16_mmx2_slowctz;
-        }
         pf->decimate_score64 = x264_decimate_score64_mmx2;
         pf->coeff_last[  DCT_LUMA_AC] = x264_coeff_last15_mmx2;
         pf->coeff_last[ DCT_LUMA_4x4] = x264_coeff_last16_mmx2;
@@ -625,11 +605,6 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->decimate_score15 = x264_decimate_score15_sse2;
         pf->decimate_score16 = x264_decimate_score16_sse2;
         pf->decimate_score64 = x264_decimate_score64_sse2;
-        if( cpu&X264_CPU_SLOW_CTZ )
-        {
-            pf->decimate_score15 = x264_decimate_score15_sse2_slowctz;
-            pf->decimate_score16 = x264_decimate_score16_sse2_slowctz;
-        }
         pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_sse2;
         pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_sse2;
         pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_sse2;
@@ -656,11 +631,6 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->denoise_dct = x264_denoise_dct_ssse3;
         pf->decimate_score15 = x264_decimate_score15_ssse3;
         pf->decimate_score16 = x264_decimate_score16_ssse3;
-        if( cpu&X264_CPU_SLOW_CTZ )
-        {
-            pf->decimate_score15 = x264_decimate_score15_ssse3_slowctz;
-            pf->decimate_score16 = x264_decimate_score16_ssse3_slowctz;
-        }
         pf->decimate_score64 = x264_decimate_score64_ssse3;
         INIT_TRELLIS( ssse3 );
     }
@@ -692,6 +662,25 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
             pf->dequant_4x4 = x264_dequant_4x4_xop;
             pf->dequant_8x8 = x264_dequant_8x8_xop;
         }
+    }
+
+    if( cpu&X264_CPU_AVX2 )
+    {
+        pf->quant_4x4 = x264_quant_4x4_avx2;
+        pf->quant_4x4_dc = x264_quant_4x4_dc_avx2;
+        pf->quant_8x8 = x264_quant_8x8_avx2;
+        pf->quant_4x4x4 = x264_quant_4x4x4_avx2;
+        if( cpu&X264_CPU_LZCNT )
+            pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx2_lzcnt;
+        pf->dequant_4x4 = x264_dequant_4x4_avx2;
+        pf->dequant_8x8 = x264_dequant_8x8_avx2;
+        if( h->param.i_cqm_preset == X264_CQM_FLAT )
+        {
+            pf->dequant_4x4 = x264_dequant_4x4_flat16_avx2;
+            pf->dequant_8x8 = x264_dequant_8x8_flat16_avx2;
+        }
+        pf->decimate_score64 = x264_decimate_score64_avx2;
+        pf->denoise_dct = x264_denoise_dct_avx2;
     }
 #endif // HAVE_MMX
 
