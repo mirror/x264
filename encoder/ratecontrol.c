@@ -1667,7 +1667,8 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
             rc->qpm = x264_clip3f( (prev_row_qp + rc->qpm)*0.5f, prev_row_qp + 1.0f, qp_max );
             rc->qpa_rc = rc->qpa_rc_prev;
             rc->qpa_aq = rc->qpa_aq_prev;
-            h->fdec->i_row_bits[y] = h->fdec->i_row_bits[y-SLICE_MBAFF] = 0;
+            h->fdec->i_row_bits[y] = 0;
+            h->fdec->i_row_bits[y-SLICE_MBAFF] = 0;
             return -1;
         }
     }
@@ -1683,7 +1684,8 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
             rc->qpm = qp_max;
             rc->qpa_rc = rc->qpa_rc_prev;
             rc->qpa_aq = rc->qpa_aq_prev;
-            h->fdec->i_row_bits[y] = h->fdec->i_row_bits[y-SLICE_MBAFF] = 0;
+            h->fdec->i_row_bits[y] = 0;
+            h->fdec->i_row_bits[y-SLICE_MBAFF] = 0;
             return -1;
         }
     }
