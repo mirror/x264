@@ -108,6 +108,7 @@ function x264_quant_4x4_neon
 
 // quant_4x4x4( int16_t dct[4][16], uint16_t mf[16], uint16_t bias[16] )
 function x264_quant_4x4x4_neon
+    vpush       {d8-d15}
     vld1.64     {d28-d31}, [r0,:128]
     vabs.s16    q8,  q14
     vabs.s16    q9,  q15
@@ -142,6 +143,7 @@ function x264_quant_4x4x4_neon
     orrne       r0,  #4
     orrs        r3,  ip
     orrne       r0,  #8
+    vpop        {d8-d15}
     bx          lr
 .endfunc
 
