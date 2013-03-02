@@ -1155,7 +1155,10 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
             pixf->satd[PIXEL_4x16]  = x264_pixel_satd_4x16_ssse3_atom;
             INIT6( satd_x3, _ssse3_atom );
             INIT6( satd_x4, _ssse3_atom );
-            INIT4( hadamard_ac, _ssse3_atom );
+            if( !(cpu&X264_CPU_STACK_MOD4) )
+            {
+                INIT4( hadamard_ac, _ssse3_atom );
+            }
 #if ARCH_X86_64
             pixf->sa8d_satd[PIXEL_16x16] = x264_pixel_sa8d_satd_16x16_ssse3_atom;
 #endif
