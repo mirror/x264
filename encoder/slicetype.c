@@ -60,7 +60,7 @@ static void x264_weight_get_h264( int weight_nonh264, int offset, x264_weight_t 
     w->i_offset = offset;
     w->i_denom = 7;
     w->i_scale = weight_nonh264;
-    while( w->i_denom > 0 && (w->i_scale > 127 || !(w->i_scale & 1)) )
+    while( w->i_denom > 0 && (w->i_scale > 127) )
     {
         w->i_denom--;
         w->i_scale >>= 1;
@@ -286,21 +286,40 @@ static void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *r
     SET_WEIGHT( weights[1], 0, 1, 0, 0 );
     SET_WEIGHT( weights[2], 0, 1, 0, 0 );
     int chroma_initted = 0;
+    float guess_scale[3];
+    float fenc_mean[3];
+    float ref_mean[3];
+    for( int plane = 0; plane <= 2*!b_lookahead; plane++ )
+    {
+        float fenc_var = fenc->i_pixel_ssd[plane] + !ref->i_pixel_ssd[plane];
+        float ref_var  =  ref->i_pixel_ssd[plane] + !ref->i_pixel_ssd[plane];
+        guess_scale[plane] = sqrtf( fenc_var / ref_var );
+        fenc_mean[plane] = (float)fenc->i_pixel_sum[plane] / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
+        ref_mean[plane]  = (float) ref->i_pixel_sum[plane] / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
+    }
+
+    int chroma_denom = 7;
+    if( !b_lookahead )
+    {
+        /* make sure both our scale factors fit */
+        while( chroma_denom > 0 )
+        {
+            float thresh = 127.f / (1<<chroma_denom);
+            if( guess_scale[1] < thresh && guess_scale[2] < thresh )
+                break;
+            chroma_denom--;
+        }
+    }
+
     /* Don't check chroma in lookahead, or if there wasn't a luma weight. */
     for( int plane = 0; plane <= 2 && !( plane && ( !weights[0].weightfn || b_lookahead ) ); plane++ )
     {
-        int cur_offset, start_offset, end_offset;
         int minoff, minscale, mindenom;
         unsigned int minscore, origscore;
         int found;
-        float fenc_var = fenc->i_pixel_ssd[plane] + !ref->i_pixel_ssd[plane];
-        float ref_var  =  ref->i_pixel_ssd[plane] + !ref->i_pixel_ssd[plane];
-        float guess_scale = sqrtf( fenc_var / ref_var );
-        float fenc_mean = (float)fenc->i_pixel_sum[plane] / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
-        float ref_mean  = (float) ref->i_pixel_sum[plane] / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
 
         //early termination
-        if( fabsf( ref_mean - fenc_mean ) < 0.5f && fabsf( 1.f - guess_scale ) < epsilon )
+        if( fabsf( ref_mean[plane] - fenc_mean[plane] ) < 0.5f && fabsf( 1.f - guess_scale[plane] ) < epsilon )
         {
             SET_WEIGHT( weights[plane], 0, 1, 0, 0 );
             continue;
@@ -308,8 +327,8 @@ static void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *r
 
         if( plane )
         {
-            weights[plane].i_denom = 6;
-            weights[plane].i_scale = x264_clip3( round( guess_scale * 64 ), 0, 255 );
+            weights[plane].i_denom = chroma_denom;
+            weights[plane].i_scale = x264_clip3( round( guess_scale[plane] * (1<<chroma_denom) ), 0, 255 );
             if( weights[plane].i_scale > 127 )
             {
                 weights[1].weightfn = weights[2].weightfn = NULL;
@@ -317,7 +336,7 @@ static void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *r
             }
         }
         else
-            x264_weight_get_h264( round( guess_scale * 128 ), 0, &weights[plane] );
+            x264_weight_get_h264( round( guess_scale[plane] * 128 ), 0, &weights[plane] );
 
         found = 0;
         mindenom = weights[plane].i_denom;
@@ -357,32 +376,64 @@ static void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *r
         if( !minscore )
             continue;
 
-        // This gives a slight improvement due to rounding errors but only tests one offset in lookahead.
-        // Currently only searches within +/- 1 of the best offset found so far.
-        // TODO: Try other offsets/multipliers/combinations thereof?
-        cur_offset = fenc_mean - ref_mean * minscale / (1 << mindenom) + 0.5f * b_lookahead;
-        start_offset = x264_clip3( cur_offset - !b_lookahead, -128, 127 );
-        end_offset   = x264_clip3( cur_offset + !b_lookahead, -128, 127 );
-        for( int i_off = start_offset; i_off <= end_offset; i_off++ )
+        /* Picked somewhat arbitrarily */
+        static const uint8_t weight_check_distance[][2] =
         {
-            SET_WEIGHT( weights[plane], 1, minscale, mindenom, i_off );
-            unsigned int s;
-            if( plane )
-            {
-                if( CHROMA444 )
-                    s = x264_weight_cost_chroma444( h, fenc, mcbuf, &weights[plane], plane );
-                else
-                    s = x264_weight_cost_chroma( h, fenc, mcbuf, &weights[plane] );
-            }
-            else
-                s = x264_weight_cost_luma( h, fenc, mcbuf, &weights[plane] );
-            COPY3_IF_LT( minscore, s, minoff, i_off, found, 1 );
+            {0,0},{0,0},{0,1},{0,1},
+            {0,1},{0,1},{0,1},{1,1},
+            {1,1},{2,1},{2,1},{4,2}
+        };
+        int scale_dist =  b_lookahead ? 0 : weight_check_distance[h->param.analyse.i_subpel_refine][0];
+        int offset_dist = b_lookahead ? 0 : weight_check_distance[h->param.analyse.i_subpel_refine][1];
 
-            // Don't check any more offsets if the previous one had a lower cost than the current one
-            if( minoff == start_offset && i_off != start_offset )
-                break;
+        int start_scale  = x264_clip3( minscale - scale_dist, 0, 127 );
+        int end_scale    = x264_clip3( minscale + scale_dist, 0, 127 );
+        for( int i_scale = start_scale; i_scale <= end_scale; i_scale++ )
+        {
+            int cur_scale = i_scale;
+            int cur_offset = fenc_mean[plane] - ref_mean[plane] * cur_scale / (1 << mindenom) + 0.5f * b_lookahead;
+            if( cur_offset < - 128 || cur_offset > 127 )
+            {
+                /* Rescale considering the constraints on cur_offset. We do it in this order
+                 * because scale has a much wider range than offset (because of denom), so
+                 * it should almost never need to be clamped. */
+                cur_offset = x264_clip3( cur_offset, -128, 127 );
+                cur_scale = (1 << mindenom) * (fenc_mean[plane] - cur_offset) / ref_mean[plane] + 0.5f;
+                cur_scale = x264_clip3( cur_scale, 0, 127 );
+            }
+            int start_offset = x264_clip3( cur_offset - offset_dist, -128, 127 );
+            int end_offset   = x264_clip3( cur_offset + offset_dist, -128, 127 );
+            for( int i_off = start_offset; i_off <= end_offset; i_off++ )
+            {
+                SET_WEIGHT( weights[plane], 1, cur_scale, mindenom, i_off );
+                unsigned int s;
+                if( plane )
+                {
+                    if( CHROMA444 )
+                        s = x264_weight_cost_chroma444( h, fenc, mcbuf, &weights[plane], plane );
+                    else
+                        s = x264_weight_cost_chroma( h, fenc, mcbuf, &weights[plane] );
+                }
+                else
+                    s = x264_weight_cost_luma( h, fenc, mcbuf, &weights[plane] );
+                COPY4_IF_LT( minscore, s, minscale, cur_scale, minoff, i_off, found, 1 );
+
+                // Don't check any more offsets if the previous one had a lower cost than the current one
+                if( minoff == start_offset && i_off != start_offset )
+                    break;
+            }
         }
         x264_emms();
+
+        /* Use a smaller denominator if possible */
+        if( !plane )
+        {
+            while( mindenom > 0 && !(minscale&1) )
+            {
+                mindenom--;
+                minscale >>= 1;
+            }
+        }
 
         /* FIXME: More analysis can be done here on SAD vs. SATD termination. */
         /* 0.2% termination derived experimentally to avoid weird weights in frames that are mostly intra. */
@@ -398,18 +449,29 @@ static void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *r
             fenc->f_weighted_cost_delta[i_delta_index] = (float)minscore / origscore;
     }
 
-    //FIXME, what is the correct way to deal with this?
-    if( weights[1].weightfn && weights[2].weightfn && weights[1].i_denom != weights[2].i_denom )
+    /* Optimize and unify denominator */
+    if( weights[1].weightfn || weights[2].weightfn )
     {
-        int denom = X264_MIN( weights[1].i_denom, weights[2].i_denom );
-        int i;
-        for( i = 1; i <= 2; i++ )
+        int denom = weights[1].weightfn ? weights[1].i_denom : weights[2].i_denom;
+        int both_weighted = weights[1].weightfn && weights[2].weightfn;
+        /* If only one plane is weighted, the other has an implicit scale of 1<<denom.
+         * With denom==7, this comes out to 128, which is invalid, so don't allow that. */
+        while( (!both_weighted && denom==7) ||
+               (denom > 0 && !(weights[1].weightfn && (weights[1].i_scale&1))
+                         && !(weights[2].weightfn && (weights[2].i_scale&1))) )
         {
-            weights[i].i_scale = x264_clip3( weights[i].i_scale >> ( weights[i].i_denom - denom ), 0, 255 );
-            weights[i].i_denom = denom;
-            h->mc.weight_cache( h, &weights[i] );
+            denom--;
+            for( int i = 1; i <= 2; i++ )
+                if( weights[i].weightfn )
+                {
+                    weights[i].i_scale >>= 1;
+                    weights[i].i_denom = denom;
+                }
         }
     }
+    for( int i = 1; i <= 2; i++ )
+        if( weights[i].weightfn )
+            h->mc.weight_cache( h, &weights[i] );
 
     if( weights[0].weightfn && b_lookahead )
     {
