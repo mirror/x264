@@ -183,8 +183,8 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     h->stream_id       = i;
     h->next_frame      = 0;
     AVCodecContext *c  = h->lavf->streams[i]->codec;
-    info->fps_num      = h->lavf->streams[i]->r_frame_rate.num;
-    info->fps_den      = h->lavf->streams[i]->r_frame_rate.den;
+    info->fps_num      = h->lavf->streams[i]->avg_frame_rate.num;
+    info->fps_den      = h->lavf->streams[i]->avg_frame_rate.den;
     info->timebase_num = h->lavf->streams[i]->time_base.num;
     info->timebase_den = h->lavf->streams[i]->time_base.den;
     /* lavf is thread unsafe as calling av_read_frame invalidates previously read AVPackets */
