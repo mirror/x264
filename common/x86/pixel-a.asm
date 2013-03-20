@@ -127,6 +127,35 @@ transd_shuf2: SHUFFLE_MASK_W 1, 9, 3, 11, 5, 13, 7, 15
 sw_f0:     dq 0xfff0, 0
 pd_f0:     times 4 dd 0xffff0000
 
+pw_76543210: dw 0, 1, 2, 3, 4, 5, 6, 7
+
+ads_mvs_count:
+%assign x 0
+%rep 256
+; population count
+db ((x>>0)&1)+((x>>1)&1)+((x>>2)&1)+((x>>3)&1)+((x>>4)&1)+((x>>5)&1)+((x>>6)&1)+((x>>7)&1)
+%assign x x+1
+%endrep
+
+ads_mvs_shuffle:
+%macro ADS_MVS_SHUFFLE 8
+    %assign y x
+    %rep 8
+        %rep 7
+            %rotate (~y)&1
+            %assign y y>>((~y)&1)
+        %endrep
+        db %1*2, %1*2+1
+        %rotate 1
+        %assign y y>>1
+    %endrep
+%endmacro
+%assign x 0
+%rep 256
+    ADS_MVS_SHUFFLE 0, 1, 2, 3, 4, 5, 6, 7
+%assign x x+1
+%endrep
+
 SECTION .text
 
 cextern pb_0
@@ -4839,7 +4868,11 @@ ASD8
 %endif
     lea     r6, [r4+r5+(mmsize-1)]
     and     r6, ~(mmsize-1)
-    jmp ads_mvs
+%if cpuflag(ssse3)
+    jmp ads_mvs_ssse3
+%else
+    jmp ads_mvs_mmx
+%endif
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -5102,9 +5135,9 @@ ADS_XMM
     inc     r1d
 %endmacro
 
-INIT_MMX
+INIT_MMX mmx
 cglobal pixel_ads_mvs, 0,7,0
-ads_mvs:
+ads_mvs_mmx:
     ; mvs = r4
     ; masks = r6
     ; width = r5
@@ -5144,5 +5177,33 @@ ALIGN 16
     cmp     r1d, r5d
     jl .loopi
 .end:
+    movifnidn eax, r0d
+    RET
+
+INIT_XMM ssse3
+cglobal pixel_ads_mvs, 0,7,0
+ads_mvs_ssse3:
+    mova      m3, [pw_8]
+    mova      m4, [pw_76543210]
+    pxor      m5, m5
+    add       r5, r6
+    xor      r0d, r0d ; nmv
+    mov     [r5], r0d
+    lea       r1, [ads_mvs_count]
+.loop:
+    movh      m0, [r6]
+    pcmpeqb   m0, m5
+    pmovmskb r2d, m0
+    xor      r2d, 0xffff        ; skipping if r2d is zero is slower (branch mispredictions)
+    movzx    r3d, byte [r1+r2]  ; popcnt
+    add      r2d, r2d
+    ; shuffle counters based on mv mask
+    pshufb    m2, m4, [r1+r2*8+(ads_mvs_shuffle-ads_mvs_count)]
+    movu [r4+r0*2], m2
+    add      r0d, r3d
+    paddw     m4, m3            ; {i*8+0, i*8+1, i*8+2, i*8+3, i*8+4, i*8+5, i*8+6, i*8+7}
+    add       r6, 8
+    cmp       r6, r5
+    jl .loop
     movifnidn eax, r0d
     RET
