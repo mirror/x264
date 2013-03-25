@@ -36,14 +36,17 @@ coeff_abs_level_transition: db 1, 2, 3, 3, 4, 5, 6, 7
                             db 4, 4, 4, 4, 5, 6, 7, 7
 
 %if ARCH_X86_64
-%macro COEFF_LAST_TABLE 16
+%macro COEFF_LAST_TABLE 17
     %define funccpu1 %1
     %define funccpu2 %2
+    %define funccpu3 %3
     %rep 14
-        %ifidn %3, 4
-            dq mangle(x264_coeff_last%3_ %+ funccpu1)
+        %ifidn %4, 4
+            dq mangle(x264_coeff_last%4_ %+ funccpu1)
+        %elifidn %4, 64
+            dq mangle(x264_coeff_last%4_ %+ funccpu2)
         %else
-            dq mangle(x264_coeff_last%3_ %+ funccpu2)
+            dq mangle(x264_coeff_last%4_ %+ funccpu3)
         %endif
         %rotate 1
     %endrep
@@ -57,9 +60,11 @@ cextern coeff_last16_sse2
 cextern coeff_last16_sse2_lzcnt
 cextern coeff_last64_sse2
 cextern coeff_last64_sse2_lzcnt
+cextern coeff_last64_avx2_lzcnt
 
-coeff_last_sse2:       COEFF_LAST_TABLE       mmx2,       sse2, 16, 15, 16, 4, 15, 64, 16, 15, 16, 64, 16, 15, 16, 64
-coeff_last_sse2_lzcnt: COEFF_LAST_TABLE mmx2_lzcnt, sse2_lzcnt, 16, 15, 16, 4, 15, 64, 16, 15, 16, 64, 16, 15, 16, 64
+coeff_last_sse2:       COEFF_LAST_TABLE       mmx2,       sse2,       sse2, 16, 15, 16, 4, 15, 64, 16, 15, 16, 64, 16, 15, 16, 64
+coeff_last_sse2_lzcnt: COEFF_LAST_TABLE mmx2_lzcnt, sse2_lzcnt, sse2_lzcnt, 16, 15, 16, 4, 15, 64, 16, 15, 16, 64, 16, 15, 16, 64
+coeff_last_avx2_lzcnt: COEFF_LAST_TABLE mmx2_lzcnt, avx2_lzcnt, sse2_lzcnt, 16, 15, 16, 4, 15, 64, 16, 15, 16, 64, 16, 15, 16, 64
 %endif
 
 SECTION .text
@@ -78,15 +83,9 @@ cextern coeff_abs_level_m1_offset
 cextern count_cat_m1
 cextern cabac_encode_ue_bypass
 
-; t3 must be ecx, since it's used for shift.
-%if WIN64
-    DECLARE_REG_TMP 3,1,2,0,5,6,4,4
-    %define pointer resq
-%elif ARCH_X86_64
-    DECLARE_REG_TMP 0,1,2,3,4,5,6,6
+%if ARCH_X86_64
     %define pointer resq
 %else
-    DECLARE_REG_TMP 0,4,2,1,3,5,6,2
     %define pointer resd
 %endif
 
@@ -116,7 +115,17 @@ endstruc
 %endif
 %endmacro
 
-cglobal cabac_encode_decision_asm, 1,7
+%macro CABAC 1
+; t3 must be ecx, since it's used for shift.
+%if WIN64
+    DECLARE_REG_TMP 3,1,2,0,5,6,4,4
+%elif ARCH_X86_64
+    DECLARE_REG_TMP 0,1,2,3,4,5,6,6
+%else
+    DECLARE_REG_TMP 0,4,2,1,3,5,6,2
+%endif
+
+cglobal cabac_encode_decision_%1, 1,7
     movifnidn t1d, r1m
     mov   t5d, [r0+cb.range]
     movzx t6d, byte [r0+cb.state+t1]
@@ -144,22 +153,29 @@ cglobal cabac_encode_decision_asm, 1,7
     mov   [t0+cb.state+t1], t4b
 ;cabac_encode_renorm
     mov   t4d, t3d
+%ifidn %1, bmi2
+    lzcnt t3d, t3d
+    sub   t3d, 23
+    shlx  t4d, t4d, t3d
+    shlx  t6d, t6d, t3d
+%else
     shr   t3d, 3
     LOAD_GLOBAL t3d, cabac_renorm_shift, t3
+    shl   t4d, t3b
+    shl   t6d, t3b
+%endif
 %if WIN64
     POP r7
 %endif
-    shl   t4d, t3b
-    shl   t6d, t3b
     mov   [t0+cb.range], t4d
     add   t3d, [t0+cb.queue]
-    jge cabac_putbyte
+    jge cabac_putbyte_%1
 .update_queue_low:
     mov   [t0+cb.low], t6d
     mov   [t0+cb.queue], t3d
     RET
 
-cglobal cabac_encode_bypass_asm, 2,3
+cglobal cabac_encode_bypass_%1, 2,3
     mov       t7d, [r0+cb.low]
     and       r1d, [r0+cb.range]
     lea       t7d, [t7*2+r1]
@@ -167,7 +183,7 @@ cglobal cabac_encode_bypass_asm, 2,3
     mov       t3d, [r0+cb.queue]
     inc       t3d
 %if ARCH_X86_64 ; .putbyte compiles to nothing but a jmp
-    jge cabac_putbyte
+    jge cabac_putbyte_%1
 %else
     jge .putbyte
 %endif
@@ -178,10 +194,11 @@ cglobal cabac_encode_bypass_asm, 2,3
 .putbyte:
     PROLOGUE 0,7
     movifnidn t6d, t7d
-    jmp cabac_putbyte
+    jmp cabac_putbyte_%1
 %endif
 
-cglobal cabac_encode_terminal_asm, 1,3
+%ifnidn %1,bmi2
+cglobal cabac_encode_terminal_%1, 1,3
     sub  dword [r0+cb.range], 2
 ; shortcut: the renormalization shift in terminal
 ; can only be 0 or 1 and is zero over 99% of the time.
@@ -199,12 +216,19 @@ cglobal cabac_encode_terminal_asm, 1,3
     movifnidn t0, r0 ; WIN64
     mov t3d, [r0+cb.queue]
     mov t6d, [t0+cb.low]
+%endif
 
-cabac_putbyte:
+cabac_putbyte_%1:
     ; alive: t0=cb t3=queue t6=low
 %if WIN64
     DECLARE_REG_TMP 3,6,1,0,2,5,4
 %endif
+%ifidn %1, bmi2
+    add   t3d, 10
+    shrx  t2d, t6d, t3d
+    bzhi  t6d, t6d, t3d
+    sub   t3d, 18
+%else
     mov   t1d, -1
     add   t3d, 10
     mov   t2d, t6d
@@ -213,6 +237,7 @@ cabac_putbyte:
     not   t1d
     sub   t3d, 18
     and   t6d, t1d
+%endif
     mov   t5d, [t0+cb.bytes_outstanding]
     cmp   t2b, 0xff ; FIXME is a 32bit op faster?
     jz    .postpone
@@ -229,7 +254,11 @@ cabac_putbyte:
 .postpone:
     inc   t5d
     mov   [t0+cb.bytes_outstanding], t5d
-    jmp mangle(x264_cabac_encode_decision_asm.update_queue_low)
+    jmp mangle(x264_cabac_encode_decision_%1.update_queue_low)
+%endmacro
+
+CABAC asm
+CABAC bmi2
 
 ; %1 = label name
 ; %2 = node_ctx init?
@@ -514,7 +543,11 @@ CABAC_RESIDUAL_RD 1, coeff_last_sse2_lzcnt
 ;-----------------------------------------------------------------------------
 
 %macro CALL_CABAC 0
+%if cpuflag(bmi2)
+    call cabac_encode_decision_bmi2
+%else
     call cabac_encode_decision_asm
+%endif
 %if WIN64 ; move cabac back
     mov r0, r3
 %endif
@@ -696,7 +729,11 @@ cglobal cabac_block_residual_internal, 4,15
     movzx nodectxd, byte [coeff_abs_level_transition+8+nodectxq GLOBAL]
 .level_sign:
     mov     r1d, r11d
+%if cpuflag(bmi2)
+    call cabac_encode_bypass_bmi2
+%else
     call cabac_encode_bypass_asm
+%endif
 %if WIN64
     mov      r0, r3
 %endif
@@ -711,4 +748,6 @@ INIT_XMM sse2
 CABAC_RESIDUAL coeff_last_sse2
 INIT_XMM sse2,lzcnt
 CABAC_RESIDUAL coeff_last_sse2_lzcnt
+INIT_XMM avx2,bmi2
+CABAC_RESIDUAL coeff_last_avx2_lzcnt
 %endif

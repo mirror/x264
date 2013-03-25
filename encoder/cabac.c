@@ -793,12 +793,18 @@ static ALWAYS_INLINE void x264_cabac_block_residual_internal( x264_t *h, x264_ca
         x264_cabac_encode_bypass( cb, coeff_sign );
     } while( --coeff_idx >= 0 );
 }
-static void x264_cabac_block_residual( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+
+void x264_cabac_block_residual_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+{
+    x264_cabac_block_residual_internal( h, cb, ctx_block_cat, l, 0 );
+}
+
+static void ALWAYS_INLINE x264_cabac_block_residual( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
 {
 #if ARCH_X86_64 && HAVE_MMX
     h->bsf.cabac_block_residual_internal( l, MB_INTERLACED, ctx_block_cat, cb );
 #else
-    x264_cabac_block_residual_internal( h, cb, ctx_block_cat, l, 0 );
+    x264_cabac_block_residual_c( h, cb, ctx_block_cat, l );
 #endif
 }
 static void x264_cabac_block_residual_422_dc( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
