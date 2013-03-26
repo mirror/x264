@@ -929,14 +929,12 @@ if [ "$avs" = "auto" ] ; then
     avs="no"
     # cygwin can use avisynth if it can use LoadLibrary
     if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibrary(0);") ; then
-        avs="yes"
-        avstype="avisynth"
+        avs="avisynth"
         define HAVE_AVS
         define USE_AVXSYNTH 0
     elif [ "$SYS" = "LINUX" -o "$SYS" = "MACOSX" ] ; then
     # AvxSynth currently only supports Linux and OSX
-        avs="yes"
-        avstype="avxsynth"
+        avs="avxsynth"
         define HAVE_AVS
         define USE_AVXSYNTH 1
         AVS_LIBS="-ldl"
@@ -1202,7 +1200,7 @@ shared:        $shared
 static:        $static
 asm:           $asm
 interlaced:    $interlaced
-avs:           $avstype
+avs:           $avs
 lavf:          $lavf
 ffms:          $ffms
 gpac:          $gpac
