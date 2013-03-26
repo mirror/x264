@@ -1263,7 +1263,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_dct_init( h->param.cpu, &h->dctf );
     x264_zigzag_init( h->param.cpu, &h->zigzagf_progressive, &h->zigzagf_interlaced );
     memcpy( &h->zigzagf, PARAM_INTERLACED ? &h->zigzagf_interlaced : &h->zigzagf_progressive, sizeof(h->zigzagf) );
-    x264_mc_init( h->param.cpu, &h->mc );
+    x264_mc_init( h->param.cpu, &h->mc, h->param.b_cpu_independent );
     x264_quant_init( h, h->param.cpu, &h->quantf );
     x264_deblock_init( h->param.cpu, &h->loopf, PARAM_INTERLACED );
     x264_bitstream_init( h->param.cpu, &h->bsf );

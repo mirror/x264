@@ -1120,9 +1120,9 @@ static int check_mc( int cpu_ref, int cpu_new )
 
     int ret = 0, ok, used_asm;
 
-    x264_mc_init( 0, &mc_c );
-    x264_mc_init( cpu_ref, &mc_ref );
-    x264_mc_init( cpu_new, &mc_a );
+    x264_mc_init( 0, &mc_c, 0 );
+    x264_mc_init( cpu_ref, &mc_ref, 0 );
+    x264_mc_init( cpu_new, &mc_a, 0 );
     x264_pixel_init( 0, &pixf );
 
 #define MC_TEST_LUMA( w, h ) \
