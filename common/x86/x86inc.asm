@@ -1116,10 +1116,10 @@ AVX_INSTR blendpd, 1, 0, 0
 AVX_INSTR blendps, 1, 0, 0
 AVX_INSTR blendvpd, 1, 0, 0
 AVX_INSTR blendvps, 1, 0, 0
-AVX_INSTR cmppd, 1, 0, 0
-AVX_INSTR cmpps, 1, 0, 0
-AVX_INSTR cmpsd, 1, 0, 0
-AVX_INSTR cmpss, 1, 0, 0
+AVX_INSTR cmppd, 1, 1, 0
+AVX_INSTR cmpps, 1, 1, 0
+AVX_INSTR cmpsd, 1, 1, 0
+AVX_INSTR cmpss, 1, 1, 0
 AVX_INSTR comisd
 AVX_INSTR comiss
 AVX_INSTR cvtdq2pd
