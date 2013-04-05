@@ -55,9 +55,9 @@ typedef struct bs_s
 
 typedef struct
 {
-    int     last;
-    int     mask;
-    dctcoef level[16];
+    int32_t last;
+    int32_t mask;
+    ALIGNED_16( dctcoef level[18] );
 } x264_run_level_t;
 
 extern const vlc_t x264_coeff0_token[6];

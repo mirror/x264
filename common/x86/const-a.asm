@@ -49,6 +49,7 @@ const pw_m2,       times 8 dw -2
 const pw_4,        times 8 dw 4
 const pw_8,        times 8 dw 8
 const pw_64,       times 8 dw 64
+const pw_256,      times 8 dw 256
 const pw_32_0,     times 4 dw 32,
                    times 4 dw 0
 const pw_8000,     times 8 dw 0x8000
@@ -62,5 +63,13 @@ const pd_32,       times 4 dd 32
 const pd_1024,     times 4 dd 1024
 const pd_ffff,     times 4 dd 0xffff
 const pw_ff00,     times 8 dw 0xff00
+
+const popcnt_table
+%assign x 0
+%rep 256
+; population count
+db ((x>>0)&1)+((x>>1)&1)+((x>>2)&1)+((x>>3)&1)+((x>>4)&1)+((x>>5)&1)+((x>>6)&1)+((x>>7)&1)
+%assign x x+1
+%endrep
 
 const sw_64,       dd 64

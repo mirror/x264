@@ -129,14 +129,6 @@ pd_f0:     times 4 dd 0xffff0000
 
 pw_76543210: dw 0, 1, 2, 3, 4, 5, 6, 7
 
-ads_mvs_count:
-%assign x 0
-%rep 256
-; population count
-db ((x>>0)&1)+((x>>1)&1)+((x>>2)&1)+((x>>3)&1)+((x>>4)&1)+((x>>5)&1)+((x>>6)&1)+((x>>7)&1)
-%assign x x+1
-%endrep
-
 ads_mvs_shuffle:
 %macro ADS_MVS_SHUFFLE 8
     %assign y x
@@ -171,6 +163,7 @@ cextern pw_pmpmpmpm
 cextern pw_pmmpzzzz
 cextern pd_1
 cextern hsub_mul
+cextern popcnt_table
 
 ;=============================================================================
 ; SSD
@@ -5189,19 +5182,24 @@ ads_mvs_ssse3:
     add       r5, r6
     xor      r0d, r0d ; nmv
     mov     [r5], r0d
-    lea       r1, [ads_mvs_count]
+%ifdef PIC
+    lea       r1, [$$]
+    %define GLOBAL +r1-$$
+%else
+    %define GLOBAL
+%endif
 .loop:
     movh      m0, [r6]
     pcmpeqb   m0, m5
     pmovmskb r2d, m0
-    xor      r2d, 0xffff        ; skipping if r2d is zero is slower (branch mispredictions)
-    movzx    r3d, byte [r1+r2]  ; popcnt
+    xor      r2d, 0xffff                         ; skipping if r2d is zero is slower (branch mispredictions)
+    movzx    r3d, byte [r2+popcnt_table GLOBAL]  ; popcnt
     add      r2d, r2d
     ; shuffle counters based on mv mask
-    pshufb    m2, m4, [r1+r2*8+(ads_mvs_shuffle-ads_mvs_count)]
+    pshufb    m2, m4, [r2*8+ads_mvs_shuffle GLOBAL]
     movu [r4+r0*2], m2
     add      r0d, r3d
-    paddw     m4, m3            ; {i*8+0, i*8+1, i*8+2, i*8+3, i*8+4, i*8+5, i*8+6, i*8+7}
+    paddw     m4, m3                             ; {i*8+0, i*8+1, i*8+2, i*8+3, i*8+4, i*8+5, i*8+6, i*8+7}
     add       r6, 8
     cmp       r6, r5
     jl .loop

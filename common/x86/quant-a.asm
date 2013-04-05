@@ -74,14 +74,38 @@ chroma_dc_dmf_mask_mmx: dw 0, 0,-1,-1, 0,-1,-1, 0
 chroma_dc_dct_mask:     dw 1, 1,-1,-1, 1, 1,-1,-1
 chroma_dc_dmf_mask:     dw 1, 1,-1,-1, 1,-1,-1, 1
 
+%if HIGH_BIT_DEPTH==0
+dct_coef_shuffle:
+%macro DCT_COEF_SHUFFLE 8
+    %assign y x
+    %rep 8
+        %rep 7
+            %rotate (~(y>>7))&1
+            %assign y y<<((~(y>>7))&1)
+        %endrep
+        db %1*2
+        %rotate 1
+        %assign y y<<1
+    %endrep
+%endmacro
+%assign x 0
+%rep 256
+    DCT_COEF_SHUFFLE 7, 6, 5, 4, 3, 2, 1, 0
+%assign x x+1
+%endrep
+%endif
+
 SECTION .text
 
 cextern pb_1
 cextern pw_1
+cextern pw_2
+cextern pw_256
 cextern pd_1
 cextern pb_01
 cextern pd_1024
 cextern deinterleave_shufd
+cextern popcnt_table
 
 %macro QUANT_DC_START 2
     movd      xm%1, r1m     ; mf
@@ -1567,6 +1591,13 @@ cglobal coeff_last64, 1,3
 ; int coeff_level_run( dctcoef *dct, run_level_t *runlevel )
 ;-----------------------------------------------------------------------------
 
+struc levelrun
+    .last: resd 1
+    .mask: resd 1
+    align 16, resb 1
+    .level: resw 16
+endstruc
+
 ; t6 = eax for return, t3 = ecx for shift, t[01] = r[01] for x86_64 args
 %if WIN64
     DECLARE_REG_TMP 3,1,2,0,4,5,6
@@ -1581,6 +1612,7 @@ cglobal coeff_level_run%1,0,7
     movifnidn t0, r0mp
     movifnidn t1, r1mp
     pxor    m2, m2
+    xor    t3d, t3d
     LAST_MASK %1, t5d, t0-(%1&1)*SIZEOF_DCTCOEF, t4d
 %if %1==15
     shr    t5d, 1
@@ -1590,7 +1622,7 @@ cglobal coeff_level_run%1,0,7
     and    t5d, 0xf
 %endif
     xor    t5d, (1<<%1)-1
-    mov [t1+4], t5d
+    mov [t1+levelrun.mask], t5d
     shl    t5d, 32-%1
     mov    t4d, %1-1
     LZCOUNT t3d, t5d, 0x1f
@@ -1598,7 +1630,7 @@ cglobal coeff_level_run%1,0,7
     add    t5d, t5d
     sub    t4d, t3d
     shl    t5d, t3b
-    mov   [t1], t4d
+    mov [t1+levelrun.last], t4d
 .loop:
     LZCOUNT t3d, t5d, 0x1f
 %if HIGH_BIT_DEPTH
@@ -1609,9 +1641,9 @@ cglobal coeff_level_run%1,0,7
     inc    t3d
     shl    t5d, t3b
 %if HIGH_BIT_DEPTH
-    mov   [t1+t6*4+ 8], t2d
+    mov   [t1+t6*4+levelrun.level], t2d
 %else
-    mov   [t1+t6*2+ 8], t2w
+    mov   [t1+t6*2+levelrun.level], t2w
 %endif
     inc    t6d
     sub    t4d, t3d
@@ -1641,3 +1673,133 @@ COEFF_LEVELRUN 16
 INIT_MMX mmx2, lzcnt
 COEFF_LEVELRUN 4
 COEFF_LEVELRUN 8
+
+; Similar to the one above, but saves the DCT
+; coefficients in m0/m1 so we don't have to load
+; them later.
+%macro LAST_MASK_LUT 3
+    pxor     xm5, xm5
+%if %1 <= 8
+    mova      m0, [%3]
+    packsswb  m2, m0, m0
+%else
+    mova     xm0, [%3+ 0]
+    mova     xm1, [%3+16]
+    packsswb xm2, xm0, xm1
+%if mmsize==32
+    vinserti128 m0, m0, xm1, 1
+%endif
+%endif
+    pcmpeqb  xm2, xm5
+    pmovmskb  %2, xm2
+%endmacro
+
+%macro COEFF_LEVELRUN_LUT 1
+cglobal coeff_level_run%1,2,4+(%1/9)
+%ifdef PIC
+    lea       r5, [$$]
+    %define GLOBAL +r5-$$
+%else
+    %define GLOBAL
+%endif
+    LAST_MASK_LUT %1, eax, r0-(%1&1)*SIZEOF_DCTCOEF
+%if %1==15
+    shr     eax, 1
+%elif %1==8
+    and     eax, 0xff
+%elif %1==4
+    and     eax, 0xf
+%endif
+    xor     eax, (1<<%1)-1
+    mov [r1+levelrun.mask], eax
+%if %1==15
+    add     eax, eax
+%endif
+%if %1 > 8
+%if ARCH_X86_64
+    mov     r4d, eax
+    shr     r4d, 8
+%else
+    movzx   r4d, ah ; first 8 bits
+%endif
+%endif
+    movzx   r2d, al ; second 8 bits
+    shl     eax, 32-%1-(%1&1)
+    LZCOUNT eax, eax, 0x1f
+    mov     r3d, %1-1
+    sub     r3d, eax
+    mov [r1+levelrun.last], r3d
+; Here we abuse pshufb, combined with a lookup table, to do a gather
+; operation based on a bitmask. For example:
+;
+; dct 15-8 (input): 0  0  4  0  0 -2  1  0
+; dct  7-0 (input): 0  0 -1  0  0  0  0 15
+; bitmask 1:        0  0  1  0  0  1  1  0
+; bitmask 2:        0  0  1  0  0  0  0  1
+; gather 15-8:      4 -2  1 __ __ __ __ __
+; gather  7-0:     -1 15 __ __ __ __ __ __
+; levels (output):  4 -2  1 -1 15 __ __ __ __ __ __ __ __ __ __ __
+;
+; The overlapping, dependent stores almost surely cause a mess of
+; forwarding issues, but it's still enormously faster.
+%if %1 > 8
+    movzx   eax, byte [popcnt_table+r4 GLOBAL]
+    movzx   r3d, byte [popcnt_table+r2 GLOBAL]
+%if mmsize==16
+    movh      m3, [dct_coef_shuffle+r4*8 GLOBAL]
+    movh      m2, [dct_coef_shuffle+r2*8 GLOBAL]
+    mova      m4, [pw_256]
+; Storing 8 bytes of shuffle constant and converting it (unpack + or)
+; is neutral to slightly faster in local speed measurements, but it
+; cuts the table size in half, which is surely a big cache win.
+    punpcklbw m3, m3
+    punpcklbw m2, m2
+    por       m3, m4
+    por       m2, m4
+    pshufb    m1, m3
+    pshufb    m0, m2
+    mova [r1+levelrun.level], m1
+; This obnoxious unaligned store messes with store forwarding and
+; stalls the CPU to no end, but merging the two registers before
+; storing requires a variable 128-bit shift. Emulating this does
+; work, but requires a lot of ops and the gain is tiny and
+; inconsistent, so we'll err on the side of fewer instructions.
+    movu [r1+rax*2+levelrun.level], m0
+%else ; mmsize==32
+    movq     xm2, [dct_coef_shuffle+r4*8 GLOBAL]
+    vinserti128 m2, m2, [dct_coef_shuffle+r2*8 GLOBAL], 1
+    punpcklbw m2, m2
+    por       m2, [pw_256]
+    pshufb    m0, m2
+    vextracti128 [r1+levelrun.level], m0, 1
+    movu [r1+rax*2+levelrun.level], xm0
+%endif
+    add     eax, r3d
+%else
+    movzx   eax, byte [popcnt_table+r2 GLOBAL]
+    movh m1, [dct_coef_shuffle+r2*8 GLOBAL]
+    punpcklbw m1, m1
+    por       m1, [pw_256]
+    pshufb    m0, m1
+    mova [r1+levelrun.level], m0
+%endif
+    RET
+%endmacro
+
+%if HIGH_BIT_DEPTH==0
+INIT_MMX ssse3
+COEFF_LEVELRUN_LUT 4
+INIT_XMM ssse3
+COEFF_LEVELRUN_LUT 8
+COEFF_LEVELRUN_LUT 15
+COEFF_LEVELRUN_LUT 16
+INIT_MMX ssse3, lzcnt
+COEFF_LEVELRUN_LUT 4
+INIT_XMM ssse3, lzcnt
+COEFF_LEVELRUN_LUT 8
+COEFF_LEVELRUN_LUT 15
+COEFF_LEVELRUN_LUT 16
+INIT_XMM avx2, lzcnt
+COEFF_LEVELRUN_LUT 15
+COEFF_LEVELRUN_LUT 16
+%endif

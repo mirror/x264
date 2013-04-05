@@ -2593,7 +2593,14 @@ static int check_all_flags( void )
         cpu1 &= ~X264_CPU_BMI1;
     }
     if( x264_cpu_detect() & X264_CPU_AVX2 )
+    {
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_AVX2, "AVX2" );
+        if( x264_cpu_detect() & X264_CPU_LZCNT )
+        {
+            ret |= add_flags( &cpu0, &cpu1, X264_CPU_LZCNT, "AVX2_LZCNT" );
+            cpu1 &= ~X264_CPU_LZCNT;
+        }
+    }
     if( x264_cpu_detect() & X264_CPU_BMI2 )
     {
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_BMI1|X264_CPU_BMI2, "BMI2" );

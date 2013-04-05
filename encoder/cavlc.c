@@ -128,13 +128,13 @@ static int x264_cavlc_block_residual_internal( x264_t *h, int ctx_block_cat, dct
     unsigned int i_sign;
 
     /* level and run and total */
-    /* set these to 2 to allow branchless i_trailing calculation */
-    runlevel.level[1] = 2;
-    runlevel.level[2] = 2;
     i_total = h->quantf.coeff_level_run[ctx_block_cat]( l, &runlevel );
     x264_prefetch( &x264_run_before[runlevel.mask] );
     i_total_zero = runlevel.last + 1 - i_total;
 
+    /* branchless i_trailing calculation */
+    runlevel.level[i_total+0] = 2;
+    runlevel.level[i_total+1] = 2;
     i_trailing = ((((runlevel.level[0]+1) | (1-runlevel.level[0])) >> 31) & 1) // abs(runlevel.level[0])>1
                | ((((runlevel.level[1]+1) | (1-runlevel.level[1])) >> 31) & 2)
                | ((((runlevel.level[2]+1) | (1-runlevel.level[2])) >> 31) & 4);
