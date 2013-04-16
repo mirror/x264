@@ -1377,7 +1377,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
         * ( h->param.rc.i_rc_method == X264_RC_ABR ? pow( 0.95, h->param.rc.i_qp_min )
           : pow( 0.95, h->param.rc.i_qp_constant ) * X264_MAX( 1, h->param.rc.f_ip_factor )));
 
-    h->nal_buffer_size = h->out.i_bitstream * 3/2 + 4;
+    h->nal_buffer_size = h->out.i_bitstream * 3/2 + 4 + 64; /* +4 for startcode, +64 for nal_escape assembly padding */
     CHECKED_MALLOC( h->nal_buffer, h->nal_buffer_size );
 
     if( h->param.i_threads > 1 &&
@@ -1625,9 +1625,9 @@ static int x264_nal_end( x264_t *h )
     x264_nal_t *nal = &h->out.nal[h->out.i_nal];
     uint8_t *end = &h->out.p_bitstream[bs_pos( &h->out.bs ) / 8];
     nal->i_payload = end - nal->p_payload;
-    /* nal_escape_mmx reads past the end of the input.
+    /* Assembly implementation of nal_escape reads past the end of the input.
      * While undefined padding wouldn't actually affect the output, it makes valgrind unhappy. */
-    memset( end, 0xff, 32 );
+    memset( end, 0xff, 64 );
     if( h->param.nalu_process )
         h->param.nalu_process( h, nal, h->fenc->opaque );
     h->out.i_nal++;
@@ -1653,7 +1653,7 @@ static int x264_encoder_encapsulate_nals( x264_t *h, int start )
         nal_size += h->out.nal[i].i_payload;
 
     /* Worst-case NAL unit escaping: reallocate the buffer if it's too small. */
-    int necessary_size = nal_size * 3/2 + h->out.i_nal * 4;
+    int necessary_size = nal_size * 3/2 + h->out.i_nal * 4 + 4 + 64;
     if( h->nal_buffer_size < necessary_size )
     {
         h->nal_buffer_size = necessary_size * 2;

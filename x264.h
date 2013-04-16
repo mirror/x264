@@ -499,7 +499,7 @@ typedef struct x264_param_t
      * is done encoding.
      *
      * This callback MUST do the following in order to work correctly:
-     * 1) Have available an output buffer of at least size nal->i_payload*3/2 + 5 + 16.
+     * 1) Have available an output buffer of at least size nal->i_payload*3/2 + 5 + 64.
      * 2) Call x264_nal_encode( h, dst, nal ), where dst is the output buffer.
      * After these steps, the content of nal is valid and can be used in the same way as if
      * the NAL unit were output by x264_encoder_encode.
