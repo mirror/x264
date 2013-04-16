@@ -392,6 +392,9 @@ void x264_predict_8x8c_init_mmx( int cpu, x264_predict_t pf[7] )
     if( !(cpu&X264_CPU_AVX) )
         return;
     pf[I_PRED_CHROMA_P]       = x264_predict_8x8c_p_avx;
+    if( !(cpu&X264_CPU_AVX2) )
+        return;
+    pf[I_PRED_CHROMA_H]   = x264_predict_8x8c_h_avx2;
 #endif
 #else
 #if ARCH_X86_64
@@ -442,6 +445,9 @@ void x264_predict_8x16c_init_mmx( int cpu, x264_predict_t pf[7] )
     if( !(cpu&X264_CPU_AVX) )
         return;
     pf[I_PRED_CHROMA_P]       = x264_predict_8x16c_p_avx;
+    if( !(cpu&X264_CPU_AVX2) )
+        return;
+    pf[I_PRED_CHROMA_H]   = x264_predict_8x16c_h_avx2;
 #else
     pf[I_PRED_CHROMA_V]       = x264_predict_8x16c_v_mmx;
     if( !(cpu&X264_CPU_MMX2) )

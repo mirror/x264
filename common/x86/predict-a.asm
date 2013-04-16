@@ -160,6 +160,44 @@ cextern pw_pixel_max
 %endif
 %endmacro
 
+%macro PRED_H_LOAD 2 ; reg, offset
+%if cpuflag(avx2)
+    vpbroadcastpix %1, [r0+(%2)*FDEC_STRIDEB-SIZEOF_PIXEL]
+%elif HIGH_BIT_DEPTH
+    movd           %1, [r0+(%2)*FDEC_STRIDEB-4]
+    SPLATW         %1, %1, 1
+%else
+    SPLATB_LOAD    %1, r0+(%2)*FDEC_STRIDE-1, m2
+%endif
+%endmacro
+
+%macro PRED_H_STORE 3 ; reg, offset, width
+%assign %%w %3*SIZEOF_PIXEL
+%if %%w == 8
+    movq [r0+(%2)*FDEC_STRIDEB], %1
+%else
+    %assign %%i 0
+    %rep %%w/mmsize
+        mova [r0+(%2)*FDEC_STRIDEB+%%i], %1
+    %assign %%i %%i+mmsize
+    %endrep
+%endif
+%endmacro
+
+%macro PRED_H_4ROWS 2 ; width, inc_ptr
+    PRED_H_LOAD  m0, 0
+    PRED_H_LOAD  m1, 1
+    PRED_H_STORE m0, 0, %1
+    PRED_H_STORE m1, 1, %1
+    PRED_H_LOAD  m0, 2
+%if %2
+    add          r0, 4*FDEC_STRIDEB
+%endif
+    PRED_H_LOAD  m1, 3-4*%2
+    PRED_H_STORE m0, 2-4*%2, %1
+    PRED_H_STORE m1, 3-4*%2, %1
+%endmacro
+
 ; dest, left, right, src, tmp
 ; output: %1 = (t[n-1] + t[n]*2 + t[n+1] + 2) >> 2
 %macro PRED8x8_LOWPASS 4-5
@@ -1674,71 +1712,42 @@ PREDICT_8x16C_V
 ;-----------------------------------------------------------------------------
 ; void predict_8x8c_h( uint8_t *src )
 ;-----------------------------------------------------------------------------
+%macro PREDICT_C_H 0
+cglobal predict_8x8c_h, 1,1
+%if cpuflag(ssse3) && notcpuflag(avx2)
+    mova  m2, [pb_3]
+%endif
+    PRED_H_4ROWS 8, 1
+    PRED_H_4ROWS 8, 0
+    RET
+
+cglobal predict_8x16c_h, 1,2
+%if cpuflag(ssse3) && notcpuflag(avx2)
+    mova  m2, [pb_3]
+%endif
+    mov  r1d, 4
+.loop:
+    PRED_H_4ROWS 8, 1
+    dec  r1d
+    jg .loop
+    RET
+%endmacro
+
+INIT_MMX mmx2
+PREDICT_C_H
 %if HIGH_BIT_DEPTH
-
-%macro PREDICT_C_H 1
-cglobal predict_8x%1c_h, 1,1
-    add        r0, FDEC_STRIDEB*4
-%assign Y -4
-%rep %1
-    movd       m0, [r0+FDEC_STRIDEB*Y-SIZEOF_PIXEL*2]
-    SPLATW     m0, m0, 1
-    mova [r0+FDEC_STRIDEB*Y], m0
-%if mmsize == 8
-    mova [r0+FDEC_STRIDEB*Y+8], m0
-%endif
-%assign Y Y+1
-%endrep
-    RET
-%endmacro
-
-INIT_MMX mmx2
-PREDICT_C_H 8
-PREDICT_C_H 16
 INIT_XMM sse2
-PREDICT_C_H 8
-PREDICT_C_H 16
-
-%else ; !HIGH_BIT_DEPTH
-
-%macro PREDICT_C_H_CORE 1
-%assign Y %1
-%rep 4
-    SPLATB_LOAD m0, r0+FDEC_STRIDE*Y-1, m1
-    mova [r0+FDEC_STRIDE*Y], m0
-%assign Y Y+1
-%endrep
-%endmacro
-
-%macro PREDICT_C_H 1
-cglobal predict_8x%1c_h, 1,1
-%if cpuflag(ssse3)
-    mova   m1, [pb_3]
-%endif
-%if %1==16
-    add    r0, FDEC_STRIDE*4
-    PREDICT_C_H_CORE -4
-    add    r0, FDEC_STRIDE*4
-    PREDICT_C_H_CORE -4
-%endif
-    add    r0, FDEC_STRIDE*4
-    PREDICT_C_H_CORE -4
-    PREDICT_C_H_CORE 0
-    RET
-%endmacro
-
-INIT_MMX mmx2
-PREDICT_C_H 8
-PREDICT_C_H 16
+PREDICT_C_H
+INIT_XMM avx2
+PREDICT_C_H
+%else
 INIT_MMX ssse3
-PREDICT_C_H 8
-PREDICT_C_H 16
-
+PREDICT_C_H
 %endif
+
 ;-----------------------------------------------------------------------------
 ; void predict_8x8c_dc( pixel *src )
 ;-----------------------------------------------------------------------------
-
 %macro LOAD_LEFT 1
     movzx    r1d, pixel [r0+FDEC_STRIDEB*(%1-4)-SIZEOF_PIXEL]
     movzx    r2d, pixel [r0+FDEC_STRIDEB*(%1-3)-SIZEOF_PIXEL]
