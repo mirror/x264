@@ -115,9 +115,6 @@ static void x264_predict_8x16c_p_##name( uint16_t *src )\
     PREDICT_8x16C_P_CORE \
     x264_predict_8x16c_p_core_##name( src, a, b, c );\
 }
-
-PREDICT_8x16_P(sse2)
-PREDICT_8x16_P(avx)
 #else
 #define PREDICT_8x16_P(name)\
 static void x264_predict_8x16c_p_##name( uint8_t *src )\
@@ -129,9 +126,10 @@ static void x264_predict_8x16c_p_##name( uint8_t *src )\
 #ifndef ARCH_X86_64
 PREDICT_8x16_P(mmx2)
 #endif
+#endif
 PREDICT_8x16_P(sse2)
 PREDICT_8x16_P(avx)
-#endif
+PREDICT_8x16_P(avx2)
 
 #if HAVE_X86_INLINE_ASM
 #if HIGH_BIT_DEPTH
@@ -225,9 +223,9 @@ static void x264_predict_8x8c_p_##name( uint8_t *src )\
     x264_predict_8x8c_p_core_##name( src, i00, b, c );\
 }
 #ifndef ARCH_X86_64
-PREDICT_8x8_P( mmx2 )
+PREDICT_8x8_P(mmx2)
 #endif
-PREDICT_8x8_P( sse2   )
+PREDICT_8x8_P(sse2)
 
 #endif //!HIGH_BIT_DEPTH
 
@@ -264,7 +262,6 @@ static void x264_predict_8x8c_p_ ## cpu1( pixel *src )\
 }
 
 PREDICT_8x8_P2(sse2, sse2)
-PREDICT_8x8_P2( avx,  avx)
 
 #else  //!HIGH_BIT_DEPTH
 #define PREDICT_8x8_P2(cpu1, cpu2)\
@@ -289,8 +286,9 @@ static void x264_predict_8x8c_p_ ## cpu1( pixel *src )\
 }
 
 PREDICT_8x8_P2(ssse3, sse2)
-PREDICT_8x8_P2(  avx,  avx)
 #endif
+PREDICT_8x8_P2(  avx,  avx)
+PREDICT_8x8_P2( avx2, avx2)
 #endif
 
 #if ARCH_X86_64 && !HIGH_BIT_DEPTH
@@ -439,6 +437,11 @@ void x264_predict_8x8c_init_mmx( int cpu, x264_predict_t pf[7] )
     pf[I_PRED_CHROMA_P]       = x264_predict_8x8c_p_avx;
 #endif
 #endif // HIGH_BIT_DEPTH
+
+    if( cpu&X264_CPU_AVX2 )
+    {
+        pf[I_PRED_CHROMA_P]   = x264_predict_8x8c_p_avx2;
+    }
 }
 
 void x264_predict_8x16c_init_mmx( int cpu, x264_predict_t pf[7] )
@@ -485,6 +488,11 @@ void x264_predict_8x16c_init_mmx( int cpu, x264_predict_t pf[7] )
         return;
     pf[I_PRED_CHROMA_P]       = x264_predict_8x16c_p_avx;
 #endif // HIGH_BIT_DEPTH
+
+    if( cpu&X264_CPU_AVX2 )
+    {
+        pf[I_PRED_CHROMA_P]   = x264_predict_8x16c_p_avx2;
+    }
 }
 
 void x264_predict_8x8_init_mmx( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_8x8_filter )

@@ -32,9 +32,9 @@
 SECTION_RODATA 32
 
 pw_0to15:    dw 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-pw_43210123: dw -3, -2, -1, 0, 1, 2, 3, 4
-pw_m3:       times 8 dw -3
-pw_m7:       times 8 dw -7
+pw_43210123: times 2 dw -3, -2, -1, 0, 1, 2, 3, 4
+pw_m3:       times 16 dw -3
+pw_m7:       times 16 dw -7
 pb_00s_ff:   times 8 db 0
 pb_0s_ff:    times 7 db 0
              db 0xff
@@ -1122,17 +1122,12 @@ PREDICT_CHROMA_P_MMX 8
 PREDICT_CHROMA_P_MMX 16
 %endif ; !ARCH_X86_64 && !HIGH_BIT_DEPTH
 
-%macro PREDICT_CHROMA_P_XMM 1
+%macro PREDICT_CHROMA_P 1
 %if HIGH_BIT_DEPTH
 cglobal predict_8x%1c_p_core, 1,2,7
-    movd        m0, r1m
-    movd        m2, r2m
-    movd        m4, r3m
+    LOAD_PLANE_ARGS
     mova        m3, [pw_pixel_max]
     pxor        m1, m1
-    SPLATW      m0, m0, 0
-    SPLATW      m2, m2, 0
-    SPLATW      m4, m4, 0
     pmullw      m2, [pw_43210123] ; b
 %if %1 == 16
     pmullw      m5, m4, [pw_m7]   ; c
@@ -1140,59 +1135,77 @@ cglobal predict_8x%1c_p_core, 1,2,7
     pmullw      m5, m4, [pw_m3]
 %endif
     paddw       m5, [pw_16]
-    mov        r1d, %1
+%if mmsize == 32
+    mova       xm6, xm4
+    paddw       m4, m4
+    paddw       m5, m6
+%endif
+    mov        r1d, %1/(mmsize/16)
 .loop:
     paddsw      m6, m2, m5
     paddsw      m6, m0
     psraw       m6, 5
     CLIPW       m6, m1, m3
-    mova      [r0], m6
     paddw       m5, m4
+%if mmsize == 32
+    vextracti128 [r0], m6, 1
+    mova [r0+FDEC_STRIDEB], xm6
+    add         r0, 2*FDEC_STRIDEB
+%else
+    mova      [r0], m6
     add         r0, FDEC_STRIDEB
+%endif
     dec        r1d
     jg .loop
     RET
 %else ; !HIGH_BIT_DEPTH
 cglobal predict_8x%1c_p_core, 1,2
-    movd        m0, r1m
-    movd        m2, r2m
-    movd        m4, r3m
-    SPLATW      m0, m0, 0
-    SPLATW      m2, m2, 0
-    SPLATW      m4, m4, 0
-    pmullw      m2, [pw_0to15]
-    paddsw      m0, m2            ; m0 = {i+0*b, i+1*b, i+2*b, i+3*b, i+4*b, i+5*b, i+6*b, i+7*b}
-    paddsw      m3, m0, m4
+    LOAD_PLANE_ARGS
+%if mmsize == 32
+    vbroadcasti128 m1, [pw_0to15]   ; 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
+    pmullw      m2, m1
+    mova       xm1, xm4             ; zero upper half
     paddsw      m4, m4
-    mov         r1d, %1/4
+    paddsw      m0, m1
+%else
+    pmullw      m2, [pw_0to15]
+%endif
+    paddsw      m0, m2              ; m0 = {i+0*b, i+1*b, i+2*b, i+3*b, i+4*b, i+5*b, i+6*b, i+7*b}
+    paddsw      m1, m0, m4
+    paddsw      m4, m4
+    mov        r1d, %1/(mmsize/8)
 .loop:
-    paddsw      m1, m3, m4
-    paddsw      m5, m0, m4
-    psraw       m3, 5
-    psraw       m0, 5
-    packuswb    m0, m3
-    movq        [r0+FDEC_STRIDE*0], m0
-    movhps      [r0+FDEC_STRIDE*1], m0
-    paddsw      m0, m5, m4
-    paddsw      m3, m1, m4
-    psraw       m5, 5
-    psraw       m1, 5
-    packuswb    m5, m1
-    movq        [r0+FDEC_STRIDE*2], m5
-    movhps      [r0+FDEC_STRIDE*3], m5
-    add         r0, FDEC_STRIDE*4
+    psraw       m2, m0, 5
+    psraw       m3, m1, 5
+    paddsw      m0, m4
+    paddsw      m1, m4
+    packuswb    m2, m3
+%if mmsize == 32
+    movq        [r0+FDEC_STRIDE*1], xm2
+    movhps      [r0+FDEC_STRIDE*3], xm2
+    vextracti128 xm2, m2, 1
+    movq        [r0+FDEC_STRIDE*0], xm2
+    movhps      [r0+FDEC_STRIDE*2], xm2
+%else
+    movq        [r0+FDEC_STRIDE*0], xm2
+    movhps      [r0+FDEC_STRIDE*1], xm2
+%endif
+    add         r0, FDEC_STRIDE*mmsize/8
     dec        r1d
     jg .loop
     RET
 %endif ; HIGH_BIT_DEPTH
-%endmacro ; PREDICT_CHROMA_P_XMM
+%endmacro ; PREDICT_CHROMA_P
 
 INIT_XMM sse2
-PREDICT_CHROMA_P_XMM 8
-PREDICT_CHROMA_P_XMM 16
+PREDICT_CHROMA_P 8
+PREDICT_CHROMA_P 16
 INIT_XMM avx
-PREDICT_CHROMA_P_XMM 8
-PREDICT_CHROMA_P_XMM 16
+PREDICT_CHROMA_P 8
+PREDICT_CHROMA_P 16
+INIT_YMM avx2
+PREDICT_CHROMA_P 8
+PREDICT_CHROMA_P 16
 
 ;-----------------------------------------------------------------------------
 ; void predict_16x16_p_core( uint8_t *src, int i00, int b, int c )
