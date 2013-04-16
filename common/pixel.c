@@ -991,6 +991,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     {
         INIT2( sad, _avx2 );
         INIT2_NAME( sad_aligned, sad, _avx2 );
+        INIT2( sad_x3, _avx2 );
+        INIT2( sad_x4, _avx2 );
         pixf->vsad = x264_pixel_vsad_avx2;
     }
 #endif // HAVE_MMX

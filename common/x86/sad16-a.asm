@@ -258,14 +258,14 @@ SAD 16,  8
     HADDW    m2, m5
 %endif
 %if UNIX64
-    movd [r5+0], m0
-    movd [r5+4], m1
-    movd [r5+8], m2
+    movd [r5+0], xm0
+    movd [r5+4], xm1
+    movd [r5+8], xm2
 %else
     mov      r0, r5mp
-    movd [r0+0], m0
-    movd [r0+4], m1
-    movd [r0+8], m2
+    movd [r0+0], xm0
+    movd [r0+4], xm1
+    movd [r0+8], xm2
 %endif
     RET
 %endmacro
@@ -354,10 +354,10 @@ SAD 16,  8
     HADDW     m3, m7
 %endif
     mov       r0, r6mp
-    movd [r0+ 0], m0
-    movd [r0+ 4], m1
-    movd [r0+ 8], m2
-    movd [r0+12], m3
+    movd [r0+ 0], xm0
+    movd [r0+ 4], xm1
+    movd [r0+ 8], xm2
+    movd [r0+12], xm3
     RET
 %endmacro
 
@@ -453,7 +453,7 @@ cglobal pixel_vsad, 3,3
     RET
 
 ;-----------------------------------------------------------------------------
-; void pixel_sad_xK_MxN( uint16_t *fenc, uint16_t *pix0, uint16_t *pix1,
+; void pixel_sad_xN_WxH( uint16_t *fenc, uint16_t *pix0, uint16_t *pix1,
 ;                        uint16_t *pix2, intptr_t i_stride, int scores[3] )
 ;-----------------------------------------------------------------------------
 %macro SAD_X 3
@@ -497,29 +497,38 @@ SAD_X 3,  4,  4
 SAD_X 4,  4,  8
 SAD_X 4,  4,  4
 INIT_XMM ssse3
-%define XMM_REGS 9
+%define XMM_REGS 7
 SAD_X 3, 16, 16
 SAD_X 3, 16,  8
 SAD_X 3,  8, 16
 SAD_X 3,  8,  8
 SAD_X 3,  8,  4
+%define XMM_REGS 9
 SAD_X 4, 16, 16
 SAD_X 4, 16,  8
 SAD_X 4,  8, 16
 SAD_X 4,  8,  8
 SAD_X 4,  8,  4
 INIT_XMM sse2
-%define XMM_REGS 11
+%define XMM_REGS 8
 SAD_X 3, 16, 16
 SAD_X 3, 16,  8
 SAD_X 3,  8, 16
 SAD_X 3,  8,  8
 SAD_X 3,  8,  4
+%define XMM_REGS 11
 SAD_X 4, 16, 16
 SAD_X 4, 16,  8
 SAD_X 4,  8, 16
 SAD_X 4,  8,  8
 SAD_X 4,  8,  4
+INIT_YMM avx2
+%define XMM_REGS 7
+SAD_X 3, 16, 16
+SAD_X 3, 16,  8
+%define XMM_REGS 9
+SAD_X 4, 16, 16
+SAD_X 4, 16,  8
 
 ;-----------------------------------------------------------------------------
 ; void intra_sad_x3_4x4( uint16_t *fenc, uint16_t *fdec, int res[3] );
