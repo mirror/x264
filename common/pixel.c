@@ -987,6 +987,11 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->vsad = x264_pixel_vsad_xop;
         pixf->asd8 = x264_pixel_asd8_xop;
     }
+    if( cpu&X264_CPU_AVX2 )
+    {
+        INIT2( sad, _avx2 );
+        INIT2_NAME( sad_aligned, sad, _avx2 );
+    }
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH
 #if HAVE_MMX

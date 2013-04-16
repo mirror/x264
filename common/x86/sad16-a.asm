@@ -90,11 +90,18 @@ cextern pw_8
 ; int pixel_sad_NxM( uint16_t *, intptr_t, uint16_t *, intptr_t )
 ;-----------------------------------------------------------------------------
 %macro SAD_MMX 3
-cglobal pixel_sad_%1x%2, 4,4
+cglobal pixel_sad_%1x%2, 4,5-(%2&4/4)
     pxor    m0, m0
-%rep %2/%3
+%if %2 == 4
     SAD_INC_%3x%1P_MMX
-%endrep
+    SAD_INC_%3x%1P_MMX
+%else
+    mov    r4d, %2/%3
+.loop:
+    SAD_INC_%3x%1P_MMX
+    dec    r4d
+    jg .loop
+%endif
 %if %1*%2 == 256
     HADDUW  m0, m1
 %else
@@ -120,7 +127,8 @@ SAD_MMX  4,  4, 2
 ; SAD XMM
 ;=============================================================================
 
-%macro SAD_INC_2x16P_XMM 0
+%macro SAD_INC_2ROW 1
+%if 2*%1 > mmsize
     movu    m1, [r2+ 0]
     movu    m2, [r2+16]
     movu    m3, [r2+2*r3+ 0]
@@ -137,9 +145,7 @@ SAD_MMX  4,  4, 2
     paddw   m3, m4
     paddw   m0, m1
     paddw   m0, m3
-%endmacro
-
-%macro SAD_INC_2x8P_XMM 0
+%else
     movu    m1, [r2]
     movu    m2, [r2+2*r3]
     psubw   m1, [r0]
@@ -149,44 +155,58 @@ SAD_MMX  4,  4, 2
     lea     r2, [r2+4*r3]
     paddw   m0, m1
     paddw   m0, m2
+%endif
 %endmacro
 
 ;-----------------------------------------------------------------------------
 ; int pixel_sad_NxM( uint16_t *, intptr_t, uint16_t *, intptr_t )
 ;-----------------------------------------------------------------------------
-%macro SAD_XMM 2
-cglobal pixel_sad_%1x%2, 4,4,8
+%macro SAD 2
+cglobal pixel_sad_%1x%2, 4,5-(%2&4/4),8*(%1/mmsize)
     pxor    m0, m0
-%rep %2/2
-    SAD_INC_2x%1P_XMM
-%endrep
+%if %2 == 4
+    SAD_INC_2ROW %1
+    SAD_INC_2ROW %1
+%else
+    mov    r4d, %2/2
+.loop:
+    SAD_INC_2ROW %1
+    dec    r4d
+    jg .loop
+%endif
     HADDW   m0, m1
-    movd   eax, m0
+    movd   eax, xm0
     RET
 %endmacro
 
 INIT_XMM sse2
-SAD_XMM 16, 16
-SAD_XMM 16,  8
-SAD_XMM  8, 16
-SAD_XMM  8,  8
-SAD_XMM  8,  4
+SAD 16, 16
+SAD 16,  8
+SAD  8, 16
+SAD  8,  8
+SAD  8,  4
 INIT_XMM sse2, aligned
-SAD_XMM 16, 16
-SAD_XMM 16,  8
-SAD_XMM  8, 16
-SAD_XMM  8,  8
+SAD 16, 16
+SAD 16,  8
+SAD  8, 16
+SAD  8,  8
 INIT_XMM ssse3
-SAD_XMM 16, 16
-SAD_XMM 16,  8
-SAD_XMM  8, 16
-SAD_XMM  8,  8
-SAD_XMM  8,  4
+SAD 16, 16
+SAD 16,  8
+SAD  8, 16
+SAD  8,  8
+SAD  8,  4
 INIT_XMM ssse3, aligned
-SAD_XMM 16, 16
-SAD_XMM 16,  8
-SAD_XMM  8, 16
-SAD_XMM  8,  8
+SAD 16, 16
+SAD 16,  8
+SAD  8, 16
+SAD  8,  8
+INIT_YMM avx2
+SAD 16, 16
+SAD 16,  8
+INIT_YMM avx2, aligned
+SAD 16, 16
+SAD 16,  8
 
 ;=============================================================================
 ; SAD x3/x4
