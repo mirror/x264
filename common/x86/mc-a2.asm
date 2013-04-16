@@ -1223,7 +1223,7 @@ MEMCPY
 ;-----------------------------------------------------------------------------
 ; void *memzero_aligned( void *dst, size_t n );
 ;-----------------------------------------------------------------------------
-%macro MEMZERO 0
+%macro MEMZERO 1
 cglobal memzero_aligned, 2,2
     add  r0, r1
     neg  r1
@@ -1234,21 +1234,21 @@ cglobal memzero_aligned, 2,2
 %endif
 .loop:
 %assign i 0
-%rep 8
+%rep %1
     mova [r0 + r1 + i], m0
 %assign i i+mmsize
 %endrep
-    add r1, mmsize*8
+    add r1, mmsize*%1
     jl .loop
     RET
 %endmacro
 
 INIT_MMX mmx
-MEMZERO
+MEMZERO 8
 INIT_XMM sse
-MEMZERO
-
-
+MEMZERO 8
+INIT_YMM avx
+MEMZERO 4
 
 %if HIGH_BIT_DEPTH == 0
 ;-----------------------------------------------------------------------------
