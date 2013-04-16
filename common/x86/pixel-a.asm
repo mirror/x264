@@ -125,7 +125,6 @@ transd_shuf1: SHUFFLE_MASK_W 0, 8, 2, 10, 4, 12, 6, 14
 transd_shuf2: SHUFFLE_MASK_W 1, 9, 3, 11, 5, 13, 7, 15
 
 sw_f0:     dq 0xfff0, 0
-sq_0f:     dq 0xffffffff, 0
 pd_f0:     times 4 dd 0xffff0000
 
 SECTION .text
@@ -536,7 +535,7 @@ cglobal pixel_ssd_nv12_core, 6,7,7
     psubw       m1, [r2+r6+mmsize]
     PSHUFLW     m0, m0, q3120
     PSHUFLW     m1, m1, q3120
-%if mmsize==16
+%if mmsize >= 16
     pshufhw     m0, m0, q3120
     pshufhw     m1, m1, q3120
 %endif
@@ -546,8 +545,13 @@ cglobal pixel_ssd_nv12_core, 6,7,7
     paddd       m3, m1
     add         r6, 2*mmsize
     jl .loopx
-%if mmsize==16 ; using HADDD would remove the mmsize/32 part from the
-               ; equation above, putting the width limit at 8208
+%if mmsize == 32 ; avx2 may overread by 32 bytes, that has to be handled
+    jz .no_overread
+    psubd       m3, m1
+.no_overread:
+%endif
+%if mmsize >= 16 ; using HADDD would remove the mmsize/32 part from the
+                 ; equation above, putting the width limit at 8208
     punpckhdq   m0, m2, m6
     punpckhdq   m1, m3, m6
     punpckldq   m2, m6
@@ -575,9 +579,13 @@ cglobal pixel_ssd_nv12_core, 6,7,7
     jg .loopy
     mov         r3, r6m
     mov         r4, r7m
-%if mmsize==16
-    movq      [r3], m4
-    movhps    [r4], m4
+%if mmsize == 32
+    vextracti128 xm0, m4, 1
+    paddq      xm4, xm0
+%endif
+%if mmsize >= 16
+    movq      [r3], xm4
+    movhps    [r4], xm4
 %else ; fixup for mmx2
     SBUTTERFLY dq, 4, 5, 0
     mova        m0, m4
@@ -605,7 +613,7 @@ cglobal pixel_ssd_nv12_core, 6,7,7
 ;-----------------------------------------------------------------------------
 %macro SSD_NV12 0
 cglobal pixel_ssd_nv12_core, 6,7
-    shl    r4d, 1
+    add    r4d, r4d
     add     r0, r4
     add     r2, r4
     pxor    m3, m3
@@ -615,10 +623,15 @@ cglobal pixel_ssd_nv12_core, 6,7
     mov     r6, r4
     neg     r6
 .loopx:
-    mova    m0, [r0+r6]
+%if mmsize == 32 ; only 16-byte alignment is guaranteed
+    movu    m2, [r0+r6]
+    movu    m1, [r2+r6]
+%else
+    mova    m2, [r0+r6]
     mova    m1, [r2+r6]
-    psubusb m0, m1
-    psubusb m1, [r0+r6]
+%endif
+    psubusb m0, m2, m1
+    psubusb m1, m2
     por     m0, m1
     psrlw   m2, m0, 8
     pand    m0, m5
@@ -628,19 +641,28 @@ cglobal pixel_ssd_nv12_core, 6,7
     paddd   m4, m2
     add     r6, mmsize
     jl .loopx
+%if mmsize == 32 ; avx2 may overread by 16 bytes, that has to be handled
+    jz .no_overread
+    pcmpeqb xm1, xm1
+    pandn   m0, m1, m0 ; zero the lower half
+    pandn   m2, m1, m2
+    psubd   m3, m0
+    psubd   m4, m2
+.no_overread:
+%endif
     add     r0, r1
     add     r2, r3
     dec    r5d
     jg .loopy
     mov     r3, r6m
     mov     r4, r7m
-    mova    m5, [sq_0f]
     HADDD   m3, m0
     HADDD   m4, m0
-    pand    m3, m5
-    pand    m4, m5
-    movq  [r3], m3
-    movq  [r4], m4
+    pxor   xm0, xm0
+    punpckldq xm3, xm0
+    punpckldq xm4, xm0
+    movq  [r3], xm3
+    movq  [r4], xm4
     RET
 %endmacro ; SSD_NV12
 %endif ; !HIGH_BIT_DEPTH
@@ -650,6 +672,8 @@ SSD_NV12
 INIT_XMM sse2
 SSD_NV12
 INIT_XMM avx
+SSD_NV12
+INIT_YMM avx2
 SSD_NV12
 
 ;=============================================================================
