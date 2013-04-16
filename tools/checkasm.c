@@ -2147,7 +2147,7 @@ static int check_intra( int cpu_ref, int cpu_new )
     int ret = 0, ok = 1, used_asm = 0;
     ALIGNED_ARRAY_32( pixel, edge,[36] );
     ALIGNED_ARRAY_32( pixel, edge2,[36] );
-    ALIGNED_16( pixel fdec[FDEC_STRIDE*20] );
+    ALIGNED_ARRAY_32( pixel, fdec,[FDEC_STRIDE*20] );
     struct
     {
         x264_predict_t      predict_16x16[4+3];

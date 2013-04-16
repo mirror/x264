@@ -38,6 +38,7 @@ void x264_predict_16x16_v_sse ( pixel *src );
 void x264_predict_16x16_h_mmx2( pixel *src );
 void x264_predict_16x16_h_sse2( uint16_t *src );
 void x264_predict_16x16_h_ssse3( uint8_t *src );
+void x264_predict_16x16_h_avx2( uint16_t *src );
 void x264_predict_16x16_dc_mmx2( pixel *src );
 void x264_predict_16x16_dc_sse2( pixel *src );
 void x264_predict_16x16_dc_core_mmx2( pixel *src, int i_dc_left );

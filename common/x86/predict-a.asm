@@ -2031,46 +2031,23 @@ cglobal predict_16x16_v, 1,1
 ;-----------------------------------------------------------------------------
 %macro PREDICT_16x16_H 0
 cglobal predict_16x16_h, 1,2
-    mov r1, 12*FDEC_STRIDEB
-%if HIGH_BIT_DEPTH
-.vloop:
-%assign Y 0
-%rep 4
-    movd        m0, [r0+r1+Y*FDEC_STRIDEB-2*SIZEOF_PIXEL]
-    SPLATW      m0, m0, 1
-    mova [r0+r1+Y*FDEC_STRIDEB+ 0], m0
-    mova [r0+r1+Y*FDEC_STRIDEB+16], m0
-%if mmsize==8
-    mova [r0+r1+Y*FDEC_STRIDEB+ 8], m0
-    mova [r0+r1+Y*FDEC_STRIDEB+24], m0
+%if cpuflag(ssse3) && notcpuflag(avx2)
+    mova  m2, [pb_3]
 %endif
-%assign Y Y+1
-%endrep
-
-%else ; !HIGH_BIT_DEPTH
-%if cpuflag(ssse3)
-    mova   m1, [pb_3]
-%endif
-.vloop:
-%assign Y 0
-%rep 4
-    SPLATB_LOAD m0, r0+r1+FDEC_STRIDE*Y-1, m1
-    mova [r0+r1+FDEC_STRIDE*Y], m0
-%if mmsize==8
-    mova [r0+r1+FDEC_STRIDE*Y+8], m0
-%endif
-%assign Y Y+1
-%endrep
-%endif ; HIGH_BIT_DEPTH
-    sub r1, 4*FDEC_STRIDEB
-    jge .vloop
+    mov  r1d, 4
+.loop:
+    PRED_H_4ROWS 16, 1
+    dec  r1d
+    jg .loop
     RET
 %endmacro
 
 INIT_MMX mmx2
 PREDICT_16x16_H
-INIT_XMM sse2
 %if HIGH_BIT_DEPTH
+INIT_XMM sse2
+PREDICT_16x16_H
+INIT_YMM avx2
 PREDICT_16x16_H
 %else
 ;no SSE2 for 8-bit, it's slower than MMX on all systems that don't support SSSE3
