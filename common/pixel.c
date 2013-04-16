@@ -989,6 +989,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     }
     if( cpu&X264_CPU_AVX2 )
     {
+        INIT2( ssd, _avx2 );
         INIT2( sad, _avx2 );
         INIT2_NAME( sad_aligned, sad, _avx2 );
         INIT2( sad_x3, _avx2 );

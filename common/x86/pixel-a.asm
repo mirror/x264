@@ -150,7 +150,7 @@ cextern hsub_mul
 
 %if HIGH_BIT_DEPTH
 ;-----------------------------------------------------------------------------
-; int pixel_ssd_MxN( uint16_t *, intptr_t, uint16_t *, intptr_t )
+; int pixel_ssd_WxH( uint16_t *, intptr_t, uint16_t *, intptr_t )
 ;-----------------------------------------------------------------------------
 %macro SSD_ONE 2
 cglobal pixel_ssd_%1x%2, 4,7,6
@@ -210,7 +210,7 @@ cglobal pixel_ssd_%1x%2, 4,7,6
     jg .loop
 %endif
     HADDD   m0, m5
-    movd   eax, m0
+    movd   eax, xm0
     RET
 %endmacro
 
@@ -227,6 +227,9 @@ INIT_XMM sse2
 SSD_ONE     8,  4
 SSD_ONE     8,  8
 SSD_ONE     8, 16
+SSD_ONE    16,  8
+SSD_ONE    16, 16
+INIT_YMM avx2
 SSD_ONE    16,  8
 SSD_ONE    16, 16
 %endif ; HIGH_BIT_DEPTH
