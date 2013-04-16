@@ -117,6 +117,7 @@ void x264_predict_8x8_filter_mmx2( uint8_t *src, uint8_t edge[36], int i_neighbo
 void x264_predict_8x8_filter_sse2( uint16_t *src, uint16_t edge[36], int i_neighbor, int i_filters );
 void x264_predict_8x8_filter_ssse3( pixel *src, pixel edge[36], int i_neighbor, int i_filters );
 void x264_predict_8x8_filter_avx( uint16_t *src, uint16_t edge[36], int i_neighbor, int i_filters );
+void x264_predict_4x4_h_avx2( uint16_t *src );
 void x264_predict_4x4_ddl_mmx2( pixel *src );
 void x264_predict_4x4_ddl_sse2( uint16_t *src );
 void x264_predict_4x4_ddl_avx( uint16_t *src );
