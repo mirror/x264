@@ -191,7 +191,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
     int omx, omy, pmx, pmy;
     pixel *p_fenc = m->p_fenc[0];
     pixel *p_fref_w = m->p_fref_w;
-    ALIGNED_ARRAY_16( pixel, pix,[16*16] );
+    ALIGNED_ARRAY_N( pixel, pix,[16*16] );
     ALIGNED_ARRAY_8( int16_t, mvc_temp,[16],[2] );
 
     ALIGNED_ARRAY_16( int, costs,[16] );
@@ -1033,9 +1033,9 @@ static void ALWAYS_INLINE x264_me_refine_bidir( x264_t *h, x264_me_t *m0, x264_m
     const int i_pixel = m0->i_pixel;
     const int bw = x264_pixel_size[i_pixel].w;
     const int bh = x264_pixel_size[i_pixel].h;
-    ALIGNED_ARRAY_16( pixel, pixy_buf,[2],[9][16*16] );
-    ALIGNED_ARRAY_16( pixel, pixu_buf,[2],[9][16*16] );
-    ALIGNED_ARRAY_16( pixel, pixv_buf,[2],[9][16*16] );
+    ALIGNED_ARRAY_N( pixel, pixy_buf,[2],[9][16*16] );
+    ALIGNED_ARRAY_N( pixel, pixu_buf,[2],[9][16*16] );
+    ALIGNED_ARRAY_N( pixel, pixv_buf,[2],[9][16*16] );
     pixel *src[3][2][9];
     int chromapix = h->luma2chroma_pixel[i_pixel];
     int chroma_v_shift = CHROMA_V_SHIFT;

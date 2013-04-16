@@ -85,6 +85,8 @@ void x264_mc_copy_w8_sse ( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_mc_copy_w16_mmx( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_mc_copy_w16_sse( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_mc_copy_w16_aligned_sse( pixel *, intptr_t, pixel *, intptr_t, int );
+void x264_mc_copy_w16_avx( uint16_t *, intptr_t, uint16_t *, intptr_t, int );
+void x264_mc_copy_w16_aligned_avx( uint16_t *, intptr_t, uint16_t *, intptr_t, int );
 void x264_prefetch_fenc_420_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_prefetch_fenc_422_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_prefetch_ref_mmx2( pixel *, intptr_t, int );
@@ -205,6 +207,8 @@ static void (* const x264_pixel_avg_wtab_##instr[6])( pixel *, intptr_t, pixel *
 #define x264_pixel_avg2_w20_mmx2       x264_pixel_avg2_w18_mmx2
 #define x264_pixel_avg2_w12_sse2         x264_pixel_avg2_w10_sse2
 #define x264_pixel_avg2_w20_sse2         x264_pixel_avg2_w18_sse2
+#define x264_pixel_avg2_w12_avx2         x264_pixel_avg2_w16_avx2
+#define x264_pixel_avg2_w20_avx2         x264_pixel_avg2_w18_avx2
 #else
 /* w16 sse2 is faster than w12 mmx as long as the cacheline issue is resolved */
 #define x264_pixel_avg2_w12_cache64_ssse3 x264_pixel_avg2_w16_cache64_ssse3
@@ -216,6 +220,7 @@ static void (* const x264_pixel_avg_wtab_##instr[6])( pixel *, intptr_t, pixel *
 PIXEL_AVG_WTAB(mmx2, mmx2, mmx2, mmx2, mmx2, mmx2)
 #if HIGH_BIT_DEPTH
 PIXEL_AVG_WTAB(sse2, mmx2, sse2, sse2, sse2, sse2)
+PIXEL_AVG_WTAB(avx2, mmx2, sse2, avx2, avx2, avx2)
 #else // !HIGH_BIT_DEPTH
 #if ARCH_X86
 PIXEL_AVG_WTAB(cache32_mmx2, mmx2, cache32_mmx2, cache32_mmx2, cache32_mmx2, cache32_mmx2)
@@ -242,6 +247,7 @@ static void (* const x264_mc_copy_wtab_##instr[5])( pixel *, intptr_t, pixel *, 
 MC_COPY_WTAB(mmx,mmx,mmx,mmx)
 #if HIGH_BIT_DEPTH
 MC_COPY_WTAB(sse,mmx,sse,sse)
+MC_COPY_WTAB(avx,mmx,sse,avx)
 #else
 MC_COPY_WTAB(sse,mmx,mmx,sse)
 #endif
@@ -372,7 +378,9 @@ static void mc_luma_##name( pixel *dst,    intptr_t i_dst_stride,\
 
 MC_LUMA(mmx2,mmx2,mmx)
 MC_LUMA(sse2,sse2,sse)
-#if !HIGH_BIT_DEPTH
+#if HIGH_BIT_DEPTH
+MC_LUMA(avx2,avx2,avx)
+#else
 #if ARCH_X86
 MC_LUMA(cache32_mmx2,cache32_mmx2,mmx)
 MC_LUMA(cache64_mmx2,cache64_mmx2,mmx)
@@ -415,6 +423,7 @@ static pixel *get_ref_##name( pixel *dst,   intptr_t *i_dst_stride,\
 
 GET_REF(mmx2)
 GET_REF(sse2)
+GET_REF(avx2)
 #if !HIGH_BIT_DEPTH
 #if ARCH_X86
 GET_REF(cache32_mmx2)
@@ -424,7 +433,6 @@ GET_REF(sse2_misalign)
 GET_REF(cache64_sse2)
 GET_REF(cache64_ssse3)
 GET_REF(cache64_ssse3_atom)
-GET_REF(avx2)
 #endif // !HIGH_BIT_DEPTH
 
 #define HPEL(align, cpu, cpuv, cpuc, cpuh)\
@@ -636,12 +644,16 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->plane_copy_interleave        = x264_plane_copy_interleave_avx;
     pf->plane_copy_deinterleave      = x264_plane_copy_deinterleave_avx;
     pf->store_interleave_chroma      = x264_store_interleave_chroma_avx;
+    pf->copy[PIXEL_16x16]            = x264_mc_copy_w16_aligned_avx;
 
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_avx;
 
     if( cpu&X264_CPU_XOP )
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_xop;
+
+    if( cpu&X264_CPU_AVX2 )
+        pf->mc_luma = mc_luma_avx2;
 #else // !HIGH_BIT_DEPTH
 
 #if ARCH_X86 // all x86_64 cpus with cacheline split issues use sse2 instead
@@ -788,7 +800,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->weight = x264_mc_weight_wtab_avx2;
         pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_avx2;
         pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_avx2;
-        pf->get_ref = get_ref_avx2;
         pf->integral_init8v = x264_integral_init8v_avx2;
         pf->integral_init4v = x264_integral_init4v_avx2;
         pf->integral_init8h = x264_integral_init8h_avx2;
@@ -807,6 +818,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     if( !(cpu&X264_CPU_AVX2) )
         return;
+    pf->get_ref = get_ref_avx2;
 
     if( cpu&X264_CPU_FMA3 )
         pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2_fma3;

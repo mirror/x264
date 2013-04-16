@@ -760,7 +760,7 @@ cglobal pixel_avg2_w%1, 6,7,4
 .height_loop:
     movu    m0, [r2]
     movu    m1, [r2+r3*2]
-%if mmsize == 8
+%if cpuflag(avx) || mmsize == 8
     pavgw   m0, [r2+r4]
     pavgw   m1, [r2+r6]
 %else
@@ -820,6 +820,8 @@ INIT_XMM sse2
 AVG2_W_ONE  8
 AVG2_W_TWO 10, movd, movd
 AVG2_W_TWO 16, movu, mova
+INIT_YMM avx2
+AVG2_W_ONE 16
 
 INIT_MMX
 cglobal pixel_avg2_w10_mmx2, 6,7
@@ -908,27 +910,40 @@ cglobal pixel_avg2_w18_mmx2, 6,7
     jg .height_loop
     RET
 
-INIT_XMM
-cglobal pixel_avg2_w18_sse2, 6,7,6
+%macro PIXEL_AVG_W18 0
+cglobal pixel_avg2_w18, 6,7
     sub     r4, r2
 .height_loop:
     movu    m0, [r2+ 0]
+    movd   xm2, [r2+32]
+%if mmsize == 32
+    pavgw   m0, [r2+r4+ 0]
+    movd   xm1, [r2+r4+32]
+    pavgw  xm2, xm1
+%else
     movu    m1, [r2+16]
-    movh    m2, [r2+32]
     movu    m3, [r2+r4+ 0]
     movu    m4, [r2+r4+16]
-    movh    m5, [r2+r4+32]
+    movd    m5, [r2+r4+32]
     pavgw   m0, m3
     pavgw   m1, m4
     pavgw   m2, m5
-    mova   [r0+ 0], m0
     mova   [r0+16], m1
-    movh   [r0+32], m2
+%endif
+    mova   [r0+ 0], m0
+    movd   [r0+32], xm2
     lea     r2, [r2+r3*2]
     lea     r0, [r0+r1*2]
     dec    r5d
     jg .height_loop
     RET
+%endmacro
+
+INIT_XMM sse2
+PIXEL_AVG_W18
+INIT_YMM avx2
+PIXEL_AVG_W18
+
 %endif ; HIGH_BIT_DEPTH
 
 %if HIGH_BIT_DEPTH == 0
@@ -1292,18 +1307,18 @@ AVG16_CACHELINE_LOOP_SSSE3 j, k
     movu  m1, [r2+%4*mmsize]
     movu  m2, [r2+r3+%3*mmsize]
     movu  m3, [r2+r3+%4*mmsize]
-    movu  m4, [r2+r3*2+%3*mmsize]
-    movu  m5, [r2+r3*2+%4*mmsize]
-    movu  m6, [r2+%2+%3*mmsize]
-    movu  m7, [r2+%2+%4*mmsize]
     mova  [r0+%3*mmsize],      m0
     mova  [r0+%4*mmsize],      m1
     mova  [r0+r1+%3*mmsize],   m2
     mova  [r0+r1+%4*mmsize],   m3
-    mova  [r0+r1*2+%3*mmsize], m4
-    mova  [r0+r1*2+%4*mmsize], m5
-    mova  [r0+%1+%3*mmsize],   m6
-    mova  [r0+%1+%4*mmsize],   m7
+    movu  m0, [r2+r3*2+%3*mmsize]
+    movu  m1, [r2+r3*2+%4*mmsize]
+    movu  m2, [r2+%2+%3*mmsize]
+    movu  m3, [r2+%2+%4*mmsize]
+    mova  [r0+r1*2+%3*mmsize], m0
+    mova  [r0+r1*2+%4*mmsize], m1
+    mova  [r0+%1+%3*mmsize],   m2
+    mova  [r0+%1+%4*mmsize],   m3
 %endmacro
 
 %macro COPY4 2
@@ -1336,7 +1351,7 @@ cglobal mc_copy_w4_mmx, 4,6
 %macro MC_COPY 1
 %assign %%w %1*SIZEOF_PIXEL/mmsize
 %if %%w > 0
-cglobal mc_copy_w%1, 5,7,8*(%%w/2)
+cglobal mc_copy_w%1, 5,7
     FIX_STRIDES r1, r3
     lea     r6, [r3*3]
     lea     r5, [r1*3]
@@ -1358,8 +1373,12 @@ MC_COPY  8
 MC_COPY 16
 INIT_XMM aligned, sse
 MC_COPY 16
-
-
+%if HIGH_BIT_DEPTH
+INIT_YMM avx
+MC_COPY 16
+INIT_YMM aligned, avx
+MC_COPY 16
+%endif
 
 ;=============================================================================
 ; prefetch
