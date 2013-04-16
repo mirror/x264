@@ -35,6 +35,7 @@ void x264_predict_8x8_init_mmx   ( int cpu, x264_predict8x8_t pf[12], x264_predi
 
 void x264_predict_16x16_v_mmx2( pixel *src );
 void x264_predict_16x16_v_sse ( pixel *src );
+void x264_predict_16x16_v_avx ( uint16_t *src );
 void x264_predict_16x16_h_mmx2( pixel *src );
 void x264_predict_16x16_h_sse2( uint16_t *src );
 void x264_predict_16x16_h_ssse3( uint8_t *src );

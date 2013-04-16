@@ -341,6 +341,9 @@ void x264_predict_16x16_init_mmx( int cpu, x264_predict_t pf[7] )
 #if HAVE_X86_INLINE_ASM
     pf[I_PRED_16x16_P]       = x264_predict_16x16_p_sse2;
 #endif
+    if( !(cpu&X264_CPU_AVX) )
+        return;
+    pf[I_PRED_16x16_V]       = x264_predict_16x16_v_avx;
     if( !(cpu&X264_CPU_AVX2) )
         return;
     pf[I_PRED_16x16_H]       = x264_predict_16x16_h_avx2;
