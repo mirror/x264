@@ -43,6 +43,7 @@ void x264_predict_16x16_dc_##name( pixel *src )\
 
 PREDICT_16x16_DC( mmx2 )
 PREDICT_16x16_DC( sse2 )
+PREDICT_16x16_DC( avx2 )
 
 #define PREDICT_16x16_DC_LEFT(name)\
 static void x264_predict_16x16_dc_left_##name( pixel *src )\
@@ -58,6 +59,7 @@ static void x264_predict_16x16_dc_left_##name( pixel *src )\
 
 PREDICT_16x16_DC_LEFT( mmx2 )
 PREDICT_16x16_DC_LEFT( sse2 )
+PREDICT_16x16_DC_LEFT( avx2 )
 
 #define PREDICT_P_SUM(j,i)\
     H += i * ( src[j+i - FDEC_STRIDE ]  - src[j-i - FDEC_STRIDE ] );\
@@ -381,6 +383,9 @@ void x264_predict_16x16_init_mmx( int cpu, x264_predict_t pf[7] )
     if( cpu&X264_CPU_AVX2 )
     {
         pf[I_PRED_16x16_P]       = x264_predict_16x16_p_avx2;
+        pf[I_PRED_16x16_DC]      = x264_predict_16x16_dc_avx2;
+        pf[I_PRED_16x16_DC_TOP]  = x264_predict_16x16_dc_top_avx2;
+        pf[I_PRED_16x16_DC_LEFT] = x264_predict_16x16_dc_left_avx2;
     }
 }
 
