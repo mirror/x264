@@ -287,16 +287,24 @@
 %endmacro
 
 %macro HADDD 2 ; sum junk
+%if sizeof%1 == 32
+%define %2 xmm%2
+    vextracti128 %2, %1, 1
+%define %1 xmm%1
+    paddd   %1, %2
+%endif
 %if mmsize >= 16
     movhlps %2, %1
     paddd   %1, %2
 %endif
     PSHUFLW %2, %1, q0032
     paddd   %1, %2
+%undef %1
+%undef %2
 %endmacro
 
 %macro HADDW 2 ; reg, tmp
-%if cpuflag(xop) && mmsize >= 16
+%if cpuflag(xop) && sizeof%1 == 16
     vphaddwq  %1, %1
     movhlps   %2, %1
     paddd     %1, %2
@@ -307,7 +315,7 @@
 %endmacro
 
 %macro HADDUWD 2
-%if cpuflag(xop)
+%if cpuflag(xop) && sizeof%1 == 16
     vphadduwd %1, %1
 %else
     psrld %2, %1, 16
@@ -318,13 +326,13 @@
 %endmacro
 
 %macro HADDUW 2
-%if cpuflag(xop) && mmsize >= 16
+%if cpuflag(xop) && sizeof%1 == 16
     vphadduwq %1, %1
     movhlps   %2, %1
     paddd     %1, %2
 %else
-    HADDUWD %1, %2
-    HADDD %1, %2
+    HADDUWD   %1, %2
+    HADDD     %1, %2
 %endif
 %endmacro
 
