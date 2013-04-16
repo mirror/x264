@@ -93,10 +93,9 @@ static void x264_predict_16x16_p_##name( pixel *src )\
     x264_predict_16x16_p_core_##name( src, i00, b, c );\
 }
 #ifndef ARCH_X86_64
-PREDICT_16x16_P( mmx2 )
+PREDICT_16x16_P(mmx2)
 #endif
-PREDICT_16x16_P( sse2   )
-PREDICT_16x16_P( avx    )
+PREDICT_16x16_P(sse2)
 #endif //!HIGH_BIT_DEPTH
 
 #define PREDICT_8x16C_P_CORE \
@@ -136,67 +135,74 @@ PREDICT_8x16_P(avx)
 
 #if HAVE_X86_INLINE_ASM
 #if HIGH_BIT_DEPTH
-static void x264_predict_16x16_p_sse2( uint16_t *src )
-#else
-static void x264_predict_16x16_p_ssse3( uint8_t *src )
-#endif
-{
-    int a, b, c, i00;
-    int H, V;
-#if HIGH_BIT_DEPTH
-    asm (
-        "movdqu           %1, %%xmm1 \n"
-        "movdqa           %2, %%xmm0 \n"
-        "pmaddwd          %3, %%xmm0 \n"
-        "pmaddwd          %4, %%xmm1 \n"
-        "paddd        %%xmm1, %%xmm0 \n"
-        "movhlps      %%xmm0, %%xmm1 \n"
-        "paddd        %%xmm1, %%xmm0 \n"
-        "pshuflw $14, %%xmm0, %%xmm1 \n"
-        "paddd        %%xmm1, %%xmm0 \n"
-        "movd         %%xmm0, %0     \n"
-        :"=r"(H)
-        :"m"(src[-FDEC_STRIDE-1]), "m"(src[-FDEC_STRIDE+8]),
-         "m"(*pw_12345678), "m"(*pw_m87654321)
+#define PREDICT_16x16_P_ASM\
+    asm (\
+        "movdqu           %1, %%xmm1 \n"\
+        "movdqa           %2, %%xmm0 \n"\
+        "pmaddwd          %3, %%xmm0 \n"\
+        "pmaddwd          %4, %%xmm1 \n"\
+        "paddd        %%xmm1, %%xmm0 \n"\
+        "movhlps      %%xmm0, %%xmm1 \n"\
+        "paddd        %%xmm1, %%xmm0 \n"\
+        "pshuflw $14, %%xmm0, %%xmm1 \n"\
+        "paddd        %%xmm1, %%xmm0 \n"\
+        "movd         %%xmm0, %0     \n"\
+        :"=r"(H)\
+        :"m"(src[-FDEC_STRIDE-1]), "m"(src[-FDEC_STRIDE+8]),\
+         "m"(*pw_12345678), "m"(*pw_m87654321)\
     );
 #else
-    asm (
-        "movq           %1, %%mm1 \n"
-        "movq           %2, %%mm0 \n"
-        "palignr $7,    %3, %%mm1 \n"
-        "pmaddubsw      %4, %%mm0 \n"
-        "pmaddubsw      %5, %%mm1 \n"
-        "paddw       %%mm1, %%mm0 \n"
-        "pshufw $14, %%mm0, %%mm1 \n"
-        "paddw       %%mm1, %%mm0 \n"
-        "pshufw  $1, %%mm0, %%mm1 \n"
-        "paddw       %%mm1, %%mm0 \n"
-        "movd        %%mm0, %0    \n"
-        "movswl        %w0, %0    \n"
-        :"=r"(H)
-        :"m"(src[-FDEC_STRIDE]), "m"(src[-FDEC_STRIDE+8]),
-         "m"(src[-FDEC_STRIDE-8]), "m"(*pb_12345678), "m"(*pb_m87654321)
+#define PREDICT_16x16_P_ASM\
+    asm (\
+        "movq           %1, %%mm1 \n"\
+        "movq           %2, %%mm0 \n"\
+        "palignr $7,    %3, %%mm1 \n"\
+        "pmaddubsw      %4, %%mm0 \n"\
+        "pmaddubsw      %5, %%mm1 \n"\
+        "paddw       %%mm1, %%mm0 \n"\
+        "pshufw $14, %%mm0, %%mm1 \n"\
+        "paddw       %%mm1, %%mm0 \n"\
+        "pshufw  $1, %%mm0, %%mm1 \n"\
+        "paddw       %%mm1, %%mm0 \n"\
+        "movd        %%mm0, %0    \n"\
+        "movswl        %w0, %0    \n"\
+        :"=r"(H)\
+        :"m"(src[-FDEC_STRIDE]), "m"(src[-FDEC_STRIDE+8]),\
+         "m"(src[-FDEC_STRIDE-8]), "m"(*pb_12345678), "m"(*pb_m87654321)\
     );
 #endif
-    V = 8 * ( src[15*FDEC_STRIDE-1] - src[-1*FDEC_STRIDE-1] )
-      + 7 * ( src[14*FDEC_STRIDE-1] - src[ 0*FDEC_STRIDE-1] )
-      + 6 * ( src[13*FDEC_STRIDE-1] - src[ 1*FDEC_STRIDE-1] )
-      + 5 * ( src[12*FDEC_STRIDE-1] - src[ 2*FDEC_STRIDE-1] )
-      + 4 * ( src[11*FDEC_STRIDE-1] - src[ 3*FDEC_STRIDE-1] )
-      + 3 * ( src[10*FDEC_STRIDE-1] - src[ 4*FDEC_STRIDE-1] )
-      + 2 * ( src[ 9*FDEC_STRIDE-1] - src[ 5*FDEC_STRIDE-1] )
-      + 1 * ( src[ 8*FDEC_STRIDE-1] - src[ 6*FDEC_STRIDE-1] );
-    a = 16 * ( src[15*FDEC_STRIDE -1] + src[15 - FDEC_STRIDE] );
-    b = ( 5 * H + 32 ) >> 6;
-    c = ( 5 * V + 32 ) >> 6;
-    i00 = a - b * 7 - c * 7 + 16;
+#define PREDICT_16x16_P_INLINE(name, name2)\
+static void x264_predict_16x16_p_##name( pixel *src )\
+{\
+    int a, b, c, i00;\
+    int H, V;\
+    PREDICT_16x16_P_ASM\
+    V = 8 * ( src[15*FDEC_STRIDE-1] - src[-1*FDEC_STRIDE-1] )\
+      + 7 * ( src[14*FDEC_STRIDE-1] - src[ 0*FDEC_STRIDE-1] )\
+      + 6 * ( src[13*FDEC_STRIDE-1] - src[ 1*FDEC_STRIDE-1] )\
+      + 5 * ( src[12*FDEC_STRIDE-1] - src[ 2*FDEC_STRIDE-1] )\
+      + 4 * ( src[11*FDEC_STRIDE-1] - src[ 3*FDEC_STRIDE-1] )\
+      + 3 * ( src[10*FDEC_STRIDE-1] - src[ 4*FDEC_STRIDE-1] )\
+      + 2 * ( src[ 9*FDEC_STRIDE-1] - src[ 5*FDEC_STRIDE-1] )\
+      + 1 * ( src[ 8*FDEC_STRIDE-1] - src[ 6*FDEC_STRIDE-1] );\
+    a = 16 * ( src[15*FDEC_STRIDE -1] + src[15 - FDEC_STRIDE] );\
+    b = ( 5 * H + 32 ) >> 6;\
+    c = ( 5 * V + 32 ) >> 6;\
+    i00 = a - b * 7 - c * 7 + 16;\
     /* b*15 + c*15 can overflow: it's easier to just branch away in this rare case
-     * than to try to consider it in the asm. */
-    if( BIT_DEPTH > 8 && (i00 > 0x7fff || abs(b) > 1092 || abs(c) > 1092) )
-        x264_predict_16x16_p_c( src );
-    else
-        x264_predict_16x16_p_core_sse2( src, i00, b, c );
+     * than to try to consider it in the asm. */\
+    if( BIT_DEPTH > 8 && (i00 > 0x7fff || abs(b) > 1092 || abs(c) > 1092) )\
+        x264_predict_16x16_p_c( src );\
+    else\
+        x264_predict_16x16_p_core_##name2( src, i00, b, c );\
 }
+#if HIGH_BIT_DEPTH
+PREDICT_16x16_P_INLINE( sse2, sse2 )
+#else
+PREDICT_16x16_P_INLINE( ssse3, sse2 )
+PREDICT_16x16_P_INLINE( avx, avx )
+#endif
+PREDICT_16x16_P_INLINE( avx2, avx2 )
 #endif
 
 #if !HIGH_BIT_DEPTH
@@ -373,6 +379,11 @@ void x264_predict_16x16_init_mmx( int cpu, x264_predict_t pf[7] )
         return;
     pf[I_PRED_16x16_P]       = x264_predict_16x16_p_avx;
 #endif // HIGH_BIT_DEPTH
+
+    if( cpu&X264_CPU_AVX2 )
+    {
+        pf[I_PRED_16x16_P]       = x264_predict_16x16_p_avx2;
+    }
 }
 
 void x264_predict_8x8c_init_mmx( int cpu, x264_predict_t pf[7] )

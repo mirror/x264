@@ -267,9 +267,13 @@
 %endmacro
 
 %imacro SPLATW 2-3 0
-    PSHUFLW    %1, %2, (%3)*q1111
+%if cpuflag(avx2) && %3 == 0
+    vpbroadcastw %1, %2
+%else
+    PSHUFLW      %1, %2, (%3)*q1111
 %if mmsize == 16
-    punpcklqdq %1, %1
+    punpcklqdq   %1, %1
+%endif
 %endif
 %endmacro
 
