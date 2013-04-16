@@ -4,6 +4,7 @@
 ;* Copyright (C) 2010-2013 x264 project
 ;*
 ;* Authors: Oskar Arvidsson <oskar@irock.se>
+;*          Henrik Gramner <henrik@gramner.com>
 ;*
 ;* This program is free software; you can redistribute it and/or modify
 ;* it under the terms of the GNU General Public License as published by
@@ -419,6 +420,37 @@ INIT_XMM ssse3
 PIXEL_VSAD
 INIT_XMM xop
 PIXEL_VSAD
+
+INIT_YMM avx2
+cglobal pixel_vsad, 3,3
+    mova      m0, [r0]
+    mova      m1, [r0+2*r1]
+    lea       r0, [r0+4*r1]
+    psubw     m0, m1
+    pabsw     m0, m0
+    sub      r2d, 2
+    je .end
+.loop:
+    mova      m2, [r0]
+    mova      m3, [r0+2*r1]
+    lea       r0, [r0+4*r1]
+    psubw     m1, m2
+    psubw     m2, m3
+    pabsw     m1, m1
+    pabsw     m2, m2
+    paddw     m0, m1
+    paddw     m0, m2
+    mova      m1, m3
+    sub      r2d, 2
+    jg .loop
+.end:
+%if BIT_DEPTH == 9
+    HADDW     m0, m1
+%else
+    HADDUW    m0, m1
+%endif
+    movd     eax, xm0
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void pixel_sad_xK_MxN( uint16_t *fenc, uint16_t *pix0, uint16_t *pix1,

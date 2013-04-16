@@ -174,6 +174,7 @@ int  x264_pixel_vsad_mmx2 ( pixel *src, intptr_t stride, int height );
 int  x264_pixel_vsad_sse2 ( pixel *src, intptr_t stride, int height );
 int  x264_pixel_vsad_ssse3( pixel *src, intptr_t stride, int height );
 int  x264_pixel_vsad_xop  ( pixel *src, intptr_t stride, int height );
+int  x264_pixel_vsad_avx2 ( uint16_t *src, intptr_t stride, int height );
 int x264_pixel_asd8_sse2 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
 int x264_pixel_asd8_ssse3( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
 int x264_pixel_asd8_xop  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
