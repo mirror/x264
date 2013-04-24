@@ -28,8 +28,10 @@
 %include "x86inc.asm"
 %include "x86util.asm"
 
-SECTION_RODATA
+SECTION_RODATA 32
 
+load_bytes_shuf: times 2 db 3,4,5,6,11,12,13,14,4,5,6,7,12,13,14,15
+insert_top_shuf: dd 0,1,4,5,7,2,3,6
 transpose_shuf: db 0,4,8,12,1,5,9,13,2,6,10,14,3,7,11,15
 
 SECTION .text
@@ -2367,3 +2369,70 @@ INIT_XMM ssse3
 DEBLOCK_STRENGTH_XMM
 INIT_XMM avx
 DEBLOCK_STRENGTH_XMM
+
+%macro LOAD_BYTES_YMM 1
+    movu         m0, [%1-4]             ; ___E FGHI ___J KLMN ___O PQRS ___T UVWX
+    pshufb       m0, [load_bytes_shuf]  ; EFGH JKLM FGHI KLMN OPQR TUVW PQRS UVWX
+    mova         m2, [insert_top_shuf]
+    vpermq       m1, m0, q3131          ; FGHI KLMN PQRS UVWX x2
+    vpermd       m0, m2, m0             ; EFGH JKLM OPQR TUVW ____ FGHI KLMN PQRS
+    vpbroadcastd m2, [%1-8]             ; ABCD ....
+    vpblendd     m0, m0, m2, 00010000b  ; EFGH JKLM OPQR TUVW ABCD FGHI KLMN PQRS
+%endmacro
+
+INIT_YMM avx2
+cglobal deblock_strength, 6,6,7
+    ; Prepare mv comparison register
+    shl      r4d, 8
+    add      r4d, 3 - (1<<8)
+    movd     xm6, r4d
+    vpbroadcastw m6, xm6
+    pxor      m5, m5 ; bs0,bs1
+
+.lists:
+    ; Check refs
+    LOAD_BYTES_YMM ref
+    pxor      m0, m1
+    por       m5, m0
+
+    ; Check mvs
+    movu     xm0, [mv-4+4*8*0]
+    vinserti128 m0, m0, [mv+4*8*-1], 1
+    vbroadcasti128  m2, [mv+4*8* 0]
+    vinserti128 m1, m2, [mv-4+4*8*1], 0
+    vbroadcasti128  m3, [mv+4*8* 1]
+    psubw     m0, m2
+    psubw     m1, m3
+
+    vinserti128 m2, m3, [mv-4+4*8*2], 0
+    vbroadcasti128  m4, [mv+4*8* 2]
+    vinserti128 m3, m4, [mv-4+4*8*3], 0
+    psubw     m2, m4
+    vbroadcasti128  m4, [mv+4*8* 3]
+    psubw     m3, m4
+    packsswb  m0, m1
+    packsswb  m2, m3
+    pabsb     m0, m0
+    pabsb     m2, m2
+    psubusb   m0, m6
+    psubusb   m2, m6
+    packsswb  m0, m2
+    por       m5, m0
+
+    add       r1, 40
+    add       r2, 4*8*5
+    dec      r5d
+    jge .lists
+
+    ; Check nnz
+    LOAD_BYTES_YMM nnz
+    por       m0, m1
+    mova      m6, [pb_1]
+    pminub    m0, m6
+    pminub    m5, m6 ; mv ? 1 : 0
+    paddb     m0, m0 ; nnz ? 2 : 0
+    pmaxub    m5, m0
+    vextracti128 [bs1], m5, 1
+    pshufb   xm5, [transpose_shuf]
+    mova   [bs0], xm5
+    RET
