@@ -116,6 +116,7 @@ void x264_intra_satd_x3_8x8c_ssse3 ( uint8_t *, uint8_t *, int * );
 void x264_intra_sad_x3_8x8c_mmx2   ( pixel   *, pixel   *, int * );
 void x264_intra_sad_x3_8x8c_sse2   ( pixel   *, pixel   *, int * );
 void x264_intra_sad_x3_8x8c_ssse3  ( pixel   *, pixel   *, int * );
+void x264_intra_sad_x3_8x8c_avx2   ( pixel   *, pixel   *, int * );
 void x264_intra_satd_x3_16x16_mmx2 ( pixel   *, pixel   *, int * );
 void x264_intra_satd_x3_16x16_ssse3( uint8_t *, uint8_t *, int * );
 void x264_intra_sad_x3_16x16_mmx2  ( pixel   *, pixel   *, int * );
