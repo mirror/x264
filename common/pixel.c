@@ -1000,6 +1000,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         INIT2( sad_x4, _avx2 );
         pixf->vsad = x264_pixel_vsad_avx2;
         pixf->ssd_nv12_core = x264_pixel_ssd_nv12_core_avx2;
+        pixf->intra_sad_x3_8x8 = x264_intra_sad_x3_8x8_avx2;
     }
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH

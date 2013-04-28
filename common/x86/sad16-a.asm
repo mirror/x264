@@ -644,12 +644,21 @@ cglobal intra_sad_x3_8x8, 3,3,8
     INTRA_SAD_HVDC_ITER 5, q2222
     INTRA_SAD_HVDC_ITER 6, q1111
     INTRA_SAD_HVDC_ITER 7, q0000
+%if cpuflag(ssse3)
+    phaddw      m2, m3     ; 2 2 2 2 3 3 3 3
+    movhlps     m3, m1
+    paddw       m1, m3     ; 1 1 1 1 _ _ _ _
+    phaddw      m2, m1     ; 2 2 3 3 1 1 _ _
+    pmaddwd     m2, [pw_1] ; 2 3 1 _
+    mova      [r2], m2
+%else
     HADDW       m2, m4
     HADDW       m3, m4
     HADDW       m1, m4
     movd    [r2+0], m2
     movd    [r2+4], m3
     movd    [r2+8], m1
+%endif
     RET
 %endmacro
 
@@ -657,3 +666,44 @@ INIT_XMM sse2
 INTRA_SAD_X3_8x8
 INIT_XMM ssse3
 INTRA_SAD_X3_8x8
+
+%macro INTRA_SAD_HVDC_ITER_YMM 2
+    mova       xm4, [r0+(%1-4)*FENC_STRIDEB]
+    vinserti128 m4, m4, [r0+%1*FENC_STRIDEB], 1
+    pshufd      m5, m7, %2
+    psubw       m5, m4
+    pabsw       m5, m5
+    ACCUM    paddw, 2, 5, %1 ; H
+    psubw       m5, m4, m6
+    psubw       m4, m0
+    pabsw       m5, m5
+    pabsw       m4, m4
+    ACCUM    paddw, 1, 5, %1 ; V
+    ACCUM    paddw, 3, 4, %1 ; DC
+%endmacro
+
+INIT_YMM avx2
+cglobal intra_sad_x3_8x8, 3,3,8
+    add            r0, 4*FENC_STRIDEB
+    movu          xm0, [r1+7*SIZEOF_PIXEL]
+    vbroadcasti128 m6, [r1+16*SIZEOF_PIXEL] ; V prediction
+    vpermq         m7, m0, q0011
+    paddw         xm0, xm6
+    paddw         xm0, [pw_1] ; equal to +8 after HADDW
+    HADDW         xm0, xm4
+    psrld         xm0, 4
+    vpbroadcastw   m0, xm0
+    punpcklwd      m7, m7
+    INTRA_SAD_HVDC_ITER_YMM 0, q3333
+    INTRA_SAD_HVDC_ITER_YMM 1, q2222
+    INTRA_SAD_HVDC_ITER_YMM 2, q1111
+    INTRA_SAD_HVDC_ITER_YMM 3, q0000
+    phaddw         m1, m2     ; 1 1 1 1 2 2 2 2 1 1 1 1 2 2 2 2
+    punpckhqdq     m2, m3, m3
+    paddw          m3, m2     ; 3 3 3 3 _ _ _ _ 3 3 3 3 _ _ _ _
+    phaddw         m1, m3     ; 1 1 2 2 3 3 _ _ 1 1 2 2 3 3 _ _
+    vextracti128  xm2, m1, 1
+    paddw         xm1, xm2    ; 1 1 2 2 3 3 _ _
+    pmaddwd       xm1, [pw_1] ; 1 2 3 _
+    mova         [r2], xm1
+    RET
