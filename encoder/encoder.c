@@ -722,7 +722,8 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         if( h->param.i_slice_max_mbs || h->param.i_slice_max_size )
             h->param.i_slice_count = 0;
     }
-    h->param.i_slice_count_max = X264_MAX( h->param.i_slice_count, h->param.i_slice_count_max );
+    if( h->param.i_slice_count_max > 0 )
+        h->param.i_slice_count_max = X264_MAX( h->param.i_slice_count, h->param.i_slice_count_max );
 
     if( h->param.b_bluray_compat )
     {
@@ -2481,7 +2482,7 @@ reencode:
                      * If possible, roll back to the last checkpoint and try again.
                      * We could try raising QP, but that would break in the case where a slice spans multiple
                      * rows, which the re-encoding infrastructure can't currently handle. */
-                    if( mb_xy < thread_last_mb && (thread_last_mb+1-mb_xy) < h->param.i_slice_min_mbs )
+                    if( mb_xy <= thread_last_mb && (thread_last_mb+1-mb_xy) < h->param.i_slice_min_mbs )
                     {
                         if( thread_last_mb-h->param.i_slice_min_mbs < h->sh.i_first_mb+h->param.i_slice_min_mbs )
                         {
