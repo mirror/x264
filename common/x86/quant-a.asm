@@ -470,25 +470,23 @@ QUANT_AC quant_8x8, 4
 QUANT_DC quant_4x4_dc, 1, 6
 
 INIT_YMM avx2
-cglobal quant_4x4x4, 3,3,7
+cglobal quant_4x4x4, 3,3,6
     mova      m2, [r1]
     mova      m3, [r2]
     QUANT_ONE [r0+ 0], m2, m3, 0, 4
     QUANT_ONE [r0+32], m2, m3, 0, 5
     packssdw  m4, m5
     QUANT_ONE [r0+64], m2, m3, 0, 5
-    QUANT_ONE [r0+96], m2, m3, 0, 6
-    packssdw  m5, m6
+    QUANT_ONE [r0+96], m2, m3, 0, 1
+    packssdw  m5, m1
     packssdw  m4, m5
-    vextracti128 xm5, m4, 1
-    por      xm4, xm5
-    packssdw xm4, xm4
-    packsswb xm4, xm4
-    pxor     xm3, xm3
-    pcmpeqb  xm4, xm3
-    pmovmskb eax, xm4
-    not      eax
-    and      eax, 0xf
+    pxor      m3, m3
+    pcmpeqd   m4, m3
+    movmskps eax, m4
+    mov      edx, eax
+    shr      eax, 4
+    and      eax, edx
+    xor      eax, 0xf
     RET
 %endif ; !HIGH_BIT_DEPTH
 
