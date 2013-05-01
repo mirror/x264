@@ -33,6 +33,7 @@ const hsub_mul,    times 16 db 1, -1
 const pw_1,        times 16 dw 1
 const pw_16,       times 16 dw 16
 const pw_32,       times 16 dw 32
+const pw_512,      times 16 dw 512
 const pw_00ff,     times 16 dw 0x00ff
 const pw_pixel_max,times 16 dw ((1 << BIT_DEPTH)-1)
 const pd_1,        times 8 dd 1

@@ -34,7 +34,6 @@
 
 SECTION_RODATA 32
 
-pw_512: times 16 dw 512
 ch_shuf: times 2 db 0,2,2,4,4,6,6,8,1,3,3,5,5,7,7,9
 ch_shuf_adj: times 8 db 0
              times 8 db 2
@@ -50,6 +49,7 @@ cextern pw_4
 cextern pw_8
 cextern pw_32
 cextern pw_64
+cextern pw_512
 cextern pw_00ff
 cextern pw_pixel_max
 cextern sw_64

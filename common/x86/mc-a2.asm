@@ -44,6 +44,7 @@ deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
 deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
 %endif
+pw_1024: times 16 dw 1024
 
 pd_16: times 4 dd 16
 pd_0f: times 4 dd 0xffff
@@ -64,6 +65,7 @@ cextern pb_0
 cextern pw_1
 cextern pw_16
 cextern pw_32
+cextern pw_512
 cextern pw_00ff
 cextern pw_3fff
 cextern pw_pixel_max
@@ -127,19 +129,24 @@ cextern pd_ffff
     paddw  %4, %6
 %endmacro
 
-%macro FILT_PACK 4-6 b
-    paddw      %1, %4
-    paddw      %2, %4
-%if %0 == 6
-    psubusw    %1, %6
-    psubusw    %2, %6
-    psrlw      %1, %3
-    psrlw      %2, %3
+%macro FILT_PACK 3-5
+%if cpuflag(ssse3)
+    pmulhrsw %1, %3
+    pmulhrsw %2, %3
 %else
-    psraw      %1, %3
-    psraw      %2, %3
+    paddw    %1, %3
+    paddw    %2, %3
+%if %0 == 5
+    psubusw  %1, %5
+    psubusw  %2, %5
+    psrlw    %1, %4
+    psrlw    %2, %4
+%else
+    psraw    %1, %4
+    psraw    %2, %4
 %endif
-%ifnidn w, %5
+%endif
+%if HIGH_BIT_DEPTH == 0
     packuswb %1, %2
 %endif
 %endmacro
@@ -203,7 +210,7 @@ cglobal hpel_filter_v, 5,6,11
     mova      [r2+r4+mmsize], m4
     paddw      m1, s30
     paddw      m4, s30
-    FILT_PACK  m1, m4, 5, m6, w, s10
+    FILT_PACK  m1, m4, m6, 5, s10
     CLIPW      m1, m0, m7
     CLIPW      m4, m0, m7
     mova      [r0+r4], m1
@@ -295,7 +302,7 @@ cglobal hpel_filter_h, 3,4,8
     FILT_H2    m1, m2, m3, m4, m5, m6
     mova       m7, [pw_1]
     pxor       m2, m2
-    FILT_PACK  m1, m4, 1, m7, w
+    FILT_PACK  m1, m4, m7, 1
     CLIPW      m1, m2, m0
     CLIPW      m4, m2, m0
     mova      [r0+r2], m1
@@ -349,14 +356,15 @@ cglobal hpel_filter_v, 5,6,%1
     paddw  m4, m5
     paddw  m1, m3
     paddw  m4, m6
+    mova   m7, [pw_1024]
 %else
     LOAD_ADD_2 m1, m4, [r1     ], [r5+r3*2], m6, m7            ; a0 / a1
     LOAD_ADD_2 m2, m5, [r1+r3  ], [r5+r3  ], m6, m7            ; b0 / b1
     LOAD_ADD   m3,     [r1+r3*2], [r5     ], m7                ; c0
     LOAD_ADD   m6,     [r1+r3*2+mmsize/2], [r5+mmsize/2], m7   ; c1
     FILT_V2 m1, m2, m3, m4, m5, m6
+    mova   m7, [pw_16]
 %endif
-    mova      m7, [pw_16]
 %if mmsize==32
     mova         [r2+r4*2], xm1
     mova         [r2+r4*2+mmsize/2], xm4
@@ -366,7 +374,7 @@ cglobal hpel_filter_v, 5,6,%1
     mova      [r2+r4*2], m1
     mova      [r2+r4*2+mmsize], m4
 %endif
-    FILT_PACK m1, m4, 5, m7
+    FILT_PACK m1, m4, m7, 5
     movnta    [r0+r4], m1
     add r1, mmsize
     add r5, mmsize
@@ -378,8 +386,8 @@ cglobal hpel_filter_v, 5,6,%1
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_c( uint8_t *dst, int16_t *buf, intptr_t width );
 ;-----------------------------------------------------------------------------
-INIT_MMX
-cglobal hpel_filter_c_mmx2, 3,3
+INIT_MMX mmx2
+cglobal hpel_filter_c, 3,3
     add r0, r2
     lea r1, [r1+r2*2]
     neg r2
@@ -399,7 +407,7 @@ cglobal hpel_filter_c_mmx2, 3,3
     paddw  m5, [src+12] ; b1
     paddw  m6, [src+10] ; c1
     FILT_H2 m1, m2, m3, m4, m5, m6
-    FILT_PACK m1, m4, 6, m7
+    FILT_PACK m1, m4, m7, 6
     movntq [r0+r2], m1
     add r2, 8
     jl .loop
@@ -408,7 +416,8 @@ cglobal hpel_filter_c_mmx2, 3,3
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_h( uint8_t *dst, uint8_t *src, intptr_t width );
 ;-----------------------------------------------------------------------------
-cglobal hpel_filter_h_mmx2, 3,3
+INIT_MMX mmx2
+cglobal hpel_filter_h, 3,3
     add r0, r2
     add r1, r2
     neg r2
@@ -443,13 +452,11 @@ cglobal hpel_filter_h_mmx2, 3,3
     paddw      m6, m7 ; a1
     movq       m7, [pw_1]
     FILT_H2 m1, m2, m3, m4, m5, m6
-    FILT_PACK m1, m4, 1, m7
+    FILT_PACK m1, m4, m7, 1
     movntq     [r0+r2], m1
     add r2, 8
     jl .loop
     RET
-
-INIT_XMM
 
 %macro HPEL_C 0
 ;-----------------------------------------------------------------------------
@@ -461,13 +468,17 @@ cglobal hpel_filter_c, 3,3,9
     neg r2
     %define src r1+r2*2
 %ifnidn cpuname, sse2
+%if cpuflag(ssse3)
+    mova    m7, [pw_512]
+%else
     mova    m7, [pw_32]
-    %define tpw_32 m7
+%endif
+    %define pw_rnd m7
 %elif ARCH_X86_64
     mova    m8, [pw_32]
-    %define tpw_32 m8
+    %define pw_rnd m8
 %else
-    %define tpw_32 [pw_32]
+    %define pw_rnd [pw_32]
 %endif
 ; This doesn't seem to be faster (with AVX) on Sandy Bridge or Bulldozer...
 %if cpuflag(misalign) || mmsize==32
@@ -513,7 +524,7 @@ cglobal hpel_filter_c, 3,3,9
     paddw     m6, m0
     FILT_H    m3, m5, m6
 %endif
-    FILT_PACK m4, m3, 6, tpw_32
+    FILT_PACK m4, m3, pw_rnd, 6
 %if mmsize==32
     vpermq    m4, m4, q3120
 %endif
@@ -526,7 +537,8 @@ cglobal hpel_filter_c, 3,3,9
 ;-----------------------------------------------------------------------------
 ; void hpel_filter_h( uint8_t *dst, uint8_t *src, intptr_t width );
 ;-----------------------------------------------------------------------------
-cglobal hpel_filter_h_sse2, 3,3,8
+INIT_XMM sse2
+cglobal hpel_filter_h, 3,3,8
     add r0, r2
     add r1, r2
     neg r2
@@ -565,7 +577,7 @@ cglobal hpel_filter_h_sse2, 3,3,8
     paddw      m6, m7 ; c1
     mova       m7, [pw_1] ; FIXME xmm8
     FILT_H2 m1, m2, m3, m4, m5, m6
-    FILT_PACK m1, m4, 1, m7
+    FILT_PACK m1, m4, m7, 1
     movntps    [r0+r2], m1
     add r2, 16
     jl .loop
@@ -582,7 +594,7 @@ cglobal hpel_filter_h, 3,3
     %define src r1+r2
     mova      m0, [src-16]
     mova      m1, [src]
-    mova      m7, [pw_16]
+    mova      m7, [pw_1024]
 .loop:
     mova      m2, [src+16]
     ; Using unaligned loads instead of palignr is marginally slower on SB and significantly
@@ -604,7 +616,7 @@ cglobal hpel_filter_h, 3,3
     paddw     m3, m1
     paddw     m4, m5
     paddw     m4, m6
-    FILT_PACK m3, m4, 5, m7
+    FILT_PACK m3, m4, m7, 5
     pshufb    m3, [hpel_shuf]
     mova      m1, m2
     movntps [r0+r2], m3
@@ -663,8 +675,8 @@ cglobal hpel_filter_h, 3,3,8
     paddw     m1, m3
     paddw     m1, m4
 
-    mova      m2, [pw_16]
-    FILT_PACK m0, m1, 5, m2
+    mova      m2, [pw_1024]
+    FILT_PACK m0, m1, m2, 5
     pshufb    m0, [hpel_shuf]
     movnta [r0+r2], m0
     add       r2, mmsize
@@ -715,7 +727,7 @@ cglobal hpel_filter_h, 3,3,8
     add       r1, 16
     mova      %1, m1
     mova      %2, m4
-    FILT_PACK m1, m4, 5, m15
+    FILT_PACK m1, m4, m15, 5
     movntps  [r8+r4+%5], m1
 %endmacro
 
@@ -735,7 +747,7 @@ cglobal hpel_filter_h, 3,3,8
 %macro DO_FILT_C 4
     FILT_C %1, %2, %3, 6
     FILT_C %2, %1, %4, 6
-    FILT_PACK %3, %4, 6, m15
+    FILT_PACK %3, %4, m15, 6
     movntps   [r5+r4], %3
 %endmacro
 
@@ -766,14 +778,14 @@ cglobal hpel_filter_h, 3,3,8
     paddw     m2, m4
     paddw     m1, m5
     paddw     m2, m6
-    FILT_PACK m1, m2, 5, m15
+    FILT_PACK m1, m2, m15, 5
     pshufb    m1, [hpel_shuf]
 %else ; ssse3, avx
     ADD8TO16  m1, m6, m12, m3, m0 ; a
     ADD8TO16  m2, m5, m12, m3, m0 ; b
     ADD8TO16  %2, m4, m12, m3, m0 ; c
     FILT_V2   m1, m2, %2, m6, m5, m4
-    FILT_PACK m1, m6, 5, m15
+    FILT_PACK m1, m6, m15, 5
 %endif
     movntps [r0+r4], m1
     mova      %2, %3
@@ -800,13 +812,14 @@ cglobal hpel_filter, 7,9,16
     sub       r3, r2
     sub       r3, r2
     mov       r4, r7
-    mova     m15, [pw_16]
 %if cpuflag(ssse3)
     mova      m0, [filt_mul51]
     mova     m12, [filt_mul15]
     mova     m14, [filt_mul20]
+    mova     m15, [pw_1024]
 %else
     pxor      m0, m0
+    mova     m15, [pw_16]
 %endif
 ;ALIGN 16
 .loopy:
@@ -816,9 +829,17 @@ cglobal hpel_filter, 7,9,16
 .loopx:
     DO_FILT_V m6, m5, m11, m12, 16
 .lastx:
+%if cpuflag(ssse3)
+    psrlw   m15, 1   ; pw_512
+%else
     paddw   m15, m15 ; pw_32
+%endif
     DO_FILT_C m9, m8, m7, m6
-    psrlw   m15, 1 ; pw_16
+%if cpuflag(ssse3)
+    paddw   m15, m15 ; pw_1024
+%else
+    psrlw   m15, 1   ; pw_16
+%endif
     movdqa   m7, m5
     DO_FILT_H m10, m13, m11
     add      r4, 16
