@@ -533,52 +533,57 @@ SAD_X 4, 16,  8
 
 %macro INTRA_SAD_X3_4x4 0
 cglobal intra_sad_x3_4x4, 3,3,7
-    movq      m0, [r1-1*FDEC_STRIDEB]
+    movddup   m0, [r1-1*FDEC_STRIDEB]
     movq      m1, [r0+0*FENC_STRIDEB]
     movq      m2, [r0+2*FENC_STRIDEB]
     pshuflw   m6, m0, q1032
     paddw     m6, m0
     pshuflw   m5, m6, q2301
     paddw     m6, m5
-    punpcklqdq m6, m6       ;A+B+C+D 8 times
-    punpcklqdq m0, m0
+    punpcklqdq m6, m6       ; A+B+C+D 8 times
     movhps    m1, [r0+1*FENC_STRIDEB]
     movhps    m2, [r0+3*FENC_STRIDEB]
     psubw     m3, m1, m0
     psubw     m0, m2
-    ABSW      m3, m3, m5
-    ABSW      m0, m0, m5
+    ABSW2     m3, m0, m3, m0, m4, m5
     paddw     m0, m3
-    HADDW     m0, m5
-    movd    [r2], m0 ;V prediction cost
     movd      m3, [r1+0*FDEC_STRIDEB-4]
-    movhps    m3, [r1+1*FDEC_STRIDEB-8]
     movd      m4, [r1+2*FDEC_STRIDEB-4]
+    movhps    m3, [r1+1*FDEC_STRIDEB-8]
     movhps    m4, [r1+3*FDEC_STRIDEB-8]
     pshufhw   m3, m3, q3333
     pshufhw   m4, m4, q3333
     pshuflw   m3, m3, q1111 ; FF FF EE EE
     pshuflw   m4, m4, q1111 ; HH HH GG GG
     paddw     m5, m3, m4
-    pshufd    m0, m5, q1032
+    paddw     m6, [pw_4]
+    paddw     m6, m5
+    pshufd    m5, m5, q1032
     paddw     m5, m6
-    paddw     m5, m0
-    paddw     m5, [pw_4]
     psrlw     m5, 3
     psubw     m6, m5, m2
     psubw     m5, m1
     psubw     m1, m3
     psubw     m2, m4
-    ABSW      m5, m5, m0
-    ABSW      m6, m6, m0
-    ABSW      m1, m1, m0
-    ABSW      m2, m2, m0
+    ABSW2     m5, m6, m5, m6, m3, m4
+    ABSW2     m1, m2, m1, m2, m3, m4
     paddw     m5, m6
     paddw     m1, m2
-    HADDW     m5, m0
-    HADDW     m1, m2
-    movd  [r2+8], m5        ;DC prediction cost
-    movd  [r2+4], m1        ;H prediction cost
+%if cpuflag(ssse3)
+    phaddw    m0, m1
+    movhlps   m3, m5
+    paddw     m5, m3
+    phaddw    m0, m5
+    pmaddwd   m0, [pw_1]
+    mova    [r2], m0
+%else
+    HADDW     m0, m3
+    HADDW     m1, m3
+    HADDW     m5, m3
+    movd    [r2], m0 ; V prediction cost
+    movd  [r2+4], m1 ; H prediction cost
+    movd  [r2+8], m5 ; DC prediction cost
+%endif
     RET
 %endmacro
 

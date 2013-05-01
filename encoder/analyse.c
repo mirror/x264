@@ -1006,7 +1006,7 @@ static void x264_mb_analyse_intra( x264_t *h, x264_mb_analysis_t *a, int i_satd_
             {
                 if( !h->mb.b_lossless && predict_mode[5] >= 0 )
                 {
-                    int satd[9];
+                    ALIGNED_ARRAY_16( int32_t, satd,[9] );
                     h->pixf.intra_mbcmp_x3_4x4( p_src_by, p_dst_by, satd );
                     int favor_vertical = satd[I_PRED_4x4_H] > satd[I_PRED_4x4_V];
                     satd[i_pred_mode] -= 3 * lambda;
