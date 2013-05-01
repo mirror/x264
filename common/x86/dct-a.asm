@@ -30,7 +30,9 @@
 %include "x86inc.asm"
 %include "x86util.asm"
 
-SECTION_RODATA
+SECTION_RODATA 32
+pb_idctdc_unpack: times 2 db 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3
+pb_idctdc_unpack2: times 2 db 4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7
 pw_ppmmmmpp:    dw 1,1,-1,-1,-1,-1,1,1
 pb_sub4frame:   db 0,1,4,8,5,2,3,6,9,12,13,10,7,11,14,15
 pb_sub4field:   db 0,4,1,8,12,5,9,13,2,6,10,14,3,7,11,15
@@ -39,8 +41,6 @@ pb_scan4framea: SHUFFLE_MASK_W 6,3,7,0,4,1,2,5
 pb_scan4frameb: SHUFFLE_MASK_W 0,4,1,2,5,6,3,7
 pb_scan4frame2a: SHUFFLE_MASK_W 0,4,1,2,5,8,12,9
 pb_scan4frame2b: SHUFFLE_MASK_W 6,3,7,10,13,14,11,15
-pb_idctdc_unpack: db 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3
-pb_idctdc_unpack2: db 4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7
 
 pb_scan8framet1: SHUFFLE_MASK_W 0,  1,  6,  7,  8,  9, 13, 14
 pb_scan8framet2: SHUFFLE_MASK_W 2 , 3,  4,  7,  9, 15, 10, 14
@@ -74,6 +74,7 @@ SECTION .text
 
 cextern pw_32_0
 cextern pw_32
+cextern pw_512
 cextern pw_8000
 cextern pw_pixel_max
 cextern hsub_mul
@@ -738,8 +739,7 @@ cglobal add8x8_idct_dc, 2,2
     movh     m0, [r1]
     pxor     m1, m1
     add      r0, FDEC_STRIDE*4
-    paddw    m0, [pw_32]
-    psraw    m0, 6
+    pmulhrsw m0, [pw_512]
     psubw    m1, m0
     mova     m5, [pb_idctdc_unpack]
     packuswb m0, m0
@@ -836,8 +836,7 @@ cglobal add16x16_idct_dc, 2,2,8
     mova     m0, [r1]
     add      r1, 16
     pxor     m1, m1
-    paddw    m0, [pw_32]
-    psraw    m0, 6
+    pmulhrsw m0, [pw_512]
     psubw    m1, m0
     mova     m5, [ pb_idctdc_unpack]
     mova     m6, [pb_idctdc_unpack2]
@@ -856,6 +855,43 @@ INIT_XMM ssse3
 ADD16x16
 INIT_XMM avx
 ADD16x16
+
+%macro ADD_DC_AVX2 3
+    mova   xm4, [r0+FDEC_STRIDE*0+%3]
+    mova   xm5, [r0+FDEC_STRIDE*1+%3]
+    vinserti128 m4, m4, [r2+FDEC_STRIDE*0+%3], 1
+    vinserti128 m5, m5, [r2+FDEC_STRIDE*1+%3], 1
+    paddusb m4, %1
+    paddusb m5, %1
+    psubusb m4, %2
+    psubusb m5, %2
+    mova [r0+FDEC_STRIDE*0+%3], xm4
+    mova [r0+FDEC_STRIDE*1+%3], xm5
+    vextracti128 [r2+FDEC_STRIDE*0+%3], m4, 1
+    vextracti128 [r2+FDEC_STRIDE*1+%3], m5, 1
+%endmacro
+
+INIT_YMM avx2
+cglobal add16x16_idct_dc, 2,3,6
+    add      r0, FDEC_STRIDE*4
+    mova     m0, [r1]
+    pxor     m1, m1
+    pmulhrsw m0, [pw_512]
+    psubw    m1, m0
+    mova     m4, [pb_idctdc_unpack]
+    mova     m5, [pb_idctdc_unpack2]
+    packuswb m0, m0
+    packuswb m1, m1
+    pshufb   m2, m0, m4      ; row0, row2
+    pshufb   m3, m1, m4      ; row0, row2
+    pshufb   m0, m5          ; row1, row3
+    pshufb   m1, m5          ; row1, row3
+    lea      r2, [r0+FDEC_STRIDE*8]
+    ADD_DC_AVX2 m2, m3, FDEC_STRIDE*-4
+    ADD_DC_AVX2 m2, m3, FDEC_STRIDE*-2
+    ADD_DC_AVX2 m0, m1, FDEC_STRIDE* 0
+    ADD_DC_AVX2 m0, m1, FDEC_STRIDE* 2
+    RET
 
 %endif ; HIGH_BIT_DEPTH
 
