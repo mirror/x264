@@ -845,6 +845,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     if( cpu&X264_CPU_MMX2 )
     {
         INIT7( sad, _mmx2 );
+        INIT7_NAME( sad_aligned, sad, _mmx2 );
         INIT7( sad_x3, _mmx2 );
         INIT7( sad_x4, _mmx2 );
         INIT8( satd, _mmx2 );
@@ -923,6 +924,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     if( cpu&X264_CPU_SSSE3 )
     {
         INIT4_NAME( sad_aligned, sad, _ssse3_aligned );
+        pixf->sad_aligned[PIXEL_4x4] = x264_pixel_sad_4x4_ssse3;
+        pixf->sad_aligned[PIXEL_4x8] = x264_pixel_sad_4x8_ssse3;
         INIT7( sad, _ssse3 );
         INIT7( sad_x3, _ssse3 );
         INIT7( sad_x4, _ssse3 );
