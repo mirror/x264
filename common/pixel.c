@@ -966,6 +966,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     }
     if( cpu&X264_CPU_AVX )
     {
+        INIT5_NAME( sad_aligned, sad, _ssse3 ); /* AVX-capable CPUs doesn't benefit from an aligned version */
         INIT_ADS( _avx );
         INIT6( satd, _avx );
         pixf->satd[PIXEL_4x16] = x264_pixel_satd_4x16_avx;
@@ -1234,6 +1235,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
 
     if( cpu&X264_CPU_AVX )
     {
+        INIT2_NAME( sad_aligned, sad, _sse2 ); /* AVX-capable CPUs doesn't benefit from an aligned version */
         INIT8( satd, _avx );
         INIT7( satd_x3, _avx );
         INIT7( satd_x4, _avx );
