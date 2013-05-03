@@ -717,6 +717,10 @@ if [ $asm = auto -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
         exit 1
     fi
     define HAVE_MMX
+    if cc_check '' -mpreferred-stack-boundary=5 ; then
+        CFLAGS="$CFLAGS -mpreferred-stack-boundary=5"
+        define HAVE_32B_STACK_ALIGNMENT
+    fi
 fi
 
 if [ $asm = auto -a $ARCH = ARM ] ; then

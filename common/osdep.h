@@ -111,7 +111,13 @@
 
 #define EXPAND(x) x
 
+#if HAVE_32B_STACK_ALIGNMENT
+#define ALIGNED_ARRAY_32( type, name, sub1, ... )\
+    ALIGNED_32( type name sub1 __VA_ARGS__ )
+#else
 #define ALIGNED_ARRAY_32( ... ) EXPAND( ALIGNED_ARRAY_EMU( 31, __VA_ARGS__ ) )
+#endif
+
 #define ALIGNED_ARRAY_64( ... ) EXPAND( ALIGNED_ARRAY_EMU( 63, __VA_ARGS__ ) )
 
 /* For AVX2 */
