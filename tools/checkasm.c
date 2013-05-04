@@ -61,7 +61,7 @@ typedef struct
 {
     void *pointer; // just for detecting duplicates
     uint32_t cpu;
-    uint32_t cycles;
+    uint64_t cycles;
     uint32_t den;
 } bench_t;
 
@@ -137,12 +137,12 @@ static int cmp_bench( const void *a, const void *b )
 
 static void print_bench(void)
 {
-    uint16_t nops[10000] = {0};
+    uint16_t nops[10000];
     int nfuncs, nop_time=0;
 
     for( int i = 0; i < 10000; i++ )
     {
-        int t = read_time();
+        uint32_t t = read_time();
         nops[i] = read_time() - t;
     }
     qsort( nops, 10000, sizeof(uint16_t), cmp_nop );
@@ -241,7 +241,7 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 #define call_bench(func,cpu,...)\
     if( do_bench && !strncmp(func_name, bench_pattern, bench_pattern_len) )\
     {\
-        uint32_t tsum = 0;\
+        uint64_t tsum = 0;\
         int tcount = 0;\
         call_a1(func, __VA_ARGS__);\
         for( int ti = 0; ti < (cpu?BENCH_RUNS:BENCH_RUNS/4); ti++ )\
@@ -252,7 +252,7 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
             func(__VA_ARGS__);\
             func(__VA_ARGS__);\
             t = read_time() - t;\
-            if( t*tcount <= tsum*4 && ti > 0 )\
+            if( (uint64_t)t*tcount <= tsum*4 && ti > 0 )\
             {\
                 tsum += t;\
                 tcount++;\
