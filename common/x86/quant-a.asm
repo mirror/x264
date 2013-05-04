@@ -7,7 +7,7 @@
 ;*          Fiona Glaser <fiona@x264.com>
 ;*          Christian Heine <sennindemokrit@gmx.net>
 ;*          Oskar Arvidsson <oskar@irock.se>
-;*          Henrik Gramner <hengar-6@student.ltu.se>
+;*          Henrik Gramner <henrik@gramner.com>
 ;*
 ;* This program is free software; you can redistribute it and/or modify
 ;* it under the terms of the GNU General Public License as published by
@@ -238,10 +238,10 @@ cextern popcnt_table
     mova [%1       ], m2
     mova [%1+mmsize], m3
     ACCUM      por, %5, 2, %4
-    ACCUM      por, %5, 3, %4+mmsize
+    por        m%5, m3
 %else ; !sse4
     QUANT_ONE_AC_MMX %1, %2, %3, %4, %5
-    QUANT_ONE_AC_MMX %1+mmsize, %2+mmsize, %3+mmsize, %4+mmsize, %5
+    QUANT_ONE_AC_MMX %1+mmsize, %2+mmsize, %3+mmsize, 1, %5
 %endif ; cpuflag
 %endmacro
 
@@ -279,8 +279,8 @@ cglobal quant_%1x%2, 3,3,8
 %endmacro
 
 %macro QUANT_4x4 2
-    QUANT_TWO_AC r0+%1+mmsize*0, r1+mmsize*0, r2+mmsize*0, mmsize*0, %2
-    QUANT_TWO_AC r0+%1+mmsize*2, r1+mmsize*2, r2+mmsize*2, mmsize*2, %2
+    QUANT_TWO_AC r0+%1+mmsize*0, r1+mmsize*0, r2+mmsize*0, 0, %2
+    QUANT_TWO_AC r0+%1+mmsize*2, r1+mmsize*2, r2+mmsize*2, 1, %2
 %endmacro
 
 %macro QUANT_4x4x4 0
@@ -323,6 +323,30 @@ QUANT_DC 4, 4
 QUANT_AC 4, 4
 QUANT_AC 8, 8
 QUANT_4x4x4
+
+INIT_YMM avx2
+QUANT_DC 4, 4
+QUANT_AC 4, 4
+QUANT_AC 8, 8
+
+INIT_YMM avx2
+cglobal quant_4x4x4, 3,3,6
+    QUANT_TWO_AC r0,    r1, r2, 0, 4
+    QUANT_TWO_AC r0+64, r1, r2, 0, 5
+    add       r0, 128
+    packssdw  m4, m5
+    QUANT_TWO_AC r0,    r1, r2, 0, 5
+    QUANT_TWO_AC r0+64, r1, r2, 0, 1
+    packssdw  m5, m1
+    packssdw  m4, m5
+    pxor      m3, m3
+    pcmpeqd   m4, m3
+    movmskps eax, m4
+    mov      edx, eax
+    shr      eax, 4
+    and      eax, edx
+    xor      eax, 0xf
+    RET
 
 %endif ; HIGH_BIT_DEPTH
 
