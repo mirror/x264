@@ -96,10 +96,6 @@ do {\
 #include <assert.h>
 #include <limits.h>
 
-#if HAVE_OPENCL
-#include "opencl.h"
-#endif
-
 #if HAVE_INTERLACED
 #   define MB_INTERLACED h->mb.b_interlaced
 #   define SLICE_MBAFF h->sh.b_mbaff
@@ -209,6 +205,9 @@ static const uint8_t x264_scan8[16*3 + 3] =
 };
 
 #include "x264.h"
+#if HAVE_OPENCL
+#include "opencl.h"
+#endif
 #include "cabac.h"
 #include "bitstream.h"
 #include "set.h"

@@ -147,29 +147,7 @@ OBJSO  += $(if $(RC), x264res.dll.o)
 endif
 endif
 
-QUOTED_CFLAGS := $(CFLAGS)
-
 ifeq ($(HAVE_OPENCL),yes)
-empty:=
-space:=$(empty) $(empty)
-escaped:=\ $(empty)
-open:=(
-escopen:=\(
-close:=)
-escclose:=\)
-SAFE_INC_DIR := $(subst $(space),$(escaped),$(OPENCL_INC_DIR))
-SAFE_INC_DIR := $(subst $(open),$(escopen),$(SAFE_INC_DIR))
-SAFE_INC_DIR := $(subst $(close),$(escclose),$(SAFE_INC_DIR))
-SAFE_LIB_DIR := $(subst $(space),$(escaped),$(OPENCL_LIB_DIR))
-SAFE_LIB_DIR := $(subst $(open),$(escopen),$(SAFE_LIB_DIR))
-SAFE_LIB_DIR := $(subst $(close),$(escclose),$(SAFE_LIB_DIR))
-# For normal CFLAGS and LDFLAGS, we must escape spaces with a backslash to
-# make gcc happy
-CFLAGS += -I$(SAFE_INC_DIR) -DCL_USE_DEPRECATED_OPENCL_1_1_APIS
-LDFLAGS += -l$(OPENCL_LIB) -L$(SAFE_LIB_DIR)
-# For the CFLAGS used by the .depend rule, we must add quotes because
-# the rule does an extra level of shell expansions
-QUOTED_CFLAGS += -I"$(OPENCL_INC_DIR)" -DCL_USE_DEPRECATED_OPENCL_1_1_APIS
 common/oclobj.h: common/opencl/x264-cl.h $(wildcard $(SRCPATH)/common/opencl/*.cl)
 	cat $^ | perl $(SRCPATH)/tools/cltostr.pl x264_opencl_source > $@
 GENERATED += common/oclobj.h
@@ -224,7 +202,7 @@ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK): .depend
 
 .depend: config.mak
 	@rm -f .depend
-	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS) $(SRCCLI) $(SRCSO)), $(CC) $(QUOTED_CFLAGS) $(SRC) $(DEPMT) $(SRC:$(SRCPATH)/%.c=%.o) $(DEPMM) 1>> .depend;)
+	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS) $(SRCCLI) $(SRCSO)), $(CC) $(CFLAGS) $(SRC) $(DEPMT) $(SRC:$(SRCPATH)/%.c=%.o) $(DEPMM) 1>> .depend;)
 
 config.mak:
 	./configure

@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 132
+#define X264_BUILD 133
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment

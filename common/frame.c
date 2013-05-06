@@ -261,6 +261,10 @@ static x264_frame_t *x264_frame_new( x264_t *h, int b_fdec )
     if( x264_pthread_cond_init( &frame->cv, NULL ) )
         goto fail;
 
+#if HAVE_OPENCL
+    frame->opencl.ocl = h->opencl.ocl;
+#endif
+
     return frame;
 
 fail:

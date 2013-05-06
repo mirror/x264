@@ -28,7 +28,7 @@
 #include "me.h"
 
 #if HAVE_OPENCL
-#if _WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
@@ -40,7 +40,7 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
 #define CL_QUEUE_THREAD_HANDLE_AMD 0x403E
 
 #define OCLCHECK( method, ... )\
-    status = method( __VA_ARGS__ );\
+    status = ocl->method( __VA_ARGS__ );\
     if( status != CL_SUCCESS ) {\
         h->param.b_opencl = 0;\
         h->opencl.b_fatal_error = 1;\
@@ -50,7 +50,9 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
 
 void x264_opencl_flush( x264_t *h )
 {
-    clFinish( h->opencl.queue );
+    x264_opencl_function_t *ocl = h->opencl.ocl;
+
+    ocl->clFinish( h->opencl.queue );
 
     /* Finish copies from the GPU by copying from the page-locked buffer to
      * their final destination */
@@ -76,13 +78,14 @@ int x264_opencl_lowres_init( x264_t *h, x264_frame_t *fenc, int lambda )
         return 0;
     fenc->b_intra_calculated = 1;
 
+    x264_opencl_function_t *ocl = h->opencl.ocl;
     int luma_length = fenc->i_stride[0] * fenc->i_lines[0];
 
 #define CREATEBUF( out, flags, size )\
-    out = clCreateBuffer( h->opencl.context, (flags), (size), NULL, &status );\
+    out = ocl->clCreateBuffer( h->opencl.context, (flags), (size), NULL, &status );\
     if( status != CL_SUCCESS ) { h->param.b_opencl = 0; x264_log( h, X264_LOG_ERROR, "clCreateBuffer error '%d'\n", status ); return -1; }
 #define CREATEIMAGE( out, flags, pf, width, height )\
-    out = clCreateImage2D( h->opencl.context, (flags), &pf, width, height, 0, NULL, &status );\
+    out = ocl->clCreateImage2D( h->opencl.context, (flags), &pf, width, height, 0, NULL, &status );\
     if( status != CL_SUCCESS ) { h->param.b_opencl = 0; x264_log( h, X264_LOG_ERROR, "clCreateImage2D error '%d'\n", status ); return -1; }
 
     int mb_count = h->mb.i_mb_count;
@@ -277,15 +280,16 @@ int x264_opencl_lowres_init( x264_t *h, x264_frame_t *fenc, int lambda )
  * applications will have self-tuning code to try many possible variables and
  * measure the runtime.  Here we simply make an educated guess based on what we
  * know GPUs typically prefer.  */
-static void x264_optimal_launch_dims( size_t *gdims, size_t *ldims, const cl_kernel kernel, const cl_device_id device )
+static void x264_optimal_launch_dims( x264_t *h, size_t *gdims, size_t *ldims, const cl_kernel kernel, const cl_device_id device )
 {
+    x264_opencl_function_t *ocl = h->opencl.ocl;
     size_t max_work_group = 256;    /* reasonable defaults for OpenCL 1.0 devices, below APIs may fail */
     size_t preferred_multiple = 64;
     cl_uint num_cus = 6;
 
-    clGetKernelWorkGroupInfo( kernel, device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &max_work_group, NULL );
-    clGetKernelWorkGroupInfo( kernel, device, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(size_t), &preferred_multiple, NULL );
-    clGetDeviceInfo( device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &num_cus, NULL );
+    ocl->clGetKernelWorkGroupInfo( kernel, device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &max_work_group, NULL );
+    ocl->clGetKernelWorkGroupInfo( kernel, device, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(size_t), &preferred_multiple, NULL );
+    ocl->clGetDeviceInfo( device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &num_cus, NULL );
 
     ldims[0] = preferred_multiple;
     ldims[1] = 8;
@@ -336,6 +340,7 @@ static void x264_optimal_launch_dims( size_t *gdims, size_t *ldims, const cl_ker
 
 int x264_opencl_motionsearch( x264_t *h, x264_frame_t **frames, int b, int ref, int b_islist1, int lambda, const x264_weight_t *w )
 {
+    x264_opencl_function_t *ocl = h->opencl.ocl;
     x264_frame_t *fenc = frames[b];
     x264_frame_t *fref = frames[ref];
 
@@ -414,7 +419,7 @@ int x264_opencl_motionsearch( x264_t *h, x264_frame_t **frames, int b, int ref, 
         if( gdims[0] < 2 || gdims[1] < 2 )
             continue;
         gdims[0] <<= 2;
-        x264_optimal_launch_dims( gdims, ldims, h->opencl.hme_kernel, h->opencl.device );
+        x264_optimal_launch_dims( h, gdims, ldims, h->opencl.hme_kernel, h->opencl.device );
 
         mb_per_group = (ldims[0] >> 2) * ldims[1];
         cost_local_size = 4 * mb_per_group * sizeof(int16_t);
@@ -526,6 +531,7 @@ int x264_opencl_motionsearch( x264_t *h, x264_frame_t **frames, int b, int ref, 
 
 int x264_opencl_finalize_cost( x264_t *h, int lambda, x264_frame_t **frames, int p0, int p1, int b, int dist_scale_factor )
 {
+    x264_opencl_function_t *ocl = h->opencl.ocl;
     cl_int status;
     x264_frame_t *fenc = frames[b];
     x264_frame_t *fref0 = frames[p0];
@@ -548,7 +554,7 @@ int x264_opencl_finalize_cost( x264_t *h, int lambda, x264_frame_t **frames, int
         /* For B frames, use 4 threads per MB for BIDIR checks */
         ldims = ldim_bidir;
         gdims[0] <<= 2;
-        x264_optimal_launch_dims( gdims, ldims, h->opencl.mode_select_kernel, h->opencl.device );
+        x264_optimal_launch_dims( h, gdims, ldims, h->opencl.mode_select_kernel, h->opencl.device );
         int mb_per_group = (ldims[0] >> 2) * ldims[1];
         cost_local_size = 4 * mb_per_group * sizeof(int16_t);
         satd_local_size = 16 * mb_per_group * sizeof(uint32_t);
@@ -640,7 +646,7 @@ void x264_opencl_slicetype_prep( x264_t *h, x264_frame_t **frames, int num_frame
 {
     if( h->param.b_opencl )
     {
-#if _WIN32
+#ifdef _WIN32
         /* Temporarily boost priority of this lookahead thread and the OpenCL
          * driver's thread until the end of this function.  On AMD GPUs this
          * greatly reduces the latency of enqueuing kernels and getting results
@@ -648,7 +654,8 @@ void x264_opencl_slicetype_prep( x264_t *h, x264_frame_t **frames, int num_frame
         HANDLE id = GetCurrentThread();
         h->opencl.lookahead_thread_pri = GetThreadPriority( id );
         SetThreadPriority( id, THREAD_PRIORITY_ABOVE_NORMAL );
-        cl_int status = clGetCommandQueueInfo( h->opencl.queue, CL_QUEUE_THREAD_HANDLE_AMD, sizeof(HANDLE), &id, NULL );
+        x264_opencl_function_t *ocl = h->opencl.ocl;
+        cl_int status = ocl->clGetCommandQueueInfo( h->opencl.queue, CL_QUEUE_THREAD_HANDLE_AMD, sizeof(HANDLE), &id, NULL );
         if( status == CL_SUCCESS )
         {
             h->opencl.opencl_thread_pri = GetThreadPriority( id );
@@ -699,12 +706,13 @@ void x264_opencl_slicetype_prep( x264_t *h, x264_frame_t **frames, int num_frame
 
 void x264_opencl_slicetype_end( x264_t *h )
 {
-#if _WIN32
+#ifdef _WIN32
     if( h->param.b_opencl )
     {
         HANDLE id = GetCurrentThread();
         SetThreadPriority( id, h->opencl.lookahead_thread_pri );
-        cl_int status = clGetCommandQueueInfo( h->opencl.queue, CL_QUEUE_THREAD_HANDLE_AMD, sizeof(HANDLE), &id, NULL );
+        x264_opencl_function_t *ocl = h->opencl.ocl;
+        cl_int status = ocl->clGetCommandQueueInfo( h->opencl.queue, CL_QUEUE_THREAD_HANDLE_AMD, sizeof(HANDLE), &id, NULL );
         if( status == CL_SUCCESS )
             SetThreadPriority( id, h->opencl.opencl_thread_pri );
     }
