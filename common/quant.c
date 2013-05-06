@@ -543,6 +543,7 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->quant_4x4_dc = x264_quant_4x4_dc_avx2;
         pf->quant_8x8 = x264_quant_8x8_avx2;
         pf->quant_4x4x4 = x264_quant_4x4x4_avx2;
+        pf->denoise_dct = x264_denoise_dct_avx2;
     }
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH

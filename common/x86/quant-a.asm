@@ -946,31 +946,29 @@ OPTIMIZE_CHROMA_2x2_DC
 ; void denoise_dct( int32_t *dct, uint32_t *sum, uint32_t *offset, int size )
 ;-----------------------------------------------------------------------------
 %macro DENOISE_DCT 0
-cglobal denoise_dct, 4,4,8
-    pxor      m6, m6
+cglobal denoise_dct, 4,4,6
+    pxor      m5, m5
     movsxdifnidn r3, r3d
 .loop:
     mova      m2, [r0+r3*4-2*mmsize]
     mova      m3, [r0+r3*4-1*mmsize]
     ABSD      m0, m2
     ABSD      m1, m3
-    mova      m4, m0
-    mova      m5, m1
+    paddd     m4, m0, [r1+r3*4-2*mmsize]
     psubd     m0, [r2+r3*4-2*mmsize]
+    mova      [r1+r3*4-2*mmsize], m4
+    paddd     m4, m1, [r1+r3*4-1*mmsize]
     psubd     m1, [r2+r3*4-1*mmsize]
-    pcmpgtd   m7, m0, m6
-    pand      m0, m7
-    pcmpgtd   m7, m1, m6
-    pand      m1, m7
+    mova      [r1+r3*4-1*mmsize], m4
+    pcmpgtd   m4, m0, m5
+    pand      m0, m4
+    pcmpgtd   m4, m1, m5
+    pand      m1, m4
     PSIGND    m0, m2
     PSIGND    m1, m3
     mova      [r0+r3*4-2*mmsize], m0
     mova      [r0+r3*4-1*mmsize], m1
-    paddd     m4, [r1+r3*4-2*mmsize]
-    paddd     m5, [r1+r3*4-1*mmsize]
-    mova      [r1+r3*4-2*mmsize], m4
-    mova      [r1+r3*4-1*mmsize], m5
-    sub       r3, mmsize/2
+    sub      r3d, mmsize/2
     jg .loop
     RET
 %endmacro
@@ -984,6 +982,8 @@ DENOISE_DCT
 INIT_XMM ssse3
 DENOISE_DCT
 INIT_XMM avx
+DENOISE_DCT
+INIT_YMM avx2
 DENOISE_DCT
 
 %else ; !HIGH_BIT_DEPTH
