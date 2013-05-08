@@ -2593,14 +2593,16 @@ void x264_threads_distribute_ratecontrol( x264_t *h )
     if( h->i_frame == 0 )
         for( int i = 0; i < h->param.i_threads; i++ )
         {
-            x264_ratecontrol_t *t = h->thread[i]->rc;
-            memcpy( t->row_preds, rc->row_preds, sizeof(rc->row_preds) );
+            x264_t *t = h->thread[i];
+            if( t != h )
+                memcpy( t->rc->row_preds, rc->row_preds, sizeof(rc->row_preds) );
         }
 
     for( int i = 0; i < h->param.i_threads; i++ )
     {
         x264_t *t = h->thread[i];
-        memcpy( t->rc, rc, offsetof(x264_ratecontrol_t, row_pred) );
+        if( t != h )
+            memcpy( t->rc, rc, offsetof(x264_ratecontrol_t, row_pred) );
         t->rc->row_pred = &t->rc->row_preds[h->sh.i_type];
         /* Calculate the planned slice size. */
         if( rc->b_vbv && rc->frame_size_planned )
