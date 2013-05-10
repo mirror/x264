@@ -207,8 +207,12 @@ cglobal checkasm_call, 1,7
 ; int x264_stack_pagealign( int (*func)(), int align )
 ;-----------------------------------------------------------------------------
 cglobal stack_pagealign, 2,2
+    movsxdifnidn r1, r1d
     push rbp
     mov  rbp, rsp
+%if WIN64
+    sub  rsp, 32 ; shadow space
+%endif
     and  rsp, ~0xfff
     sub  rsp, r1
     call r0

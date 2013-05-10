@@ -2686,7 +2686,7 @@ int main(int argc, char *argv[])
             fprintf( stderr, "%d/%d\r", i+1, BENCH_ALIGNS );
         }
     else
-        ret = check_all_flags();
+        ret = x264_stack_pagealign( check_all_flags, 0 );
 
     if( ret )
     {
