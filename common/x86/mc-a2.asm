@@ -37,6 +37,7 @@ filt_mul15: times 16 db 1, -5
 filt_mul51: times 16 db -5, 1
 hpel_shuf: times 2 db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
 deinterleave_shuf: times 2 db 0,2,4,6,8,10,12,14,1,3,5,7,9,11,13,15
+
 %if HIGH_BIT_DEPTH
 deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
 deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
@@ -642,7 +643,6 @@ INIT_XMM avx
 HPEL_C
 HPEL_V 0
 HPEL_H
-%endif
 INIT_YMM avx2
 HPEL_V 8
 HPEL_C
@@ -682,15 +682,16 @@ cglobal hpel_filter_h, 3,3,8
     add       r2, mmsize
     jl .loop
     RET
+%endif
 
 %if ARCH_X86_64
 %macro DO_FILT_V 5
     ;The optimum prefetch distance is difficult to determine in checkasm:
     ;any prefetch seems slower than not prefetching.
     ;In real use, the prefetch seems to be a slight win.
-    ;+16 is picked somewhat arbitrarily here based on the fact that even one
+    ;+mmsize is picked somewhat arbitrarily here based on the fact that even one
     ;loop iteration is going to take longer than the prefetch.
-    prefetcht0 [r1+r2*2+16]
+    prefetcht0 [r1+r2*2+mmsize]
 %if cpuflag(ssse3)
     mova m1, [r3]
     mova m2, [r3+r2]
@@ -723,31 +724,48 @@ cglobal hpel_filter_h, 3,3,8
     packuswb %3, %4
     FILT_V2 m1, m2, m3, m4, m5, m6
 %endif
-    add       r3, 16
-    add       r1, 16
+    add       r3, mmsize
+    add       r1, mmsize
+%if mmsize==32
+    vinserti128 %1, m1, xm4, 1
+    vperm2i128  %2, m1, m4, q0301
+%else
     mova      %1, m1
     mova      %2, m4
+%endif
     FILT_PACK m1, m4, m15, 5
     movntps  [r8+r4+%5], m1
 %endmacro
 
-%macro FILT_C 4
-    PALIGNR   m1, %2, %1, 12, m2
-    PALIGNR   m2, %2, %1, 14, %1
+%macro FILT_C 3
+%if mmsize==32
+    vperm2i128 m3, %2, %1, q0003
+%endif
+    PALIGNR   m1, %2, %1, (mmsize-4), m3
+    PALIGNR   m2, %2, %1, (mmsize-2), m3
+%if mmsize==32
+    vperm2i128 %1, %3, %2, q0003
+%endif
     PALIGNR   m3, %3, %2, 4, %1
     PALIGNR   m4, %3, %2, 2, %1
     paddw     m3, m2
+%if mmsize==32
+    mova      m2, %1
+%endif
     mova      %1, %3
-    PALIGNR   %3, %2, 6, m2
+    PALIGNR   %3, %3, %2, 6, m2
     paddw     m4, %2
     paddw     %3, m1
     FILT_H    %3, m3, m4
 %endmacro
 
 %macro DO_FILT_C 4
-    FILT_C %1, %2, %3, 6
-    FILT_C %2, %1, %4, 6
+    FILT_C %1, %2, %3
+    FILT_C %2, %1, %4
     FILT_PACK %3, %4, m15, 6
+%if mmsize==32
+    vpermq %3, %3, q3120
+%endif
     movntps   [r5+r4], %3
 %endmacro
 
@@ -761,8 +779,14 @@ cglobal hpel_filter_h, 3,3,8
 %endmacro
 
 %macro DO_FILT_H 3
-    PALIGNR   m1, %2, %1, 14, m3
-    PALIGNR   m2, %2, %1, 15, m3
+%if mmsize==32
+    vperm2i128 m3, %2, %1, q0003
+%endif
+    PALIGNR   m1, %2, %1, (mmsize-2), m3
+    PALIGNR   m2, %2, %1, (mmsize-1), m3
+%if mmsize==32
+    vperm2i128 m3, %3, %2, q0003
+%endif
     PALIGNR   m4, %3, %2, 1 , m3
     PALIGNR   m5, %3, %2, 2 , m3
     PALIGNR   m6, %3, %2, 3 , m3
@@ -798,9 +822,9 @@ cglobal hpel_filter_h, 3,3,8
 ;-----------------------------------------------------------------------------
 cglobal hpel_filter, 7,9,16
     mov       r7, r3
-    sub      r5d, 16
+    sub      r5d, mmsize
     mov       r8, r1
-    and       r7, 15
+    and       r7, mmsize-1
     sub       r3, r7
     add       r0, r5
     add       r8, r5
@@ -827,7 +851,7 @@ cglobal hpel_filter, 7,9,16
     DO_FILT_V m8, m7, m13, m12, 0
 ;ALIGN 16
 .loopx:
-    DO_FILT_V m6, m5, m11, m12, 16
+    DO_FILT_V m6, m5, m11, m12, mmsize
 .lastx:
 %if cpuflag(ssse3)
     psrlw   m15, 1   ; pw_512
@@ -840,11 +864,11 @@ cglobal hpel_filter, 7,9,16
 %else
     psrlw   m15, 1   ; pw_16
 %endif
-    movdqa   m7, m5
+    mova     m7, m5
     DO_FILT_H m10, m13, m11
-    add      r4, 16
+    add      r4, mmsize
     jl .loopx
-    cmp      r4, 16
+    cmp      r4, mmsize
     jl .lastx
 ; setup regs for next y
     sub      r4, r7
@@ -866,6 +890,8 @@ HPEL
 INIT_XMM ssse3
 HPEL
 INIT_XMM avx
+HPEL
+INIT_YMM avx2
 HPEL
 %endif ; ARCH_X86_64
 
