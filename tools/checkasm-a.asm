@@ -4,7 +4,7 @@
 ;* Copyright (C) 2008-2013 x264 project
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
-;*          Henrik Gramner <hengar-6@student.ltu.se>
+;*          Henrik Gramner <henrik@gramner.com>
 ;*
 ;* This program is free software; you can redistribute it and/or modify
 ;* it under the terms of the GNU General Public License as published by
@@ -88,8 +88,7 @@ cglobal checkasm_stack_clobber, 1,2
 ; intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... )
 ;-----------------------------------------------------------------------------
 INIT_XMM
-cglobal checkasm_call, 2,15,16
-    SUB  rsp, max_args*8+16
+cglobal checkasm_call, 2,15,16,max_args*8+8
     mov  r6, r0
     mov  [rsp+max_args*8], r1
 
@@ -158,7 +157,6 @@ cglobal checkasm_call, 2,15,16
     mov  dword [r1], 0
     mov  rax, r9
 .ok:
-    ADD  rsp, max_args*8+16
     RET
 
 %else

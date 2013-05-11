@@ -1794,10 +1794,9 @@ ALIGN 4
 %if ARCH_X86_64 ; too many regs for x86_32
     RESET_MM_PERMUTATION
 %if WIN64
-%if xmm_regs_used > 6
-    %assign stack_offset stack_offset-(xmm_regs_used-6)*16-16
-    %assign xmm_regs_used 6
-%endif
+    %assign stack_offset stack_offset - stack_size_padded
+    %assign stack_size_padded 0
+    %assign xmm_regs_used 0
 %endif
 .mc1dy:
     and       t2d, 7

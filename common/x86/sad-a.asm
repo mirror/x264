@@ -1733,12 +1733,12 @@ cglobal pixel_sad_x3_%1x%2_cache%3_%6
 .split:
 %if ARCH_X86_64
     PROLOGUE 6,9
-%if WIN64
-    movsxd r4, r4d
-    sub  rsp, 8
-%endif
     push r3
     push r2
+%if WIN64
+    movsxd r4, r4d
+    sub rsp, 40 ; shadow space and alignment
+%endif
     mov  r2, r1
     mov  r1, FENC_STRIDE
     mov  r3, r4
@@ -1747,7 +1747,7 @@ cglobal pixel_sad_x3_%1x%2_cache%3_%6
     call pixel_sad_%1x%2_cache%3_%5
     mov  [r8], eax
 %if WIN64
-    mov  r2, [rsp]
+    mov  r2, [rsp+40+0*8]
 %else
     pop  r2
 %endif
@@ -1755,7 +1755,7 @@ cglobal pixel_sad_x3_%1x%2_cache%3_%6
     call pixel_sad_%1x%2_cache%3_%5
     mov  [r8+4], eax
 %if WIN64
-    mov  r2, [rsp+8]
+    mov  r2, [rsp+40+1*8]
 %else
     pop  r2
 %endif
@@ -1763,7 +1763,7 @@ cglobal pixel_sad_x3_%1x%2_cache%3_%6
     call pixel_sad_%1x%2_cache%3_%5
     mov  [r8+8], eax
 %if WIN64
-    add  rsp, 24
+    add  rsp, 40+2*8
 %endif
     RET
 %else
@@ -1803,6 +1803,9 @@ cglobal pixel_sad_x4_%1x%2_cache%3_%6
     push r4
     push r3
     push r2
+%if WIN64
+    sub rsp, 32 ; shadow space
+%endif
     mov  r2, r1
     mov  r1, FENC_STRIDE
     mov  r3, r5
@@ -1810,7 +1813,7 @@ cglobal pixel_sad_x4_%1x%2_cache%3_%6
     call pixel_sad_%1x%2_cache%3_%5
     mov  [r8], eax
 %if WIN64
-    mov  r2, [rsp]
+    mov  r2, [rsp+32+0*8]
 %else
     pop  r2
 %endif
@@ -1818,7 +1821,7 @@ cglobal pixel_sad_x4_%1x%2_cache%3_%6
     call pixel_sad_%1x%2_cache%3_%5
     mov  [r8+4], eax
 %if WIN64
-    mov  r2, [rsp+8]
+    mov  r2, [rsp+32+1*8]
 %else
     pop  r2
 %endif
@@ -1826,7 +1829,7 @@ cglobal pixel_sad_x4_%1x%2_cache%3_%6
     call pixel_sad_%1x%2_cache%3_%5
     mov  [r8+8], eax
 %if WIN64
-    mov  r2, [rsp+16]
+    mov  r2, [rsp+32+2*8]
 %else
     pop  r2
 %endif
@@ -1834,7 +1837,7 @@ cglobal pixel_sad_x4_%1x%2_cache%3_%6
     call pixel_sad_%1x%2_cache%3_%5
     mov  [r8+12], eax
 %if WIN64
-    add  rsp, 24
+    add  rsp, 32+3*8
 %endif
     RET
 %else
