@@ -202,6 +202,12 @@ uint32_t x264_cpu_detect( void )
                 cpu |= X264_CPU_SSE2_IS_SLOW;  /* Bobcat has 64-bit SIMD units */
                 cpu |= X264_CPU_SLOW_PALIGNR;  /* palignr is insanely slow on Bobcat */
             }
+            if( family == 0x16 )
+            {
+                cpu |= X264_CPU_SLOW_PSHUFB;   /* Jaguar's pshufb isn't that slow, but it's slow enough
+                                                * compared to alternate instruction sequences that this
+                                                * is equal or faster on almost all such functions. */
+            }
         }
 
         if( ecx&0x00000080 ) /* Misalign SSE */
