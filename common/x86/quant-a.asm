@@ -757,55 +757,62 @@ cglobal dequant_4x4dc, 0,3,6
     DEQUANT_START 6, 6
 
 .lshift:
-    movd     m3, [r1]
-    movd     m2, t0d
-    pslld    m3, m2
-    SPLAT%1  m3, m3, 0
-%assign x 0
-%rep SIZEOF_PIXEL*16/mmsize
-    mova     m0, [r0+mmsize*0+x]
-    mova     m1, [r0+mmsize*1+x]
-    %2       m0, m3
-    %2       m1, m3
-    mova     [r0+mmsize*0+x], m0
-    mova     [r0+mmsize*1+x], m1
-%assign x x+mmsize*2
+%if cpuflag(avx2)
+    vpbroadcastdct m3, [r1]
+%else
+    movd    xm3, [r1]
+    SPLAT%1  m3, xm3
+%endif
+    movd    xm2, t0d
+    pslld    m3, xm2
+%assign %%x 0
+%rep SIZEOF_PIXEL*32/mmsize
+    %2       m0, m3, [r0+%%x]
+    mova     [r0+%%x], m0
+%assign %%x %%x+mmsize
 %endrep
     RET
 
 .rshift32:
-    neg   t0d
-    movd  m3, t0d
-    mova  m4, [p%1_1]
-    mova  m5, m4
-    pslld m4, m3
-    psrld m4, 1
-    movd  m2, [r1]
-%assign x 0
+    neg      t0d
+%if cpuflag(avx2)
+    vpbroadcastdct m2, [r1]
+%else
+    movd     xm2, [r1]
+%endif
+    mova      m5, [p%1_1]
+    movd     xm3, t0d
+    pslld     m4, m5, xm3
+    psrld     m4, 1
 %if HIGH_BIT_DEPTH
-    pshufd m2, m2, 0
+%if notcpuflag(avx2)
+    pshufd    m2, m2, 0
+%endif
+%assign %%x 0
 %rep SIZEOF_PIXEL*32/mmsize
-    mova      m0, [r0+x]
-    pmadcswd  m0, m0, m2, m4
-    psrad     m0, m3
-    mova      [r0+x], m0
-%assign x x+mmsize
+    pmadcswd  m0, m2, [r0+%%x], m4
+    psrad     m0, xm3
+    mova      [r0+%%x], m0
+%assign %%x %%x+mmsize
 %endrep
 
 %else ; !HIGH_BIT_DEPTH
+%if notcpuflag(avx2)
     PSHUFLW   m2, m2, 0
+%endif
     punpcklwd m2, m4
+%assign %%x 0
 %rep SIZEOF_PIXEL*32/mmsize
-    mova      m0, [r0+x]
+    mova      m0, [r0+%%x]
     punpckhwd m1, m0, m5
     punpcklwd m0, m5
     pmaddwd   m0, m2
     pmaddwd   m1, m2
-    psrad     m0, m3
-    psrad     m1, m3
+    psrad     m0, xm3
+    psrad     m1, xm3
     packssdw  m0, m1
-    mova      [r0+x], m0
-%assign x x+mmsize
+    mova      [r0+%%x], m0
+%assign %%x %%x+mmsize
 %endrep
 %endif ; !HIGH_BIT_DEPTH
     RET
@@ -816,6 +823,8 @@ INIT_XMM sse2
 DEQUANT_DC d, pmaddwd
 INIT_XMM xop
 DEQUANT_DC d, pmaddwd
+INIT_YMM avx2
+DEQUANT_DC d, pmaddwd
 %else
 %if ARCH_X86_64 == 0
 INIT_MMX mmx2
@@ -824,6 +833,8 @@ DEQUANT_DC w, pmullw
 INIT_XMM sse2
 DEQUANT_DC w, pmullw
 INIT_XMM avx
+DEQUANT_DC w, pmullw
+INIT_YMM avx2
 DEQUANT_DC w, pmullw
 %endif
 
