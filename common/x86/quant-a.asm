@@ -524,19 +524,25 @@ cglobal quant_4x4x4, 3,3,6
 ;;; %1      dct[y][x]
 ;;; %2,%3   dequant_mf[i_mf][y][x]
 ;;; m2      i_qbits
-    mova     m0, %2
 %if HIGH_BIT_DEPTH
-    pmaddwd  m0, %1
-    pslld    m0, m2
+    mova     m0, %1
+    mova     m1, %4
+    pmaddwd  m0, %2
+    pmaddwd  m1, %3
+    pslld    m0, xm2
+    pslld    m1, xm2
+    mova     %1, m0
+    mova     %4, m1
 %else
+    mova     m0, %2
     packssdw m0, %3
 %if mmsize==32
     vpermq   m0, m0, q3120
 %endif
     pmullw   m0, %1
     psllw    m0, xm2
-%endif
     mova     %1, m0
+%endif
 %endmacro
 
 %macro DEQUANT32_R 4
@@ -545,33 +551,34 @@ cglobal quant_4x4x4, 3,3,6
 ;;; m2      -i_qbits
 ;;; m3      f
 ;;; m4      0
-%if mmsize==32
+%if HIGH_BIT_DEPTH
+    mova      m0, %1
+    mova      m1, %4
+    pmadcswd  m0, m0, %2, m3
+    pmadcswd  m1, m1, %3, m3
+    psrad     m0, xm2
+    psrad     m1, xm2
+    mova      %1, m0
+    mova      %4, m1
+%else
+%if mmsize == 32
     pmovzxwd  m0, %1
     pmovzxwd  m1, %4
-    pmaddwd   m0, %2
-    pmaddwd   m1, %3
-    paddd     m0, m3
-    paddd     m1, m3
+%else
+    mova      m0, %1
+    punpckhwd m1, m0, m4
+    punpcklwd m0, m4
+%endif
+    pmadcswd  m0, m0, %2, m3
+    pmadcswd  m1, m1, %3, m3
     psrad     m0, xm2
     psrad     m1, xm2
     packssdw  m0, m1
+%if mmsize == 32
     vpermq    m0, m0, q3120
-%else
-    mova      m0, %1
-%if HIGH_BIT_DEPTH
-    pmadcswd  m0, m0, %2, m3
-    psrad     m0, m2
-%else
-    punpckhwd m1, m0, m4
-    punpcklwd m0, m4
-    pmadcswd  m0, m0, %2, m3
-    pmadcswd  m1, m1, %3, m3
-    psrad     m0, m2
-    psrad     m1, m2
-    packssdw  m0, m1
-%endif
 %endif
     mova      %1, m0
+%endif
 %endmacro
 
 %macro DEQUANT_LOOP 3
@@ -609,10 +616,8 @@ cglobal quant_4x4x4, 3,3,6
 %endrep
 %endmacro
 
-%if WIN64
+%if ARCH_X86_64
     DECLARE_REG_TMP 6,3,2
-%elif ARCH_X86_64
-    DECLARE_REG_TMP 4,3,2
 %else
     DECLARE_REG_TMP 2,0,1
 %endif
@@ -621,8 +626,8 @@ cglobal quant_4x4x4, 3,3,6
     movifnidn t2d, r2m
     imul t0d, t2d, 0x2b
     shr  t0d, 8     ; i_qbits = i_qp / 6
-    lea  t1, [t0*3]
-    sub  t2d, t1d
+    lea  t1d, [t0*5]
+    sub  t2d, t0d
     sub  t2d, t1d   ; i_mf = i_qp % 6
     shl  t2d, %1
 %if ARCH_X86_64
@@ -666,8 +671,8 @@ cglobal dequant_%1x%1_flat16, 0,3
 %endif
     imul t0d, t2d, 0x2b
     shr  t0d, 8     ; i_qbits = i_qp / 6
-    lea  t1, [t0*3]
-    sub  t2d, t1d
+    lea  t1d, [t0*5]
+    sub  t2d, t0d
     sub  t2d, t1d   ; i_mf = i_qp % 6
     shl  t2d, %2
 %ifdef PIC
@@ -719,11 +724,14 @@ cglobal dequant_%1x%1_flat16, 0,3
 
 %if HIGH_BIT_DEPTH
 INIT_XMM sse2
-DEQUANT 4, 4, 1
-DEQUANT 8, 6, 1
+DEQUANT 4, 4, 2
+DEQUANT 8, 6, 2
 INIT_XMM xop
-DEQUANT 4, 4, 1
-DEQUANT 8, 6, 1
+DEQUANT 4, 4, 2
+DEQUANT 8, 6, 2
+INIT_YMM avx2
+DEQUANT 4, 4, 4
+DEQUANT 8, 6, 4
 %else
 %if ARCH_X86_64 == 0
 INIT_MMX mmx
