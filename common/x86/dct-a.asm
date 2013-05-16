@@ -31,8 +31,6 @@
 %include "x86util.asm"
 
 SECTION_RODATA 32
-pb_idctdc_unpack: times 2 db 0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3
-pb_idctdc_unpack2: times 2 db 4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7
 pw_ppmmmmpp:    dw 1,1,-1,-1,-1,-1,1,1
 pb_sub4frame:   db 0,1,4,8,5,2,3,6,9,12,13,10,7,11,14,15
 pb_sub4field:   db 0,4,1,8,12,5,9,13,2,6,10,14,3,7,11,15
@@ -85,6 +83,8 @@ cextern pd_32
 cextern pw_ppppmmmm
 cextern pw_pmpmpmpm
 cextern deinterleave_shufd
+cextern pb_unpackbd1
+cextern pb_unpackbd2
 
 %macro WALSH4_1D 6
     SUMSUB_BADC %1, %5, %4, %3, %2, %6
@@ -741,7 +741,7 @@ cglobal add8x8_idct_dc, 2,2
     add      r0, FDEC_STRIDE*4
     pmulhrsw m0, [pw_512]
     psubw    m1, m0
-    mova     m5, [pb_idctdc_unpack]
+    mova     m5, [pb_unpackbd1]
     packuswb m0, m0
     packuswb m1, m1
     pshufb   m0, m5
@@ -838,8 +838,8 @@ cglobal add16x16_idct_dc, 2,2,8
     pxor     m1, m1
     pmulhrsw m0, [pw_512]
     psubw    m1, m0
-    mova     m5, [ pb_idctdc_unpack]
-    mova     m6, [pb_idctdc_unpack2]
+    mova     m5, [pb_unpackbd1]
+    mova     m6, [pb_unpackbd2]
     packuswb m0, m0
     packuswb m1, m1
     pshufb   m2, m0, m6
@@ -878,8 +878,8 @@ cglobal add16x16_idct_dc, 2,3,6
     pxor     m1, m1
     pmulhrsw m0, [pw_512]
     psubw    m1, m0
-    mova     m4, [pb_idctdc_unpack]
-    mova     m5, [pb_idctdc_unpack2]
+    mova     m4, [pb_unpackbd1]
+    mova     m5, [pb_unpackbd2]
     packuswb m0, m0
     packuswb m1, m1
     pshufb   m2, m0, m4      ; row0, row2

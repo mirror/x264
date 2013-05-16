@@ -44,6 +44,7 @@ cextern pw_2
 cextern pw_4
 cextern pw_00ff
 cextern pw_pixel_max
+cextern pb_unpackbd1
 
 %if HIGH_BIT_DEPTH
 ; out: %4 = |%1-%2|-%3
@@ -1011,31 +1012,42 @@ DEBLOCK_LUMA_INTRA
 
 ; out: %4 = |%1-%2|>%3
 ; clobbers: %5
-%macro DIFF_GT2 5
-%if ARCH_X86_64
-    psubusb %5, %2, %1
+%macro DIFF_GT2 5-6
+%if %0<6
     psubusb %4, %1, %2
+    psubusb %5, %2, %1
 %else
-    mova    %5, %2
     mova    %4, %1
-    psubusb %5, %1
+    mova    %5, %2
     psubusb %4, %2
+    psubusb %5, %1
 %endif
     psubusb %5, %3
     psubusb %4, %3
     pcmpeqb %4, %5
 %endmacro
 
-; in: m0=p1 m1=p0 m2=q0 m3=q1 %1=alpha-1 %2=beta-1
+; in: m0=p1 m1=p0 m2=q0 m3=q1 %1=alpha %2=beta
 ; out: m5=beta-1, m7=mask, %3=alpha-1
 ; clobbers: m4,m6
 %macro LOAD_MASK 2-3
+%if cpuflag(ssse3)
     movd     m4, %1
     movd     m5, %2
+    pxor     m6, m6
+    pshufb   m4, m6
+    pshufb   m5, m6
+%else
+    movd     m4, %1
+    movd     m5, %2
+    punpcklbw m4, m4
+    punpcklbw m5, m5
     SPLATW   m4, m4
     SPLATW   m5, m5
-    packuswb m4, m4  ; 16x alpha-1
-    packuswb m5, m5  ; 16x beta-1
+%endif
+    mova     m6, [pb_1]
+    psubusb  m4, m6              ; alpha - 1
+    psubusb  m5, m6              ; alpha - 2
 %if %0>2
     mova     %3, m4
 %endif
@@ -1098,9 +1110,7 @@ DEBLOCK_LUMA_INTRA
 cglobal deblock_v_luma, 5,5,10
     movd    m8, [r4] ; tc0
     lea     r4, [r1*3]
-    dec     r2d        ; alpha-1
     neg     r4
-    dec     r3d        ; beta-1
     add     r4, r0     ; pix-3*stride
 
     mova    m0, [r4+r1]   ; p1
@@ -1109,21 +1119,26 @@ cglobal deblock_v_luma, 5,5,10
     mova    m3, [r0+r1]   ; q1
     LOAD_MASK r2d, r3d
 
+%if cpuflag(avx)
+    pshufb   m8, [pb_unpackbd1]
+    pblendvb m9, m7, m6, m8
+%else
     punpcklbw m8, m8
     punpcklbw m8, m8 ; tc = 4x tc0[3], 4x tc0[2], 4x tc0[1], 4x tc0[0]
     pcmpeqb m9, m9
     pcmpeqb m9, m8
     pandn   m9, m7
+%endif
     pand    m8, m9
 
-    movdqa  m3, [r4] ; p2
+    mova    m3, [r4] ; p2
     DIFF_GT2 m1, m3, m5, m6, m7 ; |p2-p0| > beta-1
     pand    m6, m9
-    psubb   m7, m8, m6
+    psubb   m7, m8, m6 ; tc++
     pand    m6, m8
     LUMA_Q1 m0, m3, [r4], [r4+r1], m6, m4
 
-    movdqa  m4, [r0+2*r1] ; q2
+    mova    m4, [r0+2*r1] ; q2
     DIFF_GT2 m2, m4, m5, m6, m3 ; |q2-q0| > beta-1
     pand    m6, m9
     pand    m8, m6
@@ -1202,9 +1217,7 @@ DEBLOCK_LUMA
 ;-----------------------------------------------------------------------------
 cglobal deblock_%1_luma, 5,5,8,2*%2
     lea     r4, [r1*3]
-    dec     r2     ; alpha-1
     neg     r4
-    dec     r3     ; beta-1
     add     r4, r0 ; pix-3*stride
 
     mova    m0, [r4+r1]   ; p1
@@ -1215,12 +1228,18 @@ cglobal deblock_%1_luma, 5,5,8,2*%2
 
     mov     r3, r4mp
     movd    m4, [r3] ; tc0
+%if cpuflag(avx)
+    pshufb   m4, [pb_unpackbd1]
+    mova   [esp+%2], m4 ; tc
+    pblendvb m4, m7, m6, m4
+%else
     punpcklbw m4, m4
     punpcklbw m4, m4 ; tc = 4x tc0[3], 4x tc0[2], 4x tc0[1], 4x tc0[0]
     mova   [esp+%2], m4 ; tc
     pcmpeqb m3, m3
     pcmpgtb m4, m3
     pand    m4, m7
+%endif
     mova   [esp], m4 ; mask
 
     mova    m3, [r4] ; p2
@@ -1450,11 +1469,7 @@ DEBLOCK_LUMA v, 16
 cglobal deblock_%1_luma_intra, 4,6,16,0-(1-ARCH_X86_64)*0x50-WIN64*0x10
     lea     r4, [r1*4]
     lea     r5, [r1*3] ; 3*stride
-    dec     r2d        ; alpha-1
-    jl .end
     neg     r4
-    dec     r3d        ; beta-1
-    jl .end
     add     r4, r0     ; pix-4*stride
     mova    p1, [r4+2*r1]
     mova    p0, [r4+r5]
@@ -1469,9 +1484,9 @@ cglobal deblock_%1_luma_intra, 4,6,16,0-(1-ARCH_X86_64)*0x50-WIN64*0x10
     pavgb   t5, mpb_1 ; alpha/4+1
     movdqa  p2, [r4+r1]
     movdqa  q2, [r0+2*r1]
-    DIFF_GT2 p0, q0, t5, t0, t3 ; t0 = |p0-q0| > alpha/4+1
-    DIFF_GT2 p0, p2, m5, t2, t5 ; mask1 = |p2-p0| > beta-1
-    DIFF_GT2 q0, q2, m5, t4, t5 ; t4 = |q2-q0| > beta-1
+    DIFF_GT2 p0, q0, t5, t0, t3    ; t0 = |p0-q0| > alpha/4+1
+    DIFF_GT2 p0, p2, m5, t2, t5, 1 ; mask1 = |p2-p0| > beta-1
+    DIFF_GT2 q0, q2, m5, t4, t5, 1 ; t4 = |q2-q0| > beta-1
     pand    t0, mask0
     pand    t4, t0
     pand    t2, t0
@@ -1483,12 +1498,12 @@ cglobal deblock_%1_luma_intra, 4,6,16,0-(1-ARCH_X86_64)*0x50-WIN64*0x10
     mova    mask0, m7
     pavgb   m4, [pb_0]
     pavgb   m4, [pb_1] ; alpha/4+1
-    DIFF_GT2 p0, q0, m4, m6, m7 ; m6 = |p0-q0| > alpha/4+1
+    DIFF_GT2 p0, q0, m4, m6, m7    ; m6 = |p0-q0| > alpha/4+1
     pand    m6, mask0
-    DIFF_GT2 p0, p2, m5, m4, m7 ; m4 = |p2-p0| > beta-1
+    DIFF_GT2 p0, p2, m5, m4, m7, 1 ; m4 = |p2-p0| > beta-1
     pand    m4, m6
     mova    mask1p, m4
-    DIFF_GT2 q0, q2, m5, m4, m7 ; m4 = |q2-q0| > beta-1
+    DIFF_GT2 q0, q2, m5, m4, m7, 1 ; m4 = |q2-q0| > beta-1
     pand    m4, m6
     mova    mask1q, m4
 %endif
@@ -1868,8 +1883,6 @@ DEBLOCK_CHROMA
 
 %if HIGH_BIT_DEPTH == 0
 %macro CHROMA_V_START 0
-    dec    r2d      ; alpha-1
-    dec    r3d      ; beta-1
     mov    t5, r0
     sub    t5, r1
     sub    t5, r1
@@ -1880,8 +1893,6 @@ DEBLOCK_CHROMA
 %endmacro
 
 %macro CHROMA_H_START 0
-    dec    r2d
-    dec    r3d
     sub    r0, 4
     lea    t6, [r1*3]
     mov    t5, r0
@@ -1970,8 +1981,6 @@ DEBLOCK_CHROMA
 ;-----------------------------------------------------------------------------
 %macro DEBLOCK_H_CHROMA_420_MBAFF 0
 cglobal deblock_h_chroma_mbaff, 5,7,8
-    dec    r2d
-    dec    r3d
     sub    r0, 4
     lea    t6, [r1*3]
     mov    t5, r0
