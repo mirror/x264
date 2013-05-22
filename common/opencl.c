@@ -34,7 +34,7 @@
 #else
 #include <dlfcn.h> //dlopen, dlsym, dlclose
 #if SYS_MACOSX
-#define ocl_open dlopen( "libOpenCL.dylib", RTLD_NOW )
+#define ocl_open dlopen( "/System/Library/Frameworks/OpenCL.framework/OpenCL", RTLD_NOW )
 #else
 #define ocl_open dlopen( "libOpenCL.so", RTLD_NOW )
 #endif
@@ -119,7 +119,7 @@ static int x264_detect_switchable_graphics( void );
 
 /* Try to load the cached compiled program binary, verify the device context is
  * still valid before reuse */
-static cl_program x264_opencl_cache_load( x264_t *h, char *devname, char *devvendor, char *driverversion )
+static cl_program x264_opencl_cache_load( x264_t *h, char *dev_name, char *dev_vendor, char *driver_version )
 {
     /* try to load cached program binary */
     FILE *fp = fopen( h->param.psz_clbin_file, "rb" );
@@ -149,9 +149,9 @@ static cl_program x264_opencl_cache_load( x264_t *h, char *devname, char *devven
         }\
     } while( 0 )
 
-    CHECK_STRING( devname );
-    CHECK_STRING( devvendor );
-    CHECK_STRING( driverversion );
+    CHECK_STRING( dev_name );
+    CHECK_STRING( dev_vendor );
+    CHECK_STRING( driver_version );
     CHECK_STRING( x264_opencl_source_hash );
 #undef CHECK_STRING
 
@@ -167,7 +167,7 @@ fail:
 
 /* Save the compiled program binary to a file for later reuse.  Device context
  * is also saved in the cache file so we do not reuse stale binaries */
-static void x264_opencl_cache_save( x264_t *h, cl_program program, char *devname, char *devvendor, char *driverversion )
+static void x264_opencl_cache_save( x264_t *h, cl_program program, char *dev_name, char *dev_vendor, char *driver_version )
 {
     FILE *fp = fopen( h->param.psz_clbin_file, "wb" );
     if( !fp )
@@ -186,11 +186,11 @@ static void x264_opencl_cache_save( x264_t *h, cl_program program, char *devname
         status = ocl->clGetProgramInfo( program, CL_PROGRAM_BINARIES, sizeof(uint8_t *), &binary, NULL );
         if( status == CL_SUCCESS )
         {
-            fputs( devname, fp );
+            fputs( dev_name, fp );
             fputc( '\n', fp );
-            fputs( devvendor, fp );
+            fputs( dev_vendor, fp );
             fputc( '\n', fp );
-            fputs( driverversion, fp );
+            fputs( driver_version, fp );
             fputc( '\n', fp );
             fputs( x264_opencl_source_hash, fp );
             fputc( '\n', fp );
@@ -218,17 +218,17 @@ static cl_program x264_opencl_compile( x264_t *h )
     cl_program program;
     cl_int status;
 
-    char devname[64];
-    char devvendor[64];
-    char driverversion[64];
-    status  = ocl->clGetDeviceInfo( h->opencl.device, CL_DEVICE_NAME,    sizeof(devname), devname, NULL );
-    status |= ocl->clGetDeviceInfo( h->opencl.device, CL_DEVICE_VENDOR,  sizeof(devvendor), devvendor, NULL );
-    status |= ocl->clGetDeviceInfo( h->opencl.device, CL_DRIVER_VERSION, sizeof(driverversion), driverversion, NULL );
+    char dev_name[64];
+    char dev_vendor[64];
+    char driver_version[64];
+    status  = ocl->clGetDeviceInfo( h->opencl.device, CL_DEVICE_NAME,    sizeof(dev_name), dev_name, NULL );
+    status |= ocl->clGetDeviceInfo( h->opencl.device, CL_DEVICE_VENDOR,  sizeof(dev_vendor), dev_vendor, NULL );
+    status |= ocl->clGetDeviceInfo( h->opencl.device, CL_DRIVER_VERSION, sizeof(driver_version), driver_version, NULL );
     if( status != CL_SUCCESS )
         return NULL;
 
     // Most AMD GPUs have vector registers
-    int vectorize = !strcmp( devvendor, "Advanced Micro Devices, Inc." );
+    int vectorize = !strcmp( dev_vendor, "Advanced Micro Devices, Inc." );
     h->opencl.b_device_AMD_SI = 0;
 
     if( vectorize )
@@ -250,9 +250,9 @@ static cl_program x264_opencl_compile( x264_t *h )
         }
     }
 
-    x264_log( h, X264_LOG_INFO, "OpenCL acceleration enabled with %s %s %s\n", devvendor, devname, h->opencl.b_device_AMD_SI ? "(SI)" : "" );
+    x264_log( h, X264_LOG_INFO, "OpenCL acceleration enabled with %s %s %s\n", dev_vendor, dev_name, h->opencl.b_device_AMD_SI ? "(SI)" : "" );
 
-    program = x264_opencl_cache_load( h, devname, devvendor, driverversion );
+    program = x264_opencl_cache_load( h, dev_name, dev_vendor, driver_version );
     if( !program )
     {
         /* clCreateProgramWithSource() requires a pointer variable, you cannot just use &x264_opencl_source */
@@ -272,7 +272,7 @@ static cl_program x264_opencl_compile( x264_t *h )
     status = ocl->clBuildProgram( program, 1, &h->opencl.device, buildopts, NULL, NULL );
     if( status == CL_SUCCESS )
     {
-        x264_opencl_cache_save( h, program, devname, devvendor, driverversion );
+        x264_opencl_cache_save( h, program, dev_name, dev_vendor, driver_version );
         return program;
     }
 
@@ -388,7 +388,7 @@ fail:
     return -1;
 }
 
-static void x264_opencl_error_notify( const char *errinfo, const void *private_info, size_t cb, void *user_data )
+static void CL_CALLBACK x264_opencl_error_notify( const char *errinfo, const void *private_info, size_t cb, void *user_data )
 {
     /* Any error notification can be assumed to be fatal to the OpenCL context.
      * We need to stop using it immediately to prevent further damage. */
@@ -493,13 +493,13 @@ int x264_opencl_lookahead_init( x264_t *h )
             x264_free( imageType );
             if( !b_has_r || !b_has_rgba )
             {
-                char devname[64];
-                status = ocl->clGetDeviceInfo( h->opencl.device, CL_DEVICE_NAME, sizeof(devname), devname, NULL );
+                char dev_name[64];
+                status = ocl->clGetDeviceInfo( h->opencl.device, CL_DEVICE_NAME, sizeof(dev_name), dev_name, NULL );
                 if( status == CL_SUCCESS )
                 {
                     /* emit warning if we are discarding the user's explicit choice */
                     int level = h->param.opencl_device_id ? X264_LOG_WARNING : X264_LOG_DEBUG;
-                    x264_log( h, level, "OpenCL: %s does not support required image formats\n", devname);
+                    x264_log( h, level, "OpenCL: %s does not support required image formats\n", dev_name);
                 }
                 ocl->clReleaseContext( context );
                 continue;
