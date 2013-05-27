@@ -165,14 +165,12 @@ cextern pb_unpackbd1
 ;-----------------------------------------------------------------------------
 ; void deblock_v_luma( uint16_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
 ;-----------------------------------------------------------------------------
-cglobal deblock_v_luma, 5,5,8
-    %assign pad 5*mmsize+12-(stack_offset&15)
+cglobal deblock_v_luma, 5,5,8,0-5*mmsize
     %define tcm [rsp]
     %define ms1 [rsp+mmsize]
     %define ms2 [rsp+mmsize*2]
     %define am  [rsp+mmsize*3]
     %define bm  [rsp+mmsize*4]
-    SUB        rsp, pad
     add         r1, r1
     LOAD_AB     m4, m5, r2d, r3d
     mov         r3, 32/mmsize
@@ -216,11 +214,9 @@ cglobal deblock_v_luma, 5,5,8
     add         r4, mmsize/8
     dec         r3
     jg .loop
-    ADD         rsp, pad
     RET
 
-cglobal deblock_h_luma, 5,6,8
-    %assign pad 7*mmsize+12-(stack_offset&15)
+cglobal deblock_h_luma, 5,6,8,0-7*mmsize
     %define tcm [rsp]
     %define ms1 [rsp+mmsize]
     %define ms2 [rsp+mmsize*2]
@@ -228,7 +224,6 @@ cglobal deblock_h_luma, 5,6,8
     %define p2m [rsp+mmsize*4]
     %define am  [rsp+mmsize*5]
     %define bm  [rsp+mmsize*6]
-    SUB        rsp, pad
     add         r1, r1
     LOAD_AB     m4, m5, r2d, r3d
     mov         r3, r1
@@ -305,7 +300,6 @@ cglobal deblock_h_luma, 5,6,8
     lea         r2, [r2+r1*(mmsize/2)]
     dec         r5
     jg .loop
-    ADD        rsp, pad
     RET
 %endmacro
 
@@ -488,7 +482,6 @@ DEBLOCK_LUMA_64
 %endmacro
 
 %macro LUMA_INTRA_INIT 1
-    %xdefine pad %1*mmsize+((gprsize*3) % mmsize)-(stack_offset&15)
     %define t0 m4
     %define t1 m5
     %define t2 m6
@@ -498,7 +491,6 @@ DEBLOCK_LUMA_64
     CAT_XDEFINE t, i, [rsp+mmsize*(i-4)]
     %assign i i+1
 %endrep
-    SUB    rsp, pad
     add     r1, r1
 %endmacro
 
@@ -727,7 +719,7 @@ DEBLOCK_LUMA_INTRA_64
 ;-----------------------------------------------------------------------------
 ; void deblock_v_luma_intra( uint16_t *pix, intptr_t stride, int alpha, int beta )
 ;-----------------------------------------------------------------------------
-cglobal deblock_v_luma_intra, 4,7,8
+cglobal deblock_v_luma_intra, 4,7,8,0-3*mmsize
     LUMA_INTRA_INIT 3
     lea     r4, [r1*4]
     lea     r5, [r1*3]
@@ -747,13 +739,12 @@ cglobal deblock_v_luma_intra, 4,7,8
     add     r4, mmsize
     dec     r6
     jg .loop
-    ADD    rsp, pad
     RET
 
 ;-----------------------------------------------------------------------------
 ; void deblock_h_luma_intra( uint16_t *pix, intptr_t stride, int alpha, int beta )
 ;-----------------------------------------------------------------------------
-cglobal deblock_h_luma_intra, 4,7,8
+cglobal deblock_h_luma_intra, 4,7,8,0-8*mmsize
     LUMA_INTRA_INIT 8
 %if mmsize == 8
     lea     r4, [r1*3]
@@ -788,7 +779,6 @@ cglobal deblock_h_luma_intra, 4,7,8
     dec     r6
 %endif
     jg .loop
-    ADD    rsp, pad
     RET
 %endmacro
 
