@@ -1079,6 +1079,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
     BOOLIFY( b_fake_interlaced );
     BOOLIFY( b_open_gop );
     BOOLIFY( b_bluray_compat );
+    BOOLIFY( b_stitchable );
     BOOLIFY( b_full_recon );
     BOOLIFY( b_opencl );
     BOOLIFY( analyse.b_transform_8x8 );

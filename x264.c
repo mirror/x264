@@ -790,6 +790,8 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --frames <integer>      Maximum number of frames to encode\n" );
     H0( "      --level <string>        Specify level (as defined by Annex A)\n" );
     H1( "      --bluray-compat         Enable compatibility hacks for Blu-ray support\n" );
+    H1( "      --stitchable            Don't optimize headers based on video content\n"
+        "                              Ensures ability to recombine a segmented encode\n" );
     H1( "\n" );
     H1( "  -v, --verbose               Print stats for each frame\n" );
     H1( "      --no-progress           Don't show the progress indicator while encoding\n" );
@@ -1036,6 +1038,7 @@ static struct option long_options[] =
     { "dts-compress",      no_argument, NULL, OPT_DTS_COMPRESSION },
     { "output-csp",  required_argument, NULL, OPT_OUTPUT_CSP },
     { "input-range", required_argument, NULL, OPT_INPUT_RANGE },
+    { "stitchable",        no_argument, NULL, 0 },
     {0, 0, 0, 0}
 };
 

@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 133
+#define X264_BUILD 134
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -473,6 +473,11 @@ typedef struct x264_param_t
      */
 
     int b_fake_interlaced;
+
+    /* Don't optimize header parameters based on video content, e.g. ensure that splitting an input video, compressing
+     * each part, and stitching them back together will result in identical SPS/PPS. This is necessary for stitching
+     * with container formats that don't allow multiple SPS/PPS. */
+    int b_stitchable;
 
     int b_opencl;            /* use OpenCL when available */
     int i_opencl_device;     /* specify count of GPU devices to skip, for CLI users */
