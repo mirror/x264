@@ -696,7 +696,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
                  h->param.rc.i_rc_method == X264_RC_ABR )
         {
             x264_log( h, X264_LOG_WARNING, "max bitrate less than average bitrate, assuming CBR\n" );
-            h->param.rc.i_vbv_max_bitrate = h->param.rc.i_bitrate;
+            h->param.rc.i_bitrate = h->param.rc.i_vbv_max_bitrate;
         }
     }
     else if( h->param.rc.i_vbv_max_bitrate )
