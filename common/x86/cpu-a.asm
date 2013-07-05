@@ -146,17 +146,6 @@ cglobal cpu_sfence
     sfence
     ret
 
-;-----------------------------------------------------------------------------
-; void cpu_mask_misalign_sse( void )
-;-----------------------------------------------------------------------------
-cglobal cpu_mask_misalign_sse
-    sub   rsp, 4
-    stmxcsr [rsp]
-    or dword [rsp], 1<<17
-    ldmxcsr [rsp]
-    add   rsp, 4
-    ret
-
 cextern intel_cpu_indicator_init
 
 ;-----------------------------------------------------------------------------

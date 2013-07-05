@@ -1119,12 +1119,6 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
                pixf->sad_x4[PIXEL_8x16] = x264_pixel_sad_x4_8x16_cache64_sse2;
            }
         }
-
-        if( cpu&X264_CPU_SSE_MISALIGN )
-        {
-            INIT2( sad_x3, _sse2_misalign );
-            INIT2( sad_x4, _sse2_misalign );
-        }
     }
 
     if( cpu&X264_CPU_SSE2_IS_FAST && !(cpu&X264_CPU_CACHELINE_64) )
@@ -1237,6 +1231,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     if( cpu&X264_CPU_AVX )
     {
         INIT2_NAME( sad_aligned, sad, _sse2 ); /* AVX-capable CPUs doesn't benefit from an aligned version */
+        INIT2( sad_x3, _avx );
+        INIT2( sad_x4, _avx );
         INIT8( satd, _avx );
         INIT7( satd_x3, _avx );
         INIT7( satd_x4, _avx );

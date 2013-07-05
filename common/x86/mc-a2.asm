@@ -482,7 +482,7 @@ cglobal hpel_filter_c, 3,3,9
     %define pw_rnd [pw_32]
 %endif
 ; This doesn't seem to be faster (with AVX) on Sandy Bridge or Bulldozer...
-%if cpuflag(misalign) || mmsize==32
+%if mmsize==32
 .loop:
     movu    m4, [src-4]
     movu    m5, [src-2]
@@ -630,8 +630,6 @@ INIT_MMX mmx2
 HPEL_V 0
 INIT_XMM sse2
 HPEL_V 8
-INIT_XMM sse2, misalign
-HPEL_C
 %if ARCH_X86_64 == 0
 INIT_XMM sse2
 HPEL_C

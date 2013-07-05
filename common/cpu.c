@@ -74,7 +74,6 @@ const x264_cpu_name_t x264_cpu_names[] =
 #undef MMX2
     {"Cache32",         X264_CPU_CACHELINE_32},
     {"Cache64",         X264_CPU_CACHELINE_64},
-    {"SSEMisalign",     X264_CPU_SSE_MISALIGN},
     {"LZCNT",           X264_CPU_LZCNT},
     {"BMI1",            X264_CPU_BMI1},
     {"BMI2",            X264_CPU_BMI1|X264_CPU_BMI2},
@@ -208,12 +207,6 @@ uint32_t x264_cpu_detect( void )
                                                 * compared to alternate instruction sequences that this
                                                 * is equal or faster on almost all such functions. */
             }
-        }
-
-        if( ecx&0x00000080 ) /* Misalign SSE */
-        {
-            cpu |= X264_CPU_SSE_MISALIGN;
-            x264_cpu_mask_misalign_sse();
         }
 
         if( cpu & X264_CPU_AVX )

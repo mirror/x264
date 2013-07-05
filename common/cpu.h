@@ -45,7 +45,6 @@ void     x264_cpu_sfence( void );
 #define x264_emms()
 #endif
 #define x264_sfence x264_cpu_sfence
-void     x264_cpu_mask_misalign_sse( void );
 void     x264_safe_intel_cpu_indicator_init( void );
 
 /* kludge:

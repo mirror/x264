@@ -89,16 +89,11 @@ static void x264_lookahead_slicetype_decide( x264_t *h )
 
 static void *x264_lookahead_thread( x264_t *h )
 {
-    int shift;
-#if HAVE_MMX
-    if( h->param.cpu&X264_CPU_SSE_MISALIGN )
-        x264_cpu_mask_misalign_sse();
-#endif
     while( !h->lookahead->b_exit_thread )
     {
         x264_pthread_mutex_lock( &h->lookahead->ifbuf.mutex );
         x264_pthread_mutex_lock( &h->lookahead->next.mutex );
-        shift = X264_MIN( h->lookahead->next.i_max_size - h->lookahead->next.i_size, h->lookahead->ifbuf.i_size );
+        int shift = X264_MIN( h->lookahead->next.i_max_size - h->lookahead->next.i_size, h->lookahead->ifbuf.i_size );
         x264_lookahead_shift( &h->lookahead->next, &h->lookahead->ifbuf, shift );
         x264_pthread_mutex_unlock( &h->lookahead->next.mutex );
         if( h->lookahead->next.i_size <= h->lookahead->i_slicetype_length + h->param.b_vfr_input )

@@ -158,7 +158,6 @@ void x264_mc_chroma_##cpu( pixel *dstu, pixel *dstv, intptr_t i_dst, pixel *src,
                            int dx, int dy, int i_width, int i_height );
 MC_CHROMA(mmx2)
 MC_CHROMA(sse2)
-MC_CHROMA(sse2_misalign)
 MC_CHROMA(ssse3)
 MC_CHROMA(ssse3_cache64)
 MC_CHROMA(avx)
@@ -186,7 +185,6 @@ PIXEL_AVG_WALL(cache32_mmx2)
 PIXEL_AVG_WALL(cache64_mmx2)
 PIXEL_AVG_WALL(cache64_sse2)
 PIXEL_AVG_WALL(sse2)
-PIXEL_AVG_WALL(sse2_misalign)
 PIXEL_AVG_WALL(cache64_ssse3)
 PIXEL_AVG_WALL(avx2)
 
@@ -227,7 +225,6 @@ PIXEL_AVG_WTAB(cache32_mmx2, mmx2, cache32_mmx2, cache32_mmx2, cache32_mmx2, cac
 PIXEL_AVG_WTAB(cache64_mmx2, mmx2, cache64_mmx2, cache64_mmx2, cache64_mmx2, cache64_mmx2)
 #endif
 PIXEL_AVG_WTAB(sse2, mmx2, mmx2, sse2, sse2, sse2)
-PIXEL_AVG_WTAB(sse2_misalign, mmx2, mmx2, sse2, sse2, sse2_misalign)
 PIXEL_AVG_WTAB(cache64_sse2, mmx2, cache64_mmx2, cache64_sse2, cache64_sse2, cache64_sse2)
 PIXEL_AVG_WTAB(cache64_ssse3, mmx2, cache64_mmx2, cache64_ssse3, cache64_ssse3, cache64_sse2)
 PIXEL_AVG_WTAB(cache64_ssse3_atom, mmx2, mmx2, cache64_ssse3, cache64_ssse3, sse2)
@@ -429,7 +426,6 @@ GET_REF(avx2)
 GET_REF(cache32_mmx2)
 GET_REF(cache64_mmx2)
 #endif
-GET_REF(sse2_misalign)
 GET_REF(cache64_sse2)
 GET_REF(cache64_ssse3)
 GET_REF(cache64_ssse3_atom)
@@ -477,7 +473,6 @@ HPEL(16, ssse3, ssse3, ssse3, ssse3)
 HPEL(16, avx, avx, avx, avx)
 HPEL(32, avx2, avx2, avx2, avx2)
 #endif
-HPEL(16, sse2_misalign, sse2, sse2_misalign, sse2)
 #endif // HIGH_BIT_DEPTH
 
 static void x264_plane_copy_mmx2( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )
@@ -696,8 +691,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->avg[PIXEL_8x8]  = x264_pixel_avg_8x8_sse2;
         pf->avg[PIXEL_8x4]  = x264_pixel_avg_8x4_sse2;
         pf->hpel_filter = x264_hpel_filter_sse2;
-        if( cpu&X264_CPU_SSE_MISALIGN )
-            pf->hpel_filter = x264_hpel_filter_sse2_misalign;
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_sse2;
         if( !(cpu&X264_CPU_STACK_MOD4) )
             pf->mc_chroma = x264_mc_chroma_sse2;
@@ -715,12 +708,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
             {
                 pf->mc_luma = mc_luma_cache64_sse2;
                 pf->get_ref = get_ref_cache64_sse2;
-            }
-            if( cpu&X264_CPU_SSE_MISALIGN )
-            {
-                pf->get_ref = get_ref_sse2_misalign;
-                if( !(cpu&X264_CPU_STACK_MOD4) )
-                    pf->mc_chroma = x264_mc_chroma_sse2_misalign;
             }
         }
     }

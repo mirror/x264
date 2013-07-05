@@ -191,7 +191,6 @@ static void print_bench(void)
                     b->cpu&X264_CPU_SLOW_ATOM && b->cpu&X264_CPU_CACHELINE_64 ? "_c64_atom" :
                     b->cpu&X264_CPU_CACHELINE_64 ? "_c64" :
                     b->cpu&X264_CPU_SLOW_SHUFFLE ? "_slowshuffle" :
-                    b->cpu&X264_CPU_SSE_MISALIGN ? "_misalign" :
                     b->cpu&X264_CPU_LZCNT ? "_lzcnt" :
                     b->cpu&X264_CPU_BMI2 ? "_bmi2" :
                     b->cpu&X264_CPU_BMI1 ? "_bmi1" :
@@ -2548,11 +2547,6 @@ static int check_all_flags( void )
         cpu1 &= ~X264_CPU_SLOW_SHUFFLE;
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_CTZ, "SSE2 SlowCTZ" );
         cpu1 &= ~X264_CPU_SLOW_CTZ;
-    }
-    if( x264_cpu_detect() & X264_CPU_SSE_MISALIGN )
-    {
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE_MISALIGN, "SSE_Misalign" );
-        cpu1 &= ~X264_CPU_SSE_MISALIGN;
     }
     if( x264_cpu_detect() & X264_CPU_LZCNT )
     {

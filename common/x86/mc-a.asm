@@ -1029,59 +1029,48 @@ cglobal pixel_avg2_w20_mmx2, 6,7
     jg     .height_loop
     RET
 
+INIT_XMM
 cglobal pixel_avg2_w16_sse2, 6,7
     sub    r4, r2
     lea    r6, [r4+r3]
 .height_loop:
-    movdqu xmm0, [r2]
-    movdqu xmm2, [r2+r3]
-    movdqu xmm1, [r2+r4]
-    movdqu xmm3, [r2+r6]
+    movu   m0, [r2]
+    movu   m2, [r2+r3]
+    movu   m1, [r2+r4]
+    movu   m3, [r2+r6]
     lea    r2, [r2+r3*2]
-    pavgb  xmm0, xmm1
-    pavgb  xmm2, xmm3
-    movdqa [r0], xmm0
-    movdqa [r0+r1], xmm2
+    pavgb  m0, m1
+    pavgb  m2, m3
+    mova [r0], m0
+    mova [r0+r1], m2
     lea    r0, [r0+r1*2]
-    sub    r5d, 2
-    jg     .height_loop
+    sub   r5d, 2
+    jg .height_loop
     RET
 
-%macro AVG2_W20 1
-cglobal pixel_avg2_w20_%1, 6,7
+cglobal pixel_avg2_w20_sse2, 6,7
     sub    r2, r4
     lea    r6, [r2+r3]
 .height_loop:
-    movdqu xmm0, [r4]
-    movdqu xmm2, [r4+r3]
-%ifidn %1, sse2_misalign
-    movd   mm4,  [r4+16]
-    movd   mm5,  [r4+r3+16]
-    pavgb  xmm0, [r4+r2]
-    pavgb  xmm2, [r4+r6]
-%else
-    movdqu xmm1, [r4+r2]
-    movdqu xmm3, [r4+r6]
-    movd   mm4,  [r4+16]
-    movd   mm5,  [r4+r3+16]
-    pavgb  xmm0, xmm1
-    pavgb  xmm2, xmm3
-%endif
-    pavgb  mm4,  [r4+r2+16]
-    pavgb  mm5,  [r4+r6+16]
+    movu   m0, [r4]
+    movu   m2, [r4+r3]
+    movu   m1, [r4+r2]
+    movu   m3, [r4+r6]
+    movd  mm4, [r4+16]
+    movd  mm5, [r4+r3+16]
+    pavgb  m0, m1
+    pavgb  m2, m3
+    pavgb mm4, [r4+r2+16]
+    pavgb mm5, [r4+r6+16]
     lea    r4, [r4+r3*2]
-    movdqa [r0], xmm0
-    movd   [r0+16], mm4
-    movdqa [r0+r1], xmm2
-    movd   [r0+r1+16], mm5
+    mova [r0], m0
+    mova [r0+r1], m2
+    movd [r0+16], mm4
+    movd [r0+r1+16], mm5
     lea    r0, [r0+r1*2]
-    sub    r5d, 2
-    jg     .height_loop
+    sub   r5d, 2
+    jg .height_loop
     RET
-%endmacro
-
-AVG2_W20 sse2
-AVG2_W20 sse2_misalign
 
 INIT_YMM avx2
 cglobal pixel_avg2_w20, 6,7
@@ -1524,7 +1513,7 @@ cglobal prefetch_ref, 3,3
 %endmacro
 %else ; !HIGH_BIT_DEPTH
 %macro UNPACK_UNALIGNED 3
-%if mmsize == 8 || cpuflag(misalign)
+%if mmsize == 8
     punpcklwd  %1, %3
 %else
     movh       %2, %3
@@ -2129,8 +2118,6 @@ INIT_XMM avx
 MC_CHROMA
 %else ; !HIGH_BIT_DEPTH
 INIT_MMX mmx2
-MC_CHROMA
-INIT_XMM sse2, misalign
 MC_CHROMA
 INIT_XMM sse2
 MC_CHROMA

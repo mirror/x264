@@ -403,21 +403,6 @@ static void x264_encoder_thread_init( x264_t *h )
 {
     if( h->param.i_sync_lookahead )
         x264_lower_thread_priority( 10 );
-
-#if HAVE_MMX
-    /* Misalign mask has to be set separately for each thread. */
-    if( h->param.cpu&X264_CPU_SSE_MISALIGN )
-        x264_cpu_mask_misalign_sse();
-#endif
-}
-
-static void x264_lookahead_thread_init( x264_t *h )
-{
-#if HAVE_MMX
-    /* Misalign mask has to be set separately for each thread. */
-    if( h->param.cpu&X264_CPU_SSE_MISALIGN )
-        x264_cpu_mask_misalign_sse();
-#endif
 }
 #endif
 
@@ -1400,7 +1385,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
         x264_threadpool_init( &h->threadpool, h->param.i_threads, (void*)x264_encoder_thread_init, h ) )
         goto fail;
     if( h->param.i_lookahead_threads > 1 &&
-        x264_threadpool_init( &h->lookaheadpool, h->param.i_lookahead_threads, (void*)x264_lookahead_thread_init, h ) )
+        x264_threadpool_init( &h->lookaheadpool, h->param.i_lookahead_threads, NULL, NULL ) )
         goto fail;
 
 #if HAVE_OPENCL
@@ -2949,10 +2934,6 @@ int     x264_encoder_encode( x264_t *h,
         thread_current =
         thread_oldest  = h;
     }
-#if HAVE_MMX
-    if( h->param.cpu&X264_CPU_SSE_MISALIGN )
-        x264_cpu_mask_misalign_sse();
-#endif
     h->i_cpb_delay_pir_offset = h->i_cpb_delay_pir_offset_next;
 
     /* no data out */
