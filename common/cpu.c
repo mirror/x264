@@ -122,7 +122,7 @@ uint32_t x264_cpu_detect( void )
     uint32_t cpu = 0;
     uint32_t eax, ebx, ecx, edx;
     uint32_t vendor[4] = {0};
-    uint32_t max_extended_cap;
+    uint32_t max_extended_cap, max_basic_cap;
     int cache;
 
 #if !ARCH_X86_64
@@ -131,7 +131,8 @@ uint32_t x264_cpu_detect( void )
 #endif
 
     x264_cpu_cpuid( 0, &eax, vendor+0, vendor+2, vendor+1 );
-    if( eax == 0 )
+    max_basic_cap = eax;
+    if( max_basic_cap == 0 )
         return 0;
 
     x264_cpu_cpuid( 1, &eax, &ebx, &ecx, &edx );
@@ -168,15 +169,18 @@ uint32_t x264_cpu_detect( void )
         }
     }
 
-    x264_cpu_cpuid( 7, &eax, &ebx, &ecx, &edx );
-    /* AVX2 requires OS support, but BMI1/2 don't. */
-    if( (cpu&X264_CPU_AVX) && (ebx&0x00000020) )
-        cpu |= X264_CPU_AVX2;
-    if( ebx&0x00000008 )
+    if( max_basic_cap >= 7 )
     {
-        cpu |= X264_CPU_BMI1;
-        if( ebx&0x00000100 )
-            cpu |= X264_CPU_BMI2;
+        x264_cpu_cpuid( 7, &eax, &ebx, &ecx, &edx );
+        /* AVX2 requires OS support, but BMI1/2 don't. */
+        if( (cpu&X264_CPU_AVX) && (ebx&0x00000020) )
+            cpu |= X264_CPU_AVX2;
+        if( ebx&0x00000008 )
+        {
+            cpu |= X264_CPU_BMI1;
+            if( ebx&0x00000100 )
+                cpu |= X264_CPU_BMI2;
+        }
     }
 
     if( cpu & X264_CPU_SSSE3 )
@@ -267,7 +271,7 @@ uint32_t x264_cpu_detect( void )
             x264_cpu_cpuid( 0x80000006, &eax, &ebx, &ecx, &edx );
             cache = ecx&0xff; // cacheline size
         }
-        if( !cache )
+        if( !cache && max_basic_cap >= 2 )
         {
             // Cache and TLB Information
             static const char cache32_ids[] = { 0x0a, 0x0c, 0x41, 0x42, 0x43, 0x44, 0x45, 0x82, 0x83, 0x84, 0x85, 0 };
