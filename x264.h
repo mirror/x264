@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 136
+#define X264_BUILD 137
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -98,12 +98,15 @@ typedef struct
     int i_first_mb; /* If this NAL is a slice, the index of the first MB in the slice. */
     int i_last_mb;  /* If this NAL is a slice, the index of the last MB in the slice. */
 
-    /* Size of payload in bytes. */
+    /* Size of payload (including any padding) in bytes. */
     int     i_payload;
     /* If param->b_annexb is set, Annex-B bytestream with startcode.
      * Otherwise, startcode is replaced with a 4-byte size.
      * This size is the size used in mp4/similar muxing; it is equal to i_payload-4 */
     uint8_t *p_payload;
+
+    /* Size of padding in bytes. */
+    int i_padding;
 } x264_nal_t;
 
 /****************************************************************************
@@ -318,6 +321,7 @@ typedef struct x264_param_t
     int         i_bframe_pyramid;   /* Keep some B-frames as references: 0=off, 1=strict hierarchical, 2=normal */
     int         b_open_gop;
     int         b_bluray_compat;
+    int         b_avcintra_compat;
 
     int         b_deblocking_filter;
     int         i_deblocking_filter_alphac0;    /* [-6, 6] -6 light filter, 6 strong */

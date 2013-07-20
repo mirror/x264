@@ -792,6 +792,7 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --frames <integer>      Maximum number of frames to encode\n" );
     H0( "      --level <string>        Specify level (as defined by Annex A)\n" );
     H1( "      --bluray-compat         Enable compatibility hacks for Blu-ray support\n" );
+    H1( "      --avcintra-compat       Enable compatibility hacks for AVC-Intra support\n" );
     H1( "      --stitchable            Don't optimize headers based on video content\n"
         "                              Ensures ability to recombine a segmented encode\n" );
     H1( "\n" );
@@ -815,7 +816,7 @@ static void help( x264_param_t *defaults, int longhelp )
     H2( "      --no-asm                Disable all CPU optimizations\n" );
     H2( "      --opencl                Enable use of OpenCL\n" );
     H2( "      --opencl-clbin <string> Specify path of compiled OpenCL kernel cache\n" );
-    H2( "      --opencl-device <integer>  Specify OpenCL device ordinal\n" );
+    H2( "      --opencl-device <integer> Specify OpenCL device ordinal\n" );
     H2( "      --visualize             Show MB types overlayed on the encoded video\n" );
     H2( "      --dump-yuv <string>     Save reconstructed frames\n" );
     H2( "      --sps-id <integer>      Set SPS and PPS id numbers [%d]\n", defaults->i_sps_id );
@@ -895,6 +896,7 @@ static struct option long_options[] =
     { "b-pyramid",   required_argument, NULL, 0 },
     { "open-gop",          no_argument, NULL, 0 },
     { "bluray-compat",     no_argument, NULL, 0 },
+    { "avcintra-compat",   no_argument, NULL, 0 },
     { "min-keyint",  required_argument, NULL, 'i' },
     { "keyint",      required_argument, NULL, 'I' },
     { "intra-refresh",     no_argument, NULL, 0 },
