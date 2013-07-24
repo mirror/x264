@@ -503,7 +503,7 @@ case $host_os in
             CFLAGS="$CFLAGS -mno-cygwin"
             LDFLAGS="$LDFLAGS -mno-cygwin"
         fi
-        if cpp_check "" "" "defined(__CYGWIN32__)" ; then
+        if cpp_check "" "" "defined(__CYGWIN__)" ; then
             define HAVE_MALLOC_H
             SYS="CYGWIN"
         else
@@ -595,7 +595,7 @@ case $host_cpu in
                 CFLAGS="$CFLAGS -arch x86_64"
                 LDFLAGS="$LDFLAGS -arch x86_64"
             fi
-        elif [ "$SYS" = WINDOWS ]; then
+        elif [ "$SYS" = WINDOWS -o "$SYS" = CYGWIN ]; then
             ASFLAGS="$ASFLAGS -f win32 -m amd64"
             # only the GNU toolchain is inconsistent in prefixing function names with _
             [ $compiler = GNU ] && cc_check "" "-S" && grep -q "_main:" conftest && ASFLAGS="$ASFLAGS -DPREFIX"
