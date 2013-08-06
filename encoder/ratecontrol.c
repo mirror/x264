@@ -2719,7 +2719,7 @@ static int find_underflow( x264_t *h, double *fills, int *t0, int *t1, int over 
      * we're adding or removing bits), and starting on the earliest frame that
      * can influence the buffer fill of that end frame. */
     x264_ratecontrol_t *rcc = h->rc;
-    const double buffer_min = (over ? .1 : .1) * rcc->buffer_size;
+    const double buffer_min = .1 * rcc->buffer_size;
     const double buffer_max = .9 * rcc->buffer_size;
     double fill = fills[*t0-1];
     double parity = over ? 1. : -1.;
