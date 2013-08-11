@@ -26,7 +26,6 @@
 #ifndef X264_WIN32THREAD_H
 #define X264_WIN32THREAD_H
 
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 /* the following macro is used within x264 */
 #undef ERROR

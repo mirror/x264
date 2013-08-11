@@ -1104,7 +1104,7 @@ static void x264_log_default( void *p_unused, int i_level, const char *psz_fmt, 
             break;
     }
     fprintf( stderr, "x264 [%s]: ", psz_prefix );
-    vfprintf( stderr, psz_fmt, arg );
+    x264_vfprintf( stderr, psz_fmt, arg );
 }
 
 /****************************************************************************
@@ -1269,7 +1269,7 @@ char *x264_slurp_file( const char *filename )
     int b_error = 0;
     size_t i_size;
     char *buf;
-    FILE *fh = fopen( filename, "rb" );
+    FILE *fh = x264_fopen( filename, "rb" );
     if( !fh )
         return NULL;
     b_error |= fseek( fh, 0, SEEK_END ) < 0;

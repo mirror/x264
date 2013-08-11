@@ -82,7 +82,7 @@ static int x264_threadpool_wait_all( x264_t *h )
 
 static void x264_frame_dump( x264_t *h )
 {
-    FILE *f = fopen( h->param.psz_dump_yuv, "r+b" );
+    FILE *f = x264_fopen( h->param.psz_dump_yuv, "r+b" );
     if( !f )
         return;
 
@@ -1623,7 +1623,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     if( h->param.psz_dump_yuv )
     {
         /* create or truncate the reconstructed video file */
-        FILE *f = fopen( h->param.psz_dump_yuv, "w" );
+        FILE *f = x264_fopen( h->param.psz_dump_yuv, "w" );
         if( !f )
         {
             x264_log( h, X264_LOG_ERROR, "dump_yuv: can't write to %s\n", h->param.psz_dump_yuv );

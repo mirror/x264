@@ -510,6 +510,7 @@ case $host_os in
         else
             SYS="WINDOWS"
             DEVNULL="NUL"
+            LDFLAGSCLI="$LDFLAGSCLI -lshell32"
             RC="${RC-${cross_prefix}windres}"
         fi
         ;;
@@ -517,6 +518,7 @@ case $host_os in
         SYS="WINDOWS"
         EXE=".exe"
         DEVNULL="NUL"
+        LDFLAGSCLI="$LDFLAGSCLI -lshell32"
         [ $compiler = ICL ] && RC="${RC-rc}" || RC="${RC-${cross_prefix}windres}"
         ;;
     sunos*|solaris*)
@@ -945,7 +947,7 @@ fi
 if [ "$avs" = "auto" ] ; then
     avs="no"
     # cygwin can use avisynth if it can use LoadLibrary
-    if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibrary(0);") ; then
+    if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibraryW(0);") ; then
         avs="avisynth"
         define HAVE_AVS
         define USE_AVXSYNTH 0
@@ -1043,7 +1045,7 @@ if [ "$opencl" = "yes" ]; then
     fi
     log_ok
     # cygwin can use opencl if it can use LoadLibrary
-    if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibrary(0);") ; then
+    if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibraryW(0);") ; then
         opencl="yes"
         define HAVE_OPENCL
     elif [ "$SYS" = "LINUX" -o "$SYS" = "MACOSX" ] ; then
