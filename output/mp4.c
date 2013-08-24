@@ -27,6 +27,10 @@
 #include "output.h"
 #include <gpac/isomedia.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #if HAVE_GF_MALLOC
 #undef malloc
 #undef free
