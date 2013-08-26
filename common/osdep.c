@@ -192,7 +192,8 @@ int x264_vfprintf( FILE *stream, const char *format, va_list arg )
         {
             /* WriteConsoleW is the most reliable way to output Unicode to a console. */
             int length_utf16 = MultiByteToWideChar( CP_UTF8, 0, buf, length, buf_utf16, sizeof(buf_utf16)/sizeof(wchar_t) );
-            WriteConsoleW( console, buf_utf16, length_utf16, NULL, NULL );
+            DWORD written;
+            WriteConsoleW( console, buf_utf16, length_utf16, &written, NULL );
             return length;
         }
     }
