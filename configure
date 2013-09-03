@@ -424,6 +424,7 @@ CC="${CC-${cross_prefix}gcc}"
 AR="${AR-${cross_prefix}ar}"
 RANLIB="${RANLIB-${cross_prefix}ranlib}"
 STRIP="${STRIP-${cross_prefix}strip}"
+INSTALL="${INSTALL-install}"
 
 if [ "x$host" = x ]; then
     host=`${SRCPATH}/config.guess`
@@ -529,6 +530,15 @@ case $host_os in
             LDFLAGS="$LDFLAGS /usr/lib/64/values-xpg6.o"
         else
             LDFLAGS="$LDFLAGS /usr/lib/values-xpg6.o"
+        fi
+        if test -x /usr/ucb/install ; then
+            INSTALL=/usr/ucb/install
+        elif test -x /usr/bin/ginstall ; then
+            # OpenSolaris
+            INSTALL=/usr/bin/ginstall
+        elif test -x /usr/gnu/bin/install ; then
+            # OpenSolaris
+            INSTALL=/usr/gnu/bin/install
         fi
         HAVE_GETOPT_LONG=0
         ;;
@@ -1136,6 +1146,7 @@ LIBX264=$LIBX264
 AR=$AR
 RANLIB=$RANLIB
 STRIP=$STRIP
+INSTALL=$INSTALL
 AS=$AS
 ASFLAGS=$ASFLAGS
 RC=$RC
