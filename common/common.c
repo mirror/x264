@@ -1036,6 +1036,8 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->b_vfr_input = !atobool(value);
     OPT("nal-hrd")
         b_error |= parse_enum( value, x264_nal_hrd_names, &p->i_nal_hrd );
+    OPT("filler")
+        p->rc.b_filler = atobool(value);
     OPT("pic-struct")
         p->b_pic_struct = atobool(value);
     OPT("fake-interlaced")
@@ -1406,7 +1408,7 @@ char *x264_param2string( x264_param_t *p, int b_res )
         s += sprintf( s, " qp=%d", p->rc.i_qp_constant );
 
     if( p->rc.i_vbv_buffer_size )
-        s += sprintf( s, " nal_hrd=%s", x264_nal_hrd_names[p->i_nal_hrd] );
+        s += sprintf( s, " nal_hrd=%s filler=%d", x264_nal_hrd_names[p->i_nal_hrd], p->rc.b_filler );
     if( p->crop_rect.i_left | p->crop_rect.i_top | p->crop_rect.i_right | p->crop_rect.i_bottom )
         s += sprintf( s, " crop_rect=%u,%u,%u,%u", p->crop_rect.i_left, p->crop_rect.i_top,
                                                    p->crop_rect.i_right, p->crop_rect.i_bottom );

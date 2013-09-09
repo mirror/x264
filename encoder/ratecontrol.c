@@ -699,8 +699,6 @@ void x264_ratecontrol_init_reconfigurable( x264_t *h, int b_init )
             x264_log( h, X264_LOG_WARNING, "VBV parameters cannot be changed when NAL HRD is in use\n" );
             return;
         }
-        if( h->param.b_avcintra_compat )
-            h->sps->vui.hrd.b_cbr_hrd = 1;
         h->sps->vui.hrd.i_bit_rate_unscaled = vbv_max_bitrate;
         h->sps->vui.hrd.i_cpb_size_unscaled = vbv_buffer_size;
 
@@ -2122,7 +2120,7 @@ static int update_vbv( x264_t *h, int bits )
     else
         rct->buffer_fill_final += (uint64_t)bitrate * h->sps->vui.i_num_units_in_tick * h->fenc->i_cpb_duration;
 
-    if( h->sps->vui.hrd.b_cbr_hrd && rct->buffer_fill_final > buffer_size )
+    if( h->param.rc.b_filler && rct->buffer_fill_final > buffer_size )
     {
         int64_t scale = (int64_t)h->sps->vui.i_time_scale * 8;
         filler = (rct->buffer_fill_final - buffer_size + scale - 1) / scale;

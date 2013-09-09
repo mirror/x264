@@ -734,6 +734,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.rc.i_bitrate = h->param.rc.i_vbv_buffer_size * fps_num / fps_den;
         h->param.rc.i_rc_method = X264_RC_ABR;
         h->param.rc.f_vbv_buffer_init = 1.0;
+        h->param.rc.b_filler = 1;
         h->param.i_cqm_preset = X264_CQM_CUSTOM;
         memcpy( h->param.cqm_4iy, x264_cqm_jvt4i, sizeof(h->param.cqm_4iy) );
         memcpy( h->param.cqm_4ic, avcintra_lut[type][res][i].cqm_4ic, sizeof(h->param.cqm_4ic) );
@@ -1208,6 +1209,9 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.i_nal_hrd = X264_NAL_HRD_VBR;
     }
 
+    if( h->param.i_nal_hrd == X264_NAL_HRD_CBR )
+        h->param.rc.b_filler = 1;
+
     /* ensure the booleans are 0 or 1 so they can be used in math */
 #define BOOLIFY(x) h->param.x = !!h->param.x
     BOOLIFY( b_cabac );
@@ -1244,6 +1248,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
     BOOLIFY( rc.b_stat_write );
     BOOLIFY( rc.b_stat_read );
     BOOLIFY( rc.b_mb_tree );
+    BOOLIFY( rc.b_filler );
 #undef BOOLIFY
 
     return 0;

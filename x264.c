@@ -853,6 +853,8 @@ static void help( x264_param_t *defaults, int longhelp )
 
     H2( "      --nal-hrd <string>      Signal HRD information (requires vbv-bufsize)\n"
         "                                  - none, vbr, cbr (cbr not allowed in .mp4)\n" );
+    H2( "      --filler                Force hard-CBR and generate filler (implied by\n"
+        "                              --nal-hrd cbr)\n" );
     H2( "      --pic-struct            Force pic_struct in Picture Timing SEI\n" );
     H2( "      --crop-rect <string>    Add 'left,top,right,bottom' to the bitstream-level\n"
         "                              cropping rectangle\n" );
@@ -1132,6 +1134,7 @@ static struct option long_options[] =
     { "output-csp",  required_argument, NULL, OPT_OUTPUT_CSP },
     { "input-range", required_argument, NULL, OPT_INPUT_RANGE },
     { "stitchable",        no_argument, NULL, 0 },
+    { "filler",            no_argument, NULL, 0 },
     {0, 0, 0, 0}
 };
 
