@@ -631,7 +631,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
             uint16_t frame_size;
             const uint8_t *cqm_4ic;
             const uint8_t *cqm_8iy;
-        } avcintra_lut[2][2][5] =
+        } avcintra_lut[2][2][7] =
         {
             {{{ 60000, 1001, 0,  912, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
               {    50,    1, 0, 1100, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
@@ -640,7 +640,9 @@ static int x264_validate_parameters( x264_t *h, int b_open )
               { 24000, 1001, 0,  912, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy }},
              {{ 30000, 1001, 1, 1820, x264_cqm_avci50_4ic, x264_cqm_avci50_1080i_8iy },
               {    25,    1, 1, 2196, x264_cqm_avci50_4ic, x264_cqm_avci50_1080i_8iy },
+              { 60000, 1001, 0, 1820, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
               { 30000, 1001, 0, 1820, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
+              {    50,    1, 0, 2196, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
               {    25,    1, 0, 2196, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
               { 24000, 1001, 0, 1820, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy }}},
             {{{ 60000, 1001, 0, 1848, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy },
@@ -650,7 +652,9 @@ static int x264_validate_parameters( x264_t *h, int b_open )
               { 24000, 1001, 0, 1848, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy }},
              {{ 30000, 1001, 1, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080i_8iy },
               {    25,    1, 1, 4444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080i_8iy },
+              { 60000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
               { 30000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
+              {    50,    1, 0, 4444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
               {    25,    1, 0, 4444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
               { 24000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy }}}
         };
@@ -695,7 +699,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         int i;
         uint32_t fps_num = h->param.i_fps_num, fps_den = h->param.i_fps_den;
         x264_reduce_fraction( &fps_num, &fps_den );
-        for( i = 0; i < 5; i++ )
+        for( i = 0; i < 7; i++ )
         {
             if( avcintra_lut[type][res][i].fps_num == fps_num &&
                 avcintra_lut[type][res][i].fps_den == fps_den &&
@@ -704,7 +708,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
                 break;
             }
         }
-        if( i == 5 )
+        if( i == 7 )
         {
             x264_log( h, X264_LOG_ERROR, "FPS %d/%d%c not compatible with AVC-Intra\n",
                       h->param.i_fps_num, h->param.i_fps_den, PARAM_INTERLACED ? 'i' : 'p' );
@@ -3574,24 +3578,20 @@ int     x264_encoder_encode( x264_t *h,
     if( h->param.b_avcintra_compat )
     {
         /* Write an empty filler NAL to mimic the AUD in the P2 format*/
-        if( h->param.b_avcintra_compat )
-        {
-            x264_nal_start( h, NAL_FILLER, NAL_PRIORITY_DISPOSABLE );
-            x264_filler_write( h, &h->out.bs, 0 );
-            if( x264_nal_end( h ) )
-                return -1;
-            overhead += h->out.nal[h->out.i_nal-1].i_payload + NALU_OVERHEAD;
-        }
+        x264_nal_start( h, NAL_FILLER, NAL_PRIORITY_DISPOSABLE );
+        x264_filler_write( h, &h->out.bs, 0 );
+        if( x264_nal_end( h ) )
+            return -1;
+        overhead += h->out.nal[h->out.i_nal-1].i_payload + NALU_OVERHEAD;
 
         /* All lengths are magic lengths that decoders expect to see */
         /* "UMID" SEI */
         x264_nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
-        if( x264_sei_avcintra_write( h, &h->out.bs, 497, "UMID" ) < 0 )
+        if( x264_sei_avcintra_umid_write( h, &h->out.bs ) < 0 )
             return -1;
         if( x264_nal_end( h ) )
             return -1;
         overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;
-
 
         int unpadded_len;
         int total_len;
@@ -3607,7 +3607,7 @@ int     x264_encoder_encode( x264_t *h,
         }
         /* "VANC" SEI */
         x264_nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
-        if( x264_sei_avcintra_write( h, &h->out.bs, unpadded_len, "VANC" ) < 0 )
+        if( x264_sei_avcintra_vanc_write( h, &h->out.bs, unpadded_len ) < 0 )
             return -1;
         if( x264_nal_end( h ) )
             return -1;

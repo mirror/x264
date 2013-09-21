@@ -31,6 +31,7 @@
 
 // Indexed by pic_struct values
 static const uint8_t num_clock_ts[10] = { 0, 1, 1, 1, 2, 2, 3, 3, 2, 3 };
+const static uint8_t avcintra_uuid[] = {0xF7, 0x49, 0x3E, 0xB3, 0xD4, 0x00, 0x47, 0x96, 0x86, 0x86, 0xC9, 0x70, 0x7B, 0x64, 0x37, 0x2A};
 
 static void transpose( uint8_t *buf, int w )
 {
@@ -725,10 +726,34 @@ void x264_sei_dec_ref_pic_marking_write( x264_t *h, bs_t *s )
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_DEC_REF_PIC_MARKING );
 }
 
-int x264_sei_avcintra_write( x264_t *h, bs_t *s, int len, const char *msg )
+int x264_sei_avcintra_umid_write( x264_t *h, bs_t *s )
 {
-    const static uint8_t avcintra_uuid[] = {0xF7, 0x49, 0x3E, 0xB3, 0xD4, 0x00, 0x47, 0x96, 0x86, 0x86, 0xC9, 0x70, 0x7B, 0x64, 0x37, 0x2A};
+    uint8_t data[512];
+    const char *msg = "UMID";
+    const int len = 497;
+
+    memset( data, 0xff, len );
+    memcpy( data, avcintra_uuid, sizeof(avcintra_uuid) );
+    memcpy( data+16, msg, strlen(msg) );
+
+    data[20] = 0x13;
+    /* These bytes appear to be some sort of frame/seconds counter in certain applications,
+     * but others jump around, so leave them as zero for now */
+    data[21] = data[22] = 0;
+
+    data[28] = 0x14;
+    data[36] = 0x60;
+    data[41] = 0x22; /* Believed to be some sort of end of basic UMID identifier */
+
+    x264_sei_write( &h->out.bs, data, len, SEI_USER_DATA_UNREGISTERED );
+
+    return 0;
+}
+
+int x264_sei_avcintra_vanc_write( x264_t *h, bs_t *s, int len )
+{
     uint8_t data[6000];
+    const char *msg = "VANC";
     if( len > sizeof(data) )
     {
         x264_log( h, X264_LOG_ERROR, "AVC-Intra SEI is too large (%d)\n", len );
