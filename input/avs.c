@@ -338,11 +338,11 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         info->csp = X264_CSP_I420;
 #if HAVE_SWSCALE
     else if( avs_is_yuy2( vi ) )
-        info->csp = PIX_FMT_YUYV422 | X264_CSP_OTHER;
+        info->csp = AV_PIX_FMT_YUYV422 | X264_CSP_OTHER;
     else if( avs_is_yv411( vi ) )
-        info->csp = PIX_FMT_YUV411P | X264_CSP_OTHER;
+        info->csp = AV_PIX_FMT_YUV411P | X264_CSP_OTHER;
     else if( avs_is_y8( vi ) )
-        info->csp = PIX_FMT_GRAY8 | X264_CSP_OTHER;
+        info->csp = AV_PIX_FMT_GRAY8 | X264_CSP_OTHER;
 #endif
     else
         info->csp = X264_CSP_NONE;
@@ -361,7 +361,7 @@ static int picture_alloc( cli_pic_t *pic, int csp, int width, int height )
     if( cli_csp )
         pic->img.planes = cli_csp->planes;
 #if HAVE_SWSCALE
-    else if( csp == (PIX_FMT_YUV411P | X264_CSP_OTHER) )
+    else if( csp == (AV_PIX_FMT_YUV411P | X264_CSP_OTHER) )
         pic->img.planes = 3;
     else
         pic->img.planes = 1; //y8 and yuy2 are one plane

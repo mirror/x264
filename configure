@@ -858,10 +858,10 @@ if [ "$swscale" = "auto" ] ; then
     [ -z "$SWSCALE_LIBS" ] && SWSCALE_LIBS="-lswscale -lavutil"
 
     if cc_check "libswscale/swscale.h" "$SWSCALE_CFLAGS $SWSCALE_LIBS" "sws_init_context(0,0,0);" ; then
-        if cpp_check "libavutil/pixdesc.h" "$SWSCALE_CFLAGS $SWSCALE_LIBS" "defined(PIX_FMT_RGB)" ; then
+        if cpp_check "libavutil/pixdesc.h" "$SWSCALE_CFLAGS $SWSCALE_LIBS" "defined(AV_PIX_FMT_FLAG_RGB)" ; then
             swscale="yes"
         else
-            echo "Warning: PIX_FMT_RGB is missing from libavutil, update for swscale support"
+            echo "Warning: AV_PIX_FMT_FLAG_RGB is missing from libavutil, update for swscale support"
         fi
     fi
 fi
@@ -874,7 +874,7 @@ if [ "$lavf" = "auto" ] ; then
     fi
     if [ -z "$LAVF_LIBS" -a -z "$LAVF_CFLAGS" ]; then
         LAVF_LIBS="-lavformat"
-        for lib in -lpostproc -lavcodec -lavcore -lswscale -lavutil -lm -lz -lbz2 $libpthread -lavifil32; do
+        for lib in -lpostproc -lavcodec -lavcore -lswscale -lavutil -lm -lz -lbz2 $libpthread -lavifil32 -lws2_32; do
             cc_check "" $lib && LAVF_LIBS="$LAVF_LIBS $lib"
         done
     fi

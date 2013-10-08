@@ -69,9 +69,9 @@ static int handle_jpeg( int csp, int *fullrange )
 {
     switch( csp )
     {
-        case PIX_FMT_YUVJ420P: *fullrange = 1; return PIX_FMT_YUV420P;
-        case PIX_FMT_YUVJ422P: *fullrange = 1; return PIX_FMT_YUV422P;
-        case PIX_FMT_YUVJ444P: *fullrange = 1; return PIX_FMT_YUV444P;
+        case AV_PIX_FMT_YUVJ420P: *fullrange = 1; return AV_PIX_FMT_YUV420P;
+        case AV_PIX_FMT_YUVJ422P: *fullrange = 1; return AV_PIX_FMT_YUV422P;
+        case AV_PIX_FMT_YUVJ444P: *fullrange = 1; return AV_PIX_FMT_YUV444P;
         default:                               return csp;
     }
 }
