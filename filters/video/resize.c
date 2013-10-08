@@ -392,7 +392,7 @@ static int check_resizer( resizer_hnd_t *h, cli_pic_t *in )
     h->scale = input_prop;
     if( !h->buffer_allocated )
     {
-        if( x264_cli_pic_alloc( &h->buffer, h->dst_csp, h->dst.width, h->dst.height ) )
+        if( x264_cli_pic_alloc_aligned( &h->buffer, h->dst_csp, h->dst.width, h->dst.height ) )
             return -1;
         h->buffer_allocated = 1;
     }

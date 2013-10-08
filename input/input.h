@@ -124,6 +124,7 @@ extern const x264_cli_csp_t x264_cli_csps[];
 int      x264_cli_csp_is_invalid( int csp );
 int      x264_cli_csp_depth_factor( int csp );
 int      x264_cli_pic_alloc( cli_pic_t *pic, int csp, int width, int height );
+int      x264_cli_pic_alloc_aligned( cli_pic_t *pic, int csp, int width, int height );
 void     x264_cli_pic_clean( cli_pic_t *pic );
 uint64_t x264_cli_pic_plane_size( int csp, int width, int height, int plane );
 uint64_t x264_cli_pic_size( int csp, int width, int height );
