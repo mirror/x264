@@ -31,15 +31,6 @@
 #include <windows.h>
 #endif
 
-#if HAVE_GF_MALLOC
-#undef malloc
-#undef free
-#undef realloc
-#define malloc gf_malloc
-#define free gf_free
-#define realloc gf_realloc
-#endif
-
 typedef struct
 {
     GF_ISOFile *p_file;
