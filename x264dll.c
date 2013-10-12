@@ -27,7 +27,7 @@
 #include <windows.h>
 
 /* Callback for our DLL so we can initialize pthread */
-BOOL WINAPI DllMain( HANDLE hinstDLL, DWORD fdwReason, LPVOID lpvReserved )
+BOOL WINAPI DllMain( HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved )
 {
 #if PTW32_STATIC_LIB
     switch( fdwReason )
