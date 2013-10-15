@@ -196,7 +196,7 @@ static const char * const muxer_names[] =
     "raw",
     "mkv",
     "flv",
-#if HAVE_GPAC
+#if HAVE_GPAC || HAVE_LSMASH
     "mp4",
 #endif
     0
@@ -478,7 +478,7 @@ static void help( x264_param_t *defaults, int longhelp )
         " .264 -> Raw bytestream\n"
         " .mkv -> Matroska\n"
         " .flv -> Flash Video\n"
-        " .mp4 -> MP4 if compiled with GPAC support (%s)\n"
+        " .mp4 -> MP4 if compiled with GPAC or L-SMASH support (%s)\n"
         "Output bit depth: %d (configured at compile time)\n"
         "\n"
         "Options:\n"
@@ -504,7 +504,9 @@ static void help( x264_param_t *defaults, int longhelp )
         "no",
 #endif
 #if HAVE_GPAC
-        "yes",
+        "gpac",
+#elif HAVE_LSMASH
+        "lsmash",
 #else
         "no",
 #endif
@@ -1146,7 +1148,7 @@ static int select_output( const char *muxer, char *filename, x264_param_t *param
 
     if( !strcasecmp( ext, "mp4" ) )
     {
-#if HAVE_GPAC
+#if HAVE_GPAC || HAVE_LSMASH
         cli_output = mp4_output;
         param->b_annexb = 0;
         param->b_repeat_headers = 0;

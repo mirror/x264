@@ -52,6 +52,7 @@ External library support:
   --disable-lavf           disable libavformat support
   --disable-ffms           disable ffmpegsource support
   --disable-gpac           disable gpac support
+  --disable-lsmash         disable lsmash support
 
 EOF
 exit 1
@@ -264,6 +265,8 @@ avs="auto"
 lavf="auto"
 ffms="auto"
 gpac="auto"
+lsmash="auto"
+mp4="no"
 gpl="yes"
 thread="auto"
 swscale="auto"
@@ -291,7 +294,7 @@ EXE=""
 
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F VISUALIZE SWSCALE \
-             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP"
+             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH"
 
 # parse options
 
@@ -342,6 +345,9 @@ for opt do
             ;;
         --disable-gpac)
             gpac="no"
+            ;;
+        --disable-lsmash)
+            lsmash="no"
             ;;
         --disable-gpl)
             gpl="no"
@@ -932,11 +938,30 @@ if [ "$swscale" = "yes" ]; then
     fi
 fi
 
-if [ "$gpac" = "auto" ] ; then
+if [ "$lsmash" = "auto" ] ; then
+    lsmash="no"
+    if ${cross_prefix}pkg-config --exists liblsmash 2>/dev/null; then
+        LSMASH_LIBS="$LSMASH_LIBS $(${cross_prefix}pkg-config --libs liblsmash)"
+        LSMASH_CFLAGS="$LSMASH_CFLAGS $(${cross_prefix}pkg-config --cflags liblsmash)"
+    fi
+    [ -z "$LSMASH_LIBS" ] && LSMASH_LIBS="-llsmash"
+
+    if cc_check lsmash.h "$LSMASH_CFLAGS $LSMASH_LIBS" ; then
+        if cpp_check lsmash.h "$LSMASH_CFLAGS" "LSMASH_VERSION_MAJOR > 0 || (LSMASH_VERSION_MAJOR == 0 && LSMASH_VERSION_MINOR >= 1)" ; then
+            lsmash="yes"
+        else
+            echo "Warning: lsmash is too old, update to rev.751 or later"
+        fi
+    fi
+fi
+
+if [ "$gpac" = "auto" -a "$lsmash" != "yes" ] ; then
     gpac="no"
-    cc_check "" -lz && GPAC_LIBS="-lgpac_static -lz" || GPAC_LIBS="-lgpac_static"
+    GPAC_LIBS="-lgpac_static"
+    cc_check "" -lz && GPAC_LIBS="$GPAC_LIBS -lz"
     if [ "$SYS" = "WINDOWS" ] ; then
-        GPAC_LIBS="$GPAC_LIBS -lwinmm"
+        cc_check "" -lws2_32 && GPAC_LIBS="$GPAC_LIBS -lws2_32"
+        cc_check "" -lwinmm && GPAC_LIBS="$GPAC_LIBS -lwinmm"
     fi
     if cc_check gpac/isomedia.h "$GPAC_LIBS" ; then
         if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_set_pixel_aspect_ratio(0,0,0,0,0);" ; then
@@ -946,7 +971,14 @@ if [ "$gpac" = "auto" ] ; then
         fi
     fi
 fi
-if [ "$gpac" = "yes" ] ; then
+
+if [ "$lsmash" = "yes" ] ; then
+    mp4="lsmash"
+    LDFLAGSCLI="$LSMASH_LIBS $LDFLAGSCLI"
+    CFLAGS="$CFLAGS $LSMASH_CFLAGS"
+    define HAVE_LSMASH
+elif [ "$gpac" = "yes" ] ; then
+    mp4="gpac"
     define HAVE_GPAC
     LDFLAGSCLI="$GPAC_LIBS $LDFLAGSCLI"
 fi
@@ -1256,7 +1288,7 @@ interlaced:    $interlaced
 avs:           $avs
 lavf:          $lavf
 ffms:          $ffms
-gpac:          $gpac
+mp4:           $mp4
 gpl:           $gpl
 thread:        $thread
 opencl:        $opencl
