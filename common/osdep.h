@@ -37,6 +37,12 @@
 
 #include "config.h"
 
+#ifdef __INTEL_COMPILER
+#include <mathimf.h>
+#else
+#include <math.h>
+#endif
+
 #if !HAVE_LOG2F
 #define log2f(x) (logf(x)/0.693147180559945f)
 #define log2(x) (log(x)/0.693147180559945)
@@ -49,12 +55,6 @@
 #define snprintf _snprintf
 #define strtok_r strtok_s
 #define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
-#endif
-
-#ifdef __INTEL_COMPILER
-#include <mathimf.h>
-#else
-#include <math.h>
 #endif
 
 #if (defined(__GNUC__) || defined(__INTEL_COMPILER)) && (ARCH_X86 || ARCH_X86_64)
