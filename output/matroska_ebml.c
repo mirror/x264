@@ -74,10 +74,9 @@ static mk_context *mk_create_context( mk_writer *w, mk_context *parent, unsigned
     }
     else
     {
-        c = malloc( sizeof(*c) );
+        c = calloc( 1, sizeof(mk_context) );
         if( !c )
             return NULL;
-        memset( c, 0, sizeof(*c) );
     }
 
     c->parent = parent;
@@ -291,11 +290,9 @@ static int mk_write_float( mk_context *c, unsigned id, float f )
 
 mk_writer *mk_create_writer( const char *filename )
 {
-    mk_writer *w = malloc( sizeof(*w) );
+    mk_writer *w = calloc( 1, sizeof(mk_writer) );
     if( !w )
         return NULL;
-
-    memset( w, 0, sizeof(*w) );
 
     w->root = mk_create_context( w, NULL, 0 );
     if( !w->root )

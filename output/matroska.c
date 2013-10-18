@@ -44,15 +44,10 @@ typedef struct
 
 static int open_file( char *psz_filename, hnd_t *p_handle, cli_output_opt_t *opt )
 {
-    mkv_hnd_t *p_mkv;
-
     *p_handle = NULL;
-
-    p_mkv  = malloc( sizeof(*p_mkv) );
+    mkv_hnd_t *p_mkv = calloc( 1, sizeof(mkv_hnd_t) );
     if( !p_mkv )
         return -1;
-
-    memset( p_mkv, 0, sizeof(*p_mkv) );
 
     p_mkv->w = mk_create_writer( psz_filename );
     if( !p_mkv->w )
