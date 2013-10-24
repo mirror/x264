@@ -101,7 +101,7 @@ struct x264_ratecontrol_t
     double vbv_max_rate;        /* # of bits added to buffer_fill per second */
     predictor_t *pred;          /* predict frame size from satd */
     int single_frame_vbv;
-    double rate_factor_max_increment; /* Don't allow RF above (CRF + this value). */
+    float rate_factor_max_increment; /* Don't allow RF above (CRF + this value). */
 
     /* ABR stuff */
     int    last_satd;
@@ -2108,7 +2108,13 @@ static int update_vbv( x264_t *h, int bits )
     rct->buffer_fill_final -= (uint64_t)bits * h->sps->vui.i_time_scale;
 
     if( rct->buffer_fill_final < 0 )
-        x264_log( h, X264_LOG_WARNING, "VBV underflow (frame %d, %.0f bits)\n", h->i_frame, (double)rct->buffer_fill_final / h->sps->vui.i_time_scale );
+    {
+        double underflow = (double)rct->buffer_fill_final / h->sps->vui.i_time_scale;
+        if( rcc->rate_factor_max_increment && rcc->qpm >= rcc->qp_novbv + rcc->rate_factor_max_increment )
+            x264_log( h, X264_LOG_DEBUG, "VBV underflow due to CRF-max (frame %d, %.0f bits)\n", h->i_frame, underflow );
+        else
+            x264_log( h, X264_LOG_WARNING, "VBV underflow (frame %d, %.0f bits)\n", h->i_frame, underflow );
+    }
     rct->buffer_fill_final = X264_MAX( rct->buffer_fill_final, 0 );
 
     if( h->param.b_avcintra_compat )
