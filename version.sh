@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 [ -n "$1" ] && cd $1
 
 git_version() {
