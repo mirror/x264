@@ -2121,7 +2121,7 @@ static void x264_mb_analyse_inter_b16x16( x264_t *h, x264_mb_analysis_t *a )
         int cost00 = h->pixf.mbcmp[PIXEL_16x16]( h->mb.pic.p_fenc[0], FENC_STRIDE, pix0, 16 )
                    + ref_costs + l0_mv_cost + l1_mv_cost;
 
-        if( h->mb.b_chroma_me )
+        if( h->mb.b_chroma_me && cost00 < a->i_cost16x16bi )
         {
             ALIGNED_ARRAY_16( pixel, bi, [16*FENC_STRIDE] );
 
