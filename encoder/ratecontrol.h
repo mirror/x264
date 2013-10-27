@@ -43,6 +43,7 @@ int  x264_ratecontrol_new   ( x264_t * );
 void x264_ratecontrol_delete( x264_t * );
 
 void x264_ratecontrol_init_reconfigurable( x264_t *h, int b_init );
+int x264_encoder_reconfig_apply( x264_t *h, x264_param_t *param );
 
 void x264_adaptive_quant_frame( x264_t *h, x264_frame_t *frame, float *quant_offsets );
 int  x264_macroblock_tree_read( x264_t *h, x264_frame_t *frame, float *quant_offsets );

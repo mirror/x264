@@ -517,6 +517,12 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         return -1;
     }
 
+    if( h->param.vui.i_sar_width <= 0 || h->param.vui.i_sar_height <= 0 )
+    {
+        h->param.vui.i_sar_width = 0;
+        h->param.vui.i_sar_height = 0;
+    }
+
     if( h->param.i_threads == X264_THREADS_AUTO )
         h->param.i_threads = x264_cpu_num_processors() * (h->param.b_sliced_threads?2:3)/2;
     int max_sliced_threads = X264_MAX( 1, (h->param.i_height+15)/16 / 4 );
@@ -1331,7 +1337,6 @@ static void x264_set_aspect_ratio( x264_t *h, x264_param_t *param, int initial )
                 h->param.vui.i_sar_width = i_w;
                 h->param.vui.i_sar_height = i_h;
             }
-            x264_sps_init( h->sps, h->param.i_sps_id, &h->param );
         }
     }
 }
@@ -1385,10 +1390,10 @@ x264_t *x264_encoder_open( x264_param_t *param )
         goto fail;
     }
 
+    x264_set_aspect_ratio( h, &h->param, 1 );
+
     x264_sps_init( h->sps, h->param.i_sps_id, &h->param );
     x264_pps_init( h->pps, h->param.i_sps_id, &h->param, h->sps );
-
-    x264_set_aspect_ratio( h, &h->param, 1 );
 
     x264_validate_levels( h, 1 );
 
@@ -1540,6 +1545,8 @@ x264_t *x264_encoder_open( x264_param_t *param )
     h->nal_buffer_size = h->out.i_bitstream * 3/2 + 4 + 64; /* +4 for startcode, +64 for nal_escape assembly padding */
     CHECKED_MALLOC( h->nal_buffer, h->nal_buffer_size );
 
+    CHECKED_MALLOC( h->reconfig_h, sizeof(x264_t) );
+
     if( h->param.i_threads > 1 &&
         x264_threadpool_init( &h->threadpool, h->param.i_threads, (void*)x264_encoder_thread_init, h ) )
         goto fail;
@@ -1568,6 +1575,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
             CHECKED_MALLOC( h->lookahead_thread[i], sizeof(x264_t) );
             *h->lookahead_thread[i] = *h;
         }
+    *h->reconfig_h = *h;
 
     for( int i = 0; i < h->param.i_threads; i++ )
     {
@@ -1667,18 +1675,10 @@ fail:
     return NULL;
 }
 
-/****************************************************************************
- * x264_encoder_reconfig:
- ****************************************************************************/
-int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
+/****************************************************************************/
+static int x264_encoder_try_reconfig( x264_t *h, x264_param_t *param, int *rc_reconfig )
 {
-    /* If the previous frame isn't done encoding, reconfiguring is probably dangerous. */
-    if( h->param.b_sliced_threads )
-        if( x264_threadpool_wait_all( h ) < 0 )
-            return -1;
-
-    int rc_reconfig = 0;
-    h = h->thread[h->thread[0]->i_thread_phase];
+    *rc_reconfig = 0;
     x264_set_aspect_ratio( h, param, 0 );
 #define COPY(var) h->param.var = param->var
     COPY( i_frame_reference ); // but never uses more refs than initially specified
@@ -1727,22 +1727,30 @@ int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
     if( h->param.rc.i_vbv_max_bitrate > 0 && h->param.rc.i_vbv_buffer_size > 0 &&
           param->rc.i_vbv_max_bitrate > 0 &&   param->rc.i_vbv_buffer_size > 0 )
     {
-        rc_reconfig |= h->param.rc.i_vbv_max_bitrate != param->rc.i_vbv_max_bitrate;
-        rc_reconfig |= h->param.rc.i_vbv_buffer_size != param->rc.i_vbv_buffer_size;
-        rc_reconfig |= h->param.rc.i_bitrate != param->rc.i_bitrate;
+        *rc_reconfig |= h->param.rc.i_vbv_max_bitrate != param->rc.i_vbv_max_bitrate;
+        *rc_reconfig |= h->param.rc.i_vbv_buffer_size != param->rc.i_vbv_buffer_size;
+        *rc_reconfig |= h->param.rc.i_bitrate != param->rc.i_bitrate;
         COPY( rc.i_vbv_max_bitrate );
         COPY( rc.i_vbv_buffer_size );
         COPY( rc.i_bitrate );
     }
-    rc_reconfig |= h->param.rc.f_rf_constant != param->rc.f_rf_constant;
-    rc_reconfig |= h->param.rc.f_rf_constant_max != param->rc.f_rf_constant_max;
+    *rc_reconfig |= h->param.rc.f_rf_constant != param->rc.f_rf_constant;
+    *rc_reconfig |= h->param.rc.f_rf_constant_max != param->rc.f_rf_constant_max;
     COPY( rc.f_rf_constant );
     COPY( rc.f_rf_constant_max );
 #undef COPY
 
-    mbcmp_init( h );
+    return x264_validate_parameters( h, 0 );
+}
 
-    int ret = x264_validate_parameters( h, 0 );
+int x264_encoder_reconfig_apply( x264_t *h, x264_param_t *param )
+{
+    int rc_reconfig;
+    int ret = x264_encoder_try_reconfig( h, param, &rc_reconfig );
+
+    mbcmp_init( h );
+    if( !ret )
+        x264_sps_init( h->sps, h->param.i_sps_id, &h->param );
 
     /* Supported reconfiguration options (1-pass only):
      * vbv-maxrate
@@ -1751,6 +1759,25 @@ int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
      * bitrate (CBR only) */
     if( !ret && rc_reconfig )
         x264_ratecontrol_init_reconfigurable( h, 0 );
+
+    return ret;
+}
+
+/****************************************************************************
+ * x264_encoder_reconfig:
+ ****************************************************************************/
+int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
+{
+    h = h->thread[h->thread[0]->i_thread_phase];
+    x264_param_t param_save = h->reconfig_h->param;
+    h->reconfig_h->param = h->param;
+
+    int rc_reconfig;
+    int ret = x264_encoder_try_reconfig( h->reconfig_h, param, &rc_reconfig );
+    if( !ret )
+        h->reconfig = 1;
+    else
+        h->reconfig_h->param = param_save;
 
     return ret;
 }
@@ -2905,6 +2932,7 @@ static void x264_thread_sync_context( x264_t *dst, x264_t *src )
     dst->param = src->param;
     dst->stat = src->stat;
     dst->pixf = src->pixf;
+    dst->reconfig = src->reconfig;
 }
 
 static void x264_thread_sync_stat( x264_t *dst, x264_t *src )
@@ -3223,9 +3251,14 @@ int     x264_encoder_encode( x264_t *h,
 
     if( h->i_frame == h->i_thread_frames - 1 )
         h->i_reordered_pts_delay = h->fenc->i_reordered_pts;
+    if( h->reconfig )
+    {
+        x264_encoder_reconfig_apply( h, &h->reconfig_h->param );
+        h->reconfig = 0;
+    }
     if( h->fenc->param )
     {
-        x264_encoder_reconfig( h, h->fenc->param );
+        x264_encoder_reconfig_apply( h, h->fenc->param );
         if( h->fenc->param->param_free )
         {
             h->fenc->param->param_free( h->fenc->param );
@@ -4218,6 +4251,7 @@ void    x264_encoder_close  ( x264_t *h )
 
     x264_cqm_delete( h );
     x264_free( h->nal_buffer );
+    x264_free( h->reconfig_h );
     x264_analyse_free_costs( h );
 
     if( h->i_thread_frames > 1 )

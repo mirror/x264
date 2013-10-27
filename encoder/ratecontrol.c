@@ -1398,7 +1398,7 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
     x264_emms();
 
     if( zone && (!rc->prev_zone || zone->param != rc->prev_zone->param) )
-        x264_encoder_reconfig( h, zone->param );
+        x264_encoder_reconfig_apply( h, zone->param );
     rc->prev_zone = zone;
 
     if( h->param.rc.b_stat_read )

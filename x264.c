@@ -1589,8 +1589,11 @@ generic_option:
     info.fps_den    = param->i_fps_den;
     info.fullrange  = input_opt.input_range == RANGE_PC;
     info.interlaced = param->b_interlaced;
-    info.sar_width  = param->vui.i_sar_width;
-    info.sar_height = param->vui.i_sar_height;
+    if( param->vui.i_sar_width > 0 && param->vui.i_sar_height > 0 )
+    {
+        info.sar_width  = param->vui.i_sar_width;
+        info.sar_height = param->vui.i_sar_height;
+    }
     info.tff        = param->b_tff;
     info.vfr        = param->b_vfr_input;
 
@@ -1633,7 +1636,7 @@ generic_option:
 #endif
 
     /* override detected values by those specified by the user */
-    if( param->vui.i_sar_width && param->vui.i_sar_height )
+    if( param->vui.i_sar_width > 0 && param->vui.i_sar_height > 0 )
     {
         info.sar_width  = param->vui.i_sar_width;
         info.sar_height = param->vui.i_sar_height;

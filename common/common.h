@@ -517,6 +517,9 @@ struct x264_t
     uint8_t *nal_buffer;
     int      nal_buffer_size;
 
+    x264_t          *reconfig_h;
+    int             reconfig;
+
     /**** thread synchronization starts here ****/
 
     /* frame number/poc */
