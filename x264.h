@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 139
+#define X264_BUILD 140
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -348,7 +348,6 @@ typedef struct x264_param_t
     void        (*pf_log)( void *, int i_level, const char *psz, va_list );
     void        *p_log_private;
     int         i_log_level;
-    int         b_visualize;
     int         b_full_recon;   /* fully reconstruct frames, even when not necessary for encoding.  Implied by psz_dump_yuv */
     char        *psz_dump_yuv;  /* filename (in UTF-8) for reconstructed frames */
 

@@ -33,10 +33,6 @@
 #include "macroblock.h"
 #include "me.h"
 
-#if HAVE_VISUALIZE
-#include "common/visualize.h"
-#endif
-
 //#define DEBUG_MB_TYPE
 
 #define bs_write_ue bs_write_ue_big
@@ -1225,7 +1221,6 @@ static int x264_validate_parameters( x264_t *h, int b_open )
     BOOLIFY( b_sliced_threads );
     BOOLIFY( b_interlaced );
     BOOLIFY( b_intra_refresh );
-    BOOLIFY( b_visualize );
     BOOLIFY( b_aud );
     BOOLIFY( b_repeat_headers );
     BOOLIFY( b_annexb );
@@ -2757,11 +2752,6 @@ reencode:
 cont:
         h->mb.b_reencode_mb = 0;
 
-#if HAVE_VISUALIZE
-        if( h->param.b_visualize )
-            x264_visualize_mb( h );
-#endif
-
         /* save cache */
         x264_macroblock_cache_save( h );
 
@@ -2956,12 +2946,6 @@ static void *x264_slices_write( x264_t *h )
     int i_slice_num = 0;
     int last_thread_mb = h->sh.i_last_mb;
 
-#if HAVE_VISUALIZE
-    if( h->param.b_visualize )
-        if( x264_visualize_init( h ) )
-            goto fail;
-#endif
-
     /* init stats */
     memset( &h->stat.frame, 0, sizeof(h->stat.frame) );
     h->mb.b_reencode_mb = 0;
@@ -3006,14 +2990,6 @@ static void *x264_slices_write( x264_t *h )
         if( SLICE_MBAFF && h->sh.i_first_mb % h->mb.i_mb_width )
             h->sh.i_first_mb -= h->mb.i_mb_stride;
     }
-
-#if HAVE_VISUALIZE
-    if( h->param.b_visualize )
-    {
-        x264_visualize_show( h );
-        x264_visualize_close( h );
-    }
-#endif
 
     return (void *)0;
 

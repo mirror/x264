@@ -73,11 +73,6 @@ ifneq ($(findstring HAVE_LSMASH 1, $(CONFIG)),)
 SRCCLI += output/mp4_lsmash.c
 endif
 
-# Visualization sources
-ifneq ($(findstring HAVE_VISUALIZE 1, $(CONFIG)),)
-SRCS   += common/visualize.c common/display-x11.c
-endif
-
 # MMX/SSE optims
 ifneq ($(AS),)
 X86SRC0 = const-a.asm cabac-a.asm dct-a.asm deblock-a.asm mc-a.asm \

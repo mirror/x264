@@ -30,7 +30,6 @@ Configuration options:
   --disable-thread         disable multithreaded encoding
   --enable-win32thread     use win32threads (windows only)
   --disable-interlaced     disable interlaced encoding support
-  --enable-visualize       enable visualization (X11 only)
   --bit-depth=BIT_DEPTH    set output bit depth (8-10) [8]
   --chroma-format=FORMAT   output chroma format (420, 422, 444, all) [all]
 
@@ -276,7 +275,6 @@ debug="no"
 gprof="no"
 strip="no"
 pic="no"
-vis="no"
 bit_depth="8"
 chroma_format="all"
 compiler="GNU"
@@ -293,7 +291,7 @@ cross_prefix=""
 EXE=""
 
 # list of all preprocessor HAVE values we can define
-CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F VISUALIZE SWSCALE \
+CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
              LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH"
 
 # parse options
@@ -386,9 +384,6 @@ for opt do
             ;;
         --enable-pic)
             pic="yes"
-            ;;
-        --enable-visualize)
-            vis="yes"
             ;;
         --host=*)
             host="$optarg"
@@ -843,18 +838,6 @@ if [ "$SYS" = "LINUX" -a \( "$ARCH" = "X86" -o "$ARCH" = "X86_64" \) ] && cc_che
     define HAVE_THP
 fi
 
-if [ "$vis" = "yes" ] ; then
-    save_CFLAGS="$CFLAGS"
-    CFLAGS="$CFLAGS -I/usr/X11R6/include"
-    if cc_check "X11/Xlib.h" "-L/usr/X11R6/lib -lX11" "XOpenDisplay(0);" ; then
-        LDFLAGS="-L/usr/X11R6/lib -lX11 $LDFLAGS"
-        define HAVE_VISUALIZE
-    else
-        vis="no"
-        CFLAGS="$save_CFLAGS"
-   fi
-fi
-
 if [ "$swscale" = "auto" ] ; then
     swscale="no"
     if ${cross_prefix}pkg-config --exists libswscale 2>/dev/null; then
@@ -1297,7 +1280,6 @@ debug:         $debug
 gprof:         $gprof
 strip:         $strip
 PIC:           $pic
-visualize:     $vis
 bit depth:     $bit_depth
 chroma format: $chroma_format
 EOF
