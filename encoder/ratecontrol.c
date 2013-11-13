@@ -911,7 +911,7 @@ int x264_ratecontrol_new( x264_t *h )
              * so we'll at least try to roughly approximate this effect. */
             res_factor_bits = powf( res_factor, 0.7 );
 
-            if( ( p = strstr( opts, "timebase=" ) ) && sscanf( p, "timebase=%u/%u", &k, &l ) != 2 )
+            if( !( p = strstr( opts, "timebase=" ) ) || sscanf( p, "timebase=%u/%u", &k, &l ) != 2 )
             {
                 x264_log( h, X264_LOG_ERROR, "timebase specified in stats file not valid\n" );
                 return -1;
