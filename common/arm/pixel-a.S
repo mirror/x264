@@ -328,9 +328,9 @@ SAD_FUNC_DUAL  16, 16
 function x264_pixel_sad_x\x\()_\w\()x\h\()_neon
     push        {r6-r7,lr}
 .if \x == 3
-    ldrd        r6,  [sp, #12]
+    ldrd        r6,  r7,  [sp, #12]
 .else
-    ldrd        r6,  [sp, #16]
+    ldrd        r6,  r7,  [sp, #16]
     ldr         r12, [sp, #12]
 .endif
     mov         lr,  #FENC_STRIDE
@@ -596,7 +596,7 @@ function x264_pixel_var2_8x8_neon
     vadd.s32        d1,  d2,  d3
     vpadd.s32       d0,  d0,  d1
 
-    vmov.32         r0,  r1,  d0
+    vmov            r0,  r1,  d0
     vst1.32         {d0[1]}, [ip,:32]
     mul             r0,  r0,  r0
     sub             r0,  r1,  r0,  lsr #6

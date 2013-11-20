@@ -26,7 +26,7 @@
 #include "asm.S"
 
 .fpu neon
-.align
+.align 2
 
 // done in gas because .fpu neon overrides the refusal to assemble
 // instructions the selected -march/-mcpu doesn't support
@@ -95,7 +95,7 @@ average_loop:
     sub         r2, r2, r1
     cmpgt       r2, #30 << 3    // assume context switch if it took over 30 cycles
     addle       r3, r3, r2
-    subles      ip, ip, #1
+    subsle      ip, ip, #1
     bgt         average_loop
 
     // disable counters if we enabled them

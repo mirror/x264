@@ -26,6 +26,8 @@
 
 #include "config.h"
 
+.syntax unified
+
 #ifdef PREFIX
 #   define EXTERN_ASM _
 #else

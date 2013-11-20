@@ -167,7 +167,7 @@ function x264_pixel_avg_\w\()x\h\()_neon
     ldr         ip, [sp, #8]
     push        {r4-r6,lr}
     cmp         ip, #32
-    ldrd        r4, [sp, #16]
+    ldrd        r4, r5, [sp, #16]
     mov         lr, #\h
     beq         x264_pixel_avg_w\w\()_neon
     rsbs        r6,  ip,  #64
@@ -447,7 +447,7 @@ avg2_w20_loop:
 .ifc \type, full
     ldr         lr,  [r4, #32]      // denom
 .endif
-    ldrd        r4,  [r4, #32+4]    // scale, offset
+    ldrd        r4,  r5,  [r4, #32+4]    // scale, offset
     vdup.16     q0,  r4
     vdup.16     q1,  r5
 .ifc \type, full
@@ -818,8 +818,8 @@ copy_w16_aligned_loop:
 function x264_mc_chroma_neon
     push            {r4-r8, lr}
     vpush           {d8-d11}
-    ldrd            r4, [sp, #56]
-    ldrd            r6, [sp, #64]
+    ldrd            r4, r5, [sp, #56]
+    ldrd            r6, r7, [sp, #64]
 
     asr             lr, r6, #3
     mul             lr, r4, lr
@@ -1380,8 +1380,8 @@ filter_h_loop:
 function x264_frame_init_lowres_core_neon
     push            {r4-r10,lr}
     vpush           {d8-d15}
-    ldrd            r4,  [sp, #96]
-    ldrd            r6,  [sp, #104]
+    ldrd            r4,  r5,  [sp, #96]
+    ldrd            r6,  r7,  [sp, #104]
     ldr             lr,  [sp, #112]
     sub             r10, r6,  r7            // dst_stride - width
     and             r10, r10, #~15
