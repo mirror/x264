@@ -78,6 +78,7 @@ int x264_rename( const char *oldname, const char *newname );
 #define x264_fstat _fstati64
 int x264_stat( const char *path, x264_struct_stat *buf );
 int x264_vfprintf( FILE *stream, const char *format, va_list arg );
+int x264_is_pipe( const char *path );
 #else
 #define x264_fopen       fopen
 #define x264_rename      rename
@@ -85,6 +86,7 @@ int x264_vfprintf( FILE *stream, const char *format, va_list arg );
 #define x264_fstat       fstat
 #define x264_stat        stat
 #define x264_vfprintf    vfprintf
+#define x264_is_pipe(x)  0
 #endif
 
 #ifdef __ICL
@@ -377,19 +379,19 @@ static ALWAYS_INLINE void x264_prefetch( void *p )
 #define x264_lower_thread_priority(p)
 #endif
 
-static inline uint8_t x264_is_regular_file( FILE *filehandle )
+static inline int x264_is_regular_file( FILE *filehandle )
 {
     x264_struct_stat file_stat;
     if( x264_fstat( fileno( filehandle ), &file_stat ) )
-        return -1;
+        return 1;
     return S_ISREG( file_stat.st_mode );
 }
 
-static inline uint8_t x264_is_regular_file_path( const char *filename )
+static inline int x264_is_regular_file_path( const char *filename )
 {
     x264_struct_stat file_stat;
     if( x264_stat( filename, &file_stat ) )
-        return -1;
+        return !x264_is_pipe( filename );
     return S_ISREG( file_stat.st_mode );
 }
 

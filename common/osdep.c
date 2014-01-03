@@ -199,4 +199,12 @@ int x264_vfprintf( FILE *stream, const char *format, va_list arg )
     }
     return vfprintf( stream, format, arg );
 }
+
+int x264_is_pipe( const char *path )
+{
+    wchar_t path_utf16[MAX_PATH];
+    if( utf8_to_utf16( path, path_utf16 ) )
+        return WaitNamedPipeW( path_utf16, 0 );
+    return 0;
+}
 #endif
