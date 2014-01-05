@@ -1,6 +1,6 @@
 # Perl script used for compiling OpenCL src into x264 binary
 #
-# Copyright (C) 2013 x264 project
+# Copyright (C) 2013-2014 x264 project
 # Authors: Steve Borho <sborho@multicorewareinc.com>
 
 use Digest::MD5 qw(md5_hex);
