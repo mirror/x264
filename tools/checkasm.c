@@ -1453,6 +1453,33 @@ static int check_mc( int cpu_ref, int cpu_new )
     }
     report( "plane_copy :" );
 
+    if( mc_a.plane_copy_deinterleave_v210 != mc_ref.plane_copy_deinterleave_v210 )
+    {
+        set_func_name( "plane_copy_deinterleave_v210" );
+        used_asm = 1;
+        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        {
+            int w = (plane_specs[i].w + 1) >> 1;
+            int h = plane_specs[i].h;
+            intptr_t dst_stride = ALIGN( w, 16 );
+            intptr_t src_stride = (w + 47) / 48 * 128 / sizeof(uint32_t);
+            intptr_t offv = dst_stride*h + 32;
+            memset( pbuf3, 0, 0x1000 );
+            memset( pbuf4, 0, 0x1000 );
+            call_c( mc_c.plane_copy_deinterleave_v210, pbuf3, dst_stride, pbuf3+offv, dst_stride, (uint32_t *)buf1, src_stride, w, h );
+            call_a( mc_a.plane_copy_deinterleave_v210, pbuf4, dst_stride, pbuf4+offv, dst_stride, (uint32_t *)buf1, src_stride, w, h );
+            for( int y = 0; y < h; y++ )
+                if( memcmp( pbuf3+y*dst_stride,      pbuf4+y*dst_stride,      w*sizeof(uint16_t) ) ||
+                    memcmp( pbuf3+y*dst_stride+offv, pbuf4+y*dst_stride+offv, w*sizeof(uint16_t) ) )
+                {
+                    ok = 0;
+                    fprintf( stderr, "plane_copy_deinterleave_v210 FAILED: w=%d h=%d stride=%d\n", w, h, (int)src_stride );
+                    break;
+                }
+        }
+    }
+    report( "v210 :" );
+
     if( mc_a.hpel_filter != mc_ref.hpel_filter )
     {
         pixel *srchpel = pbuf1+8+2*64;

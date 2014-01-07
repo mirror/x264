@@ -38,6 +38,13 @@ filt_mul51: times 16 db -5, 1
 hpel_shuf: times 2 db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
 deinterleave_shuf: times 2 db 0,2,4,6,8,10,12,14,1,3,5,7,9,11,13,15
 
+v210_mask: times 4 dq 0xc00ffc003ff003ff
+v210_luma_shuf: times 2 db 1,2,4,5,6,7,9,10,12,13,14,15,12,13,14,15
+v210_chroma_shuf: times 2 db 0,1,2,3,5,6,8,9,10,11,13,14,10,11,13,14
+; vpermd indices {0,1,2,4,5,7,_,_} merged in the 3 lsb of each dword to save a register
+v210_mult: dw 0x2000,0x7fff,0x0801,0x2000,0x7ffa,0x0800,0x7ffc,0x0800
+           dw 0x1ffd,0x7fff,0x07ff,0x2000,0x7fff,0x0800,0x7fff,0x0800
+
 %if HIGH_BIT_DEPTH
 deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
 deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
@@ -1195,6 +1202,64 @@ cglobal load_deinterleave_chroma_fdec, 4,4
     RET
 %endmacro ; PLANE_DEINTERLEAVE
 
+%macro PLANE_DEINTERLEAVE_V210 0
+;-----------------------------------------------------------------------------
+; void x264_plane_copy_deinterleave_v210( uint16_t *dsty, intptr_t i_dsty,
+;                                         uint16_t *dstc, intptr_t i_dstc,
+;                                         uint32_t *src, intptr_t i_src, int w, int h )
+;-----------------------------------------------------------------------------
+%if ARCH_X86_64
+cglobal plane_copy_deinterleave_v210, 8,10,7
+%define src   r8
+%define org_w r9
+%define h     r7d
+%else
+cglobal plane_copy_deinterleave_v210, 7,7,7
+%define src   r4m
+%define org_w r6m
+%define h     dword r7m
+%endif
+    FIX_STRIDES r1, r3, r6d
+    shl    r5, 2
+    add    r0, r6
+    add    r2, r6
+    neg    r6
+    mov   src, r4
+    mov org_w, r6
+    mova   m2, [v210_mask]
+    mova   m3, [v210_luma_shuf]
+    mova   m4, [v210_chroma_shuf]
+    mova   m5, [v210_mult] ; also functions as vpermd index for avx2
+    pshufd m6, m5, q1102
+
+ALIGN 16
+.loop:
+    movu   m1, [r4]
+    pandn  m0, m2, m1
+    pand   m1, m2
+    pshufb m0, m3
+    pshufb m1, m4
+    pmulhrsw m0, m5 ; y0 y1 y2 y3 y4 y5 __ __
+    pmulhrsw m1, m6 ; u0 v0 u1 v1 u2 v2 __ __
+%if mmsize == 32
+    vpermd m0, m5, m0
+    vpermd m1, m5, m1
+%endif
+    movu [r0+r6], m0
+    movu [r2+r6], m1
+    add    r4, mmsize
+    add    r6, 3*mmsize/4
+    jl .loop
+    add    r0, r1
+    add    r2, r3
+    add   src, r5
+    mov    r4, src
+    mov    r6, org_w
+    dec     h
+    jg .loop
+    RET
+%endmacro ; PLANE_DEINTERLEAVE_V210
+
 %if HIGH_BIT_DEPTH
 INIT_MMX mmx2
 PLANE_INTERLEAVE
@@ -1203,9 +1268,14 @@ PLANE_DEINTERLEAVE
 INIT_XMM sse2
 PLANE_INTERLEAVE
 PLANE_DEINTERLEAVE
+INIT_XMM ssse3
+PLANE_DEINTERLEAVE_V210
 INIT_XMM avx
 PLANE_INTERLEAVE
 PLANE_DEINTERLEAVE
+PLANE_DEINTERLEAVE_V210
+INIT_YMM avx2
+PLANE_DEINTERLEAVE_V210
 %else
 INIT_MMX mmx2
 PLANE_INTERLEAVE

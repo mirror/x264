@@ -94,9 +94,12 @@ static void help( int longhelp )
 
     for( int i = X264_CSP_NONE+1; i < X264_CSP_CLI_MAX; i++ )
     {
-        printf( "%s", x264_cli_csps[i].name );
-        if( i+1 < X264_CSP_CLI_MAX )
-            printf( ", " );
+        if( x264_cli_csps[i].name )
+        {
+            printf( "%s", x264_cli_csps[i].name );
+            if( i+1 < X264_CSP_CLI_MAX )
+                printf( ", " );
+        }
     }
     printf( "\n"
             "               - depth: 8 or 16 bits per pixel [keep current]\n"
@@ -243,8 +246,11 @@ static int handle_opts( const char **optlist, char **opts, video_info_t *info, r
         if( strlen( str_csp ) == 0 )
             csp = info->csp & X264_CSP_MASK;
         else
-            for( csp = X264_CSP_CLI_MAX-1; x264_cli_csps[csp].name && strcasecmp( x264_cli_csps[csp].name, str_csp ); )
-                csp--;
+            for( csp = X264_CSP_CLI_MAX-1; csp > X264_CSP_NONE; csp-- )
+            {
+                if( x264_cli_csps[csp].name && !strcasecmp( x264_cli_csps[csp].name, str_csp ) )
+                    break;
+            }
         FAIL_IF_ERROR( csp == X264_CSP_NONE, "unsupported colorspace `%s'\n", str_csp );
         h->dst_csp = csp;
         if( depth == 16 )

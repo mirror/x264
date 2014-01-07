@@ -55,8 +55,11 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     FAIL_IF_ERROR( !info->width || !info->height, "raw input requires a resolution.\n" )
     if( opt->colorspace )
     {
-        for( info->csp = X264_CSP_CLI_MAX-1; x264_cli_csps[info->csp].name && strcasecmp( x264_cli_csps[info->csp].name, opt->colorspace ); )
-            info->csp--;
+        for( info->csp = X264_CSP_CLI_MAX-1; info->csp > X264_CSP_NONE; info->csp-- )
+        {
+            if( x264_cli_csps[info->csp].name && !strcasecmp( x264_cli_csps[info->csp].name, opt->colorspace ) )
+                break;
+        }
         FAIL_IF_ERROR( info->csp == X264_CSP_NONE, "unsupported colorspace `%s'\n", opt->colorspace );
     }
     else /* default */

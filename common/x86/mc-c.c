@@ -116,6 +116,15 @@ void x264_plane_copy_deinterleave_ssse3( uint8_t *dstu, intptr_t i_dstu,
 void x264_plane_copy_deinterleave_avx( uint16_t *dstu, intptr_t i_dstu,
                                        uint16_t *dstv, intptr_t i_dstv,
                                        uint16_t *src,  intptr_t i_src, int w, int h );
+void x264_plane_copy_deinterleave_v210_ssse3( uint16_t *dstu, intptr_t i_dstu,
+                                              uint16_t *dstv, intptr_t i_dstv,
+                                              uint32_t *src,  intptr_t i_src, int w, int h );
+void x264_plane_copy_deinterleave_v210_avx  ( uint16_t *dstu, intptr_t i_dstu,
+                                              uint16_t *dstv, intptr_t i_dstv,
+                                              uint32_t *src,  intptr_t i_src, int w, int h );
+void x264_plane_copy_deinterleave_v210_avx2 ( uint16_t *dstu, intptr_t i_dstu,
+                                              uint16_t *dstv, intptr_t i_dstv,
+                                              uint32_t *src,  intptr_t i_src, int w, int h );
 void x264_store_interleave_chroma_mmx2( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
 void x264_store_interleave_chroma_sse2( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
 void x264_store_interleave_chroma_avx ( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
@@ -627,6 +636,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         return;
 
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
+    pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_ssse3;
 
     if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
         pf->integral_init4v = x264_integral_init4v_ssse3;
@@ -639,6 +649,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_avx;
     pf->plane_copy_interleave        = x264_plane_copy_interleave_avx;
     pf->plane_copy_deinterleave      = x264_plane_copy_deinterleave_avx;
+    pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_avx;
     pf->store_interleave_chroma      = x264_store_interleave_chroma_avx;
     pf->copy[PIXEL_16x16]            = x264_mc_copy_w16_aligned_avx;
 
@@ -649,7 +660,10 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_xop;
 
     if( cpu&X264_CPU_AVX2 )
+    {
         pf->mc_luma = mc_luma_avx2;
+        pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_avx2;
+    }
 #else // !HIGH_BIT_DEPTH
 
 #if ARCH_X86 // all x86_64 cpus with cacheline split issues use sse2 instead

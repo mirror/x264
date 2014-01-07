@@ -53,6 +53,7 @@ static int x264_frame_internal_csp( int external_csp )
         case X264_CSP_NV16:
         case X264_CSP_I422:
         case X264_CSP_YV16:
+        case X264_CSP_V210:
             return X264_CSP_NV16;
         case X264_CSP_I444:
         case X264_CSP_YV24:
@@ -380,6 +381,12 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
     }
 #endif
 
+    if( BIT_DEPTH != 10 && i_csp == X264_CSP_V210 )
+    {
+        x264_log( h, X264_LOG_ERROR, "v210 input is only compatible with bit-depth of 10 bits\n" );
+        return -1;
+    }
+
     dst->i_type     = src->i_type;
     dst->i_qpplus1  = src->i_qpplus1;
     dst->i_pts      = dst->i_reordered_pts = src->i_pts;
@@ -392,7 +399,16 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
 
     uint8_t *pix[3];
     int stride[3];
-    if ( i_csp >= X264_CSP_BGR )
+    if( i_csp == X264_CSP_V210 )
+    {
+         stride[0] = src->img.i_stride[0];
+         pix[0] = src->img.plane[0];
+
+         h->mc.plane_copy_deinterleave_v210( dst->plane[0], dst->i_stride[0],
+                                             dst->plane[1], dst->i_stride[1],
+                                             (uint32_t *)pix[0], stride[0]/sizeof(uint32_t), h->param.i_width, h->param.i_height );
+    }
+    else if( i_csp >= X264_CSP_BGR )
     {
          stride[0] = src->img.i_stride[0];
          pix[0] = src->img.plane[0];

@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 140
+#define X264_BUILD 141
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -215,12 +215,13 @@ static const char * const x264_nal_hrd_names[] = { "none", "vbr", "cbr", 0 };
 #define X264_CSP_I422           0x0004  /* yuv 4:2:2 planar */
 #define X264_CSP_YV16           0x0005  /* yvu 4:2:2 planar */
 #define X264_CSP_NV16           0x0006  /* yuv 4:2:2, with one y plane and one packed u+v */
-#define X264_CSP_I444           0x0007  /* yuv 4:4:4 planar */
-#define X264_CSP_YV24           0x0008  /* yvu 4:4:4 planar */
-#define X264_CSP_BGR            0x0009  /* packed bgr 24bits   */
-#define X264_CSP_BGRA           0x000a  /* packed bgr 32bits   */
-#define X264_CSP_RGB            0x000b  /* packed rgb 24bits   */
-#define X264_CSP_MAX            0x000c  /* end of list */
+#define X264_CSP_V210           0x0007  /* 10-bit yuv 4:2:2 packed in 32 */
+#define X264_CSP_I444           0x0008  /* yuv 4:4:4 planar */
+#define X264_CSP_YV24           0x0009  /* yvu 4:4:4 planar */
+#define X264_CSP_BGR            0x000a  /* packed bgr 24bits   */
+#define X264_CSP_BGRA           0x000b  /* packed bgr 32bits   */
+#define X264_CSP_RGB            0x000c  /* packed rgb 24bits   */
+#define X264_CSP_MAX            0x000d  /* end of list */
 #define X264_CSP_VFLIP          0x1000  /* the csp is vertically flipped */
 #define X264_CSP_HIGH_DEPTH     0x2000  /* the csp has a depth of 16 bits per pixel component */
 

@@ -42,7 +42,8 @@ const x264_cli_csp_t x264_cli_csps[] = {
 int x264_cli_csp_is_invalid( int csp )
 {
     int csp_mask = csp & X264_CSP_MASK;
-    return csp_mask <= X264_CSP_NONE || csp_mask >= X264_CSP_CLI_MAX || csp & X264_CSP_OTHER;
+    return csp_mask <= X264_CSP_NONE || csp_mask >= X264_CSP_CLI_MAX ||
+           csp_mask == X264_CSP_V210 || csp & X264_CSP_OTHER;
 }
 
 int x264_cli_csp_depth_factor( int csp )

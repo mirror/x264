@@ -1144,7 +1144,7 @@ int x264_picture_alloc( x264_picture_t *pic, int i_csp, int i_width, int i_heigh
     };
 
     int csp = i_csp & X264_CSP_MASK;
-    if( csp <= X264_CSP_NONE || csp >= X264_CSP_MAX )
+    if( csp <= X264_CSP_NONE || csp >= X264_CSP_MAX || csp == X264_CSP_V210 )
         return -1;
     x264_picture_init( pic );
     pic->img.i_csp = i_csp;
