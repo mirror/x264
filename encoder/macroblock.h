@@ -98,10 +98,10 @@ do\
 #define CLEAR_16x16_NNZ( p ) \
 do\
 {\
-    M32( &h->mb.cache.non_zero_count[x264_scan8[16*p+ 0]] ) = 0;\
-    M32( &h->mb.cache.non_zero_count[x264_scan8[16*p+ 2]] ) = 0;\
-    M32( &h->mb.cache.non_zero_count[x264_scan8[16*p+ 8]] ) = 0;\
-    M32( &h->mb.cache.non_zero_count[x264_scan8[16*p+10]] ) = 0;\
+    M32( &h->mb.cache.non_zero_count[x264_scan8[16*p] + 0*8] ) = 0;\
+    M32( &h->mb.cache.non_zero_count[x264_scan8[16*p] + 1*8] ) = 0;\
+    M32( &h->mb.cache.non_zero_count[x264_scan8[16*p] + 2*8] ) = 0;\
+    M32( &h->mb.cache.non_zero_count[x264_scan8[16*p] + 3*8] ) = 0;\
 } while(0)
 
 /* A special for loop that iterates branchlessly over each set

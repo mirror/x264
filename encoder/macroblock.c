@@ -157,10 +157,7 @@ static void x264_mb_encode_i16x16( x264_t *h, int p, int i_qp )
         return;
     }
 
-    M32( &h->mb.cache.non_zero_count[x264_scan8[ 0+p*16]] ) = 0;
-    M32( &h->mb.cache.non_zero_count[x264_scan8[ 2+p*16]] ) = 0;
-    M32( &h->mb.cache.non_zero_count[x264_scan8[ 8+p*16]] ) = 0;
-    M32( &h->mb.cache.non_zero_count[x264_scan8[10+p*16]] ) = 0;
+    CLEAR_16x16_NNZ( p );
 
     h->dctf.sub16x16_dct( dct4x4, p_src, p_dst );
 
