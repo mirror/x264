@@ -609,7 +609,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
     if( PARAM_INTERLACED )
         h->param.b_pic_struct = 1;
 
-    if( h->param.b_avcintra_compat )
+    if( h->param.i_avcintra_class )
     {
         if( BIT_DEPTH != 10 )
         {
@@ -618,7 +618,16 @@ static int x264_validate_parameters( x264_t *h, int b_open )
             return -1;
         }
 
-        /* [50/100][res][fps] */
+        int type = h->param.i_avcintra_class == 200 ? 2 :
+                   h->param.i_avcintra_class == 100 ? 1 :
+                   h->param.i_avcintra_class == 50 ? 0 : -1;
+        if( type < 0 )
+        {
+            x264_log( h, X264_LOG_ERROR, "Invalid AVC-Intra class\n" );
+            return -1;
+        }
+
+        /* [50/100/200][res][fps] */
         static const struct
         {
             uint16_t fps_num;
@@ -627,7 +636,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
             uint16_t frame_size;
             const uint8_t *cqm_4ic;
             const uint8_t *cqm_8iy;
-        } avcintra_lut[2][2][7] =
+        } avcintra_lut[3][2][7] =
         {
             {{{ 60000, 1001, 0,  912, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
               {    50,    1, 0, 1100, x264_cqm_avci50_4ic, x264_cqm_avci50_p_8iy },
@@ -652,31 +661,39 @@ static int x264_validate_parameters( x264_t *h, int b_open )
               { 30000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
               {    50,    1, 0, 4444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
               {    25,    1, 0, 4444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
-              { 24000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy }}}
+              { 24000, 1001, 0, 3692, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy }}},
+            {{{ 60000, 1001, 0, 3724, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy },
+              {    50,    1, 0, 4472, x264_cqm_avci100_720p_4ic, x264_cqm_avci100_720p_8iy }},
+             {{ 30000, 1001, 1, 7444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080i_8iy },
+              {    25,    1, 1, 8940, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080i_8iy },
+              { 60000, 1001, 0, 7444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
+              { 30000, 1001, 0, 7444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
+              {    50,    1, 0, 8940, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
+              {    25,    1, 0, 8940, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy },
+              { 24000, 1001, 0, 7444, x264_cqm_avci100_1080_4ic, x264_cqm_avci100_1080p_8iy }}}
         };
 
         int res = -1;
-        int type = i_csp == X264_CSP_I422;
-        if( type )
-        {
-            if(      h->param.i_width == 1920 && h->param.i_height == 1080 ) res =  1;
-            else if( h->param.i_width == 1280 && h->param.i_height ==  720 ) res =  0;
-        }
-        else if( i_csp == X264_CSP_I420 )
+        if( i_csp >= X264_CSP_I420 && i_csp < X264_CSP_I422 && !type )
         {
             if(      h->param.i_width == 1440 && h->param.i_height == 1080 ) res =  1;
             else if( h->param.i_width ==  960 && h->param.i_height ==  720 ) res =  0;
         }
+        else if( i_csp >= X264_CSP_I422 && i_csp < X264_CSP_I444 && type )
+        {
+            if(      h->param.i_width == 1920 && h->param.i_height == 1080 ) res =  1;
+            else if( h->param.i_width == 1280 && h->param.i_height ==  720 ) res =  0;
+        }
         else
         {
-            x264_log( h, X264_LOG_ERROR, "Invalid colorspace for AVC-Intra\n" );
+            x264_log( h, X264_LOG_ERROR, "Invalid colorspace for AVC-Intra %d\n", h->param.i_avcintra_class );
             return -1;
         }
 
         if( res < 0 )
         {
-            x264_log( h, X264_LOG_ERROR, "Resolution %dx%d invalid for AVC-Intra %s\n",
-                      h->param.i_width, h->param.i_height, type ? "100" : "50" );
+            x264_log( h, X264_LOG_ERROR, "Resolution %dx%d invalid for AVC-Intra %d\n",
+                      h->param.i_width, h->param.i_height, h->param.i_avcintra_class );
             return -1;
         }
 
@@ -765,8 +782,9 @@ static int x264_validate_parameters( x264_t *h, int b_open )
             h->param.vui.i_sar_height = 3;
         }
 
-        /* Avid cannot handle negative QPs */
-        h->param.rc.i_qp_min = X264_MAX( h->param.rc.i_qp_min, QP_BD_OFFSET );
+        /* Official encoder doesn't appear to go under 13
+         * and Avid cannot handle negative QPs */
+        h->param.rc.i_qp_min = X264_MAX( h->param.rc.i_qp_min, QP_BD_OFFSET + 1 );
     }
 
     h->param.rc.f_rf_constant = x264_clip3f( h->param.rc.f_rf_constant, -QP_BD_OFFSET, 51 );
@@ -1070,10 +1088,10 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.analyse.i_chroma_qp_offset += 6;
     /* Psy RDO increases overall quantizers to improve the quality of luma--this indirectly hurts chroma quality */
     /* so we lower the chroma QP offset to compensate */
-    if( b_open && h->mb.i_psy_rd && !h->param.b_avcintra_compat )
+    if( b_open && h->mb.i_psy_rd && !h->param.i_avcintra_class )
         h->param.analyse.i_chroma_qp_offset -= h->param.analyse.f_psy_rd < 0.25 ? 1 : 2;
     /* Psy trellis has a similar effect. */
-    if( b_open && h->mb.i_psy_trellis && !h->param.b_avcintra_compat )
+    if( b_open && h->mb.i_psy_trellis && !h->param.i_avcintra_class )
         h->param.analyse.i_chroma_qp_offset -= h->param.analyse.f_psy_trellis < 0.25 ? 1 : 2;
     h->param.analyse.i_chroma_qp_offset = x264_clip3(h->param.analyse.i_chroma_qp_offset, -12, 12);
     /* MB-tree requires AQ to be on, even if the strength is zero. */
@@ -1234,7 +1252,6 @@ static int x264_validate_parameters( x264_t *h, int b_open )
     BOOLIFY( b_stitchable );
     BOOLIFY( b_full_recon );
     BOOLIFY( b_opencl );
-    BOOLIFY( b_avcintra_compat );
     BOOLIFY( analyse.b_transform_8x8 );
     BOOLIFY( analyse.b_weighted_bipred );
     BOOLIFY( analyse.b_chroma_me );
@@ -1894,10 +1911,10 @@ static int x264_encoder_encapsulate_nals( x264_t *h, int start )
     {
         int old_payload_len = h->out.nal[i].i_payload;
         h->out.nal[i].b_long_startcode = !i || h->out.nal[i].i_type == NAL_SPS || h->out.nal[i].i_type == NAL_PPS ||
-                                         h->param.b_avcintra_compat;
+                                         h->param.i_avcintra_class;
         x264_nal_encode( h, nal_buffer, &h->out.nal[i] );
         nal_buffer += h->out.nal[i].i_payload;
-        if( h->param.b_avcintra_compat )
+        if( h->param.i_avcintra_class )
         {
             h->out.nal[i].i_padding -= h->out.nal[i].i_payload - (old_payload_len + NALU_OVERHEAD);
             if( h->out.nal[i].i_padding > 0 )
@@ -3443,7 +3460,7 @@ int     x264_encoder_encode( x264_t *h,
             if( x264_nal_end( h ) )
                 return -1;
             /* Pad AUD/SPS to 256 bytes like Panasonic */
-            if( h->param.b_avcintra_compat )
+            if( h->param.i_avcintra_class )
                 h->out.nal[h->out.i_nal-1].i_padding = 256 - bs_pos( &h->out.bs ) / 8 - 2*NALU_OVERHEAD;
             overhead += h->out.nal[h->out.i_nal-1].i_payload + h->out.nal[h->out.i_nal-1].i_padding + NALU_OVERHEAD;
 
@@ -3452,7 +3469,7 @@ int     x264_encoder_encode( x264_t *h,
             x264_pps_write( &h->out.bs, h->sps, h->pps );
             if( x264_nal_end( h ) )
                 return -1;
-            if( h->param.b_avcintra_compat )
+            if( h->param.i_avcintra_class )
                 h->out.nal[h->out.i_nal-1].i_padding = 256 - h->out.nal[h->out.i_nal-1].i_payload - NALU_OVERHEAD;
             overhead += h->out.nal[h->out.i_nal-1].i_payload + h->out.nal[h->out.i_nal-1].i_padding + NALU_OVERHEAD;
         }
@@ -3495,7 +3512,7 @@ int     x264_encoder_encode( x264_t *h,
     if( h->fenc->b_keyframe )
     {
         /* Avid's decoder strictly wants two SEIs for AVC-Intra so we can't insert the x264 SEI */
-        if( h->param.b_repeat_headers && h->fenc->i_frame == 0 && !h->param.b_avcintra_compat )
+        if( h->param.b_repeat_headers && h->fenc->i_frame == 0 && !h->param.i_avcintra_class )
         {
             /* identify ourself */
             x264_nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
@@ -3551,7 +3568,7 @@ int     x264_encoder_encode( x264_t *h,
         h->i_cpb_delay_pir_offset_next = h->fenc->i_cpb_delay;
 
     /* Filler space: 10 or 18 SEIs' worth of space, depending on resolution */
-    if( h->param.b_avcintra_compat )
+    if( h->param.i_avcintra_class )
     {
         /* Write an empty filler NAL to mimic the AUD in the P2 format*/
         x264_nal_start( h, NAL_FILLER, NAL_PRIORITY_DISPOSABLE );
@@ -3723,7 +3740,7 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
 
     /* Filler in AVC-Intra mode is written as zero bytes to the last slice
      * We don't know the size of the last slice until encapsulation so we add filler to the encapsulated NAL */
-    if( h->param.b_avcintra_compat )
+    if( h->param.i_avcintra_class )
     {
         x264_t *h0 = h->thread[0];
         int ret = x264_check_encapsulated_buffer( h, h0, h->out.i_nal, frame_size, frame_size + filler );

@@ -653,7 +653,7 @@ void x264_ratecontrol_init_reconfigurable( x264_t *h, int b_init )
                       h->param.rc.i_vbv_buffer_size );
         }
 
-        int kilobit_size = h->param.b_avcintra_compat ? 1024 : 1000;
+        int kilobit_size = h->param.i_avcintra_class ? 1024 : 1000;
         int vbv_buffer_size = h->param.rc.i_vbv_buffer_size * kilobit_size;
         int vbv_max_bitrate = h->param.rc.i_vbv_max_bitrate * kilobit_size;
 
@@ -759,7 +759,7 @@ int x264_ratecontrol_new( x264_t *h )
     else
         rc->qcompress = h->param.rc.f_qcompress;
 
-    rc->bitrate = h->param.rc.i_bitrate * (h->param.b_avcintra_compat ? 1024. : 1000.);
+    rc->bitrate = h->param.rc.i_bitrate * (h->param.i_avcintra_class ? 1024. : 1000.);
     rc->rate_tolerance = h->param.rc.f_rate_tolerance;
     rc->nmb = h->mb.i_mb_count;
     rc->last_non_b_pict_type = -1;
@@ -2115,7 +2115,7 @@ static int update_vbv( x264_t *h, int bits )
     }
     rct->buffer_fill_final = X264_MAX( rct->buffer_fill_final, 0 );
 
-    if( h->param.b_avcintra_compat )
+    if( h->param.i_avcintra_class )
         rct->buffer_fill_final += buffer_size;
     else
         rct->buffer_fill_final += (uint64_t)bitrate * h->sps->vui.i_num_units_in_tick * h->fenc->i_cpb_duration;
@@ -2124,7 +2124,7 @@ static int update_vbv( x264_t *h, int bits )
     {
         int64_t scale = (int64_t)h->sps->vui.i_time_scale * 8;
         filler = (rct->buffer_fill_final - buffer_size + scale - 1) / scale;
-        bits = h->param.b_avcintra_compat ? filler * 8 : X264_MAX( (FILLER_OVERHEAD - h->param.b_annexb), filler ) * 8;
+        bits = h->param.i_avcintra_class ? filler * 8 : X264_MAX( (FILLER_OVERHEAD - h->param.b_annexb), filler ) * 8;
         rct->buffer_fill_final -= (uint64_t)bits * h->sps->vui.i_time_scale;
     }
     else

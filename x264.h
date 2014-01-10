@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 141
+#define X264_BUILD 142
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -322,7 +322,7 @@ typedef struct x264_param_t
     int         i_bframe_pyramid;   /* Keep some B-frames as references: 0=off, 1=strict hierarchical, 2=normal */
     int         b_open_gop;
     int         b_bluray_compat;
-    int         b_avcintra_compat;
+    int         i_avcintra_class;
 
     int         b_deblocking_filter;
     int         i_deblocking_filter_alphac0;    /* [-6, 6] -6 light filter, 6 strong */
