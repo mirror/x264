@@ -552,15 +552,15 @@ struct x264_t
     int             (*dequant4_mf[4])[16];   /* [4][6][16] */
     int             (*dequant8_mf[4])[64];   /* [4][6][64] */
     /* quantization matrix for trellis, [cqm][qp][coef] */
-    int             (*unquant4_mf[4])[16];   /* [4][52][16] */
-    int             (*unquant8_mf[4])[64];   /* [4][52][64] */
+    int             (*unquant4_mf[4])[16];   /* [4][QP_MAX_SPEC][16] */
+    int             (*unquant8_mf[4])[64];   /* [4][QP_MAX_SPEC][64] */
     /* quantization matrix for deadzone */
-    udctcoef        (*quant4_mf[4])[16];     /* [4][52][16] */
-    udctcoef        (*quant8_mf[4])[64];     /* [4][52][64] */
-    udctcoef        (*quant4_bias[4])[16];   /* [4][52][16] */
-    udctcoef        (*quant8_bias[4])[64];   /* [4][52][64] */
-    udctcoef        (*quant4_bias0[4])[16];  /* [4][52][16] */
-    udctcoef        (*quant8_bias0[4])[64];  /* [4][52][64] */
+    udctcoef        (*quant4_mf[4])[16];     /* [4][QP_MAX_SPEC][16] */
+    udctcoef        (*quant8_mf[4])[64];     /* [4][QP_MAX_SPEC][64] */
+    udctcoef        (*quant4_bias[4])[16];   /* [4][QP_MAX_SPEC][16] */
+    udctcoef        (*quant8_bias[4])[64];   /* [4][QP_MAX_SPEC][64] */
+    udctcoef        (*quant4_bias0[4])[16];  /* [4][QP_MAX_SPEC][16] */
+    udctcoef        (*quant8_bias0[4])[64];  /* [4][QP_MAX_SPEC][64] */
     udctcoef        (*nr_offset_emergency)[4][64];
 
     /* mv/ref cost arrays. */

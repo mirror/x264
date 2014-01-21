@@ -1778,7 +1778,7 @@ static int check_quant( int cpu_ref, int cpu_new )
         }
 
         h->param.rc.i_qp_min = 0;
-        h->param.rc.i_qp_max = QP_MAX;
+        h->param.rc.i_qp_max = QP_MAX_SPEC;
         x264_cqm_init( h );
         x264_quant_init( h, 0, &qf_c );
         x264_quant_init( h, cpu_ref, &qf_ref );

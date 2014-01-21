@@ -159,7 +159,7 @@ int x264_cqm_init( x264_t *h )
                      quant8_mf[i_list][q][i] = DIV(def_quant8[q][i] * 16, h->pps->scaling_list[4+i_list][i]);
             }
     }
-    for( int q = 0; q < QP_MAX+1; q++ )
+    for( int q = 0; q <= QP_MAX_SPEC; q++ )
     {
         int j;
         for( int i_list = 0; i_list < 4; i_list++ )
