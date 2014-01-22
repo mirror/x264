@@ -105,9 +105,9 @@ int x264_cqm_init( x264_t *h )
         }\
         else\
         {\
-            CHECKED_MALLOC( h->  quant##w##_mf[i], (QP_MAX+1)*size*sizeof(udctcoef) );\
+            CHECKED_MALLOC( h->  quant##w##_mf[i], (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
             CHECKED_MALLOC( h->dequant##w##_mf[i],  6*size*sizeof(int) );\
-            CHECKED_MALLOC( h->unquant##w##_mf[i], (QP_MAX+1)*size*sizeof(int) );\
+            CHECKED_MALLOC( h->unquant##w##_mf[i], (QP_MAX_SPEC+1)*size*sizeof(int) );\
         }\
         for( j = 0; j < i; j++ )\
             if( deadzone[j] == deadzone[i] &&\
@@ -120,8 +120,8 @@ int x264_cqm_init( x264_t *h )
         }\
         else\
         {\
-            CHECKED_MALLOC( h->quant##w##_bias[i], (QP_MAX+1)*size*sizeof(udctcoef) );\
-            CHECKED_MALLOC( h->quant##w##_bias0[i], (QP_MAX+1)*size*sizeof(udctcoef) );\
+            CHECKED_MALLOC( h->quant##w##_bias[i], (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
+            CHECKED_MALLOC( h->quant##w##_bias0[i], (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
         }\
     }
 
