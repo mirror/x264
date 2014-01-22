@@ -675,7 +675,7 @@ cglobal add16x16_idct_dc, 2,3,8
     mova        m6, [pw_pixel_max]
     mova        m7, [pd_32]
     pxor        m5, m5
-.loop
+.loop:
     mova        m3, [r1]
     paddd       m3, m7
     psrad       m3, 6         ; dc0   0 dc1   0 dc2   0 dc3   0

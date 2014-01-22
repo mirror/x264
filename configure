@@ -733,6 +733,7 @@ if [ $asm = auto -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
         echo "If you really want to compile without asm, configure with --disable-asm."
         exit 1
     fi
+    ASFLAGS="$ASFLAGS -Worphan-labels"
     define HAVE_MMX
     if cc_check '' -mpreferred-stack-boundary=5 ; then
         CFLAGS="$CFLAGS -mpreferred-stack-boundary=5"

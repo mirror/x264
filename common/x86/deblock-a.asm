@@ -621,7 +621,7 @@ cglobal deblock_v_luma_intra, 4,7,16
     mov     r6, 2
     mova    m0, [pw_2]
     LOAD_AB aa, bb, r2d, r3d
-.loop
+.loop:
     mova    p2, [r4+r1]
     mova    p1, [r4+2*r1]
     mova    p0, [r4+r5]
@@ -671,7 +671,7 @@ cglobal deblock_h_luma_intra, 4,7,16
     add     r4, r0     ; pix+4*stride
     mov     r6, 2
     mova    m0, [pw_2]
-.loop
+.loop:
     movu    q3, [r0-8]
     movu    q2, [r0+r1-8]
     movu    q1, [r0+r1*2-8]

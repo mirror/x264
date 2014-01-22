@@ -205,7 +205,7 @@ cglobal pixel_ssd_%1x%2, 4,7,6
     mov    r4d, %%n
 %endif
     pxor    m0, m0
-.loop
+.loop:
     mova    m1, [r0]
     mova    m2, [r0+offset0_1]
     mova    m3, [r0+offset0_2]
