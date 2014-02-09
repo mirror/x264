@@ -1392,19 +1392,18 @@ cglobal deblock_%1_luma, 5,5,8,2*%2
 ;-----------------------------------------------------------------------------
 ; void deblock_h_luma( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
 ;-----------------------------------------------------------------------------
-
 %if cpuflag(avx)
 INIT_XMM cpuname
 %else
 INIT_MMX cpuname
 %endif
-cglobal deblock_h_luma, 0,5,8,0x60+HAVE_ALIGNED_STACK*12
-    mov    r0, r0mp
+cglobal deblock_h_luma, 1,5,8,0x60+12
     mov    r3, r1m
     lea    r4, [r3*3]
     sub    r0, 4
     lea    r1, [r0+r4]
-    %define pix_tmp esp+12*HAVE_ALIGNED_STACK
+    %define pix_tmp esp+12
+    ; esp is intentionally misaligned to make it aligned after pushing the arguments for deblock_%1_luma.
 
     ; transpose 6x16 -> tmp space
     TRANSPOSE6x8_MEM  PASS8ROWS(r0, r1, r3, r4), pix_tmp

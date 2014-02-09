@@ -126,7 +126,7 @@ int x264_is_pipe( const char *path );
 
 #define EXPAND(x) x
 
-#if HAVE_32B_STACK_ALIGNMENT
+#if STACK_ALIGNMENT >= 32
 #define ALIGNED_ARRAY_32( type, name, sub1, ... )\
     ALIGNED_32( type name sub1 __VA_ARGS__ )
 #else

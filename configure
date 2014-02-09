@@ -557,7 +557,7 @@ esac
 
 LDFLAGS="$LDFLAGS $libm"
 
-aligned_stack=1
+stack_alignment=16
 case $host_cpu in
     i*86)
         ARCH="X86"
@@ -577,8 +577,7 @@ case $host_cpu in
             if [ $SYS = LINUX ]; then
                 # < 11 is completely incapable of keeping a mod16 stack
                 if cpp_check "" "" "__INTEL_COMPILER < 1100" ; then
-                    define BROKEN_STACK_ALIGNMENT
-                    aligned_stack=0
+                    stack_alignment=4
                 # 11 <= x < 12 is capable of keeping a mod16 stack, but defaults to not doing so.
                 elif cpp_check "" "" "__INTEL_COMPILER < 1200" ; then
                     CFLAGS="$CFLAGS -falign-stack=assume-16-byte"
@@ -586,7 +585,7 @@ case $host_cpu in
                 # >= 12 defaults to a mod16 stack
             fi
             # icl on windows has no mod16 stack support
-            [ $SYS = WINDOWS ] && define BROKEN_STACK_ALIGNMENT && aligned_stack=0
+            [ $SYS = WINDOWS ] && stack_alignment=4
         fi
         if [ "$SYS" = MACOSX ]; then
             ASFLAGS="$ASFLAGS -f macho -DPREFIX"
@@ -681,7 +680,6 @@ case $host_cpu in
         ARCH="$(echo $host_cpu | tr a-z A-Z)"
         ;;
 esac
-ASFLAGS="$ASFLAGS -DHAVE_ALIGNED_STACK=${aligned_stack}"
 
 if [ $SYS = WINDOWS ]; then
     if ! rc_check "0 RCDATA {0}" ; then
@@ -735,9 +733,9 @@ if [ $asm = auto -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
     fi
     ASFLAGS="$ASFLAGS -Worphan-labels"
     define HAVE_MMX
-    if cc_check '' -mpreferred-stack-boundary=5 ; then
+    if [ $compiler = GNU ] && cc_check '' -mpreferred-stack-boundary=5 ; then
         CFLAGS="$CFLAGS -mpreferred-stack-boundary=5"
-        define HAVE_32B_STACK_ALIGNMENT
+        stack_alignment=32
     fi
 fi
 
@@ -761,6 +759,9 @@ fi
 
 define ARCH_$ARCH
 define SYS_$SYS
+
+define STACK_ALIGNMENT $stack_alignment
+ASFLAGS="$ASFLAGS -DSTACK_ALIGNMENT=$stack_alignment"
 
 # skip endianness check for Intel Compiler, as all supported platforms are little. the -ipo flag will also cause the check to fail
 if [ $compiler = GNU ]; then

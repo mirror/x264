@@ -2530,7 +2530,7 @@ static int add_flags( int *cpu_ref, int *cpu_new, int flags, const char *name )
 {
     *cpu_ref = *cpu_new;
     *cpu_new |= flags;
-#if BROKEN_STACK_ALIGNMENT
+#if STACK_ALIGNMENT < 16
     *cpu_new |= X264_CPU_STACK_MOD4;
 #endif
     if( *cpu_new & X264_CPU_SSE2_IS_FAST )
