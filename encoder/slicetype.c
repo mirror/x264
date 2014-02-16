@@ -1055,7 +1055,7 @@ static void x264_macroblock_tree_propagate( x264_t *h, x264_frame_t **frames, fl
     uint16_t *propagate_cost = frames[b]->i_propagate_cost;
 
     x264_emms();
-    float fps_factor = CLIP_DURATION(frames[b]->f_duration) / CLIP_DURATION(average_duration);
+    float fps_factor = CLIP_DURATION(frames[b]->f_duration) / (CLIP_DURATION(average_duration) * 256.0f);
 
     /* For non-reffed frames the source costs are always zero, so just memset one row and re-use it. */
     if( !referenced )

@@ -486,7 +486,7 @@ static void frame_init_lowres_core( pixel *src0, pixel *dst0, pixel *dsth, pixel
 static void mbtree_propagate_cost( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                    uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len )
 {
-    float fps = *fps_factor / 256.f;
+    float fps = *fps_factor;
     for( int i = 0; i < len; i++ )
     {
         float intra_cost       = intra_costs[i] * inv_qscales[i];

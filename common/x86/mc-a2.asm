@@ -56,7 +56,6 @@ pw_1024: times 16 dw 1024
 
 pd_16: times 4 dd 16
 pd_0f: times 4 dd 0xffff
-pf_inv256: times 8 dd 0.00390625
 
 pad10: times 8 dw    10*PIXEL_MAX
 pad20: times 8 dw    20*PIXEL_MAX
@@ -1881,62 +1880,62 @@ FRAME_INIT_LOWRES
 ;                             uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len )
 ;-----------------------------------------------------------------------------
 %macro MBTREE 0
-cglobal mbtree_propagate_cost, 7,7,7
-    add        r6d, r6d
-    lea         r0, [r0+r6*2]
-    add         r1, r6
-    add         r2, r6
-    add         r3, r6
-    add         r4, r6
-    neg         r6
-    pxor      xmm4, xmm4
-    movss     xmm6, [r5]
-    shufps    xmm6, xmm6, 0
-    mulps     xmm6, [pf_inv256]
-    movdqa    xmm5, [pw_3fff]
+cglobal mbtree_propagate_cost, 6,6,7
+    movss     m6, [r5]
+    mov      r5d, r6m
+    lea       r0, [r0+r5*4]
+    add      r5d, r5d
+    add       r1, r5
+    add       r2, r5
+    add       r3, r5
+    add       r4, r5
+    neg       r5
+    pxor      m4, m4
+    shufps    m6, m6, 0
+    mova      m5, [pw_3fff]
 .loop:
-    movq      xmm2, [r2+r6] ; intra
-    movq      xmm0, [r4+r6] ; invq
-    movq      xmm3, [r3+r6] ; inter
-    movq      xmm1, [r1+r6] ; prop
-    punpcklwd xmm2, xmm4
-    punpcklwd xmm0, xmm4
-    pmaddwd   xmm0, xmm2
-    pand      xmm3, xmm5
-    punpcklwd xmm1, xmm4
-    punpcklwd xmm3, xmm4
+    movq      m2, [r2+r5] ; intra
+    movq      m0, [r4+r5] ; invq
+    movq      m3, [r3+r5] ; inter
+    movq      m1, [r1+r5] ; prop
+    punpcklwd m2, m4
+    punpcklwd m0, m4
+    pmaddwd   m0, m2
+    pand      m3, m5
+    punpcklwd m1, m4
+    punpcklwd m3, m4
 %if cpuflag(fma4)
-    cvtdq2ps  xmm0, xmm0
-    cvtdq2ps  xmm1, xmm1
-    fmaddps   xmm0, xmm0, xmm6, xmm1
-    cvtdq2ps  xmm1, xmm2
-    psubd     xmm2, xmm3
-    cvtdq2ps  xmm2, xmm2
-    rcpps     xmm3, xmm1
-    mulps     xmm1, xmm3
-    mulps     xmm0, xmm2
-    addps     xmm2, xmm3, xmm3
-    fnmaddps  xmm3, xmm1, xmm3, xmm2
-    mulps     xmm0, xmm3
+    cvtdq2ps  m0, m0
+    cvtdq2ps  m1, m1
+    fmaddps   m0, m0, m6, m1
+    cvtdq2ps  m1, m2
+    psubd     m2, m3
+    cvtdq2ps  m2, m2
+    rcpps     m3, m1
+    mulps     m1, m3
+    mulps     m0, m2
+    addps     m2, m3, m3
+    fnmaddps  m3, m1, m3, m2
+    mulps     m0, m3
 %else
-    cvtdq2ps  xmm0, xmm0
-    mulps     xmm0, xmm6    ; intra*invq*fps_factor>>8
-    cvtdq2ps  xmm1, xmm1    ; prop
-    addps     xmm0, xmm1    ; prop + (intra*invq*fps_factor>>8)
-    cvtdq2ps  xmm1, xmm2    ; intra
-    psubd     xmm2, xmm3    ; intra - inter
-    cvtdq2ps  xmm2, xmm2    ; intra - inter
-    rcpps     xmm3, xmm1    ; 1 / intra 1st approximation
-    mulps     xmm1, xmm3    ; intra * (1/intra 1st approx)
-    mulps     xmm1, xmm3    ; intra * (1/intra 1st approx)^2
-    mulps     xmm0, xmm2    ; (prop + (intra*invq*fps_factor>>8)) * (intra - inter)
-    addps     xmm3, xmm3    ; 2 * (1/intra 1st approx)
-    subps     xmm3, xmm1    ; 2nd approximation for 1/intra
-    mulps     xmm0, xmm3    ; / intra
+    cvtdq2ps  m0, m0
+    mulps     m0, m6    ; intra*invq*fps_factor>>8
+    cvtdq2ps  m1, m1    ; prop
+    addps     m0, m1    ; prop + (intra*invq*fps_factor>>8)
+    cvtdq2ps  m1, m2    ; intra
+    psubd     m2, m3    ; intra - inter
+    cvtdq2ps  m2, m2    ; intra - inter
+    rcpps     m3, m1    ; 1 / intra 1st approximation
+    mulps     m1, m3    ; intra * (1/intra 1st approx)
+    mulps     m1, m3    ; intra * (1/intra 1st approx)^2
+    mulps     m0, m2    ; (prop + (intra*invq*fps_factor>>8)) * (intra - inter)
+    addps     m3, m3    ; 2 * (1/intra 1st approx)
+    subps     m3, m1    ; 2nd approximation for 1/intra
+    mulps     m0, m3    ; / intra
 %endif
-    cvtps2dq  xmm0, xmm0
-    movdqa [r0+r6*2], xmm0
-    add         r6, 8
+    cvtps2dq  m0, m0
+    mova [r0+r5*2], m0
+    add       r5, 8
     jl .loop
     RET
 %endmacro
@@ -1948,33 +1947,33 @@ INIT_XMM fma4
 MBTREE
 
 %macro INT16_UNPACK 1
-    vpunpckhwd   xm4, xm%1, xm7
-    vpunpcklwd  xm%1, xm7
-    vinsertf128  m%1, m%1, xm4, 1
+    punpckhwd   xm4, xm%1, xm7
+    punpcklwd  xm%1, xm7
+    vinsertf128 m%1, m%1, xm4, 1
 %endmacro
 
-; FIXME: align loads/stores to 16 bytes
-%macro MBTREE_AVX 0
-cglobal mbtree_propagate_cost, 7,7,8
-    add          r6d, r6d
-    lea           r0, [r0+r6*2]
-    add           r1, r6
-    add           r2, r6
-    add           r3, r6
-    add           r4, r6
-    neg           r6
-    mova         xm5, [pw_3fff]
-    vbroadcastss  m6, [r5]
-    mulps         m6, [pf_inv256]
+; FIXME: align loads to 16 bytes
+%macro MBTREE_AVX 1
+cglobal mbtree_propagate_cost, 6,6,%1
+    vbroadcastss m6, [r5]
+    mov         r5d, r6m
+    lea          r0, [r0+r5*4]
+    add         r5d, r5d
+    add          r1, r5
+    add          r2, r5
+    add          r3, r5
+    add          r4, r5
+    neg          r5
+    mova        xm5, [pw_3fff]
 %if notcpuflag(avx2)
-    pxor         xm7, xm7
+    pxor        xm7, xm7
 %endif
 .loop:
 %if cpuflag(avx2)
-    pmovzxwd     m0, [r2+r6]      ; intra
-    pmovzxwd     m1, [r4+r6]      ; invq
-    pmovzxwd     m2, [r1+r6]      ; prop
-    pand        xm3, xm5, [r3+r6] ; inter
+    pmovzxwd     m0, [r2+r5]      ; intra
+    pmovzxwd     m1, [r4+r5]      ; invq
+    pmovzxwd     m2, [r1+r5]      ; prop
+    pand        xm3, xm5, [r3+r5] ; inter
     pmovzxwd     m3, xm3
     pmaddwd      m1, m0
     psubd        m4, m0, m3
@@ -1990,10 +1989,10 @@ cglobal mbtree_propagate_cost, 7,7,8
     fnmaddps     m4, m2, m3, m4
     mulps        m1, m4
 %else
-    movu        xm0, [r2+r6]
-    movu        xm1, [r4+r6]
-    movu        xm2, [r1+r6]
-    pand        xm3, xm5, [r3+r6]
+    movu        xm0, [r2+r5]
+    movu        xm1, [r4+r5]
+    movu        xm2, [r1+r5]
+    pand        xm3, xm5, [r3+r5]
     INT16_UNPACK 0
     INT16_UNPACK 1
     INT16_UNPACK 2
@@ -2015,13 +2014,13 @@ cglobal mbtree_propagate_cost, 7,7,8
     mulps        m1, m3         ; / intra
 %endif
     vcvtps2dq    m1, m1
-    movu  [r0+r6*2], m1
-    add          r6, 16
+    mova  [r0+r5*2], m1
+    add          r5, 16
     jl .loop
     RET
 %endmacro
 
 INIT_YMM avx
-MBTREE_AVX
+MBTREE_AVX 8
 INIT_YMM avx2,fma3
-MBTREE_AVX
+MBTREE_AVX 7

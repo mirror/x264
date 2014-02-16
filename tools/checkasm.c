@@ -1573,7 +1573,7 @@ static int check_mc( int cpu_ref, int cpu_new )
         x264_emms();
         for( int i = 0; i < 10; i++ )
         {
-            float fps_factor = (rand()&65535) / 256.;
+            float fps_factor = (rand()&65535) / 65535.0f;
             set_func_name( "mbtree_propagate" );
             int *dsta = (int*)buf3;
             int *dstc = dsta+400;
