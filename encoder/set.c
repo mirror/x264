@@ -228,7 +228,8 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     }
 
     /* FIXME: not sufficient for interlaced video */
-    sps->vui.b_chroma_loc_info_present = param->vui.i_chroma_loc > 0 && param->vui.i_chroma_loc <= 5;
+    sps->vui.b_chroma_loc_info_present = param->vui.i_chroma_loc > 0 && param->vui.i_chroma_loc <= 5 &&
+                                         sps->i_chroma_format_idc == CHROMA_420;
     if( sps->vui.b_chroma_loc_info_present )
     {
         sps->vui.i_chroma_loc_top = param->vui.i_chroma_loc;
