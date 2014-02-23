@@ -38,6 +38,7 @@ filt_mul51: times 16 db -5, 1
 hpel_shuf: times 2 db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
 deinterleave_shuf: times 2 db 0,2,4,6,8,10,12,14,1,3,5,7,9,11,13,15
 
+%if HIGH_BIT_DEPTH
 v210_mask: times 4 dq 0xc00ffc003ff003ff
 v210_luma_shuf: times 2 db 1,2,4,5,6,7,9,10,12,13,14,15,12,13,14,15
 v210_chroma_shuf: times 2 db 0,1,2,3,5,6,8,9,10,11,13,14,10,11,13,14
@@ -45,13 +46,16 @@ v210_chroma_shuf: times 2 db 0,1,2,3,5,6,8,9,10,11,13,14,10,11,13,14
 v210_mult: dw 0x2000,0x7fff,0x0801,0x2000,0x7ffa,0x0800,0x7ffc,0x0800
            dw 0x1ffd,0x7fff,0x07ff,0x2000,0x7fff,0x0800,0x7fff,0x0800
 
-%if HIGH_BIT_DEPTH
 deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
 deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
 %else
+deinterleave_rgb_shuf: db 0,3,6,9,1,4,7,10,2,5,8,11,-1,-1,-1,-1
+                       db 0,4,8,12,1,5,9,13,2,6,10,14,-1,-1,-1,-1
+
 deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
-%endif
+%endif ; !HIGH_BIT_DEPTH
+
 pw_1024: times 16 dw 1024
 
 pd_16: times 4 dd 16
@@ -1200,6 +1204,105 @@ cglobal load_deinterleave_chroma_fdec, 4,4
     jg .loop
     RET
 %endmacro ; PLANE_DEINTERLEAVE
+
+%macro PLANE_DEINTERLEAVE_RGB_CORE 9 ; pw, i_dsta, i_dstb, i_dstc, i_src, w, h, tmp1, tmp2
+%if cpuflag(ssse3)
+    mova        m3, [deinterleave_rgb_shuf+(%1-3)*16]
+%endif
+%%loopy:
+    mov         %8, r6
+    mov         %9, %6
+%%loopx:
+    movu        m0, [%8]
+    movu        m1, [%8+%1*mmsize/4]
+%if cpuflag(ssse3)
+    pshufb      m0, m3        ; b0 b1 b2 b3 g0 g1 g2 g3 r0 r1 r2 r3
+    pshufb      m1, m3        ; b4 b5 b6 b7 g4 g5 g6 g7 r4 r5 r6 r7
+%elif %1 == 3
+    psrldq      m2, m0, 6
+    punpcklqdq  m0, m1        ; b0 g0 r0 b1 g1 r1 __ __ b4 g4 r4 b5 g5 r5
+    psrldq      m1, 6
+    punpcklqdq  m2, m1        ; b2 g2 r2 b3 g3 r3 __ __ b6 g6 r6 b7 g7 r7
+    psrlq       m3, m0, 24
+    psrlq       m4, m2, 24
+    punpckhbw   m1, m0, m3    ; b4 b5 g4 g5 r4 r5
+    punpcklbw   m0, m3        ; b0 b1 g0 g1 r0 r1
+    punpckhbw   m3, m2, m4    ; b6 b7 g6 g7 r6 r7
+    punpcklbw   m2, m4        ; b2 b3 g2 g3 r2 r3
+    punpcklwd   m0, m2        ; b0 b1 b2 b3 g0 g1 g2 g3 r0 r1 r2 r3
+    punpcklwd   m1, m3        ; b4 b5 b6 b7 g4 g5 g6 g7 r4 r5 r6 r7
+%else
+    pshufd      m3, m0, q2301
+    pshufd      m4, m1, q2301
+    punpckhbw   m2, m0, m3    ; b2 b3 g2 g3 r2 r3
+    punpcklbw   m0, m3        ; b0 b1 g0 g1 r0 r1
+    punpckhbw   m3, m1, m4    ; b6 b7 g6 g7 r6 r7
+    punpcklbw   m1, m4        ; b4 b5 g4 g5 r4 r5
+    punpcklwd   m0, m2        ; b0 b1 b2 b3 g0 g1 g2 g3 r0 r1 r2 r3
+    punpcklwd   m1, m3        ; b4 b5 b6 b7 g4 g5 g6 g7 r4 r5 r6 r7
+%endif
+    punpckldq   m2, m0, m1    ; b0 b1 b2 b3 b4 b5 b6 b7 g0 g1 g2 g3 g4 g5 g6 g7
+    punpckhdq   m0, m1        ; r0 r1 r2 r3 r4 r5 r6 r7
+    movh   [r0+%9], m2
+    movhps [r2+%9], m2
+    movh   [r4+%9], m0
+    add         %8, %1*mmsize/2
+    add         %9, mmsize/2
+    jl %%loopx
+    add         r0, %2
+    add         r2, %3
+    add         r4, %4
+    add         r6, %5
+    dec        %7d
+    jg %%loopy
+%endmacro
+
+%macro PLANE_DEINTERLEAVE_RGB 0
+;-----------------------------------------------------------------------------
+; void x264_plane_copy_deinterleave_rgb( pixel *dsta, intptr_t i_dsta,
+;                                        pixel *dstb, intptr_t i_dstb,
+;                                        pixel *dstc, intptr_t i_dstc,
+;                                        pixel *src,  intptr_t i_src, int pw, int w, int h )
+;-----------------------------------------------------------------------------
+%if ARCH_X86_64
+cglobal plane_copy_deinterleave_rgb, 8,12
+    %define %%args r1, r3, r5, r7, r8, r9, r10, r11
+    mov        r8d, r9m
+    mov        r9d, r10m
+    add         r0, r8
+    add         r2, r8
+    add         r4, r8
+    neg         r8
+%else
+cglobal plane_copy_deinterleave_rgb, 1,7
+    %define %%args r1m, r3m, r5m, r7m, r9m, r1, r3, r5
+    mov         r1, r9m
+    mov         r2, r2m
+    mov         r4, r4m
+    mov         r6, r6m
+    add         r0, r1
+    add         r2, r1
+    add         r4, r1
+    neg         r1
+    mov        r9m, r1
+    mov         r1, r10m
+%endif
+    cmp  dword r8m, 4
+    je .pw4
+    PLANE_DEINTERLEAVE_RGB_CORE 3, %%args ; BGR
+    jmp .ret
+.pw4:
+    PLANE_DEINTERLEAVE_RGB_CORE 4, %%args ; BGRA
+.ret:
+    REP_RET
+%endmacro
+
+%if HIGH_BIT_DEPTH == 0
+INIT_XMM sse2
+PLANE_DEINTERLEAVE_RGB
+INIT_XMM ssse3
+PLANE_DEINTERLEAVE_RGB
+%endif ; !HIGH_BIT_DEPTH
 
 %macro PLANE_DEINTERLEAVE_V210 0
 ;-----------------------------------------------------------------------------

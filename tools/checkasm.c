@@ -1451,6 +1451,37 @@ static int check_mc( int cpu_ref, int cpu_new )
                 }
         }
     }
+
+    if( mc_a.plane_copy_deinterleave_rgb != mc_ref.plane_copy_deinterleave_rgb )
+    {
+        set_func_name( "plane_copy_deinterleave_rgb" );
+        used_asm = 1;
+        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        {
+            int w = (plane_specs[i].w + 2) >> 2;
+            int h = plane_specs[i].h;
+            intptr_t src_stride = plane_specs[i].src_stride;
+            intptr_t dst_stride = ALIGN( w, 16 );
+            intptr_t offv = dst_stride*h + 16;
+
+            for( int pw = 3; pw <= 4; pw++ )
+            {
+                memset( pbuf3, 0, 0x1000 );
+                memset( pbuf4, 0, 0x1000 );
+                call_c( mc_c.plane_copy_deinterleave_rgb, pbuf3, dst_stride, pbuf3+offv, dst_stride, pbuf3+2*offv, dst_stride, pbuf1, src_stride, pw, w, h );
+                call_a( mc_a.plane_copy_deinterleave_rgb, pbuf4, dst_stride, pbuf4+offv, dst_stride, pbuf4+2*offv, dst_stride, pbuf1, src_stride, pw, w, h );
+                for( int y = 0; y < h; y++ )
+                    if( memcmp( pbuf3+y*dst_stride+0*offv, pbuf4+y*dst_stride+0*offv, w ) ||
+                        memcmp( pbuf3+y*dst_stride+1*offv, pbuf4+y*dst_stride+1*offv, w ) ||
+                        memcmp( pbuf3+y*dst_stride+2*offv, pbuf4+y*dst_stride+2*offv, w ) )
+                    {
+                        ok = 0;
+                        fprintf( stderr, "plane_copy_deinterleave_rgb FAILED: w=%d h=%d stride=%d pw=%d\n", w, h, (int)src_stride, pw );
+                        break;
+                    }
+            }
+        }
+    }
     report( "plane_copy :" );
 
     if( mc_a.plane_copy_deinterleave_v210 != mc_ref.plane_copy_deinterleave_v210 )

@@ -116,6 +116,14 @@ void x264_plane_copy_deinterleave_ssse3( uint8_t *dstu, intptr_t i_dstu,
 void x264_plane_copy_deinterleave_avx( uint16_t *dstu, intptr_t i_dstu,
                                        uint16_t *dstv, intptr_t i_dstv,
                                        uint16_t *src,  intptr_t i_src, int w, int h );
+void x264_plane_copy_deinterleave_rgb_sse2 ( pixel *dsta, intptr_t i_dsta,
+                                             pixel *dstb, intptr_t i_dstb,
+                                             pixel *dstc, intptr_t i_dstc,
+                                             pixel *src,  intptr_t i_src, int pw, int w, int h );
+void x264_plane_copy_deinterleave_rgb_ssse3( pixel *dsta, intptr_t i_dsta,
+                                             pixel *dstb, intptr_t i_dstb,
+                                             pixel *dstc, intptr_t i_dstc,
+                                             pixel *src,  intptr_t i_src, int pw, int w, int h );
 void x264_plane_copy_deinterleave_v210_ssse3( uint16_t *dstu, intptr_t i_dstu,
                                               uint16_t *dstv, intptr_t i_dstv,
                                               uint32_t *src,  intptr_t i_src, int w, int h );
@@ -688,6 +696,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->integral_init8v = x264_integral_init8v_sse2;
     pf->hpel_filter = x264_hpel_filter_sse2_amd;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
+    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_sse2;
 
     if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
     {
@@ -738,6 +747,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_ssse3;
     pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_ssse3;
     pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_ssse3;
+    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_ssse3;
 
     if( !(cpu&X264_CPU_SLOW_PSHUFB) )
     {
