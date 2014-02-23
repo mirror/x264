@@ -122,8 +122,12 @@ typedef struct
     weight_fn_t *offsetsub;
     void (*weight_cache)( x264_t *, x264_weight_t * );
 
-    void (*mbtree_propagate_cost)( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+    void (*mbtree_propagate_cost)( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                    uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+
+    void (*mbtree_propagate_list)( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
+                                   int16_t *propagate_amount, uint16_t *lowres_costs,
+                                   int bipred_weight, int mb_y, int len, int list );
 } x264_mc_functions_t;
 
 void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent );

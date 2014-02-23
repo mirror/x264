@@ -32,6 +32,7 @@
 
 SECTION_RODATA 32
 
+pw_1024: times 16 dw 1024
 filt_mul20: times 32 db 20
 filt_mul15: times 16 db 1, -5
 filt_mul51: times 16 db -5, 1
@@ -56,8 +57,6 @@ deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
 %endif ; !HIGH_BIT_DEPTH
 
-pw_1024: times 16 dw 1024
-
 pd_16: times 4 dd 16
 pd_0f: times 4 dd 0xffff
 
@@ -70,16 +69,22 @@ tap1: times 4 dw  1, -5
 tap2: times 4 dw 20, 20
 tap3: times 4 dw -5,  1
 
+pw_0xc000: times 8 dw 0xc000
+pw_31: times 8 dw 31
+pd_4: times 4 dd 4
+
 SECTION .text
 
 cextern pb_0
 cextern pw_1
+cextern pw_8
 cextern pw_16
 cextern pw_32
 cextern pw_512
 cextern pw_00ff
 cextern pw_3fff
 cextern pw_pixel_max
+cextern pw_0to15
 cextern pd_ffff
 
 %macro LOAD_ADD 4
@@ -1986,7 +1991,7 @@ FRAME_INIT_LOWRES
 cglobal mbtree_propagate_cost, 6,6,7
     movss     m6, [r5]
     mov      r5d, r6m
-    lea       r0, [r0+r5*4]
+    lea       r0, [r0+r5*2]
     add      r5d, r5d
     add       r1, r5
     add       r2, r5
@@ -2001,10 +2006,11 @@ cglobal mbtree_propagate_cost, 6,6,7
     movq      m0, [r4+r5] ; invq
     movq      m3, [r3+r5] ; inter
     movq      m1, [r1+r5] ; prop
+    pand      m3, m5
+    pminsw    m3, m2
     punpcklwd m2, m4
     punpcklwd m0, m4
     pmaddwd   m0, m2
-    pand      m3, m5
     punpcklwd m1, m4
     punpcklwd m3, m4
 %if cpuflag(fma4)
@@ -2037,7 +2043,8 @@ cglobal mbtree_propagate_cost, 6,6,7
     mulps     m0, m3    ; / intra
 %endif
     cvtps2dq  m0, m0
-    mova [r0+r5*2], m0
+    packssdw  m0, m0
+    movh [r0+r5], m0
     add       r5, 8
     jl .loop
     RET
@@ -2060,7 +2067,7 @@ MBTREE
 cglobal mbtree_propagate_cost, 6,6,%1
     vbroadcastss m6, [r5]
     mov         r5d, r6m
-    lea          r0, [r0+r5*4]
+    lea          r0, [r0+r5*2]
     add         r5d, r5d
     add          r1, r5
     add          r2, r5
@@ -2078,6 +2085,7 @@ cglobal mbtree_propagate_cost, 6,6,%1
     pmovzxwd     m2, [r1+r5]      ; prop
     pand        xm3, xm5, [r3+r5] ; inter
     pmovzxwd     m3, xm3
+    pminsd       m3, m0
     pmaddwd      m1, m0
     psubd        m4, m0, m3
     cvtdq2ps     m0, m0
@@ -2096,6 +2104,7 @@ cglobal mbtree_propagate_cost, 6,6,%1
     movu        xm1, [r4+r5]
     movu        xm2, [r1+r5]
     pand        xm3, xm5, [r3+r5]
+    pminsw      xm3, xm0
     INT16_UNPACK 0
     INT16_UNPACK 1
     INT16_UNPACK 2
@@ -2117,7 +2126,9 @@ cglobal mbtree_propagate_cost, 6,6,%1
     mulps        m1, m3         ; / intra
 %endif
     vcvtps2dq    m1, m1
-    mova  [r0+r5*2], m1
+    vextractf128 xm2, m1, 1
+    packssdw    xm1, xm2
+    mova    [r0+r5], xm1
     add          r5, 16
     jl .loop
     RET
@@ -2127,3 +2138,95 @@ INIT_YMM avx
 MBTREE_AVX 8
 INIT_YMM avx2,fma3
 MBTREE_AVX 7
+
+%macro MBTREE_PROPAGATE_LIST 0
+;-----------------------------------------------------------------------------
+; void mbtree_propagate_list_internal( int16_t (*mvs)[2], int *propagate_amount, uint16_t *lowres_costs,
+;                                      int16_t *output, int bipred_weight, int mb_y, int len )
+;-----------------------------------------------------------------------------
+cglobal mbtree_propagate_list_internal, 4,6,8
+    movh     m6, [pw_0to15] ; mb_x
+    movd     m7, r5m
+    pshuflw  m7, m7, 0
+    punpcklwd m6, m7       ; 0 y 1 y 2 y 3 y
+    movd     m7, r4m
+    SPLATW   m7, m7        ; bipred_weight
+    psllw    m7, 9         ; bipred_weight << 9
+
+    mov     r5d, r6m
+    xor     r4d, r4d
+.loop:
+    mova     m3, [r1+r4*2]
+    movu     m4, [r2+r4*2]
+    mova     m5, [pw_0xc000]
+    pand     m4, m5
+    pcmpeqw  m4, m5
+    pmulhrsw m5, m3, m7    ; propagate_amount = (propagate_amount * bipred_weight + 32) >> 6
+%if cpuflag(avx)
+    pblendvb m5, m3, m5, m4
+%else
+    pand     m5, m4
+    pandn    m4, m3
+    por      m5, m4        ; if( lists_used == 3 )
+                           ;     propagate_amount = (propagate_amount * bipred_weight + 32) >> 6
+%endif
+
+    movu     m0, [r0+r4*4] ; x,y
+    movu     m1, [r0+r4*4+mmsize]
+
+    psraw    m2, m0, 5
+    psraw    m3, m1, 5
+    mova     m4, [pd_4]
+    paddw    m2, m6        ; {mbx, mby} = ({x,y}>>5)+{h->mb.i_mb_x,h->mb.i_mb_y}
+    paddw    m6, m4        ; {mbx, mby} += {4, 0}
+    paddw    m3, m6        ; {mbx, mby} = ({x,y}>>5)+{h->mb.i_mb_x,h->mb.i_mb_y}
+    paddw    m6, m4        ; {mbx, mby} += {4, 0}
+
+    mova [r3+mmsize*0], m2
+    mova [r3+mmsize*1], m3
+
+    mova     m3, [pw_31]
+    pand     m0, m3        ; x &= 31
+    pand     m1, m3        ; y &= 31
+    packuswb m0, m1
+    psrlw    m1, m0, 3
+    pand     m0, m3        ; x
+    SWAP      1, 3
+    pandn    m1, m3        ; y premultiplied by (1<<5) for later use of pmulhrsw
+
+    mova     m3, [pw_32]
+    psubw    m3, m0        ; 32 - x
+    mova     m4, [pw_1024]
+    psubw    m4, m1        ; (32 - y) << 5
+
+    pmullw   m2, m3, m4    ; idx0weight = (32-y)*(32-x) << 5
+    pmullw   m4, m0        ; idx1weight = (32-y)*x << 5
+    pmullw   m0, m1        ; idx3weight = y*x << 5
+    pmullw   m1, m3        ; idx2weight = y*(32-x) << 5
+
+    ; avoid overflow in the input to pmulhrsw
+    psrlw    m3, m2, 15
+    psubw    m2, m3        ; idx0weight -= (idx0weight == 32768)
+
+    pmulhrsw m2, m5        ; idx0weight * propagate_amount + 512 >> 10
+    pmulhrsw m4, m5        ; idx1weight * propagate_amount + 512 >> 10
+    pmulhrsw m1, m5        ; idx2weight * propagate_amount + 512 >> 10
+    pmulhrsw m0, m5        ; idx3weight * propagate_amount + 512 >> 10
+
+    SBUTTERFLY wd, 2, 4, 3
+    SBUTTERFLY wd, 1, 0, 3
+    mova [r3+mmsize*2], m2
+    mova [r3+mmsize*3], m4
+    mova [r3+mmsize*4], m1
+    mova [r3+mmsize*5], m0
+    add     r4d, mmsize/2
+    add      r3, mmsize*6
+    cmp     r4d, r5d
+    jl .loop
+    REP_RET
+%endmacro
+
+INIT_XMM ssse3
+MBTREE_PROPAGATE_LIST
+INIT_XMM avx
+MBTREE_PROPAGATE_LIST

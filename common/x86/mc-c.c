@@ -161,13 +161,13 @@ void x264_integral_init4v_avx2( uint16_t *sum8, uint16_t *sum4, intptr_t stride 
 void x264_integral_init8v_mmx ( uint16_t *sum8, intptr_t stride );
 void x264_integral_init8v_sse2( uint16_t *sum8, intptr_t stride );
 void x264_integral_init8v_avx2( uint16_t *sum8, intptr_t stride );
-void x264_mbtree_propagate_cost_sse2( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+void x264_mbtree_propagate_cost_sse2( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                       uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
-void x264_mbtree_propagate_cost_avx ( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+void x264_mbtree_propagate_cost_avx ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                       uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
-void x264_mbtree_propagate_cost_fma4( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+void x264_mbtree_propagate_cost_fma4( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                       uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
-void x264_mbtree_propagate_cost_avx2_fma3( int *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+void x264_mbtree_propagate_cost_avx2_fma3( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                            uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
 
 #define MC_CHROMA(cpu)\
@@ -533,6 +533,113 @@ PLANE_INTERLEAVE(sse2)
 PLANE_INTERLEAVE(avx)
 #endif
 
+#if HAVE_X86_INLINE_ASM
+#define CLIP_ADD(s,x)\
+do\
+{\
+    int temp;\
+    asm("movd       %0, %%xmm0     \n"\
+        "movd       %2, %%xmm1     \n"\
+        "paddsw %%xmm1, %%xmm0     \n"\
+        "movd   %%xmm0, %1         \n"\
+        :"+m"(s), "=&r"(temp)\
+        :"m"(x)\
+    );\
+    s = temp;\
+} while(0)
+
+#define CLIP_ADD2(s,x)\
+do\
+{\
+    asm("movd       %0, %%xmm0     \n"\
+        "movd       %1, %%xmm1     \n"\
+        "paddsw %%xmm1, %%xmm0     \n"\
+        "movd   %%xmm0, %0         \n"\
+        :"+m"(M32(s))\
+        :"m"(M32(x))\
+    );\
+} while(0)
+#else
+#define CLIP_ADD(s,x) (s) = X264_MIN((s)+(x),(1<<15)-1)
+#define CLIP_ADD2(s,x)\
+do\
+{\
+    CLIP_ADD((s)[0], (x)[0]);\
+    CLIP_ADD((s)[1], (x)[1]);\
+} while(0)
+#endif
+
+#define PROPAGATE_LIST(cpu)\
+void x264_mbtree_propagate_list_internal_##cpu( int16_t (*mvs)[2], int16_t *propagate_amount,\
+                                                uint16_t *lowres_costs, int16_t *output,\
+                                                int bipred_weight, int mb_y, int len );\
+\
+static void x264_mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],\
+                                              int16_t *propagate_amount, uint16_t *lowres_costs,\
+                                              int bipred_weight, int mb_y, int len, int list )\
+{\
+    int16_t *current = h->scratch_buffer2;\
+\
+    x264_mbtree_propagate_list_internal_##cpu( mvs, propagate_amount, lowres_costs,\
+                                               current, bipred_weight, mb_y, len );\
+\
+    unsigned stride = h->mb.i_mb_stride;\
+    unsigned width = h->mb.i_mb_width;\
+    unsigned height = h->mb.i_mb_height;\
+\
+    for( unsigned i = 0; i < len; current += 32 )\
+    {\
+        int end = X264_MIN( i+8, len );\
+        for( ; i < end; i++, current += 2 )\
+        {\
+            if( !(lowres_costs[i] & (1 << (list+LOWRES_COST_SHIFT))) )\
+                continue;\
+\
+            unsigned mbx = current[0];\
+            unsigned mby = current[1];\
+            unsigned idx0 = mbx + mby * stride;\
+            unsigned idx2 = idx0 + stride;\
+\
+            /* Shortcut for the simple/common case of zero MV */\
+            if( !M32( mvs[i] ) )\
+            {\
+                CLIP_ADD( ref_costs[idx0], current[16] );\
+                continue;\
+            }\
+\
+            if( mbx < width-1 && mby < height-1 )\
+            {\
+                CLIP_ADD2( ref_costs+idx0, current+16 );\
+                CLIP_ADD2( ref_costs+idx2, current+32 );\
+            }\
+            else\
+            {\
+                /* Note: this takes advantage of unsigned representation to\
+                 * catch negative mbx/mby. */\
+                if( mby < height )\
+                {\
+                    if( mbx < width )\
+                        CLIP_ADD( ref_costs[idx0+0], current[16] );\
+                    if( mbx+1 < width )\
+                        CLIP_ADD( ref_costs[idx0+1], current[17] );\
+                }\
+                if( mby+1 < height )\
+                {\
+                    if( mbx < width )\
+                        CLIP_ADD( ref_costs[idx2+0], current[32] );\
+                    if( mbx+1 < width )\
+                        CLIP_ADD( ref_costs[idx2+1], current[33] );\
+                }\
+            }\
+        }\
+    }\
+}
+
+PROPAGATE_LIST(ssse3)
+PROPAGATE_LIST(avx)
+#undef CLIP_ADD
+#undef CLIP_ADD2
+
 void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 {
     if( !(cpu&X264_CPU_MMX) )
@@ -645,6 +752,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
     pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_ssse3;
+    pf->mbtree_propagate_list = x264_mbtree_propagate_list_ssse3;
 
     if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
         pf->integral_init4v = x264_integral_init4v_ssse3;
@@ -748,6 +856,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_ssse3;
     pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_ssse3;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_ssse3;
+    pf->mbtree_propagate_list = x264_mbtree_propagate_list_ssse3;
 
     if( !(cpu&X264_CPU_SLOW_PSHUFB) )
     {
@@ -824,6 +933,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         return;
     pf->memzero_aligned = x264_memzero_aligned_avx;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx;
+    pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx;
 
     if( cpu&X264_CPU_FMA4 )
         pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_fma4;
