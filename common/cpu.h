@@ -58,7 +58,7 @@ void     x264_safe_intel_cpu_indicator_init( void );
  * if it doesn't).
  */
 #if (ARCH_X86 || HAVE_32B_STACK_ALIGNMENT) && HAVE_MMX
-int x264_stack_align( void (*func)(), ... );
+intptr_t x264_stack_align( void (*func)(), ... );
 #define x264_stack_align(func,...) x264_stack_align((void (*)())func, __VA_ARGS__)
 #else
 #define x264_stack_align(func,...) func(__VA_ARGS__)
