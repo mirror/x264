@@ -806,10 +806,15 @@ if [ "$thread" = "auto" ]; then
             fi
             ;;
         QNX)
-            cc_check pthread.h -lc && thread="posix" && libpthread="-lc"
+            cc_check pthread.h -lc "pthread_create(0,0,0,0);" && thread="posix" && libpthread="-lc"
             ;;
         *)
-            cc_check pthread.h -lpthread && thread="posix" && libpthread="-lpthread"
+            if cc_check pthread.h -lpthread "pthread_create(0,0,0,0);" ; then
+               thread="posix"
+               libpthread="-lpthread"
+            else
+                cc_check pthread.h "" "pthread_create(0,0,0,0);" && thread="posix" && libpthread=""
+            fi
             ;;
     esac
 fi
