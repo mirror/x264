@@ -1265,7 +1265,7 @@ VAR2_8x8_AVX2 16, 7
 ; clobber: m3..m7
 ; out: %1 = satd
 %macro SATD_4x4_MMX 3
-    %xdefine %%n n%1
+    %xdefine %%n nn%1
     %assign offset %2*SIZEOF_PIXEL
     LOAD_DIFF m4, m3, none, [r0+     offset], [r2+     offset]
     LOAD_DIFF m5, m3, none, [r0+  r1+offset], [r2+  r3+offset]
