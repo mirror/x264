@@ -2567,7 +2567,8 @@ static int x264_slice_write( x264_t *h )
      * other inaccuracies. */
     int overhead_guess = (NALU_OVERHEAD - (h->param.b_annexb && h->out.i_nal)) + 1 + h->param.b_cabac + 5;
     int slice_max_size = h->param.i_slice_max_size > 0 ? (h->param.i_slice_max_size-overhead_guess)*8 : 0;
-    int back_up_bitstream = slice_max_size || (!h->param.b_cabac && h->sps->i_profile_idc < PROFILE_HIGH);
+    int back_up_bitstream_cavlc = !h->param.b_cabac && h->sps->i_profile_idc < PROFILE_HIGH;
+    int back_up_bitstream = slice_max_size || back_up_bitstream_cavlc;
     int starting_bits = bs_pos(&h->out.bs);
     int b_deblock = h->sh.i_disable_deblocking_filter_idc != 1;
     int b_hpel = h->fdec->b_kept_as_ref;
@@ -2575,9 +2576,10 @@ static int x264_slice_write( x264_t *h )
     int thread_last_mb = h->i_threadslice_end * h->mb.i_mb_width - 1;
     uint8_t *last_emu_check;
 #define BS_BAK_SLICE_MAX_SIZE 0
-#define BS_BAK_SLICE_MIN_MBS  1
-#define BS_BAK_ROW_VBV        2
-    x264_bs_bak_t bs_bak[3];
+#define BS_BAK_CAVLC_OVERFLOW 1
+#define BS_BAK_SLICE_MIN_MBS  2
+#define BS_BAK_ROW_VBV        3
+    x264_bs_bak_t bs_bak[4];
     b_deblock &= b_hpel || h->param.b_full_recon || h->param.psz_dump_yuv;
     bs_realign( &h->out.bs );
 
@@ -2630,11 +2632,16 @@ static int x264_slice_write( x264_t *h )
                 x264_fdec_filter_row( h, i_mb_y, 0 );
         }
 
-        if( !(i_mb_y & SLICE_MBAFF) && back_up_bitstream )
+        if( back_up_bitstream )
         {
-            x264_bitstream_backup( h, &bs_bak[BS_BAK_SLICE_MAX_SIZE], i_skip, 0 );
-            if( slice_max_size && (thread_last_mb+1-mb_xy) == h->param.i_slice_min_mbs )
-                x264_bitstream_backup( h, &bs_bak[BS_BAK_SLICE_MIN_MBS], i_skip, 0 );
+            if( back_up_bitstream_cavlc )
+                x264_bitstream_backup( h, &bs_bak[BS_BAK_CAVLC_OVERFLOW], i_skip, 0 );
+            if( slice_max_size && !(i_mb_y & SLICE_MBAFF) )
+            {
+                x264_bitstream_backup( h, &bs_bak[BS_BAK_SLICE_MAX_SIZE], i_skip, 0 );
+                if( (thread_last_mb+1-mb_xy) == h->param.i_slice_min_mbs )
+                    x264_bitstream_backup( h, &bs_bak[BS_BAK_SLICE_MIN_MBS], i_skip, 0 );
+            }
         }
 
         if( PARAM_INTERLACED )
@@ -2698,7 +2705,7 @@ reencode:
                     h->mb.i_skip_intra = 0;
                     h->mb.b_skip_mc = 0;
                     h->mb.b_overflow = 0;
-                    x264_bitstream_restore( h, &bs_bak[BS_BAK_SLICE_MAX_SIZE], &i_skip, 0 );
+                    x264_bitstream_restore( h, &bs_bak[BS_BAK_CAVLC_OVERFLOW], &i_skip, 0 );
                     goto reencode;
                 }
             }
