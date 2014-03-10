@@ -1253,8 +1253,13 @@ static void ALWAYS_INLINE x264_macroblock_cache_load( x264_t *h, int mb_x, int m
         }
     }
 
-    if( b_mbaff && mb_x == 0 && !(mb_y&1) && mb_y > 0 )
-        h->mb.field_decoding_flag = h->mb.field[h->mb.i_mb_xy - h->mb.i_mb_stride];
+    if( b_mbaff && mb_x == 0 && !(mb_y&1) )
+    {
+        if( h->mb.i_mb_top_xy >= h->sh.i_first_mb )
+            h->mb.field_decoding_flag = h->mb.field[h->mb.i_mb_top_xy];
+        else
+            h->mb.field_decoding_flag = 0;
+    }
 
     /* Check whether skip here would cause decoder to predict interlace mode incorrectly.
      * FIXME: It might be better to change the interlace type rather than forcing a skip to be non-skip. */
@@ -1262,26 +1267,8 @@ static void ALWAYS_INLINE x264_macroblock_cache_load( x264_t *h, int mb_x, int m
     if( b_mbaff )
     {
         if( MB_INTERLACED != h->mb.field_decoding_flag &&
-            h->mb.i_mb_prev_xy >= 0 && IS_SKIP(h->mb.type[h->mb.i_mb_prev_xy]) )
+            (mb_y&1) && IS_SKIP(h->mb.type[h->mb.i_mb_xy - h->mb.i_mb_stride]) )
             h->mb.b_allow_skip = 0;
-        if( (mb_y&1) && IS_SKIP(h->mb.type[h->mb.i_mb_xy - h->mb.i_mb_stride]) )
-        {
-            if( h->mb.i_neighbour & MB_LEFT )
-            {
-                if( h->mb.field[h->mb.i_mb_xy - 1] != MB_INTERLACED )
-                    h->mb.b_allow_skip = 0;
-            }
-            else if( h->mb.i_neighbour & MB_TOP )
-            {
-                if( h->mb.field[h->mb.i_mb_top_xy] != MB_INTERLACED )
-                    h->mb.b_allow_skip = 0;
-            }
-            else // Frame mb pair is predicted
-            {
-                if( MB_INTERLACED )
-                    h->mb.b_allow_skip = 0;
-            }
-        }
     }
 
     if( h->param.b_cabac )
