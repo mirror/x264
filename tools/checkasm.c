@@ -200,7 +200,7 @@ static void print_bench(void)
                     b->cpu&X264_CPU_FAST_NEON_MRC ? "_fast_mrc" :
 #endif
                     "",
-                    ((int64_t)10*b->cycles/b->den - nop_time)/4 );
+                    (int64_t)(10*b->cycles/b->den - nop_time)/4 );
         }
 }
 
