@@ -1350,6 +1350,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->var[PIXEL_8x16]   = x264_pixel_var_8x16_neon;
         pixf->var[PIXEL_16x16]  = x264_pixel_var_16x16_neon;
         pixf->var2[PIXEL_8x8]   = x264_pixel_var2_8x8_neon;
+        pixf->var2[PIXEL_8x16]  = x264_pixel_var2_8x16_neon;
 
         pixf->ssim_4x4x2_core   = x264_pixel_ssim_4x4x2_core_neon;
         pixf->ssim_end4         = x264_pixel_ssim_end4_neon;

@@ -635,6 +635,49 @@ function x264_pixel_var2_8x8_neon
     bx              lr
 .endfunc
 
+function x264_pixel_var2_8x16_neon
+    vld1.64         {d16}, [r0,:64], r1
+    vld1.64         {d17}, [r2,:64], r3
+    vld1.64         {d18}, [r0,:64], r1
+    vld1.64         {d19}, [r2,:64], r3
+    vsubl.u8        q10, d16, d17
+    vsubl.u8        q11, d18, d19
+    SQR_ACC         q1,  d20, d21,  vmull.s16
+    vld1.64         {d16}, [r0,:64], r1
+    vadd.s16        q0,  q10, q11
+    vld1.64         {d17}, [r2,:64], r3
+    SQR_ACC         q2,  d22, d23,  vmull.s16
+    mov             ip,  #14
+1:  subs            ip,  ip,  #2
+    vld1.64         {d18}, [r0,:64], r1
+    vsubl.u8        q10, d16, d17
+    vld1.64         {d19}, [r2,:64], r3
+    vadd.s16        q0,  q0,  q10
+    SQR_ACC         q1,  d20, d21
+    vsubl.u8        q11, d18, d19
+    beq             2f
+    vld1.64         {d16}, [r0,:64], r1
+    vadd.s16        q0,  q0,  q11
+    vld1.64         {d17}, [r2,:64], r3
+    SQR_ACC         q2,  d22, d23
+    b               1b
+2:
+    vadd.s16        q0,  q0,  q11
+    SQR_ACC         q2,  d22, d23
+
+    ldr             ip,  [sp]
+    vadd.s16        d0,  d0,  d1
+    vadd.s32        q1,  q1,  q2
+    vpaddl.s16      d0,  d0
+    vadd.s32        d1,  d2,  d3
+    vpadd.s32       d0,  d0,  d1
+
+    vmov            r0,  r1,  d0
+    vst1.32         {d0[1]}, [ip,:32]
+    mul             r0,  r0,  r0
+    sub             r0,  r1,  r0,  lsr #7
+    bx              lr
+.endfunc
 
 .macro LOAD_DIFF_8x4 q0 q1 q2 q3
     vld1.32     {d1}, [r2], r3
