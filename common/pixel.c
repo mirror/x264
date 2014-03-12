@@ -36,6 +36,7 @@
 #endif
 #if ARCH_ARM
 #   include "arm/pixel.h"
+#   include "arm/predict.h"
 #endif
 #if ARCH_UltraSPARC
 #   include "sparc/pixel.h"
@@ -532,6 +533,10 @@ INTRA_MBCMP_8x8(sa8d,, _c )
 INTRA_MBCMP_8x8( sad, _mmx2,  _c )
 INTRA_MBCMP_8x8(sa8d, _sse2,  _sse2 )
 #endif
+#if !HIGH_BIT_DEPTH && HAVE_ARMV6
+INTRA_MBCMP_8x8( sad, _neon, _neon )
+INTRA_MBCMP_8x8(sa8d, _neon, _neon )
+#endif
 
 #define INTRA_MBCMP( mbcmp, size, pred1, pred2, pred3, chroma, cpu, cpu2 )\
 void x264_intra_##mbcmp##_x3_##size##chroma##cpu( pixel *fenc, pixel *fdec, int res[3] )\
@@ -586,6 +591,16 @@ INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _sse4, _mmx2 )
 INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _avx, _mmx2 )
 INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _xop, _mmx2 )
 #endif
+#endif
+#if !HIGH_BIT_DEPTH && HAVE_ARMV6
+INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _c )
+INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _c )
+INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _neon )
+INTRA_MBCMP(satd,  8x8,  dc, h,  v, c, _neon, _neon )
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _neon, _c )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _neon, _c )
+INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _neon )
+INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _neon )
 #endif
 
 // No C implementation of intra_satd_x9. See checkasm for its behavior,
@@ -1351,6 +1366,17 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->var[PIXEL_16x16]  = x264_pixel_var_16x16_neon;
         pixf->var2[PIXEL_8x8]   = x264_pixel_var2_8x8_neon;
         pixf->var2[PIXEL_8x16]  = x264_pixel_var2_8x16_neon;
+
+        pixf->intra_sad_x3_4x4    = x264_intra_sad_x3_4x4_neon;
+        pixf->intra_satd_x3_4x4   = x264_intra_satd_x3_4x4_neon;
+        pixf->intra_sad_x3_8x8    = x264_intra_sad_x3_8x8_neon;
+        pixf->intra_sa8d_x3_8x8   = x264_intra_sa8d_x3_8x8_neon;
+        pixf->intra_sad_x3_8x8c   = x264_intra_sad_x3_8x8c_neon;
+        pixf->intra_satd_x3_8x8c  = x264_intra_satd_x3_8x8c_neon;
+        pixf->intra_sad_x3_8x16c  = x264_intra_sad_x3_8x16c_neon;
+        pixf->intra_satd_x3_8x16c = x264_intra_satd_x3_8x16c_neon;
+        pixf->intra_sad_x3_16x16  = x264_intra_sad_x3_16x16_neon;
+        pixf->intra_satd_x3_16x16 = x264_intra_satd_x3_16x16_neon;
 
         pixf->ssim_4x4x2_core   = x264_pixel_ssim_4x4x2_core_neon;
         pixf->ssim_end4         = x264_pixel_ssim_end4_neon;
