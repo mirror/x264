@@ -56,6 +56,7 @@ int x264_pixel_sa8d_8x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t );
 int x264_pixel_sa8d_16x16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t );
 
 uint64_t x264_pixel_var_8x8_neon  ( uint8_t *, intptr_t );
+uint64_t x264_pixel_var_8x16_neon ( uint8_t *, intptr_t );
 uint64_t x264_pixel_var_16x16_neon( uint8_t *, intptr_t );
 int x264_pixel_var2_8x8_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, int * );
 
