@@ -26,6 +26,9 @@
 #ifndef X264_ARM_PREDICT_H
 #define X264_ARM_PREDICT_H
 
+void x264_predict_4x4_dc_armv6( uint8_t *src );
+void x264_predict_4x4_v_armv6( uint8_t *src );
+void x264_predict_4x4_h_armv6( uint8_t *src );
 void x264_predict_8x8_v_neon( pixel *src, pixel edge[36] );
 void x264_predict_8x8_h_neon( pixel *src, pixel edge[36] );
 void x264_predict_8x8_dc_neon( pixel *src, pixel edge[36] );

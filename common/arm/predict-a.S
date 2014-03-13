@@ -79,6 +79,15 @@ function x264_predict_4x4_h_armv6
     bx      lr
 .endfunc
 
+function x264_predict_4x4_v_armv6
+    ldr     r1,  [r0, #0 - 1 * FDEC_STRIDE]
+    str     r1,  [r0, #0 + 0 * FDEC_STRIDE]
+    str     r1,  [r0, #0 + 1 * FDEC_STRIDE]
+    str     r1,  [r0, #0 + 2 * FDEC_STRIDE]
+    str     r1,  [r0, #0 + 3 * FDEC_STRIDE]
+    bx      lr
+.endfunc
+
 function x264_predict_4x4_dc_armv6
     mov     ip, #0
     ldr     r1, [r0, #-FDEC_STRIDE]

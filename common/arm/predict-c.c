@@ -64,6 +64,7 @@ void x264_predict_4x4_init_arm( int cpu, x264_predict_t pf[12] )
 
 #if !HIGH_BIT_DEPTH
     pf[I_PRED_4x4_H]   = x264_predict_4x4_h_armv6;
+    pf[I_PRED_4x4_V]   = x264_predict_4x4_v_armv6;
     pf[I_PRED_4x4_DC]  = x264_predict_4x4_dc_armv6;
     pf[I_PRED_4x4_DDR] = x264_predict_4x4_ddr_armv6;
 

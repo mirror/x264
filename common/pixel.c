@@ -593,8 +593,8 @@ INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _xop, _mmx2 )
 #endif
 #endif
 #if !HIGH_BIT_DEPTH && HAVE_ARMV6
-INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _c )
-INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _c )
+INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _armv6 )
+INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _armv6 )
 INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _neon )
 INTRA_MBCMP(satd,  8x8,  dc, h,  v, c, _neon, _neon )
 INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _neon, _c )
