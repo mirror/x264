@@ -1466,6 +1466,32 @@ lowres_xloop_end:
     pop             {r4-r10,pc}
 .endfunc
 
+function x264_load_deinterleave_chroma_fdec_neon
+    mov             ip,  #FDEC_STRIDE/2
+1:
+    vld2.8          {d0-d1}, [r1,:128], r2
+    subs            r3,  r3,  #1
+    pld             [r1]
+    vst1.8          {d0},    [r0,:64], ip
+    vst1.8          {d1},    [r0,:64], ip
+    bgt             1b
+
+    bx              lr
+.endfunc
+
+function x264_load_deinterleave_chroma_fenc_neon
+    mov             ip,  #FENC_STRIDE/2
+1:
+    vld2.8          {d0-d1}, [r1,:128], r2
+    subs            r3,  r3,  #1
+    pld             [r1]
+    vst1.8          {d0},    [r0,:64], ip
+    vst1.8          {d1},    [r0,:64], ip
+    bgt             1b
+
+    bx              lr
+.endfunc
+
 function x264_plane_copy_deinterleave_neon
     push            {r4-r7, lr}
     ldrd            r6, r7, [sp, #28]
