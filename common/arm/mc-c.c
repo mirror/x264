@@ -37,6 +37,7 @@ void x264_pixel_avg_16x8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_
 void x264_pixel_avg_8x16_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 void x264_pixel_avg_8x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 void x264_pixel_avg_8x4_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_4x16_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 void x264_pixel_avg_4x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 void x264_pixel_avg_4x4_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 void x264_pixel_avg_4x2_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
@@ -229,6 +230,7 @@ void x264_mc_init_arm( int cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_8x16]  = x264_pixel_avg_8x16_neon;
     pf->avg[PIXEL_8x8]   = x264_pixel_avg_8x8_neon;
     pf->avg[PIXEL_8x4]   = x264_pixel_avg_8x4_neon;
+    pf->avg[PIXEL_4x16]  = x264_pixel_avg_4x16_neon;
     pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_neon;
     pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_neon;
     pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_neon;

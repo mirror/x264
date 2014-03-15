@@ -181,6 +181,7 @@ function x264_pixel_avg_\w\()x\h\()_neon
 AVGH  4, 2
 AVGH  4, 4
 AVGH  4, 8
+AVGH  4, 16
 AVGH  8, 4
 AVGH  8, 8
 AVGH  8, 16
