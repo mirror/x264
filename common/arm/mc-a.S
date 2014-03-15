@@ -1465,3 +1465,29 @@ lowres_xloop_end:
     vpop            {d8-d15}
     pop             {r4-r10,pc}
 .endfunc
+
+function x264_plane_copy_deinterleave_neon
+    push            {r4-r7, lr}
+    ldrd            r6, r7, [sp, #28]
+    ldrd            r4, r5, [sp, #20]
+    add             lr,  r6,  #15
+    bic             lr,  lr,  #15
+    sub             r1,  r1,  lr
+    sub             r3,  r3,  lr
+    sub             r5,  r5,  lr, lsl #1
+block:
+    vld2.8          {d0-d3}, [r4,:128]!
+    subs            lr,  lr,  #16
+    vst1.8          {q0},    [r0]!
+    vst1.8          {q1},    [r2]!
+    bgt             block
+
+    add             r4,  r4,  r5
+    subs            r7,  r7,  #1
+    add             r0,  r0,  r1
+    add             r2,  r2,  r3
+    mov             lr,  r6
+    bgt             block
+
+    pop             {r4-r7, pc}
+.endfunc
