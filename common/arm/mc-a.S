@@ -1569,3 +1569,30 @@ block4:
 
     pop             {r4-r8, r10, r11, pc}
 .endfunc
+
+function x264_plane_copy_interleave_neon
+    push            {r4-r7, lr}
+    ldrd            r6, r7, [sp, #28]
+    ldrd            r4, r5, [sp, #20]
+    add             lr,  r6,  #15
+    bic             lr,  lr,  #15
+    sub             r1,  r1,  lr, lsl #1
+    sub             r3,  r3,  lr
+    sub             r5,  r5,  lr
+blocki:
+    vld1.8          {q0}, [r2]!
+    vld1.8          {q1}, [r4]!
+    subs            lr,  lr,  #16
+    vst2.8          {d0,d2}, [r0]!
+    vst2.8          {d1,d3}, [r0]!
+    bgt             blocki
+
+    subs            r7,  r7,  #1
+    add             r0,  r0,  r1
+    add             r2,  r2,  r3
+    add             r4,  r4,  r5
+    mov             lr,  r6
+    bgt             blocki
+
+    pop             {r4-r7, pc}
+.endfunc
