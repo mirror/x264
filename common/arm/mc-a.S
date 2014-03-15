@@ -1517,3 +1517,55 @@ block:
 
     pop             {r4-r7, pc}
 .endfunc
+
+function x264_plane_copy_deinterleave_rgb_neon
+    push            {r4-r8, r10, r11, lr}
+    ldrd            r4,  r5,  [sp, #32]
+    ldrd            r6,  r7,  [sp, #40]
+    ldr             r8,  [sp, #48]
+    ldrd            r10, r11, [sp, #52]
+    add             lr,  r10, #7
+    subs            r8,  r8,  #3
+    bic             lr,  lr,  #7
+    sub             r7,  r7,  lr, lsl #1
+    sub             r1,  r1,  lr
+    sub             r3,  r3,  lr
+    sub             r5,  r5,  lr
+    subne           r7,  r7,  lr, lsl #1
+    subeq           r7,  r7,  lr
+    bne             block4
+block3:
+    vld3.8          {d0,d1,d2}, [r6]!
+    subs            lr,  lr,  #8
+    vst1.8          {d0},    [r0]!
+    vst1.8          {d1},    [r2]!
+    vst1.8          {d2},    [r4]!
+    bgt             block3
+
+    subs            r11, r11, #1
+    add             r0,  r0,  r1
+    add             r2,  r2,  r3
+    add             r4,  r4,  r5
+    add             r6,  r6,  r7
+    mov             lr,  r10
+    bgt             block3
+
+    pop             {r4-r8, r10, r11, pc}
+block4:
+    vld4.8          {d0,d1,d2,d3}, [r6]!
+    subs            lr,  lr,  #8
+    vst1.8          {d0},    [r0]!
+    vst1.8          {d1},    [r2]!
+    vst1.8          {d2},    [r4]!
+    bgt             block4
+
+    subs            r11, r11, #1
+    add             r0,  r0,  r1
+    add             r2,  r2,  r3
+    add             r4,  r4,  r5
+    add             r6,  r6,  r7
+    mov             lr,  r10
+    bgt             block4
+
+    pop             {r4-r8, r10, r11, pc}
+.endfunc
