@@ -1596,3 +1596,17 @@ blocki:
 
     pop             {r4-r7, pc}
 .endfunc
+
+function x264_store_interleave_chroma_neon
+    push            {lr}
+    ldr             lr,  [sp, #4]
+    mov             ip,  #FDEC_STRIDE
+1:
+    vld1.8          {d0}, [r2], ip
+    vld1.8          {d1}, [r3], ip
+    subs            lr,  lr,  #1
+    vst2.8          {d0,d1}, [r0,:128], r1
+    bgt             1b
+
+    pop             {pc}
+.endfunc
