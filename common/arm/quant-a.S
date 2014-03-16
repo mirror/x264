@@ -321,6 +321,20 @@ function x264_coeff_last4_arm
     bx          lr
 .endfunc
 
+function x264_coeff_last8_arm
+    ldrd        r2,  r3,  [r0, #8]
+    orrs        ip,  r2,  r3
+    movne       r0,  #4
+    ldrdeq      r2,  r3,  [r0]
+    moveq       r0,  #0
+    tst         r3,  r3
+    addne       r0,  #2
+    movne       r2,  r3
+    lsrs        r2,  r2,  #16
+    addne       r0,  r0,  #1
+    bx          lr
+.endfunc
+
 .macro COEFF_LAST_1x size
 function x264_coeff_last\size\()_neon
 .if \size == 15

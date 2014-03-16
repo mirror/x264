@@ -725,7 +725,10 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
 
 #if HAVE_ARMV6
     if( cpu&X264_CPU_ARMV6 )
+    {
         pf->coeff_last4 = x264_coeff_last4_arm;
+        pf->coeff_last8 = x264_coeff_last8_arm;
+    }
 
     if( cpu&X264_CPU_NEON )
     {

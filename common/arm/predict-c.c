@@ -27,36 +27,6 @@
 #include "predict.h"
 #include "pixel.h"
 
-void x264_predict_4x4_dc_armv6( uint8_t *src );
-void x264_predict_4x4_dc_top_neon( uint8_t *src );
-void x264_predict_4x4_h_armv6( uint8_t *src );
-void x264_predict_4x4_ddr_armv6( uint8_t *src );
-void x264_predict_4x4_ddl_neon( uint8_t *src );
-
-void x264_predict_8x8c_dc_neon( uint8_t *src );
-void x264_predict_8x8c_dc_top_neon( uint8_t *src );
-void x264_predict_8x8c_dc_left_neon( uint8_t *src );
-void x264_predict_8x8c_h_neon( uint8_t *src );
-void x264_predict_8x8c_v_neon( uint8_t *src );
-void x264_predict_8x8c_p_neon( uint8_t *src );
-
-void x264_predict_8x8_dc_neon( uint8_t *src, uint8_t edge[36] );
-void x264_predict_8x8_ddl_neon( uint8_t *src, uint8_t edge[36] );
-void x264_predict_8x8_ddr_neon( uint8_t *src, uint8_t edge[36] );
-void x264_predict_8x8_vl_neon( uint8_t *src, uint8_t edge[36] );
-void x264_predict_8x8_vr_neon( uint8_t *src, uint8_t edge[36] );
-void x264_predict_8x8_v_neon( uint8_t *src, uint8_t edge[36] );
-void x264_predict_8x8_h_neon( uint8_t *src, uint8_t edge[36] );
-void x264_predict_8x8_hd_neon( uint8_t *src, uint8_t edge[36] );
-void x264_predict_8x8_hu_neon( uint8_t *src, uint8_t edge[36] );
-
-void x264_predict_16x16_dc_neon( uint8_t *src );
-void x264_predict_16x16_dc_top_neon( uint8_t *src );
-void x264_predict_16x16_dc_left_neon( uint8_t *src );
-void x264_predict_16x16_h_neon( uint8_t *src );
-void x264_predict_16x16_v_neon( uint8_t *src );
-void x264_predict_16x16_p_neon( uint8_t *src );
-
 void x264_predict_4x4_init_arm( int cpu, x264_predict_t pf[12] )
 {
     if (!(cpu&X264_CPU_ARMV6))
