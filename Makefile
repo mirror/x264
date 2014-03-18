@@ -123,6 +123,15 @@ OBJASM  = $(ASMSRC:%.S=%.o)
 endif
 endif
 
+# AArch64 NEON optims
+ifeq ($(ARCH),AARCH64)
+ifneq ($(AS),)
+ASMSRC +=
+SRCS   +=
+OBJASM  = $(ASMSRC:%.S=%.o)
+endif
+endif
+
 ifneq ($(HAVE_GETOPT_LONG),1)
 SRCCLI += extras/getopt.c
 endif

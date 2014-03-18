@@ -684,6 +684,15 @@ case $host_cpu in
             AS="${AS-${CC}}"
         fi
         ;;
+    aarch64)
+        ARCH="AARCH64"
+        if [ "$SYS" = MACOSX ] ; then
+            AS="${AS-extras/gas-preprocessor.pl $CC}"
+            ASFLAGS="$ASFLAGS -DPREFIX"
+        else
+            AS="${AS-${CC}}"
+        fi
+        ;;
     s390|s390x)
         ARCH="S390"
         ;;
@@ -767,7 +776,20 @@ if [ $asm = auto -a $ARCH = ARM ] ; then
     fi
 fi
 
-if [ $asm = auto -a $ARCH = ARM ] ; then
+if [ $asm = auto -a $ARCH = AARCH64 ] ; then
+    # set flags so neon is built by default
+    echo $CFLAGS | grep -Eq '(-mcpu|-march|-mfpu|-arch)' || CFLAGS="$CFLAGS -arch arm64 -mfpu=neon"
+
+    if  cc_check '' '' '__asm__("cmeq v0.8h, v0.8h, #0");' ; then define HAVE_NEON
+        ASFLAGS="$ASFLAGS -c"
+    else
+        echo "no NEON support, try adding -mfpu=neon to CFLAGS"
+        echo "If you really want to run on such a CPU, configure with --disable-asm."
+        exit 1
+    fi
+fi
+
+if [ $asm = auto -a \( $ARCH = ARM -o $ARCH = AARCH64 \) ] ; then
     # check if the assembler supports '.func' (clang 3.5 does not)
     as_check ".func test${NL}.endfunc" && define HAVE_AS_FUNC 1
 fi
@@ -1318,7 +1340,7 @@ cat conftest.log
 rm conftest.log
 
 [ "$SRCPATH" != "." ] && ln -sf ${SRCPATH}/Makefile ./Makefile
-mkdir -p common/{arm,ppc,x86} encoder extras filters/video input output tools
+mkdir -p common/{aarch64,arm,ppc,x86} encoder extras filters/video input output tools
 
 echo
 echo "You can run 'make' or 'make fprofiled' now."
