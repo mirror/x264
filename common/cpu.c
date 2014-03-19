@@ -89,6 +89,9 @@ const x264_cpu_name_t x264_cpu_names[] =
     {"ARMv6",           X264_CPU_ARMV6},
     {"NEON",            X264_CPU_NEON},
     {"FastNeonMRC",     X264_CPU_FAST_NEON_MRC},
+#elif ARCH_AARCH64
+    {"ARMv8",           X264_CPU_ARMV8},
+    {"NEON",            X264_CPU_NEON},
 #endif
     {"", 0},
 };
@@ -407,6 +410,13 @@ uint32_t x264_cpu_detect( void )
     // TODO: write dual issue test? currently it's A8 (dual issue) vs. A9 (fast mrc)
 #endif
     return flags;
+}
+
+#elif ARCH_AARCH64
+
+uint32_t x264_cpu_detect( void )
+{
+    return X264_CPU_ARMV8 | X264_CPU_NEON;
 }
 
 #else

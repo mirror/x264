@@ -184,6 +184,9 @@ static void print_bench(void)
 #elif ARCH_ARM
                     b->cpu&X264_CPU_NEON ? "neon" :
                     b->cpu&X264_CPU_ARMV6 ? "armv6" :
+#elif ARCH_AARCH64
+                    b->cpu&X264_CPU_NEON ? "neon" :
+                    b->cpu&X264_CPU_ARMV8 ? "armv8" :
 #endif
                     "c",
 #if HAVE_MMX
@@ -2731,6 +2734,11 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_NEON, "NEON" );
     if( x264_cpu_detect() & X264_CPU_FAST_NEON_MRC )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_FAST_NEON_MRC, "Fast NEON MRC" );
+#elif ARCH_AARCH64
+    if( x264_cpu_detect() & X264_CPU_ARMV8 )
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_ARMV8, "ARMv8" );
+    if( x264_cpu_detect() & X264_CPU_NEON )
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_NEON, "NEON" );
 #endif
     return ret;
 }
