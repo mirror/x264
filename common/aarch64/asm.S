@@ -97,3 +97,17 @@ MACH    .const_data
 #define GLUE(a, b) a ## b
 #define JOIN(a, b) GLUE(a, b)
 #define X(s) JOIN(EXTERN_ASM, s)
+
+#define FDEC_STRIDE 32
+#define FENC_STRIDE 16
+
+
+.macro SUMSUB_AB   sum, sub, a, b
+    add        \sum,  \a,  \b
+    sub        \sub,  \a,  \b
+.endm
+
+.macro transpose t1, t2, s1, s2
+    trn1        \t1,  \s1,  \s2
+    trn2        \t2,  \s1,  \s2
+.endm

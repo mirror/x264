@@ -38,6 +38,9 @@
 #   include "arm/pixel.h"
 #   include "arm/predict.h"
 #endif
+#if ARCH_AARCH64
+#   include "aarch64/pixel.h"
+#endif
 
 
 /****************************************************************************
@@ -496,7 +499,7 @@ SATD_X_DECL7( _xop )
 #endif
 
 #if !HIGH_BIT_DEPTH
-#if HAVE_ARMV6
+#if HAVE_ARMV6 || ARCH_AARCH64
 SATD_X_DECL7( _neon )
 #endif
 #endif // !HIGH_BIT_DEPTH
@@ -523,6 +526,10 @@ INTRA_MBCMP_8x8(sa8d, _sse2,  _sse2 )
 #if !HIGH_BIT_DEPTH && HAVE_ARMV6
 INTRA_MBCMP_8x8( sad, _neon, _neon )
 INTRA_MBCMP_8x8(sa8d, _neon, _neon )
+#endif
+#if !HIGH_BIT_DEPTH && ARCH_AARCH64
+INTRA_MBCMP_8x8( sad, _neon, _c )
+INTRA_MBCMP_8x8(sa8d, _neon, _c )
 #endif
 
 #define INTRA_MBCMP( mbcmp, size, pred1, pred2, pred3, chroma, cpu, cpu2 )\
@@ -588,6 +595,16 @@ INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _neon, _c )
 INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _neon, _c )
 INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _neon )
 INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _neon )
+#endif
+#if !HIGH_BIT_DEPTH && ARCH_AARCH64
+INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _c )
+INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _c )
+INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _c )
+INTRA_MBCMP(satd,  8x8,  dc, h,  v, c, _neon, _c )
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _neon, _c )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _neon, _c )
+INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _c )
+INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _c )
 #endif
 
 // No C implementation of intra_satd_x9. See checkasm for its behavior,
@@ -1390,6 +1407,46 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         }
     }
 #endif
+
+#if ARCH_AARCH64
+    if( cpu&X264_CPU_NEON )
+    {
+        INIT7( sad, _neon );
+        // AArch64 has no distinct instructions for aligned load/store
+        INIT7_NAME( sad_aligned, sad, _neon );
+        INIT7( sad_x3, _neon );
+        INIT7( sad_x4, _neon );
+        INIT7( ssd, _neon );
+        INIT7( satd, _neon );
+        INIT7( satd_x3, _neon );
+        INIT7( satd_x4, _neon );
+        INIT4( hadamard_ac, _neon );
+
+        pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_neon;
+        pixf->sa8d[PIXEL_16x16] = x264_pixel_sa8d_16x16_neon;
+
+        pixf->var[PIXEL_8x8]    = x264_pixel_var_8x8_neon;
+        pixf->var[PIXEL_8x16]   = x264_pixel_var_8x16_neon;
+        pixf->var[PIXEL_16x16]  = x264_pixel_var_16x16_neon;
+        pixf->var2[PIXEL_8x8]   = x264_pixel_var2_8x8_neon;
+        pixf->var2[PIXEL_8x16]  = x264_pixel_var2_8x16_neon;
+
+        pixf->intra_sad_x3_4x4    = x264_intra_sad_x3_4x4_neon;
+        pixf->intra_satd_x3_4x4   = x264_intra_satd_x3_4x4_neon;
+        pixf->intra_sad_x3_8x8    = x264_intra_sad_x3_8x8_neon;
+        pixf->intra_sa8d_x3_8x8   = x264_intra_sa8d_x3_8x8_neon;
+        pixf->intra_sad_x3_8x8c   = x264_intra_sad_x3_8x8c_neon;
+        pixf->intra_satd_x3_8x8c  = x264_intra_satd_x3_8x8c_neon;
+        pixf->intra_sad_x3_8x16c  = x264_intra_sad_x3_8x16c_neon;
+        pixf->intra_satd_x3_8x16c = x264_intra_satd_x3_8x16c_neon;
+        pixf->intra_sad_x3_16x16  = x264_intra_sad_x3_16x16_neon;
+        pixf->intra_satd_x3_16x16 = x264_intra_satd_x3_16x16_neon;
+
+        pixf->ssim_4x4x2_core   = x264_pixel_ssim_4x4x2_core_neon;
+        pixf->ssim_end4         = x264_pixel_ssim_end4_neon;
+    }
+#endif // ARCH_AARCH64
+
 #endif // HIGH_BIT_DEPTH
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )

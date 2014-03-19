@@ -126,7 +126,7 @@ endif
 # AArch64 NEON optims
 ifeq ($(ARCH),AARCH64)
 ifneq ($(AS),)
-ASMSRC +=
+ASMSRC += common/aarch64/pixel-a.S
 SRCS   +=
 OBJASM  = $(ASMSRC:%.S=%.o)
 endif
