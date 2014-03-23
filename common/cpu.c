@@ -338,6 +338,9 @@ uint32_t x264_cpu_detect( void )
 
 uint32_t x264_cpu_detect( void )
 {
+#ifdef __NO_FPRS__
+    return 0;
+#else
     static void (*oldsig)( int );
 
     oldsig = signal( SIGILL, sigill_handler );
@@ -357,6 +360,7 @@ uint32_t x264_cpu_detect( void )
     signal( SIGILL, oldsig );
 
     return X264_CPU_ALTIVEC;
+#endif
 }
 #endif
 
