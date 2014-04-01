@@ -575,7 +575,7 @@ var16_loop:
     bgt             var16_loop
 .endfunc
 
-function x264_var_end
+function x264_var_end, export=0
     vpaddl.u16      q8,  q14
     vpaddl.u16      q9,  q15
     vadd.u32        q1,  q1,  q8
@@ -760,7 +760,7 @@ function x264_pixel_satd_8x4_neon
     SUMSUB_AB   q10, q11, q2,  q3
 .endfunc
 
-function x264_satd_4x8_8x4_end_neon
+function x264_satd_4x8_8x4_end_neon, export=0
     vadd.s16    q0,  q8,  q10
     vadd.s16    q1,  q9,  q11
     vsub.s16    q2,  q8,  q10
@@ -823,7 +823,7 @@ function x264_pixel_satd_8x16_neon
     bx          lr
 .endfunc
 
-function x264_satd_8x8_neon
+function x264_satd_8x8_neon, export=0
     LOAD_DIFF_8x4 q8,  q9,  q10, q11
     vld1.64     {d7}, [r2], r3
     SUMSUB_AB   q0,  q1,  q8,  q9
@@ -844,7 +844,7 @@ function x264_satd_8x8_neon
 .endfunc
 
 // one vertical hadamard pass and two horizontal
-function x264_satd_8x4v_8x8h_neon
+function x264_satd_8x4v_8x8h_neon, export=0
     SUMSUB_ABCD q0, q1, q2, q3, q12, q13, q14, q15
     vtrn.16     q8,  q9
     SUMSUB_AB   q12, q14, q0,  q2
@@ -928,7 +928,7 @@ function x264_pixel_satd_16x16_neon
     bx          lr
 .endfunc
 
-function x264_satd_16x4_neon
+function x264_satd_16x4_neon, export=0
     vld1.64     {d2-d3}, [r2], r3
     vld1.64     {d0-d1}, [r0,:128], r1
     vsubl.u8    q8,  d0,  d2
@@ -1002,7 +1002,7 @@ function x264_pixel_sa8d_16x16_neon
     SUMSUB_ABCD \r1, \r3, \r2, \r4, \t1, \t3, \t2, \t4
 .endm
 
-function x264_sa8d_8x8_neon
+function x264_sa8d_8x8_neon, export=0
     LOAD_DIFF_8x4   q8,  q9,  q10, q11
     vld1.64         {d7}, [r2], r3
     SUMSUB_AB       q0,  q1,  q8,  q9
@@ -1103,7 +1103,7 @@ HADAMARD_AC 16, 8
 HADAMARD_AC 16, 16
 
 // q4: satd  q5: sa8d  q6: mask_ac4  q7: mask_ac8
-function x264_hadamard_ac_8x8_neon
+function x264_hadamard_ac_8x8_neon, export=0
     vld1.64         {d2},  [r0,:64], r1
     vld1.64         {d3},  [r0,:64], r1
     vaddl.u8        q0,  d2,  d3

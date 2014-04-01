@@ -88,7 +88,7 @@ function x264_memcpy_aligned_neon
 .endfunc
 
 .macro MEMCPY_ALIGNED srcalign dstalign
-function memcpy_aligned_\dstalign\()_\srcalign\()_neon
+function memcpy_aligned_\dstalign\()_\srcalign\()_neon, export=0
     mov         r3, r0
 .if \srcalign == 8 && \dstalign == 8
     sub         r2, #16
@@ -239,7 +239,7 @@ AVGH 16, 16
 .endm
 
 .macro AVG_WEIGHT ext
-function x264_pixel_avg_weight_w4_\ext\()_neon
+function x264_pixel_avg_weight_w4_\ext\()_neon, export=0
     load_weights_\ext
 1:  // height loop
     subs            lr,  lr,  #2
@@ -255,7 +255,7 @@ function x264_pixel_avg_weight_w4_\ext\()_neon
     pop             {r4-r6,pc}
 .endfunc
 
-function x264_pixel_avg_weight_w8_\ext\()_neon
+function x264_pixel_avg_weight_w8_\ext\()_neon, export=0
     load_weights_\ext
 1:  // height loop
     subs            lr,  lr,  #4
@@ -279,7 +279,7 @@ function x264_pixel_avg_weight_w8_\ext\()_neon
     pop             {r4-r6,pc}
 .endfunc
 
-function x264_pixel_avg_weight_w16_\ext\()_neon
+function x264_pixel_avg_weight_w16_\ext\()_neon, export=0
     load_weights_\ext
 1:  // height loop
     subs            lr,  lr,  #2
@@ -304,7 +304,7 @@ AVG_WEIGHT add_add
 AVG_WEIGHT add_sub
 AVG_WEIGHT sub_add
 
-function x264_pixel_avg_w4_neon
+function x264_pixel_avg_w4_neon, export=0
     subs        lr,  lr,  #2
     vld1.32     {d0[]}, [r2], r3
     vld1.32     {d2[]}, [r4], r5
@@ -318,7 +318,7 @@ function x264_pixel_avg_w4_neon
     pop         {r4-r6,pc}
 .endfunc
 
-function x264_pixel_avg_w8_neon
+function x264_pixel_avg_w8_neon, export=0
     subs        lr,  lr,  #4
     vld1.64     {d0}, [r2], r3
     vld1.64     {d2}, [r4], r5
@@ -340,7 +340,7 @@ function x264_pixel_avg_w8_neon
     pop         {r4-r6,pc}
 .endfunc
 
-function x264_pixel_avg_w16_neon
+function x264_pixel_avg_w16_neon, export=0
     subs        lr,  lr,  #4
     vld1.64     {d0-d1}, [r2], r3
     vld1.64     {d2-d3}, [r4], r5

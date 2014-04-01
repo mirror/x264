@@ -48,14 +48,20 @@ ELF     .eabi_attribute 24, \val
 ELF     .eabi_attribute 25, \val
 .endm
 
-.macro function name
-        .global EXTERN_ASM\name
+.macro function name, export=1
         .align  2
+.if \export == 1
+        .global EXTERN_ASM\name
+ELF     .hidden EXTERN_ASM\name
+ELF     .type   EXTERN_ASM\name, %function
+        .func   EXTERN_ASM\name
 EXTERN_ASM\name:
+.else
 ELF     .hidden \name
 ELF     .type   \name, %function
         .func   \name
 \name:
+.endif
 .endm
 
 .macro movrel rd, val
@@ -77,6 +83,10 @@ ELF     .type   \name, %function
     ldr         \rd, =\val
 #endif
 .endm
+
+#define GLUE(a, b) a ## b
+#define JOIN(a, b) GLUE(a, b)
+#define X(s) JOIN(EXTERN_ASM, s)
 
 #define FENC_STRIDE 16
 #define FDEC_STRIDE 32

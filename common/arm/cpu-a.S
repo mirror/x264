@@ -38,7 +38,7 @@ function x264_cpu_neon_test
 // return: 0 on success
 //         1 if counters were already enabled
 //         9 if lo-res counters were already enabled
-function x264_cpu_enable_armv7_counter
+function x264_cpu_enable_armv7_counter, export=0
     mrc         p15, 0, r2, c9, c12, 0      // read PMNC
     ands        r0, r2, #1
     andne       r0, r2, #9
@@ -51,7 +51,7 @@ function x264_cpu_enable_armv7_counter
     bx          lr
 .endfunc
 
-function x264_cpu_disable_armv7_counter
+function x264_cpu_disable_armv7_counter, export=0
     mrc         p15, 0, r0, c9, c12, 0      // read PMNC
     bic         r0, r0, #1                  // disable counters
     mcr         p15, 0, r0, c9, c12, 0      // write PMNC
