@@ -68,7 +68,7 @@ void x264_mc_weight_w16##func##_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, 
 void x264_mc_weight_w8##func##_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
 void x264_mc_weight_w4##func##_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
 \
-static void (* const x264_mc##func##_wtab_neon[6])( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int ) =\
+static weight_fn_t x264_mc##func##_wtab_neon[6] =\
 {\
     x264_mc_weight_w4##func##_neon,\
     x264_mc_weight_w4##func##_neon,\
