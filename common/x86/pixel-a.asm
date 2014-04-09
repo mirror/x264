@@ -561,10 +561,15 @@ cglobal pixel_ssd_nv12_core, 6,7,7
     pshufhw     m0, m0, q3120
     pshufhw     m1, m1, q3120
 %endif
+%if cpuflag(xop)
+    pmadcswd    m2, m0, m0, m2
+    pmadcswd    m3, m1, m1, m3
+%else
     pmaddwd     m0, m0
     pmaddwd     m1, m1
     paddd       m2, m0
     paddd       m3, m1
+%endif
     add         r6, 2*mmsize
     jl .loopx
 %if mmsize == 32 ; avx2 may overread by 32 bytes, that has to be handled
@@ -657,10 +662,15 @@ cglobal pixel_ssd_nv12_core, 6,7
     por     m0, m1
     psrlw   m2, m0, 8
     pand    m0, m5
+%if cpuflag(xop)
+    pmadcswd m4, m2, m2, m4
+    pmadcswd m3, m0, m0, m3
+%else
     pmaddwd m2, m2
     pmaddwd m0, m0
-    paddd   m3, m0
     paddd   m4, m2
+    paddd   m3, m0
+%endif
     add     r6, mmsize
     jl .loopx
 %if mmsize == 32 ; avx2 may overread by 16 bytes, that has to be handled
@@ -694,6 +704,8 @@ SSD_NV12
 INIT_XMM sse2
 SSD_NV12
 INIT_XMM avx
+SSD_NV12
+INIT_XMM xop
 SSD_NV12
 INIT_YMM avx2
 SSD_NV12

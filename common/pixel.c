@@ -1021,6 +1021,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     }
     if( cpu&X264_CPU_XOP )
     {
+        pixf->ssd_nv12_core    = x264_pixel_ssd_nv12_core_xop;
         pixf->var[PIXEL_16x16] = x264_pixel_var_16x16_xop;
         pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_xop;
         pixf->vsad = x264_pixel_vsad_xop;
@@ -1313,6 +1314,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->sa8d[PIXEL_16x16]= x264_pixel_sa8d_16x16_xop;
         pixf->sa8d[PIXEL_8x8]  = x264_pixel_sa8d_8x8_xop;
         pixf->intra_satd_x3_8x16c = x264_intra_satd_x3_8x16c_xop;
+        pixf->ssd_nv12_core    = x264_pixel_ssd_nv12_core_xop;
         pixf->var[PIXEL_16x16] = x264_pixel_var_16x16_xop;
         pixf->var[PIXEL_8x16]  = x264_pixel_var_8x16_xop;
         pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_xop;
