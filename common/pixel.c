@@ -1025,6 +1025,9 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_xop;
         pixf->vsad = x264_pixel_vsad_xop;
         pixf->asd8 = x264_pixel_asd8_xop;
+#if ARCH_X86_64
+        pixf->sa8d_satd[PIXEL_16x16] = x264_pixel_sa8d_satd_16x16_xop;
+#endif
     }
     if( cpu&X264_CPU_AVX2 )
     {
