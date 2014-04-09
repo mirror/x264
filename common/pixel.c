@@ -1021,6 +1021,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     }
     if( cpu&X264_CPU_XOP )
     {
+        INIT5( sad_x3, _xop );
+        INIT5( sad_x4, _xop );
         pixf->ssd_nv12_core    = x264_pixel_ssd_nv12_core_xop;
         pixf->var[PIXEL_16x16] = x264_pixel_var_16x16_xop;
         pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_xop;

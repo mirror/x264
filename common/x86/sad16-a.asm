@@ -519,6 +519,19 @@ SAD_X 4, 16,  8
 SAD_X 4,  8, 16
 SAD_X 4,  8,  8
 SAD_X 4,  8,  4
+INIT_XMM xop
+%define XMM_REGS 7
+SAD_X 3, 16, 16
+SAD_X 3, 16,  8
+SAD_X 3,  8, 16
+SAD_X 3,  8,  8
+SAD_X 3,  8,  4
+%define XMM_REGS 9
+SAD_X 4, 16, 16
+SAD_X 4, 16,  8
+SAD_X 4,  8, 16
+SAD_X 4,  8,  8
+SAD_X 4,  8,  4
 INIT_YMM avx2
 %define XMM_REGS 7
 SAD_X 3, 16, 16
