@@ -1025,6 +1025,10 @@ if cc_check '' -Wshadow ; then
     CFLAGS="-Wshadow $CFLAGS"
 fi
 
+if cc_check '' -Wmaybe-uninitialized ; then
+    CFLAGS="-Wno-maybe-uninitialized $CFLAGS"
+fi
+
 if [ "$bit_depth" -gt "8" ]; then
     define HIGH_BIT_DEPTH
     ASFLAGS="$ASFLAGS -DHIGH_BIT_DEPTH=1"
