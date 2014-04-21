@@ -1004,7 +1004,6 @@ if [ "$debug" != "yes" -a "$gprof" != "yes" ]; then
 fi
 
 if [ "$strip" = "yes" ]; then
-    CFLAGS="$CFLAGS -s"
     LDFLAGS="$LDFLAGS -s"
 fi
 
