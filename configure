@@ -633,19 +633,6 @@ case $host_cpu in
         ;;
     sparc)
         ARCH="SPARC"
-        case $(uname -m) in
-            sun4u|sun4v)
-                if [ $asm = auto ]; then
-                    ARCH="UltraSPARC"
-                    if ! echo $CFLAGS | grep -Eq '\-mcpu' ; then
-                        CFLAGS="$CFLAGS -mcpu=ultrasparc"
-                        LDFLAGS="$LDFLAGS -mcpu=ultrasparc"
-                    fi
-                    AS="${AS-${cross_prefix}as}"
-                    ASFLAGS="$ASFLAGS -xarch=v8plusa"
-                fi
-                ;;
-        esac
         ;;
     mips|mipsel|mips64|mips64el)
         ARCH="MIPS"
@@ -1296,7 +1283,7 @@ cat conftest.log
 rm conftest.log
 
 [ "$SRCPATH" != "." ] && ln -sf ${SRCPATH}/Makefile ./Makefile
-mkdir -p common/{arm,ppc,sparc,x86} encoder extras filters/video input output tools
+mkdir -p common/{arm,ppc,x86} encoder extras filters/video input output tools
 
 echo
 echo "You can run 'make' or 'make fprofiled' now."

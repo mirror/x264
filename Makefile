@@ -123,14 +123,6 @@ OBJASM  = $(ASMSRC:%.S=%.o)
 endif
 endif
 
-# VIS optims
-ifeq ($(ARCH),UltraSPARC)
-ifeq ($(findstring HIGH_BIT_DEPTH, $(CONFIG)),)
-ASMSRC += common/sparc/pixel.asm
-OBJASM  = $(ASMSRC:%.asm=%.o)
-endif
-endif
-
 ifneq ($(HAVE_GETOPT_LONG),1)
 SRCCLI += extras/getopt.c
 endif

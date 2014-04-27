@@ -38,9 +38,6 @@
 #   include "arm/pixel.h"
 #   include "arm/predict.h"
 #endif
-#if ARCH_UltraSPARC
-#   include "sparc/pixel.h"
-#endif
 
 
 /****************************************************************************
@@ -453,15 +450,6 @@ SAD_X( 8x8 )
 SAD_X( 8x4 )
 SAD_X( 4x8 )
 SAD_X( 4x4 )
-
-#if !HIGH_BIT_DEPTH
-#if ARCH_UltraSPARC
-SAD_X( 16x16_vis )
-SAD_X( 16x8_vis )
-SAD_X( 8x16_vis )
-SAD_X( 8x8_vis )
-#endif
-#endif // !HIGH_BIT_DEPTH
 
 /****************************************************************************
  * pixel_satd_x4
@@ -1410,13 +1398,6 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         x264_pixel_altivec_init( pixf );
     }
 #endif
-#if !HIGH_BIT_DEPTH
-#if ARCH_UltraSPARC
-    INIT4( sad, _vis );
-    INIT4( sad_x3, _vis );
-    INIT4( sad_x4, _vis );
-#endif
-#endif // !HIGH_BIT_DEPTH
 
     pixf->ads[PIXEL_8x16] =
     pixf->ads[PIXEL_8x4] =
