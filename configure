@@ -561,7 +561,7 @@ case $host_cpu in
     i*86)
         ARCH="X86"
         AS="yasm"
-        ASFLAGS="$ASFLAGS -O2"
+        ASFLAGS="$ASFLAGS -O2 -DARCH_X86_64=0 -I\$(SRCPATH)/common/x86/"
         if [ $compiler = GNU ]; then
             if [[ "$asm" == auto && "$CFLAGS" != *-march* ]]; then
                 CFLAGS="$CFLAGS -march=i686"
@@ -600,6 +600,7 @@ case $host_cpu in
     x86_64)
         ARCH="X86_64"
         AS="yasm"
+        ASFLAGS="$ASFLAGS -DARCH_X86_64=1 -I\$(SRCPATH)/common/x86/"
         [ $compiler = GNU ] && CFLAGS="-m64 $CFLAGS" && LDFLAGS="-m64 $LDFLAGS"
         if [ "$SYS" = MACOSX ]; then
             ASFLAGS="$ASFLAGS -f macho64 -m amd64 -DPIC -DPREFIX"
