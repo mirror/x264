@@ -174,7 +174,7 @@ checkasm$(EXE): $(GENERATED) .depend $(OBJCHK) $(LIBX264)
 
 $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK): .depend
 
-%.o: %.asm
+%.o: %.asm common/x86/x86inc.asm common/x86/x86util.asm
 	$(AS) $(ASFLAGS) -o $@ $<
 	-@ $(if $(STRIP), $(STRIP) -x $@) # delete local/anonymous symbols, so they don't show up in oprofile
 
