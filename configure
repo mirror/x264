@@ -1046,15 +1046,6 @@ ASFLAGS="$ASFLAGS -DBIT_DEPTH=$bit_depth"
 libdl=""
 if [ "$opencl" = "yes" ]; then
     opencl="no"
-    log_check "for perl"
-    output=$(perl -v)
-    if [ "$output" = "" ]; then
-        log_fail
-        echo 'OpenCL support requires perl to compile.'
-        echo 'use --disable-opencl to compile without OpenCL.'
-        exit 1
-    fi
-    log_ok
     # cygwin can use opencl if it can use LoadLibrary
     if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibraryW(0);") ; then
         opencl="yes"
