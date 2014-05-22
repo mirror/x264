@@ -728,11 +728,14 @@ static int check_pixel( int cpu_ref, int cpu_new )
             fprintf( stderr, "ssim: %.7f != %.7f [FAILED]\n", res_c, res_a );
         }
         set_func_name( "ssim_core" );
-        call_c2( pixel_c.ssim_4x4x2_core,   pbuf1+2, (intptr_t)32, pbuf2+2, (intptr_t)32, sums );
-        call_a2( pixel_asm.ssim_4x4x2_core, pbuf1+2, (intptr_t)32, pbuf2+2, (intptr_t)32, sums );
+        call_c( pixel_c.ssim_4x4x2_core,   pbuf1+2, (intptr_t)32, pbuf2+2, (intptr_t)32, sums );
+        call_a( pixel_asm.ssim_4x4x2_core, pbuf1+2, (intptr_t)32, pbuf2+2, (intptr_t)32, sums );
         set_func_name( "ssim_end" );
         call_c2( pixel_c.ssim_end4,   sums, sums, 4 );
         call_a2( pixel_asm.ssim_end4, sums, sums, 4 );
+        /* check incorrect assumptions that 32-bit ints are zero-extended to 64-bit */
+        call_c1( pixel_c.ssim_end4,   sums, sums, 3 );
+        call_a1( pixel_asm.ssim_end4, sums, sums, 3 );
         report( "ssim :" );
     }
 
