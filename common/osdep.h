@@ -48,17 +48,13 @@
 #define log2(x) (log(x)/0.693147180559945)
 #endif
 
-#ifdef __ICL
+#ifdef _MSC_VER
 #define inline __inline
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 #define snprintf _snprintf
 #define strtok_r strtok_s
 #define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
-#endif
-
-#if (defined(__GNUC__) || defined(__INTEL_COMPILER)) && (ARCH_X86 || ARCH_X86_64)
-#define HAVE_X86_INLINE_ASM 1
 #endif
 
 #if !defined(isfinite) && (SYS_OPENBSD || SYS_SunOS)
@@ -89,7 +85,7 @@ int x264_is_pipe( const char *path );
 #define x264_is_pipe(x)  0
 #endif
 
-#ifdef __ICL
+#ifdef _MSC_VER
 #define DECLARE_ALIGNED( var, n ) __declspec(align(n)) var
 #else
 #define DECLARE_ALIGNED( var, n ) var __attribute__((aligned(n)))
@@ -156,7 +152,7 @@ int x264_is_pipe( const char *path );
 #define x264_constant_p(x) __builtin_constant_p(x)
 #define x264_nonconstant_p(x) (!__builtin_constant_p(x))
 #else
-#ifdef __ICL
+#ifdef _MSC_VER
 #define ALWAYS_INLINE __forceinline
 #define NOINLINE __declspec(noinline)
 #else

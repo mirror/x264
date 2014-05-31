@@ -298,7 +298,10 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
             opt->input_range = opt->output_range;
         }
         const char *arg_name[] = { NULL, "interlaced", "matrix" };
-        AVS_Value arg_arr[] = { res, avs_new_value_bool( info->interlaced ), avs_new_value_string( matrix ) };
+        AVS_Value arg_arr[3];
+        arg_arr[0] = res;
+        arg_arr[1] = avs_new_value_bool( info->interlaced );
+        arg_arr[2] = avs_new_value_string( matrix );
         AVS_Value res2 = h->func.avs_invoke( h->env, conv_func, avs_new_value_array( arg_arr, arg_count ), arg_name );
         FAIL_IF_ERROR( avs_is_error( res2 ), "couldn't convert input clip to %s\n", csp )
         res = update_clip( h, &vi, res2, res );
@@ -308,7 +311,9 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     {
         const char *levels = opt->output_range ? "TV->PC" : "PC->TV";
         x264_cli_log( "avs", X264_LOG_WARNING, "performing %s conversion\n", levels );
-        AVS_Value arg_arr[] = { res, avs_new_value_string( levels ) };
+        AVS_Value arg_arr[2];
+        arg_arr[0] = res;
+        arg_arr[1] = avs_new_value_string( levels );
         const char *arg_name[] = { NULL, "levels" };
         AVS_Value res2 = h->func.avs_invoke( h->env, "ColorYUV", avs_new_value_array( arg_arr, 2 ), arg_name );
         FAIL_IF_ERROR( avs_is_error( res2 ), "couldn't convert range: %s\n", avs_as_error( res2 ) )

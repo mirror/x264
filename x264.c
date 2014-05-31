@@ -320,6 +320,8 @@ static void print_version_info( void )
     printf( "intel: %.2f (%d)\n", __INTEL_COMPILER / 100.f, __INTEL_COMPILER_BUILD_DATE );
 #elif defined(__GNUC__)
     printf( "gcc: " __VERSION__ "\n" );
+#elif defined(_MSC_FULL_VER)
+    printf( "msvc: %.2f (%u)\n", _MSC_VER / 100.f, _MSC_FULL_VER );
 #else
     printf( "using an unknown compiler\n" );
 #endif
