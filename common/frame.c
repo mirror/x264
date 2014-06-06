@@ -47,6 +47,7 @@ static int x264_frame_internal_csp( int external_csp )
     switch( external_csp & X264_CSP_MASK )
     {
         case X264_CSP_NV12:
+        case X264_CSP_NV21:
         case X264_CSP_I420:
         case X264_CSP_YV12:
             return X264_CSP_NV12;
@@ -434,6 +435,12 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
             get_plane_ptr( h, src, &pix[1], &stride[1], 1, 0, v_shift );
             h->mc.plane_copy( dst->plane[1], dst->i_stride[1], (pixel*)pix[1],
                               stride[1]/sizeof(pixel), h->param.i_width, h->param.i_height>>v_shift );
+        }
+        else if( i_csp == X264_CSP_NV21 )
+        {
+            get_plane_ptr( h, src, &pix[1], &stride[1], 1, 0, v_shift );
+            h->mc.plane_copy_swap( dst->plane[1], dst->i_stride[1], (pixel*)pix[1],
+                                   stride[1]/sizeof(pixel), h->param.i_width>>1, h->param.i_height>>v_shift );
         }
         else if( i_csp == X264_CSP_I420 || i_csp == X264_CSP_I422 || i_csp == X264_CSP_YV12 || i_csp == X264_CSP_YV16 )
         {

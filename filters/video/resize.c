@@ -156,6 +156,7 @@ static int convert_csp_to_pix_fmt( int csp )
         case X264_CSP_BGRA: return csp&X264_CSP_HIGH_DEPTH ? AV_PIX_FMT_BGRA64    : AV_PIX_FMT_BGRA;
         /* the next csp has no equivalent 16bit depth in swscale */
         case X264_CSP_NV12: return csp&X264_CSP_HIGH_DEPTH ? AV_PIX_FMT_NONE      : AV_PIX_FMT_NV12;
+        case X264_CSP_NV21: return csp&X264_CSP_HIGH_DEPTH ? AV_PIX_FMT_NONE      : AV_PIX_FMT_NV21;
         /* the next csp is no supported by swscale at all */
         case X264_CSP_NV16:
         default:            return AV_PIX_FMT_NONE;

@@ -1413,6 +1413,32 @@ static int check_mc( int cpu_ref, int cpu_new )
         }
     }
 
+    if( mc_a.plane_copy_swap != mc_ref.plane_copy_swap )
+    {
+        set_func_name( "plane_copy_swap" );
+        used_asm = 1;
+        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        {
+            int w = (plane_specs[i].w + 1) >> 1;
+            int h = plane_specs[i].h;
+            intptr_t src_stride = plane_specs[i].src_stride;
+            intptr_t dst_stride = (2*w + 127) & ~63;
+            assert( dst_stride * h <= 0x1000 );
+            pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
+            memset( pbuf3, 0, 0x1000*sizeof(pixel) );
+            memset( pbuf4, 0, 0x1000*sizeof(pixel) );
+            call_c( mc_c.plane_copy_swap, pbuf3, dst_stride, src1, src_stride, w, h );
+            call_a( mc_a.plane_copy_swap, pbuf4, dst_stride, src1, src_stride, w, h );
+            for( int y = 0; y < h; y++ )
+                if( memcmp( pbuf3+y*dst_stride, pbuf4+y*dst_stride, 2*w*sizeof(pixel) ) )
+                {
+                    ok = 0;
+                    fprintf( stderr, "plane_copy_swap FAILED: w=%d h=%d stride=%d\n", w, h, (int)src_stride );
+                    break;
+                }
+        }
+    }
+
     if( mc_a.plane_copy_interleave != mc_ref.plane_copy_interleave )
     {
         set_func_name( "plane_copy_interleave" );

@@ -50,6 +50,7 @@ static int depth_filter_csp_is_supported( int csp )
            csp_mask == X264_CSP_YV16 ||
            csp_mask == X264_CSP_YV24 ||
            csp_mask == X264_CSP_NV12 ||
+           csp_mask == X264_CSP_NV21 ||
            csp_mask == X264_CSP_NV16 ||
            csp_mask == X264_CSP_BGR ||
            csp_mask == X264_CSP_RGB ||
@@ -59,7 +60,7 @@ static int depth_filter_csp_is_supported( int csp )
 static int csp_num_interleaved( int csp, int plane )
 {
     int csp_mask = csp & X264_CSP_MASK;
-    return (csp_mask == X264_CSP_NV12 || csp_mask == X264_CSP_NV16) && plane == 1 ? 2 :
+    return (csp_mask == X264_CSP_NV12 || csp_mask == X264_CSP_NV21 || csp_mask == X264_CSP_NV16) && plane == 1 ? 2 :
            csp_mask == X264_CSP_BGR || csp_mask == X264_CSP_RGB ? 3 :
            csp_mask == X264_CSP_BGRA ? 4 :
            1;

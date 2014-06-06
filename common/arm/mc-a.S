@@ -1566,6 +1566,30 @@ blocki:
     pop             {r4-r7, pc}
 endfunc
 
+function x264_plane_copy_swap_neon
+    push            {r4-r5, lr}
+    ldrd            r4, r5, [sp, #12]
+    add             lr,  r4,  #15
+    bic             lr,  lr,  #15
+    sub             r1,  r1,  lr, lsl #1
+    sub             r3,  r3,  lr, lsl #1
+1:
+    vld1.8          {q0, q1}, [r2]!
+    subs            lr,  lr,  #16
+    vrev16.8        q0,  q0
+    vrev16.8        q1,  q1
+    vst1.8          {q0, q1}, [r0]!
+    bgt             1b
+
+    subs            r5,  r5,  #1
+    add             r0,  r0,  r1
+    add             r2,  r2,  r3
+    mov             lr,  r4
+    bgt             1b
+
+    pop             {r4-r5, pc}
+endfunc
+
 function x264_store_interleave_chroma_neon
     push            {lr}
     ldr             lr,  [sp, #4]

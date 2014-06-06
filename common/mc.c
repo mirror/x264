@@ -299,6 +299,17 @@ void x264_plane_copy_c( pixel *dst, intptr_t i_dst,
     }
 }
 
+void x264_plane_copy_swap_c( pixel *dst, intptr_t i_dst,
+                             pixel *src, intptr_t i_src, int w, int h )
+{
+    for( int y=0; y<h; y++, dst+=i_dst, src+=i_src )
+        for( int x=0; x<2*w; x+=2 )
+        {
+            dst[x]   = src[x+1];
+            dst[x+1] = src[x];
+        }
+}
+
 void x264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
                                    pixel *srcu, intptr_t i_srcu,
                                    pixel *srcv, intptr_t i_srcv, int w, int h )
@@ -612,6 +623,7 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->load_deinterleave_chroma_fdec = load_deinterleave_chroma_fdec;
 
     pf->plane_copy = x264_plane_copy_c;
+    pf->plane_copy_swap = x264_plane_copy_swap_c;
     pf->plane_copy_interleave = x264_plane_copy_interleave_c;
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_c;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_c;
