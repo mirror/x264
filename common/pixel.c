@@ -197,7 +197,7 @@ PIXEL_VAR_C( x264_pixel_var_8x8,    8,  8 )
 #define PIXEL_VAR2_C( name, w, h, shift ) \
 static int name( pixel *pix1, intptr_t i_stride1, pixel *pix2, intptr_t i_stride2, int *ssd ) \
 { \
-    uint32_t var = 0, sum = 0, sqr = 0; \
+    int var = 0, sum = 0, sqr = 0; \
     for( int y = 0; y < h; y++ ) \
     { \
         for( int x = 0; x < w; x++ ) \
@@ -209,8 +209,7 @@ static int name( pixel *pix1, intptr_t i_stride1, pixel *pix2, intptr_t i_stride
         pix1 += i_stride1; \
         pix2 += i_stride2; \
     } \
-    sum = abs(sum); \
-    var = sqr - ((uint64_t)sum * sum >> shift); \
+    var = sqr - ((int64_t)sum * sum >> shift); \
     *ssd = sqr; \
     return var; \
 }

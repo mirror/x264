@@ -316,8 +316,8 @@ static ALWAYS_INLINE int x264_predictor_difference( int16_t (*mvc)[2], intptr_t 
 
 static ALWAYS_INLINE uint16_t x264_cabac_mvd_sum( uint8_t *mvdleft, uint8_t *mvdtop )
 {
-    int amvd0 = abs(mvdleft[0]) + abs(mvdtop[0]);
-    int amvd1 = abs(mvdleft[1]) + abs(mvdtop[1]);
+    int amvd0 = mvdleft[0] + mvdtop[0];
+    int amvd1 = mvdleft[1] + mvdtop[1];
     amvd0 = (amvd0 > 2) + (amvd0 > 32);
     amvd1 = (amvd1 > 2) + (amvd1 > 32);
     return amvd0 + (amvd1<<8);
