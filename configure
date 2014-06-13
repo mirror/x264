@@ -651,6 +651,9 @@ case $host_os in
         HAVE_GETOPT_LONG=0
         CFLAGS="$CFLAGS -I\$(SRCPATH)/extras"
         ;;
+    *haiku*)
+        SYS="HAIKU"
+        ;;
     *)
         die "Unknown system $host, edit the configure"
         ;;
