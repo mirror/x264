@@ -675,7 +675,9 @@ void x264_sei_frame_packing_write( x264_t *h, bs_t *s )
         bs_write( &q, 4, 0 );                     // frame1_grid_position_y
     }
     bs_write( &q, 8, 0 );                         // frame_packing_arrangement_reserved_byte
-    bs_write_ue( &q, 1 );                         // frame_packing_arrangement_repetition_period
+    // "frame_packing_arrangement_repetition_period equal to 1 specifies that the frame packing arrangement SEI message persists in output"
+    // for (i_frame_packing == 5) this will undermine current_frame_is_frame0_flag which must alternate every view sequence
+    bs_write_ue( &q, h->param.i_frame_packing != 5 ); // frame_packing_arrangement_repetition_period
     bs_write1( &q, 0 );                           // frame_packing_arrangement_extension_flag
 
     bs_align_10( &q );
