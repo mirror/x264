@@ -943,10 +943,10 @@ if [ "$lsmash" = "auto" ] ; then
     [ -z "$LSMASH_LIBS" ] && LSMASH_LIBS="-llsmash"
 
     if cc_check lsmash.h "$LSMASH_CFLAGS $LSMASH_LIBS" ; then
-        if cpp_check lsmash.h "$LSMASH_CFLAGS" "LSMASH_VERSION_MAJOR > 0 || (LSMASH_VERSION_MAJOR == 0 && LSMASH_VERSION_MINOR >= 1)" ; then
+        if cpp_check lsmash.h "$LSMASH_CFLAGS" "LSMASH_VERSION_MAJOR > 1 || (LSMASH_VERSION_MAJOR == 1 && LSMASH_VERSION_MINOR >= 5)" ; then
             lsmash="yes"
         else
-            echo "Warning: lsmash is too old, update to rev.751 or later"
+            echo "Warning: lsmash is too old, update to rev.895 or later"
         fi
     fi
 fi
