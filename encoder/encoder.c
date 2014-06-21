@@ -2154,6 +2154,31 @@ static inline void x264_reference_build_list( x264_t *h, int i_poc )
             h->fref[1][h->i_ref[1]++] = h->frames.reference[i];
     }
 
+    if( h->sh.i_mmco_remove_from_end )
+    {
+        /* Order ref0 for MMCO remove */
+        do
+        {
+            b_ok = 1;
+            for( int i = 0; i < h->i_ref[0] - 1; i++ )
+            {
+                if( h->fref[0][i]->i_frame < h->fref[0][i+1]->i_frame )
+                {
+                    XCHG( x264_frame_t*, h->fref[0][i], h->fref[0][i+1] );
+                    b_ok = 0;
+                    break;
+                }
+            }
+        } while( !b_ok );
+
+        for( int i = h->i_ref[0]-1; i >= h->i_ref[0] - h->sh.i_mmco_remove_from_end; i-- )
+        {
+            int diff = h->i_frame_num - h->fref[0][i]->i_frame_num;
+            h->sh.mmco[h->sh.i_mmco_command_count].i_poc = h->fref[0][i]->i_poc;
+            h->sh.mmco[h->sh.i_mmco_command_count++].i_difference_of_pic_nums = diff;
+        }
+    }
+
     /* Order reference lists by distance from the current frame. */
     for( int list = 0; list < 2; list++ )
     {
@@ -2175,14 +2200,6 @@ static inline void x264_reference_build_list( x264_t *h, int i_poc )
             }
         } while( !b_ok );
     }
-
-    if( h->sh.i_mmco_remove_from_end )
-        for( int i = h->i_ref[0]-1; i >= h->i_ref[0] - h->sh.i_mmco_remove_from_end; i-- )
-        {
-            int diff = h->i_frame_num - h->fref[0][i]->i_frame_num;
-            h->sh.mmco[h->sh.i_mmco_command_count].i_poc = h->fref[0][i]->i_poc;
-            h->sh.mmco[h->sh.i_mmco_command_count++].i_difference_of_pic_nums = diff;
-        }
 
     x264_reference_check_reorder( h );
 
