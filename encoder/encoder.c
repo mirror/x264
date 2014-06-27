@@ -1403,7 +1403,11 @@ x264_t *x264_encoder_open( x264_param_t *param )
     /* Init x264_t */
     h->i_frame = -1;
     h->i_frame_num = 0;
-    h->i_idr_pic_id = 0;
+
+    if( h->param.i_avcintra_class )
+        h->i_idr_pic_id = 5;
+    else
+        h->i_idr_pic_id = 0;
 
     if( (uint64_t)h->param.i_timebase_den * 2 > UINT32_MAX )
     {
@@ -2455,7 +2459,24 @@ static inline void x264_slice_init( x264_t *h, int i_nal_type, int i_global_qp )
         x264_slice_header_init( h, &h->sh, h->sps, h->pps, h->i_idr_pic_id, h->i_frame_num, i_global_qp );
 
         /* alternate id */
-        h->i_idr_pic_id ^= 1;
+        if( h->param.i_avcintra_class )
+        {
+            switch( h->i_idr_pic_id )
+            {
+                case 5:
+                    h->i_idr_pic_id = 3;
+                    break;
+                case 3:
+                    h->i_idr_pic_id = 4;
+                    break;
+                case 4:
+                default:
+                    h->i_idr_pic_id = 5;
+                    break;
+            }
+        }
+        else
+            h->i_idr_pic_id ^= 1;
     }
     else
     {

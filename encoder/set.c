@@ -742,11 +742,15 @@ int x264_sei_avcintra_umid_write( x264_t *h, bs_t *s )
     data[20] = 0x13;
     /* These bytes appear to be some sort of frame/seconds counter in certain applications,
      * but others jump around, so leave them as zero for now */
-    data[21] = data[22] = 0;
-
+    data[22] = data[23] = data[25] = data[26] = 0;
     data[28] = 0x14;
+    data[30] = data[31] = data[33] = data[34] = 0;
     data[36] = 0x60;
     data[41] = 0x22; /* Believed to be some sort of end of basic UMID identifier */
+    data[60] = 0x62;
+    data[62] = data[63] = data[65] = data[66] = 0;
+    data[68] = 0x63;
+    data[70] = data[71] = data[73] = data[74] = 0;
 
     x264_sei_write( &h->out.bs, data, len, SEI_USER_DATA_UNREGISTERED );
 
