@@ -111,3 +111,50 @@ MACH    .const_data
     trn1        \t1,  \s1,  \s2
     trn2        \t2,  \s1,  \s2
 .endm
+
+.macro transpose4x4.h v0, v1, v2, v3, t0, t1, t2, t3
+    transpose   \t0\().2s,  \t2\().2s,  \v0\().2s,  \v2\().2s
+    transpose   \t1\().2s,  \t3\().2s,  \v1\().2s,  \v3\().2s
+    transpose   \v0\().4h,  \v1\().4h,  \t0\().4h,  \t1\().4h
+    transpose   \v2\().4h,  \v3\().4h,  \t2\().4h,  \t3\().4h
+.endm
+
+.macro transpose4x8.h v0, v1, v2, v3, t0, t1, t2, t3
+    transpose   \t0\().4s,  \t2\().4s,  \v0\().4s,  \v2\().4s
+    transpose   \t1\().4s,  \t3\().4s,  \v1\().4s,  \v3\().4s
+    transpose   \v0\().8h,  \v1\().8h,  \t0\().8h,  \t1\().8h
+    transpose   \v2\().8h,  \v3\().8h,  \t2\().8h,  \t3\().8h
+.endm
+
+
+.macro transpose8x8.h r0, r1, r2, r3, r4, r5, r6, r7, r8, r9
+    trn1        \r8\().8H,  \r0\().8H,  \r1\().8H
+    trn2        \r9\().8H,  \r0\().8H,  \r1\().8H
+    trn1        \r1\().8H,  \r2\().8H,  \r3\().8H
+    trn2        \r3\().8H,  \r2\().8H,  \r3\().8H
+    trn1        \r0\().8H,  \r4\().8H,  \r5\().8H
+    trn2        \r5\().8H,  \r4\().8H,  \r5\().8H
+    trn1        \r2\().8H,  \r6\().8H,  \r7\().8H
+    trn2        \r7\().8H,  \r6\().8H,  \r7\().8H
+
+    trn1        \r4\().4S,  \r0\().4S,  \r2\().4S
+    trn2        \r2\().4S,  \r0\().4S,  \r2\().4S
+    trn1        \r6\().4S,  \r5\().4S,  \r7\().4S
+    trn2        \r7\().4S,  \r5\().4S,  \r7\().4S
+    trn1        \r5\().4S,  \r9\().4S,  \r3\().4S
+    trn2        \r9\().4S,  \r9\().4S,  \r3\().4S
+    trn1        \r3\().4S,  \r8\().4S,  \r1\().4S
+    trn2        \r8\().4S,  \r8\().4S,  \r1\().4S
+
+    trn1        \r0\().2D,  \r3\().2D,  \r4\().2D
+    trn2        \r4\().2D,  \r3\().2D,  \r4\().2D
+
+    trn1        \r1\().2D,  \r5\().2D,  \r6\().2D
+    trn2        \r5\().2D,  \r5\().2D,  \r6\().2D
+
+    trn2        \r6\().2D,  \r8\().2D,  \r2\().2D
+    trn1        \r2\().2D,  \r8\().2D,  \r2\().2D
+
+    trn1        \r3\().2D,  \r9\().2D,  \r7\().2D
+    trn2        \r7\().2D,  \r9\().2D,  \r7\().2D
+.endm

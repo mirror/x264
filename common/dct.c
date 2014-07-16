@@ -35,6 +35,9 @@
 #if ARCH_ARM
 #   include "arm/dct.h"
 #endif
+#if ARCH_AARCH64
+#   include "aarch64/dct.h"
+#endif
 
 /* the inverse of the scaling factors introduced by 8x8 fdct */
 /* uint32 is for the asm implementation of trellis. the actual values fit in uint16. */
@@ -723,7 +726,7 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
     }
 #endif
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 || ARCH_AARCH64
     if( cpu&X264_CPU_NEON )
     {
         dctf->sub4x4_dct    = x264_sub4x4_dct_neon;
@@ -999,10 +1002,10 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_altivec;
     }
 #endif
-#if HAVE_ARMV6
+#if HAVE_ARMV6 || ARCH_AARCH64
     if( cpu&X264_CPU_NEON )
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_neon;
-#endif
+#endif // HAVE_ARMV6 || ARCH_AARCH64
 #endif // HIGH_BIT_DEPTH
 
     pf_interlaced->interleave_8x8_cavlc =
