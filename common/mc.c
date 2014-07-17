@@ -35,6 +35,9 @@
 #if ARCH_ARM
 #include "arm/mc.h"
 #endif
+#if ARCH_AARCH64
+#include "aarch64/mc.h"
+#endif
 
 
 static inline void pixel_avg( pixel *dst,  intptr_t i_dst_stride,
@@ -640,6 +643,9 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
 #endif
 #if HAVE_ARMV6
     x264_mc_init_arm( cpu, pf );
+#endif
+#if ARCH_AARCH64
+    x264_mc_init_aarch64( cpu, pf );
 #endif
 
     if( cpu_independent )
