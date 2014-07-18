@@ -40,6 +40,7 @@
 #endif
 #if ARCH_AARCH64
 #   include "aarch64/pixel.h"
+#   include "aarch64/predict.h"
 #endif
 
 
@@ -523,13 +524,9 @@ INTRA_MBCMP_8x8(sa8d,, _c )
 INTRA_MBCMP_8x8( sad, _mmx2,  _c )
 INTRA_MBCMP_8x8(sa8d, _sse2,  _sse2 )
 #endif
-#if !HIGH_BIT_DEPTH && HAVE_ARMV6
+#if !HIGH_BIT_DEPTH && (HAVE_ARMV6 || ARCH_AARCH64)
 INTRA_MBCMP_8x8( sad, _neon, _neon )
 INTRA_MBCMP_8x8(sa8d, _neon, _neon )
-#endif
-#if !HIGH_BIT_DEPTH && ARCH_AARCH64
-INTRA_MBCMP_8x8( sad, _neon, _c )
-INTRA_MBCMP_8x8(sa8d, _neon, _c )
 #endif
 
 #define INTRA_MBCMP( mbcmp, size, pred1, pred2, pred3, chroma, cpu, cpu2 )\
@@ -597,14 +594,14 @@ INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _neon )
 INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _neon )
 #endif
 #if !HIGH_BIT_DEPTH && ARCH_AARCH64
-INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _c )
-INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _c )
-INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _c )
-INTRA_MBCMP(satd,  8x8,  dc, h,  v, c, _neon, _c )
+INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _neon )
+INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _neon )
+INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _neon )
+INTRA_MBCMP(satd,  8x8,  dc, h,  v, c, _neon, _neon )
 INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _neon, _c )
 INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _neon, _c )
-INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _c )
-INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _c )
+INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _neon )
+INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _neon )
 #endif
 
 // No C implementation of intra_satd_x9. See checkasm for its behavior,
