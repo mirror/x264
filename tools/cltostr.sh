@@ -12,7 +12,7 @@ sanitize() {
 # Convert stdin to a \0-terminated char array.
 dump() {
     printf 'static const char %s[] = {\n' $1
-    od -v -A n -t x1 | sed 's/.\(..\)/0x\1, /g'
+    od -v -A n -t x1 | sed 's/[[:space:]]*\([[:alnum:]]\{2\}\)/0x\1, /g'
     printf '0x00 };\n'
 }
 
