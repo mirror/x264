@@ -448,7 +448,7 @@ endfunc
     ldr         lr,  [r4, #32]      // denom
 .endif
     ldrd        r4,  r5,  [r4, #32+4]    // scale, offset
-    vdup.16     q0,  r4
+    vdup.8      d0,  r4
     vdup.16     q1,  r5
 .ifc \type, full
     rsb         lr,  lr,  #0
@@ -464,19 +464,13 @@ function x264_mc_weight_w20_neon
 weight20_loop:
     subs        ip,  #2
     vld1.8      {d17-d19}, [r2], r3
-    vmovl.u8    q10, d17
-    vmovl.u8    q11, d18
-    vmovl.u8    q14, d19
+    vmull.u8    q10, d17, d0
+    vmull.u8    q11, d18, d0
     vld1.8      {d16-d18}, [r2], r3
-    vmovl.u8    q12, d16
-    vmovl.u8    q13, d17
-    vmovl.u8    q15, d18
-    vmul.s16    q10, q10, q0
-    vmul.s16    q11, q11, q0
-    vmul.s16    q12, q12, q0
-    vmul.s16    q13, q13, q0
-    vmul.s16    d28, d28, d0
-    vmul.s16    d29, d30, d0
+    vmull.u8    q12, d16, d0
+    vmull.u8    q13, d17, d0
+    vtrn.32     d19, d18
+    vmull.u8    q14, d19, d0
     vrshl.s16   q10, q10, q2
     vrshl.s16   q11, q11, q2
     vrshl.s16   q12, q12, q2
@@ -506,14 +500,10 @@ weight16_loop:
     subs        ip,  #2
     vld1.8      {d16-d17}, [r2], r3
     vld1.8      {d18-d19}, [r2], r3
-    vmovl.u8    q10, d16
-    vmovl.u8    q11, d17
-    vmovl.u8    q12, d18
-    vmovl.u8    q13, d19
-    vmul.s16    q10, q10, q0
-    vmul.s16    q11, q11, q0
-    vmul.s16    q12, q12, q0
-    vmul.s16    q13, q13, q0
+    vmull.u8    q10, d16, d0
+    vmull.u8    q11, d17, d0
+    vmull.u8    q12, d18, d0
+    vmull.u8    q13, d19, d0
     vrshl.s16   q10, q10, q2
     vrshl.s16   q11, q11, q2
     vrshl.s16   q12, q12, q2
@@ -538,10 +528,8 @@ weight8_loop:
     subs        ip,  #2
     vld1.8      {d16}, [r2], r3
     vld1.8      {d18}, [r2], r3
-    vmovl.u8    q8,  d16
-    vmovl.u8    q9,  d18
-    vmul.s16    q8,  q8,  q0
-    vmul.s16    q9,  q9,  q0
+    vmull.u8    q8,  d16, d0
+    vmull.u8    q9,  d18, d0
     vrshl.s16   q8,  q8,  q2
     vrshl.s16   q9,  q9,  q2
     vadd.s16    q8,  q8,  q1
@@ -558,12 +546,9 @@ function x264_mc_weight_w4_neon
     weight_prologue full
 weight4_loop:
     subs        ip,  #2
-    vld1.32     {d16[]}, [r2], r3
-    vld1.32     {d18[]}, [r2], r3
-    vmovl.u8    q8,  d16
-    vmovl.u8    q9,  d18
-    vmul.s16    d16, d16, d0
-    vmul.s16    d17, d18, d0
+    vld1.32     {d16[0]}, [r2], r3
+    vld1.32     {d16[1]}, [r2], r3
+    vmull.u8    q8,  d16, d0
     vrshl.s16   q8,  q8,  q2
     vadd.s16    q8,  q8,  q1
     vqmovun.s16 d16, q8
@@ -578,25 +563,19 @@ function x264_mc_weight_w20_nodenom_neon
     sub         r1, #16
 weight20_nodenom_loop:
     subs        ip,  #2
-    vld1.8      {d17-d19}, [r2], r3
-    vmovl.u8    q10, d17
-    vmovl.u8    q11, d18
-    vmovl.u8    q14, d19
-    vld1.8      {d16-d18}, [r2], r3
-    vmovl.u8    q12, d16
-    vmovl.u8    q13, d17
-    vmovl.u8    q15, d18
+    vld1.8      {d26-d28}, [r2], r3
     vmov        q8,  q1
     vmov        q9,  q1
-    vmla.s16    q8,  q10, q0
-    vmla.s16    q9,  q11, q0
+    vld1.8      {d29-d31}, [r2], r3
     vmov        q10, q1
     vmov        q11, q1
-    vmla.s16    q10, q12, q0
-    vmla.s16    q11, q13, q0
     vmov        q12, q1
-    vmla.s16    d24, d28, d0
-    vmla.s16    d25, d30, d0
+    vtrn.32     d28, d31
+    vmlal.u8    q8,  d26, d0
+    vmlal.u8    q9,  d27, d0
+    vmlal.u8    q10, d29, d0
+    vmlal.u8    q11, d30, d0
+    vmlal.u8    q12, d28, d0
     vqmovun.s16 d16, q8
     vqmovun.s16 d17, q9
     vqmovun.s16 d18, q10
@@ -616,22 +595,18 @@ weight16_nodenom_loop:
     subs        ip,  #2
     vld1.8      {d16-d17}, [r2], r3
     vld1.8      {d18-d19}, [r2], r3
-    vmovl.u8    q12, d16
-    vmovl.u8    q13, d17
-    vmovl.u8    q14, d18
-    vmovl.u8    q15, d19
-    vmov        q8,  q1
-    vmov        q9,  q1
-    vmov        q10, q1
-    vmov        q11, q1
-    vmla.s16    q8,  q12, q0
-    vmla.s16    q9,  q13, q0
-    vmla.s16    q10, q14, q0
-    vmla.s16    q11, q15, q0
-    vqmovun.s16 d16, q8
-    vqmovun.s16 d17, q9
-    vqmovun.s16 d18, q10
-    vqmovun.s16 d19, q11
+    vmov        q12, q1
+    vmov        q13, q1
+    vmov        q14, q1
+    vmov        q15, q1
+    vmlal.u8    q12, d16, d0
+    vmlal.u8    q13, d17, d0
+    vmlal.u8    q14, d18, d0
+    vmlal.u8    q15, d19, d0
+    vqmovun.s16 d16, q12
+    vqmovun.s16 d17, q13
+    vqmovun.s16 d18, q14
+    vqmovun.s16 d19, q15
     vst1.8      {d16-d17}, [r0,:128], r1
     vst1.8      {d18-d19}, [r0,:128], r1
     bgt         weight16_nodenom_loop
@@ -644,12 +619,10 @@ weight8_nodenom_loop:
     subs        ip,  #2
     vld1.8      {d16}, [r2], r3
     vld1.8      {d18}, [r2], r3
-    vmovl.u8    q8,  d16
-    vmovl.u8    q9,  d18
     vmov        q10, q1
     vmov        q11, q1
-    vmla.s16    q10, q8,  q0
-    vmla.s16    q11, q9,  q0
+    vmlal.u8    q10, d16, d0
+    vmlal.u8    q11, d18, d0
     vqmovun.s16 d16, q10
     vqmovun.s16 d17, q11
     vst1.8      {d16}, [r0,:64], r1
@@ -662,13 +635,10 @@ function x264_mc_weight_w4_nodenom_neon
     weight_prologue nodenom
 weight4_nodenom_loop:
     subs        ip,  #2
-    vld1.32     {d16[]}, [r2], r3
-    vld1.32     {d18[]}, [r2], r3
-    vmovl.u8    q8,  d16
-    vmovl.u8    q9,  d18
+    vld1.32     {d16[0]}, [r2], r3
+    vld1.32     {d16[1]}, [r2], r3
     vmov        q10, q1
-    vmla.s16    d20, d16, d0
-    vmla.s16    d21, d18, d0
+    vmlal.u8    q10, d16, d0
     vqmovun.s16 d16, q10
     vst1.32     {d16[0]}, [r0], r1
     vst1.32     {d16[1]}, [r0], r1
