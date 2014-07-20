@@ -27,7 +27,6 @@
 
 #include "asm.S"
 
-.fpu neon
 .text
 
 // note: prefetch stuff assumes 64-byte cacheline, true for the Cortex-A8

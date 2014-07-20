@@ -25,8 +25,6 @@
 
 #include "asm.S"
 
-.fpu neon
-
 .section .rodata
 .align 4
 

@@ -25,7 +25,6 @@
 
 #include "asm.S"
 
-.fpu neon
 .align 2
 
 // done in gas because .fpu neon overrides the refusal to assemble

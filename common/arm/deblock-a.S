@@ -25,8 +25,6 @@
 
 #include "asm.S"
 
-.fpu neon
-
 .macro h264_loop_filter_start
     ldr             ip,  [sp]
     ldr             ip,  [ip]
