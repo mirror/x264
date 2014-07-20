@@ -567,8 +567,8 @@ weight4_loop:
     vrshl.s16   q8,  q8,  q2
     vadd.s16    q8,  q8,  q1
     vqmovun.s16 d16, q8
-    vst1.32     {d16[0]}, [r0,:32], r1
-    vst1.32     {d16[1]}, [r0,:32], r1
+    vst1.32     {d16[0]}, [r0], r1
+    vst1.32     {d16[1]}, [r0], r1
     bgt         weight4_loop
     pop         {r4-r5,pc}
 endfunc
@@ -670,8 +670,8 @@ weight4_nodenom_loop:
     vmla.s16    d20, d16, d0
     vmla.s16    d21, d18, d0
     vqmovun.s16 d16, q10
-    vst1.32     {d16[0]}, [r0,:32], r1
-    vst1.32     {d16[1]}, [r0,:32], r1
+    vst1.32     {d16[0]}, [r0], r1
+    vst1.32     {d16[1]}, [r0], r1
     bgt         weight4_nodenom_loop
     pop         {r4-r5,pc}
 endfunc
@@ -734,8 +734,8 @@ weight4_\name\()_loop:
     vld1.32     {d16[]}, [r2], r3
     vld1.32     {d17[]}, [r2], r3
     \op         q8,  q8,  q1
-    vst1.32     {d16[0]}, [r0,:32], r1
-    vst1.32     {d17[0]}, [r0,:32], r1
+    vst1.32     {d16[0]}, [r0], r1
+    vst1.32     {d17[0]}, [r0], r1
     bgt         weight4_\name\()_loop
     pop         {pc}
 endfunc
