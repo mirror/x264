@@ -28,10 +28,12 @@
 .section .rodata
 .align 4
 
-.rept 16 .byte 0xff
+.rept 16
+        .byte 0xff
 .endr
 mask_ff:
-.rept 16 .byte 0
+.rept 16
+        .byte 0
 .endr
 
 mask_ac4:
