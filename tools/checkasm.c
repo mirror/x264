@@ -1100,6 +1100,7 @@ static int check_dct( int cpu_ref, int cpu_new )
         TEST_ZIGZAG_SCAN( scan_8x8, level1, level2, dct8[0], 8 );
         TEST_ZIGZAG_SCAN( scan_4x4, level1, level2, dct1[0], 4 );
         TEST_ZIGZAG_SUB( sub_4x4, level1, level2, 16 );
+        TEST_ZIGZAG_SUB( sub_8x8, level1, level2, 64 );
         TEST_ZIGZAG_SUBAC( sub_4x4ac, level1, level2 );
         report( interlace ? "zigzag_field :" : "zigzag_frame :" );
     }
