@@ -177,8 +177,9 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
 
 static int picture_alloc( cli_pic_t *pic, int csp, int width, int height )
 {
-    if( x264_cli_pic_alloc( pic, csp, width, height ) )
+    if( x264_cli_pic_alloc( pic, X264_CSP_NONE, width, height ) )
         return -1;
+    pic->img.csp = csp;
     pic->img.planes = 4;
     return 0;
 }

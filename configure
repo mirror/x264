@@ -926,7 +926,7 @@ if [ "$lavf" = "auto" ] ; then
         done
     fi
     LAVF_LIBS="-L. $LAVF_LIBS"
-    if cc_check libavformat/avformat.h "$LAVF_CFLAGS $LAVF_LIBS" "avformat_close_input(0);" ; then
+    if cc_check libavformat/avformat.h "$LAVF_CFLAGS $LAVF_LIBS" "av_frame_free(0);" ; then
         if [ "$swscale" = "yes" ]; then
             lavf="yes"
         else
