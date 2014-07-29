@@ -148,7 +148,7 @@ SAD_FUNC  16, 16
     \first      v17.8h,  v2.8b,  v0.8b
     ld1        {v3.8b}, [x3], x5
     ld1        {v1.8b}, [x1], x5
-   \first       v18.8h,  v3.8b,  v0.8b
+    \first      v18.8h,  v3.8b,  v0.8b
     uabal       v16.8h,  v1.8b,  v5.8b
     ld1        {v2.8b}, [x2], x5
     ld1        {v3.8b}, [x3], x5
@@ -247,6 +247,30 @@ SAD_X_FUNC  4, 8,  16
 SAD_X_FUNC  4, 16, 8
 SAD_X_FUNC  4, 16, 16
 
+
+function x264_pixel_vsad_neon, export=1
+    subs        w2,  w2,  #2
+    ld1        {v0.16b},  [x0],  x1
+    ld1        {v1.16b},  [x0],  x1
+    uabdl       v6.8h,  v0.8b,  v1.8b
+    uabdl2      v7.8h,  v0.16b, v1.16b
+    b.le        2f
+1:
+    subs        w2,  w2,  #2
+    ld1        {v0.16b},  [x0],  x1
+    uabal       v6.8h,  v1.8b,  v0.8b
+    uabal2      v7.8h,  v1.16b, v0.16b
+    ld1        {v1.16b},  [x0],  x1
+    b.lt        2f
+    uabal       v6.8h,  v0.8b,  v1.8b
+    uabal2      v7.8h,  v0.16b, v1.16b
+    b.gt        1b
+2:
+    add         v5.8h,  v6.8h,  v7.8h
+    uaddlv      s0,  v5.8h
+    fmov        w0,  s0
+    ret
+endfunc
 
 .macro SSD_START_4
     ld1        {v16.s}[0], [x0], x1
