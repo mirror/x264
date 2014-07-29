@@ -1,9 +1,10 @@
 /*****************************************************************************
- * dct.h: AArch64 transform and zigzag
+ * dct.h: aarch64 transform and zigzag
  *****************************************************************************
  * Copyright (C) 2009-2014 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
+ *          Janne Grunau <janne-x264@jannau.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,5 +49,18 @@ void x264_add8x8_idct8_neon( uint8_t *p_dst, int16_t dct[64] );
 void x264_add16x16_idct8_neon( uint8_t *p_dst, int16_t dct[4][64] );
 
 void x264_zigzag_scan_4x4_frame_neon( int16_t level[16], int16_t dct[16] );
+void x264_zigzag_scan_4x4_field_neon( int16_t level[16], int16_t dct[16] );
+void x264_zigzag_scan_8x8_frame_neon( int16_t level[64], int16_t dct[64] );
+void x264_zigzag_scan_8x8_field_neon( int16_t level[64], int16_t dct[64] );
+
+int x264_zigzag_sub_4x4_field_neon( dctcoef level[16], const pixel *p_src, pixel *p_dst );
+int x264_zigzag_sub_4x4ac_field_neon( dctcoef level[16], const pixel *p_src, pixel *p_dst, dctcoef *dc );
+int x264_zigzag_sub_4x4_frame_neon( dctcoef level[16], const pixel *p_src, pixel *p_dst );
+int x264_zigzag_sub_4x4ac_frame_neon( dctcoef level[16], const pixel *p_src, pixel *p_dst, dctcoef *dc );
+
+int x264_zigzag_sub_8x8_field_neon( dctcoef level[16], const pixel *p_src, pixel *p_dst );
+int x264_zigzag_sub_8x8_frame_neon( dctcoef level[16], const pixel *p_src, pixel *p_dst );
+
+void x264_zigzag_interleave_8x8_cavlc_neon( dctcoef *dst, dctcoef *src, uint8_t *nnz );
 
 #endif
