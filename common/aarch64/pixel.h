@@ -48,6 +48,9 @@ DECL_X4( sad, neon )
 DECL_X1( satd, neon )
 DECL_X1( ssd, neon )
 
+
+void x264_pixel_ssd_nv12_core_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, int, int, uint64_t *, uint64_t * );
+
 int x264_pixel_vsad_neon( uint8_t *, intptr_t, int );
 
 int x264_pixel_sa8d_8x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t );

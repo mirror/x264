@@ -373,6 +373,77 @@ SSD_FUNC   8, 16
 SSD_FUNC  16, 8
 SSD_FUNC  16, 16
 
+
+function x264_pixel_ssd_nv12_core_neon, export=1
+    sxtw        x8,  w4
+    add         x8,  x8,  #8
+    and         x8,  x8,  #~15
+    movi        v6.2d,  #0
+    movi        v7.2d,  #0
+    sub         x1,  x1,  x8, lsl #1
+    sub         x3,  x3,  x8, lsl #1
+1:
+    subs        w8,  w4,  #16
+    ld2        {v0.8b,v1.8b},   [x0],  #16
+    ld2        {v2.8b,v3.8b},   [x2],  #16
+    ld2        {v24.8b,v25.8b}, [x0],  #16
+    ld2        {v26.8b,v27.8b}, [x2],  #16
+
+    usubl       v16.8h, v0.8b,  v2.8b
+    usubl       v17.8h, v1.8b,  v3.8b
+    smull       v20.4s, v16.4h, v16.4h
+    smull       v21.4s, v17.4h, v17.4h
+    usubl       v18.8h, v24.8b, v26.8b
+    usubl       v19.8h, v25.8b, v27.8b
+    smlal2      v20.4s, v16.8h, v16.8h
+    smlal2      v21.4s, v17.8h, v17.8h
+
+    b.lt        4f
+    b.eq        3f
+2:
+    smlal       v20.4s, v18.4h, v18.4h
+    smlal       v21.4s, v19.4h, v19.4h
+    ld2        {v0.8b,v1.8b}, [x0],  #16
+    ld2        {v2.8b,v3.8b}, [x2],  #16
+    smlal2      v20.4s, v18.8h, v18.8h
+    smlal2      v21.4s, v19.8h, v19.8h
+
+    subs        w8,  w8,  #16
+    usubl       v16.8h, v0.8b,  v2.8b
+    usubl       v17.8h, v1.8b,  v3.8b
+    smlal       v20.4s, v16.4h, v16.4h
+    smlal       v21.4s, v17.4h, v17.4h
+    ld2        {v24.8b,v25.8b}, [x0],  #16
+    ld2        {v26.8b,v27.8b}, [x2],  #16
+    smlal2      v20.4s, v16.8h, v16.8h
+    smlal2      v21.4s, v17.8h, v17.8h
+    b.lt        4f
+
+    usubl       v18.8h, v24.8b, v26.8b
+    usubl       v19.8h, v25.8b, v27.8b
+    b.gt        2b
+3:
+    smlal       v20.4s, v18.4h, v18.4h
+    smlal       v21.4s, v19.4h, v19.4h
+    smlal2      v20.4s, v18.8h, v18.8h
+    smlal2      v21.4s, v19.8h, v19.8h
+4:
+    subs        w5,  w5,  #1
+    uaddw       v6.2d,  v6.2d,  v20.2s
+    uaddw       v7.2d,  v7.2d,  v21.2s
+    add         x0,  x0,  x1
+    add         x2,  x2,  x3
+    uaddw2      v6.2d,  v6.2d,  v20.4s
+    uaddw2      v7.2d,  v7.2d,  v21.4s
+    b.gt        1b
+
+    addp        v6.2d,  v6.2d,  v7.2d
+    st1        {v6.d}[0], [x6]
+    st1        {v6.d}[1], [x7]
+
+    ret
+endfunc
+
 .macro pixel_var_8 h
 function x264_pixel_var_8x\h\()_neon, export=1
     ld1            {v16.8b}, [x0], x1

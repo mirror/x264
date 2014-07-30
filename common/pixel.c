@@ -1442,6 +1442,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->intra_sad_x3_16x16  = x264_intra_sad_x3_16x16_neon;
         pixf->intra_satd_x3_16x16 = x264_intra_satd_x3_16x16_neon;
 
+        pixf->ssd_nv12_core     = x264_pixel_ssd_nv12_core_neon;
         pixf->ssim_4x4x2_core   = x264_pixel_ssim_4x4x2_core_neon;
         pixf->ssim_end4         = x264_pixel_ssim_end4_neon;
     }
