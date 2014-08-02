@@ -2136,7 +2136,7 @@ cglobal mbtree_propagate_cost, 6,6,%1
 
 INIT_YMM avx
 MBTREE_AVX 8
-INIT_YMM avx2,fma3
+INIT_YMM avx2
 MBTREE_AVX 7
 
 %macro MBTREE_PROPAGATE_LIST 0

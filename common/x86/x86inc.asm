@@ -738,8 +738,8 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %assign cpuflags_avx      (1<<11)| cpuflags_sse42
 %assign cpuflags_xop      (1<<12)| cpuflags_avx
 %assign cpuflags_fma4     (1<<13)| cpuflags_avx
-%assign cpuflags_avx2     (1<<14)| cpuflags_avx
-%assign cpuflags_fma3     (1<<15)| cpuflags_avx
+%assign cpuflags_fma3     (1<<14)| cpuflags_avx
+%assign cpuflags_avx2     (1<<15)| cpuflags_fma3
 
 %assign cpuflags_cache32  (1<<16)
 %assign cpuflags_cache64  (1<<17)
