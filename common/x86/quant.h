@@ -31,7 +31,6 @@
 int x264_quant_2x2_dc_mmx2( dctcoef dct[4], int mf, int bias );
 int x264_quant_4x4_dc_mmx2( dctcoef dct[16], int mf, int bias );
 int x264_quant_4x4_mmx( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] );
-int x264_quant_4x4x4_mmx( dctcoef dct[4][16], udctcoef mf[16], udctcoef bias[16] );
 int x264_quant_8x8_mmx( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] );
 int x264_quant_2x2_dc_sse2( dctcoef dct[16], int mf, int bias );
 int x264_quant_4x4_dc_sse2( dctcoef dct[16], int mf, int bias );
