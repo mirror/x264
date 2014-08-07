@@ -114,6 +114,7 @@ endfunc
 
 SAD_FUNC  4,  4
 SAD_FUNC  4,  8
+SAD_FUNC  4,  16
 SAD_FUNC  8,  4
 SAD_FUNC  8,  8
 SAD_FUNC  8,  16
@@ -367,6 +368,7 @@ endfunc
 
 SSD_FUNC   4, 4
 SSD_FUNC   4, 8
+SSD_FUNC   4, 16
 SSD_FUNC   8, 4
 SSD_FUNC   8, 8
 SSD_FUNC   8, 16
@@ -895,6 +897,61 @@ function x264_satd_16x4_neon
     b           x264_satd_8x4v_8x8h_neon
 endfunc
 
+function x264_pixel_satd_4x16_neon, export=1
+    mov         x4,  x30
+    ld1        {v1.s}[0],  [x2], x3
+    ld1        {v0.s}[0],  [x0], x1
+    ld1        {v3.s}[0],  [x2], x3
+    ld1        {v2.s}[0],  [x0], x1
+    ld1        {v5.s}[0],  [x2], x3
+    ld1        {v4.s}[0],  [x0], x1
+    ld1        {v7.s}[0],  [x2], x3
+    ld1        {v6.s}[0],  [x0], x1
+    ld1        {v1.s}[1],  [x2], x3
+    ld1        {v0.s}[1],  [x0], x1
+    ld1        {v3.s}[1],  [x2], x3
+    ld1        {v2.s}[1],  [x0], x1
+    ld1        {v5.s}[1],  [x2], x3
+    ld1        {v4.s}[1],  [x0], x1
+    ld1        {v7.s}[1],  [x2], x3
+    ld1        {v6.s}[1],  [x0], x1
+    usubl       v16.8h, v0.8b,  v1.8b
+    usubl       v17.8h, v2.8b,  v3.8b
+    usubl       v18.8h, v4.8b,  v5.8b
+    usubl       v19.8h, v6.8b,  v7.8b
+    ld1        {v1.s}[0],  [x2], x3
+    ld1        {v0.s}[0],  [x0], x1
+    ld1        {v3.s}[0],  [x2], x3
+    ld1        {v2.s}[0],  [x0], x1
+    ld1        {v5.s}[0],  [x2], x3
+    ld1        {v4.s}[0],  [x0], x1
+    ld1        {v7.s}[0],  [x2], x3
+    ld1        {v6.s}[0],  [x0], x1
+    ld1        {v1.s}[1],  [x2], x3
+    ld1        {v0.s}[1],  [x0], x1
+    ld1        {v3.s}[1],  [x2], x3
+    ld1        {v2.s}[1],  [x0], x1
+    ld1        {v5.s}[1],  [x2], x3
+    ld1        {v4.s}[1],  [x0], x1
+    ld1        {v7.s}[1],  [x2], x3
+    ld1        {v6.s}[1],  [x0], x1
+    usubl       v20.8h, v0.8b,  v1.8b
+    usubl       v21.8h, v2.8b,  v3.8b
+    usubl       v22.8h, v4.8b,  v5.8b
+    usubl       v23.8h, v6.8b,  v7.8b
+
+    SUMSUB_AB   v0.8h,  v1.8h,  v16.8h, v17.8h
+    SUMSUB_AB   v2.8h,  v3.8h,  v18.8h, v19.8h
+
+    bl          x264_satd_8x4v_8x8h_neon
+
+    add         v30.8h, v0.8h,  v1.8h
+    add         v31.8h, v2.8h,  v3.8h
+    add         v0.8h,  v30.8h, v31.8h
+    uaddlv      s0,  v0.8h
+    mov         w0,  v0.s[0]
+    ret         x4
+endfunc
 
 function x264_pixel_sa8d_8x8_neon, export=1
     mov         x4,  x30

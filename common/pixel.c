@@ -1409,13 +1409,13 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
 #if ARCH_AARCH64
     if( cpu&X264_CPU_NEON )
     {
-        INIT7( sad, _neon );
+        INIT8( sad, _neon );
         // AArch64 has no distinct instructions for aligned load/store
-        INIT7_NAME( sad_aligned, sad, _neon );
+        INIT8_NAME( sad_aligned, sad, _neon );
         INIT7( sad_x3, _neon );
         INIT7( sad_x4, _neon );
-        INIT7( ssd, _neon );
-        INIT7( satd, _neon );
+        INIT8( ssd, _neon );
+        INIT8( satd, _neon );
         INIT7( satd_x3, _neon );
         INIT7( satd_x4, _neon );
         INIT4( hadamard_ac, _neon );
