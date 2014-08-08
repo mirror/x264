@@ -622,56 +622,70 @@ function x264_add16x16_idct_dc_neon, export=1
     ret
 endfunc
 
+.macro sub4x4x2_dct_dc, dst, t0, t1, t2, t3, t4, t5, t6, t7
+    ld1        {\t0\().8b}, [x1], x3
+    ld1        {\t1\().8b}, [x2], x4
+    ld1        {\t2\().8b}, [x1], x3
+    ld1        {\t3\().8b}, [x2], x4
+    usubl       \t0\().8h,  \t0\().8b,  \t1\().8b
+    ld1        {\t4\().8b}, [x1], x3
+    ld1        {\t5\().8b}, [x2], x4
+    usubl       \t1\().8h,  \t2\().8b,  \t3\().8b
+    ld1        {\t6\().8b}, [x1], x3
+    ld1        {\t7\().8b}, [x2], x4
+    add         \dst\().8h, \t0\().8h,  \t1\().8h
+    usubl       \t2\().8h,  \t4\().8b,  \t5\().8b
+    usubl       \t3\().8h,  \t6\().8b,  \t7\().8b
+    add         \dst\().8h, \dst\().8h, \t2\().8h
+    add         \dst\().8h, \dst\().8h, \t3\().8h
+.endm
+
 function x264_sub8x8_dct_dc_neon, export=1
     mov             x3,  #FENC_STRIDE
     mov             x4,  #FDEC_STRIDE
-    ld1        {v16.8b}, [x1], x3
-    ld1        {v17.8b}, [x2], x4
-    usubl       v16.8h,  v16.8b, v17.8b
-    ld1        {v18.8b}, [x1], x3
-    ld1        {v19.8b}, [x2], x4
-    usubl       v17.8h,  v18.8b, v19.8b
-    ld1        {v20.8b}, [x1], x3
-    ld1        {v21.8b}, [x2], x4
-    usubl       v18.8h, v20.8b, v21.8b
-    ld1        {v22.8b}, [x1], x3
-    add         v0.8h,  v16.8h, v17.8h
-    ld1        {v23.8b}, [x2], x4
-    usubl       v19.8h, v22.8b, v23.8b
-    ld1        {v24.8b}, [x1], x3
-    add         v0.8h,  v0.8h,  v18.8h
-    ld1        {v25.8b}, [x2], x4
-    usubl       v20.8h, v24.8b, v25.8b
-    ld1        {v26.8b}, [x1], x3
-    add         v0.8h,  v0.8h,  v19.8h
-    ld1        {v27.8b}, [x2], x4
-    usubl       v21.8h, v26.8b, v27.8b
-    ld1        {v28.8b}, [x1], x3
-    ld1        {v29.8b}, [x2], x4
-    usubl       v22.8h, v28.8b, v29.8b
-    ld1        {v30.8b}, [x1], x3
-    add         v1.8h,  v20.8h, v21.8h
-    ld1        {v31.8b}, [x2], x4
-    usubl       v23.8h, v30.8b, v31.8b
-    add         v1.8h,  v1.8h,  v22.8h
-    add         v1.8h,  v1.8h,  v23.8h
+
+    sub4x4x2_dct_dc  v0, v16, v17, v18, v19, v20, v21, v22, v23
+    sub4x4x2_dct_dc  v1, v24, v25, v26, v27, v28, v29, v30, v31
 
     transpose   v2.2d,  v3.2d,  v0.2d,  v1.2d
-
-    add         v0.8h,  v2.8h,  v3.8h
-    sub         v1.8h,  v2.8h,  v3.8h
-
+    SUMSUB_AB   v0.8h,  v1.8h,  v2.8h,  v3.8h
     transpose   v2.2d,  v3.2d,  v0.2d,  v1.2d
-
-    add         v0.8h,  v2.8h,  v3.8h
-    sub         v1.8h,  v2.8h,  v3.8h
-
+    SUMSUB_AB   v0.8h,  v1.8h,  v2.8h,  v3.8h
     transpose   v2.2d,  v3.2d,  v0.2d,  v1.2d
 
     addp        v0.8h,  v2.8h,  v3.8h
     addp        v0.8h,  v0.8h,  v0.8h
 
     st1        {v0.4h}, [x0]
+    ret
+endfunc
+
+function x264_sub8x16_dct_dc_neon, export=1
+    mov             x3,  #FENC_STRIDE
+    mov             x4,  #FDEC_STRIDE
+    sub4x4x2_dct_dc  v0, v16, v17, v18, v19, v20, v21, v22, v23
+    sub4x4x2_dct_dc  v1, v24, v25, v26, v27, v28, v29, v30, v31
+    sub4x4x2_dct_dc  v2, v16, v17, v18, v19, v20, v21, v22, v23
+    sub4x4x2_dct_dc  v3, v24, v25, v26, v27, v28, v29, v30, v31
+
+    addp             v4.8h,  v0.8h,  v2.8h
+    addp             v5.8h,  v1.8h,  v3.8h
+
+    transpose   v2.4s,  v3.4s,  v4.4s,  v5.4s
+    SUMSUB_AB   v0.8h,  v1.8h,  v2.8h,  v3.8h
+
+    transpose   v2.4s,  v3.4s,  v0.4s,  v1.4s
+    SUMSUB_AB   v0.8h,  v1.8h,  v2.8h,  v3.8h
+
+    transpose   v2.2d,  v3.2d,  v0.2d,  v1.2d
+    SUMSUB_AB   v0.8h,  v1.8h,  v2.8h,  v3.8h
+
+    trn1        v2.2d,  v0.2d,  v1.2d
+    trn2        v3.2d,  v1.2d,  v0.2d
+
+    addp        v0.8h,  v2.8h,  v3.8h
+
+    st1        {v0.8h}, [x0]
     ret
 endfunc
 
