@@ -114,6 +114,7 @@ cl_ldflags() {
         [ "$arg" = -Werror ] && arg=
         [ "$arg" = -Wshadow ] && arg=
         [ "$arg" = -Wmaybe-uninitialized ] && arg=
+        [[ "$arg" = -Qdiag-error* ]] && arg=
 
         arg=${arg/pthreadGC/pthreadVC}
         [ "$arg" = avifil32.lib ] && arg=vfw32.lib
@@ -145,9 +146,9 @@ cc_check() {
     [ -n "$1" ] && echo "#include <$1>" > conftest.c
     echo "int main (void) { $3 return 0; }" >> conftest.c
     if [ $compiler_style = MS ]; then
-        cc_cmd="$CC conftest.c $(cc_cflags $CFLAGS $2) -link $(cl_ldflags $2 $LDFLAGSCLI $LDFLAGS)"
+        cc_cmd="$CC conftest.c $(cc_cflags $CFLAGS $CHECK_CFLAGS $2) -link $(cl_ldflags $2 $LDFLAGSCLI $LDFLAGS)"
     else
-        cc_cmd="$CC conftest.c $CFLAGS $2 $LDFLAGSCLI $LDFLAGS -o conftest"
+        cc_cmd="$CC conftest.c $CFLAGS $CHECK_CFLAGS $2 $LDFLAGSCLI $LDFLAGS -o conftest"
     fi
     if $cc_cmd >conftest.log 2>&1; then
         res=$?
@@ -299,6 +300,7 @@ LDFLAGS="$LDFLAGS"
 LDFLAGSCLI="$LDFLAGSCLI"
 ASFLAGS="$ASFLAGS -I. -I\$(SRCPATH)"
 RCFLAGS="$RCFLAGS"
+CHECK_CFLAGS=""
 HAVE_GETOPT_LONG=1
 cross_prefix=""
 
@@ -460,7 +462,7 @@ host_os="${host#*-}"
 cc_base=`basename "$CC"`
 QPRE="-"
 if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
-    if [[ "$cc_base" = icl || "$cc_base" = icl.* ]]; then
+    if [[ "$cc_base" = icl || "$cc_base" = icl[\ .]* ]]; then
         # Windows Intel Compiler creates dependency generation with absolute Windows paths, Cygwin's make does not support Windows paths.
         [[ $host_os = cygwin* ]] && die "Windows Intel Compiler support requires MSYS"
         compiler=ICL
@@ -470,7 +472,10 @@ if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
         `$CC 2>&1 | grep -q IA-32` && host_cpu=i486
         `$CC 2>&1 | grep -q "Intel(R) 64"` && host_cpu=x86_64
         cpp_check "" "" "_MSC_VER >= 1400" || die "Windows Intel Compiler support requires Visual Studio 2005 or newer"
-    elif [[ "$cc_base" = cl || "$cc_base" = cl.* ]]; then
+        if cc_check '' -Qdiag-error:10006,10157 ; then
+            CHECK_CFLAGS="$CHECK_CFLAGS -Qdiag-error:10006,10157"
+        fi
+    elif [[ "$cc_base" = cl || "$cc_base" = cl[\ .]* ]]; then
         # Standard Microsoft Visual Studio
         # Dependency creation includes absolute windows paths, Cygwin's make does not support Windows paths.
         [[ $host_os = cygwin* ]] && die "Microsoft Visual Studio support requires MSYS"
@@ -482,9 +487,15 @@ if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
         cpp_check '' '' '_MSC_VER > 1800 || (_MSC_VER == 1800 && _MSC_FULL_VER >= 180030324)' || die "Microsoft Visual Studio support requires Visual Studio 2013 Update 2 or newer"
     fi
 else
-    if [[ "$cc_base" = icc || "$cc_base" = icc.* ]]; then
+    if [[ "$cc_base" = icc || "$cc_base" = icc[\ .]* ]]; then
         AR="xiar"
         compiler=ICC
+    fi
+fi
+
+if [[ "$cc_base" = clang || "$cc_base" = clang[\ .]* ]]; then
+    if cc_check '' -Werror=unknown-warning-option ; then
+        CHECK_CFLAGS="$CHECK_CFLAGS -Werror=unknown-warning-option"
     fi
 fi
 
