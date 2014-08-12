@@ -714,7 +714,8 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
 #endif // HAVE_MMX
 
 #if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC ) {
+    if( cpu&X264_CPU_ALTIVEC )
+    {
         pf->quant_2x2_dc = x264_quant_2x2_dc_altivec;
         pf->quant_4x4_dc = x264_quant_4x4_dc_altivec;
         pf->quant_4x4 = x264_quant_4x4_altivec;
@@ -753,6 +754,12 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
     {
         pf->coeff_last4 = x264_coeff_last4_aarch64;
         pf->coeff_last8 = x264_coeff_last8_aarch64;
+    }
+    if( cpu&X264_CPU_NEON )
+    {
+        pf->decimate_score15 = x264_decimate_score15_neon;
+        pf->decimate_score16 = x264_decimate_score16_neon;
+        pf->decimate_score64 = x264_decimate_score64_neon;
     }
 #endif
 #endif // HIGH_BIT_DEPTH
