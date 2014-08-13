@@ -557,6 +557,223 @@ function x264_predict_8x8c_p_neon, export=1
 endfunc
 
 
+.macro loadsum4 wd, t1, t2, t3, x, idx
+    ldrb        \wd,  [\x, #(\idx + 0) * FDEC_STRIDE - 1]
+    ldrb        \t1,  [\x, #(\idx + 1) * FDEC_STRIDE - 1]
+    ldrb        \t2,  [\x, #(\idx + 2) * FDEC_STRIDE - 1]
+    ldrb        \t3,  [\x, #(\idx + 3) * FDEC_STRIDE - 1]
+    add         \wd,  \wd,  \t1
+    add         \t1,  \t2,  \t3
+    add         \wd,  \wd,  \t1
+.endm
+
+function x264_predict_8x16c_h_neon, export=1
+    sub         x2,  x0,  #1
+    add         x3,  x0,  #FDEC_STRIDE - 1
+    mov         x7,  #2 * FDEC_STRIDE
+    add         x1,  x0,  #FDEC_STRIDE
+.rept 4
+    ld1r       {v0.8b}, [x2], x7
+    ld1r       {v1.8b}, [x3], x7
+    ld1r       {v2.8b}, [x2], x7
+    ld1r       {v3.8b}, [x3], x7
+    st1        {v0.8b}, [x0], x7
+    st1        {v1.8b}, [x1], x7
+    st1        {v2.8b}, [x0], x7
+    st1        {v3.8b}, [x1], x7
+.endr
+    ret
+endfunc
+
+function x264_predict_8x16c_v_neon, export=1
+    sub         x1,  x0,  #FDEC_STRIDE
+    mov         x2,  #2 * FDEC_STRIDE
+    ld1        {v0.8b}, [x1], x2
+.rept 8
+    st1        {v0.8b}, [x0], x2
+    st1        {v0.8b}, [x1], x2
+.endr
+    ret
+endfunc
+
+function x264_predict_8x16c_p_neon, export=1
+    movrel      x4,  p16weight
+    ld1        {v17.8h}, [x4]
+    sub         x3,  x0,  #FDEC_STRIDE
+    mov         x1,  #FDEC_STRIDE
+    add         x2,  x3,  #4
+    sub         x3,  x3,  #1
+
+    ld1        {v0.8b}, [x3]
+    ld1        {v2.8b}, [x2], x1
+    ldcol.8     v1,  x3,  x1
+    add         x3,  x3,  x1
+    ldcol.8     v3,  x3,  x1
+    ext         v4.8b,  v2.8b,  v2.8b,  #3
+    ext         v5.8b,  v3.8b,  v3.8b,  #7
+    rev32       v0.8b,  v0.8b
+    rev64       v1.8b,  v1.8b
+
+    uaddl       v4.8h,  v5.8b,  v4.8b // a * 1/16
+
+    usubl       v2.8h,  v2.8b,  v0.8b
+    mul         v2.8h,  v2.8h,  v17.8h
+    saddlp      v2.4s,  v2.8h
+    addp        v2.4s,  v2.4s,  v2.4s  // H
+
+    usubl       v3.8h,  v3.8b,  v1.8b
+    mul         v3.8h,  v3.8h,  v17.8h
+    saddlp      v3.4s,  v3.8h
+    addp        v3.4s,  v3.4s,  v3.4s
+    addp        v3.4s,  v3.4s,  v3.4s  // V
+
+    ext         v17.16b, v17.16b, v17.16b, #14
+
+    shl         v4.4h,  v4.4h,  #4     // a
+    shl         v6.2s,  v2.2s,  #4     // 16 * H
+    shl         v7.2s,  v3.2s,  #2     // 4 * V
+    add         v2.2s,  v2.2s,  v6.2s  // 17 * H
+    add         v3.2s,  v3.2s,  v7.2s  // 5 * V
+    rshrn       v2.4h,  v2.4s,  #5     // b
+    rshrn       v3.4h,  v3.4s,  #6     // c
+
+    mov         v17.h[0],  wzr
+
+    sub         v4.4h,  v4.4h,  v2.4h  // a - b
+    shl         v6.4h,  v2.4h,  #1     // 2 * b
+    add         v4.4h,  v4.4h,  v3.4h  // a - b + c
+    shl         v7.4h,  v3.4h,  #3     // 8 * c
+    sub         v4.4h,  v4.4h,  v6.4h  // a - 3b + c
+    sub         v4.4h,  v4.4h,  v7.4h  // a - 3b - 7c
+
+    mul         v0.8h,  v17.8h, v2.h[0]         // 0,1,2,3,4,5,6,7 * b
+    dup         v1.8h,  v4.h[0]                 // i00
+    dup         v2.8h,  v3.h[0]                 // c
+    add         v1.8h,  v1.8h,  v0.8h           // pix + {0..7}*b
+    mov         x3,  #16
+1:
+    subs        x3,  x3,  #2
+    sqrshrun    v4.8b,  v1.8h,  #5
+    add         v1.8h,  v1.8h,  v2.8h
+    sqrshrun    v5.8b,  v1.8h,  #5
+    st1        {v4.8b}, [x0], x1
+    add         v1.8h,  v1.8h,  v2.8h
+    st1        {v5.8b}, [x0], x1
+    b.ne        1b
+    ret
+endfunc
+
+function x264_predict_8x16c_dc_neon, export=1
+    sub         x3,  x0,  #FDEC_STRIDE
+    mov         x1,  #FDEC_STRIDE
+    ld1        {v6.8b}, [x3]
+    loadsum4    w2, w3, w4, w5, x0, 0
+    uaddlp      v6.4h,  v6.8b
+    dup         v22.8h, w2              // s2
+    loadsum4    w6, w7, w8, w9, x0, 4
+    addp        v6.4h,  v6.4h,  v6.4h   // s0, s1
+    dup         v23.8h, w6              // s3
+    loadsum4    w2, w3, w4, w5, x0, 8
+    dup         v20.8h, v6.h[0]         // s0
+    dup         v24.8h, w2              // s4
+    loadsum4    w6, w7, w8, w9, x0, 12
+    dup         v21.8h, v6.h[1]         // s1
+    dup         v25.8h, w6              // s5
+
+    ext         v16.16b, v20.16b, v21.16b, #8
+    ext         v17.16b, v22.16b, v21.16b, #8
+    ext         v1.16b,  v23.16b, v21.16b, #8
+    ext         v2.16b,  v24.16b, v21.16b, #8
+    ext         v3.16b,  v25.16b, v21.16b, #8
+
+    add         v0.8h,  v16.8h, v17.8h
+    add         v1.8h,  v1.8h,  v23.8h
+    add         v2.8h,  v2.8h,  v24.8h
+    add         v3.8h,  v3.8h,  v25.8h
+
+    rshrn       v0.8b,  v0.8h,  #3
+    rshrn       v1.8b,  v1.8h,  #3
+    rshrn       v2.8b,  v2.8h,  #3
+    rshrn       v3.8b,  v3.8h,  #3
+.irp  idx, 0, 1, 2, 3
+.rept 4
+    st1        {v\idx\().8b}, [x0], x1
+.endr
+.endr
+    ret
+endfunc
+
+function x264_predict_8x16c_dc_left_neon, export=1
+    mov         x1,  #FDEC_STRIDE
+    ldrb        w2,  [x0, # 0 * FDEC_STRIDE - 1]
+    ldrb        w3,  [x0, # 1 * FDEC_STRIDE - 1]
+    ldrb        w4,  [x0, # 2 * FDEC_STRIDE - 1]
+    ldrb        w5,  [x0, # 3 * FDEC_STRIDE - 1]
+    add         w2,  w2,  w3
+
+    ldrb        w6,  [x0, # 4 * FDEC_STRIDE - 1]
+    add         w4,  w4,  w5
+    ldrb        w7,  [x0, # 5 * FDEC_STRIDE - 1]
+    add         w2,  w2,  w4
+    ldrb        w8,  [x0, # 6 * FDEC_STRIDE - 1]
+    ldrb        w9,  [x0, # 7 * FDEC_STRIDE - 1]
+    dup         v0.8h,  w2
+    add         w6,  w6,  w7
+    rshrn       v0.8b,  v0.8h,  #2
+    add         w8,  w8,  w9
+
+    ldrb        w10, [x0, # 8 * FDEC_STRIDE - 1]
+    ldrb        w11, [x0, # 9 * FDEC_STRIDE - 1]
+    add         w6,  w6,  w8
+    ldrb        w12, [x0, #10 * FDEC_STRIDE - 1]
+    ldrb        w13, [x0, #11 * FDEC_STRIDE - 1]
+    dup         v1.8h,  w6
+    add         w10,  w10,  w11
+    rshrn       v1.8b,  v1.8h,  #2
+    add         w12,  w12,  w13
+
+    ldrb        w2,  [x0, #12 * FDEC_STRIDE - 1]
+    ldrb        w3,  [x0, #13 * FDEC_STRIDE - 1]
+    add         w10,  w10,  w12
+    ldrb        w4,  [x0, #14 * FDEC_STRIDE - 1]
+    ldrb        w5,  [x0, #15 * FDEC_STRIDE - 1]
+    dup         v2.8h,  w10
+    add         w2,  w2,  w3
+    rshrn       v2.8b,  v2.8h,  #2
+    add         w4,  w4,  w5
+    st1        {v0.8b}, [x0], x1
+    st1        {v0.8b}, [x0], x1
+    add         w2,  w2,  w4
+    st1        {v0.8b}, [x0], x1
+    dup         v3.8h,  w2
+    st1        {v0.8b}, [x0], x1
+    rshrn       v3.8b,  v3.8h,  #2
+
+.irp  idx, 1, 2, 3
+.rept 4
+    st1        {v\idx\().8b}, [x0], x1
+.endr
+.endr
+    ret
+endfunc
+
+function x264_predict_8x16c_dc_top_neon, export=1
+    sub         x2,  x0,  #FDEC_STRIDE
+    mov         x1,  #FDEC_STRIDE
+    ld1        {v0.8b}, [x2]
+    uaddlp      v0.4h,  v0.8b
+    addp        v0.4h,  v0.4h,  v0.4h
+    rshrn       v4.8b,  v0.8h,  #2
+    dup         v0.8b,  v4.b[0]
+    dup         v1.8b,  v4.b[1]
+    ext         v0.8b,  v0.8b,  v1.8b,  #4
+.rept 16
+    st1        {v0.8b}, [x0], x1
+.endr
+    ret
+endfunc
+
+
 function x264_predict_16x16_dc_top_neon, export=1
     sub         x2,  x0,  #FDEC_STRIDE
     mov         x1,  #FDEC_STRIDE
@@ -614,7 +831,7 @@ function x264_predict_16x16_v_neon, export=1
 .rept 16
     st1        {v0.16b}, [x0], x7
 .endr
-   ret
+    ret
 endfunc
 
 function x264_predict_16x16_p_neon, export=1

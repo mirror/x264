@@ -949,6 +949,10 @@ void x264_predict_8x16c_init( int cpu, x264_predict_t pf[7] )
 #if HAVE_MMX
     x264_predict_8x16c_init_mmx( cpu, pf );
 #endif
+
+#if ARCH_AARCH64
+    x264_predict_8x16c_init_aarch64( cpu, pf );
+#endif
 }
 
 void x264_predict_8x8_init( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
