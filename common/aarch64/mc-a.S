@@ -1363,3 +1363,124 @@ function x264_store_interleave_chroma_neon, export=1
 
     ret
 endfunc
+
+.macro integral4h p1, p2
+    ext         v1.8b,  \p1\().8b,  \p2\().8b,  #1
+    ext         v2.8b,  \p1\().8b,  \p2\().8b,  #2
+    ext         v3.8b,  \p1\().8b,  \p2\().8b,  #3
+    uaddl       v0.8h,  \p1\().8b,  v1.8b
+    uaddl       v4.8h,  v2.8b,  v3.8b
+    add         v0.8h,  v0.8h,  v4.8h
+    add         v0.8h,  v0.8h,  v5.8h
+.endm
+
+function integral_init4h_neon, export=1
+    sub         x3,  x0,  x2
+    ld1        {v6.8b,v7.8b}, [x1], #16
+1:
+    subs        x2,  x2,  #16
+    ld1        {v5.8h},  [x3], #16
+    integral4h  v6, v7
+    ld1        {v6.8b},  [x1], #8
+    ld1        {v5.8h},  [x3], #16
+    st1        {v0.8h},  [x0], #16
+    integral4h  v7, v6
+    ld1        {v7.8b},  [x1], #8
+    st1        {v0.8h},  [x0], #16
+    b.gt        1b
+    ret
+endfunc
+
+.macro integral8h p1, p2, s
+    ext         v1.8b,  \p1\().8b,  \p2\().8b,  #1
+    ext         v2.8b,  \p1\().8b,  \p2\().8b,  #2
+    ext         v3.8b,  \p1\().8b,  \p2\().8b,  #3
+    ext         v4.8b,  \p1\().8b,  \p2\().8b,  #4
+    ext         v5.8b,  \p1\().8b,  \p2\().8b,  #5
+    ext         v6.8b,  \p1\().8b,  \p2\().8b,  #6
+    ext         v7.8b,  \p1\().8b,  \p2\().8b,  #7
+    uaddl       v0.8h,  \p1\().8b,  v1.8b
+    uaddl       v2.8h,  v2.8b,  v3.8b
+    uaddl       v4.8h,  v4.8b,  v5.8b
+    uaddl       v6.8h,  v6.8b,  v7.8b
+    add         v0.8h,  v0.8h,  v2.8h
+    add         v4.8h,  v4.8h,  v6.8h
+    add         v0.8h,  v0.8h,  v4.8h
+    add         v0.8h,  v0.8h,  \s\().8h
+.endm
+
+function integral_init8h_neon, export=1
+    sub         x3,  x0,  x2
+    ld1        {v16.8b,v17.8b}, [x1], #16
+1:
+    subs        x2,  x2,  #16
+    ld1        {v18.8h}, [x3], #16
+    integral8h  v16, v17, v18
+    ld1        {v16.8b}, [x1], #8
+    ld1        {v18.8h}, [x3], #16
+    st1        {v0.8h},  [x0], #16
+    integral8h  v17, v16, v18
+    ld1        {v17.8b}, [x1], #8
+    st1        {v0.8h},  [x0], #16
+    b.gt        1b
+    ret
+endfunc
+
+function integral_init4v_neon, export=1
+    mov         x3,  x0
+    add         x4,  x0,  x2,  lsl #3
+    add         x8,  x0,  x2,  lsl #4
+    sub         x2,  x2,  #8
+    ld1        {v20.8h,v21.8h,v22.8h}, [x3], #48
+    ld1        {v16.8h,v17.8h,v18.8h}, [x8], #48
+1:
+    subs        x2,  x2,  #16
+    ld1        {v24.8h,v25.8h}, [x4], #32
+    ext         v0.16b,  v20.16b, v21.16b, #8
+    ext         v1.16b,  v21.16b, v22.16b, #8
+    ext         v2.16b,  v16.16b, v17.16b, #8
+    ext         v3.16b,  v17.16b, v18.16b, #8
+    sub         v24.8h,  v24.8h,  v20.8h
+    sub         v25.8h,  v25.8h,  v21.8h
+    add         v0.8h,   v0.8h,   v20.8h
+    add         v1.8h,   v1.8h,   v21.8h
+    add         v2.8h,   v2.8h,   v16.8h
+    add         v3.8h,   v3.8h,   v17.8h
+    st1        {v24.8h},  [x1], #16
+    st1        {v25.8h},  [x1], #16
+    mov         v20.16b,  v22.16b
+    mov         v16.16b,  v18.16b
+    sub         v0.8h,   v2.8h,   v0.8h
+    sub         v1.8h,   v3.8h,   v1.8h
+    ld1        {v21.8h,v22.8h}, [x3], #32
+    ld1        {v17.8h,v18.8h}, [x8], #32
+    st1        {v0.8h},  [x0], #16
+    st1        {v1.8h},  [x0], #16
+    b.gt        1b
+2:
+    ret
+endfunc
+
+function integral_init8v_neon, export=1
+    add         x2,  x0,  x1,  lsl #4
+    sub         x1,  x1,  #8
+    ands        x3,  x1,  #16 - 1
+    b.eq        1f
+    subs        x1,  x1,  #8
+    ld1        {v0.8h}, [x0]
+    ld1        {v2.8h}, [x2], #16
+    sub         v4.8h,  v2.8h,  v0.8h
+    st1        {v4.8h},  [x0], #16
+    b.le        2f
+1:
+    subs        x1,  x1,  #16
+    ld1        {v0.8h,v1.8h}, [x0]
+    ld1        {v2.8h,v3.8h}, [x2], #32
+    sub         v4.8h,  v2.8h,  v0.8h
+    sub         v5.8h,  v3.8h,  v1.8h
+    st1        {v4.8h},  [x0], #16
+    st1        {v5.8h},  [x0], #16
+    b.gt        1b
+2:
+    ret
+endfunc

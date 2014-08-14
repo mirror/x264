@@ -4,6 +4,7 @@
  * Copyright (C) 2009-2014 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
+ *          Janne Grunau <janne-x264@jannau.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,6 +90,10 @@ void x264_mc_copy_w8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 void x264_mc_copy_w16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 
 void x264_mc_chroma_neon( uint8_t *, uint8_t *, intptr_t, uint8_t *, intptr_t, int, int, int, int );
+void integral_init4h_neon( uint16_t *, uint8_t *, intptr_t );
+void integral_init4v_neon( uint16_t *, uint16_t *, intptr_t );
+void integral_init8h_neon( uint16_t *, uint8_t *, intptr_t );
+void integral_init8v_neon( uint16_t *, intptr_t );
 void x264_frame_init_lowres_core_neon( uint8_t *, uint8_t *, uint8_t *, uint8_t *, uint8_t *, intptr_t, intptr_t, int, int );
 
 #if !HIGH_BIT_DEPTH
@@ -242,5 +247,10 @@ void x264_mc_init_aarch64( int cpu, x264_mc_functions_t *pf )
     pf->get_ref = get_ref_neon;
     pf->hpel_filter = x264_hpel_filter_neon;
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_neon;
+
+    pf->integral_init4h = integral_init4h_neon;
+    pf->integral_init8h = integral_init8h_neon;
+    pf->integral_init4v = integral_init4v_neon;
+    pf->integral_init8v = integral_init8v_neon;
 #endif // !HIGH_BIT_DEPTH
 }
