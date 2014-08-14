@@ -436,14 +436,25 @@ function x264_predict_8x8c_dc_top_neon, export=1
 endfunc
 
 function x264_predict_8x8c_dc_left_neon, export=1
-    sub         x2,  x0,  #1
+    ldrb        w2,  [x0, #0 * FDEC_STRIDE - 1]
+    ldrb        w3,  [x0, #1 * FDEC_STRIDE - 1]
+    ldrb        w4,  [x0, #2 * FDEC_STRIDE - 1]
+    ldrb        w5,  [x0, #3 * FDEC_STRIDE - 1]
     mov         x1,  #FDEC_STRIDE
-    ldcol.8     v0,  x2,  x1
-    uaddlp      v0.4h,  v0.8b
-    addp        v0.4h,  v0.4h,  v0.4h
+    add         w2,  w2,  w3
+    add         w3,  w4,  w5
+    ldrb        w6,  [x0, #4 * FDEC_STRIDE - 1]
+    ldrb        w7,  [x0, #5 * FDEC_STRIDE - 1]
+    ldrb        w8,  [x0, #6 * FDEC_STRIDE - 1]
+    ldrb        w9,  [x0, #7 * FDEC_STRIDE - 1]
+    add         w6,  w6,  w7
+    add         w7,  w8,  w9
+    add         w2,  w2,  w3
+    add         w6,  w6,  w7
+    dup         v0.8h,  w2
+    dup         v1.8h,  w6
     rshrn       v0.8b,  v0.8h,  #2
-    dup         v1.8b,  v0.b[1]
-    dup         v0.8b,  v0.b[0]
+    rshrn       v1.8b,  v1.8h,  #2
     b           pred8x8c_dc_end
 endfunc
 
