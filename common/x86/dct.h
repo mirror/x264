@@ -70,7 +70,7 @@ void x264_add8x8_idct_dc_avx    ( pixel   *p_dst, dctcoef dct    [ 4] );
 void x264_add16x16_idct_dc_avx  ( pixel   *p_dst, dctcoef dct    [16] );
 void x264_add16x16_idct_dc_avx2 ( uint8_t *p_dst, int16_t dct    [16] );
 
-void x264_dct4x4dc_mmx       ( int16_t d[16] );
+void x264_dct4x4dc_mmx2      ( int16_t d[16] );
 void x264_dct4x4dc_sse2      ( int32_t d[16] );
 void x264_dct4x4dc_avx       ( int32_t d[16] );
 void x264_idct4x4dc_mmx      ( int16_t d[16] );

@@ -453,7 +453,7 @@ INIT_MMX mmx2
 QUANT_DC quant_2x2_dc, 1
 %if ARCH_X86_64 == 0 ; not needed because sse2 is faster
 QUANT_DC quant_4x4_dc, 4
-INIT_MMX mmx
+INIT_MMX mmx2
 QUANT_AC quant_4x4, 4
 QUANT_AC quant_8x8, 16
 %endif

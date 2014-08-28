@@ -143,7 +143,7 @@ INIT_XMM avx
 DCT4x4_DC
 %else
 
-INIT_MMX mmx
+INIT_MMX mmx2
 cglobal dct4x4dc, 1,1
     movq   m3, [r0+24]
     movq   m2, [r0+16]
