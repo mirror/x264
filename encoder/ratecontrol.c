@@ -2191,6 +2191,8 @@ static double clip_qscale( x264_t *h, int pict_type, double q )
 
     if( rcc->b_vbv && rcc->last_satd > 0 )
     {
+        double fenc_cpb_duration = (double)h->fenc->i_cpb_duration *
+                                   h->sps->vui.i_num_units_in_tick / h->sps->vui.i_time_scale;
         /* Lookahead VBV: raise the quantizer as necessary such that no frames in
          * the lookahead overflow and such that the buffer is in a reasonable state
          * by the end of the lookahead. */
@@ -2206,6 +2208,7 @@ static double clip_qscale( x264_t *h, int pict_type, double q )
                 double buffer_fill_cur = rcc->buffer_fill - cur_bits;
                 double target_fill;
                 double total_duration = 0;
+                double last_duration = fenc_cpb_duration;
                 frame_q[0] = h->sh.i_type == SLICE_TYPE_I ? q * h->param.rc.f_ip_factor : q;
                 frame_q[1] = frame_q[0] * h->param.rc.f_pb_factor;
                 frame_q[2] = frame_q[0] / h->param.rc.f_ip_factor;
@@ -2213,8 +2216,8 @@ static double clip_qscale( x264_t *h, int pict_type, double q )
                 /* Loop over the planned future frames. */
                 for( int j = 0; buffer_fill_cur >= 0 && buffer_fill_cur <= rcc->buffer_size; j++ )
                 {
-                    total_duration += h->fenc->f_planned_cpb_duration[j];
-                    buffer_fill_cur += rcc->vbv_max_rate * h->fenc->f_planned_cpb_duration[j];
+                    total_duration += last_duration;
+                    buffer_fill_cur += rcc->vbv_max_rate * last_duration;
                     int i_type = h->fenc->i_planned_type[j];
                     int i_satd = h->fenc->i_planned_satd[j];
                     if( i_type == X264_TYPE_AUTO )
@@ -2222,6 +2225,7 @@ static double clip_qscale( x264_t *h, int pict_type, double q )
                     i_type = IS_X264_TYPE_I( i_type ) ? SLICE_TYPE_I : IS_X264_TYPE_B( i_type ) ? SLICE_TYPE_B : SLICE_TYPE_P;
                     cur_bits = predict_size( &rcc->pred[i_type], frame_q[i_type], i_satd );
                     buffer_fill_cur -= cur_bits;
+                    last_duration = h->fenc->f_planned_cpb_duration[j];
                 }
                 /* Try to get to get the buffer at least 50% filled, but don't set an impossible goal. */
                 target_fill = X264_MIN( rcc->buffer_fill + total_duration * rcc->vbv_max_rate * 0.5, rcc->buffer_size * 0.5 );
@@ -2286,13 +2290,13 @@ static double clip_qscale( x264_t *h, int pict_type, double q )
             double bframe_cpb_duration = 0;
             double minigop_cpb_duration;
             for( int i = 0; i < nb; i++ )
-                bframe_cpb_duration += h->fenc->f_planned_cpb_duration[1+i];
+                bframe_cpb_duration += h->fenc->f_planned_cpb_duration[i];
 
             if( bbits * nb > bframe_cpb_duration * rcc->vbv_max_rate )
                 nb = 0;
             pbbits += nb * bbits;
 
-            minigop_cpb_duration = bframe_cpb_duration + h->fenc->f_planned_cpb_duration[0];
+            minigop_cpb_duration = bframe_cpb_duration + fenc_cpb_duration;
             space = rcc->buffer_fill + minigop_cpb_duration*rcc->vbv_max_rate - rcc->buffer_size;
             if( pbbits < space )
             {

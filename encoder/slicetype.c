@@ -1853,14 +1853,11 @@ void x264_slicetype_decide( x264_t *h )
         if( i )
         {
             x264_calculate_durations( h, h->lookahead->next.list[i], h->lookahead->next.list[i-1], &h->i_cpb_delay, &h->i_coded_fields );
-            h->lookahead->next.list[0]->f_planned_cpb_duration[i-1] = (double)h->lookahead->next.list[i-1]->i_cpb_duration *
+            h->lookahead->next.list[0]->f_planned_cpb_duration[i-1] = (double)h->lookahead->next.list[i]->i_cpb_duration *
                                                                       h->sps->vui.i_num_units_in_tick / h->sps->vui.i_time_scale;
         }
         else
             x264_calculate_durations( h, h->lookahead->next.list[i], NULL, &h->i_cpb_delay, &h->i_coded_fields );
-
-        h->lookahead->next.list[0]->f_planned_cpb_duration[i] = (double)h->lookahead->next.list[i]->i_cpb_duration *
-                                                                h->sps->vui.i_num_units_in_tick / h->sps->vui.i_time_scale;
     }
 }
 
