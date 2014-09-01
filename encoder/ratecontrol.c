@@ -2255,32 +2255,31 @@ static double clip_qscale( x264_t *h, int pict_type, double q )
             /* Now a hard threshold to make sure the frame fits in VBV.
              * This one is mostly for I-frames. */
             double bits = predict_size( &rcc->pred[h->sh.i_type], q, rcc->last_satd );
-            double qf = 1.0;
             /* For small VBVs, allow the frame to use up the entire VBV. */
             double max_fill_factor = h->param.rc.i_vbv_buffer_size >= 5*h->param.rc.i_vbv_max_bitrate / rcc->fps ? 2 : 1;
             /* For single-frame VBVs, request that the frame use up the entire VBV. */
             double min_fill_factor = rcc->single_frame_vbv ? 1 : 2;
 
             if( bits > rcc->buffer_fill/max_fill_factor )
-                qf = x264_clip3f( rcc->buffer_fill/(max_fill_factor*bits), 0.2, 1.0 );
-            q /= qf;
-            bits *= qf;
+            {
+                double qf = x264_clip3f( rcc->buffer_fill/(max_fill_factor*bits), 0.2, 1.0 );
+                q /= qf;
+                bits *= qf;
+            }
             if( bits < rcc->buffer_rate/min_fill_factor )
-                q *= bits*min_fill_factor/rcc->buffer_rate;
+            {
+                double qf = x264_clip3f( bits*min_fill_factor/rcc->buffer_rate, 0.001, 1.0 );
+                q *= qf;
+            }
             q = X264_MAX( q0, q );
         }
-
-        /* Apply MinCR restrictions */
-        double bits = predict_size( &rcc->pred[h->sh.i_type], q, rcc->last_satd );
-        if( bits > rcc->frame_size_maximum )
-            q *= bits / rcc->frame_size_maximum;
-        bits = predict_size( &rcc->pred[h->sh.i_type], q, rcc->last_satd );
 
         /* Check B-frame complexity, and use up any bits that would
          * overflow before the next P-frame. */
         if( h->sh.i_type == SLICE_TYPE_P && !rcc->single_frame_vbv )
         {
             int nb = rcc->bframes;
+            double bits = predict_size( &rcc->pred[h->sh.i_type], q, rcc->last_satd );
             double pbbits = bits;
             double bbits = predict_size( rcc->pred_b_from_p, q * h->param.rc.f_pb_factor, rcc->last_satd );
             double space;
@@ -2301,6 +2300,12 @@ static double clip_qscale( x264_t *h, int pict_type, double q )
             }
             q = X264_MAX( q0/2, q );
         }
+
+        /* Apply MinCR and buffer fill restrictions */
+        double bits = predict_size( &rcc->pred[h->sh.i_type], q, rcc->last_satd );
+        double frame_size_maximum = X264_MIN( rcc->frame_size_maximum, X264_MAX( rcc->buffer_fill, 0.001 ) );
+        if( bits > frame_size_maximum )
+            q *= bits / frame_size_maximum;
 
         if( !rcc->b_vbv_min_rate )
             q = X264_MAX( q0, q );
