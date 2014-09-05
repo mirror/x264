@@ -289,6 +289,7 @@ static ALWAYS_INLINE void x264_cavlc_macroblock_luma_residual( x264_t *h, int pl
                 x264_cavlc_block_residual( h, DCT_LUMA_4x4, i4+i8*4+p*16, h->dct.luma4x4[i4+i8*4+p*16] );
 }
 
+#if RDO_SKIP_BS
 static ALWAYS_INLINE void x264_cavlc_partition_luma_residual( x264_t *h, int i8, int p )
 {
     if( h->mb.b_transform_8x8 && h->mb.cache.non_zero_count[x264_scan8[i8*4]] )
@@ -299,6 +300,7 @@ static ALWAYS_INLINE void x264_cavlc_partition_luma_residual( x264_t *h, int i8,
         for( int i4 = 0; i4 < 4; i4++ )
             x264_cavlc_block_residual( h, DCT_LUMA_4x4, i4+i8*4+p*16, h->dct.luma4x4[i4+i8*4+p*16] );
 }
+#endif
 
 static void x264_cavlc_mb_header_i( x264_t *h, int i_mb_type, int i_mb_i_offset, int chroma )
 {
