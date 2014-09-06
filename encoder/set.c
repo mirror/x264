@@ -543,7 +543,8 @@ void x264_pps_write( bs_t *s, x264_sps_t *sps, x264_pps_t *pps )
 void x264_sei_recovery_point_write( x264_t *h, bs_t *s, int recovery_frame_cnt )
 {
     bs_t q;
-    uint8_t tmp_buf[100];
+    ALIGNED_4( uint8_t tmp_buf[100] );
+    M32( tmp_buf ) = 0; // shut up gcc
     bs_init( &q, tmp_buf, 100 );
 
     bs_realign( &q );
@@ -595,7 +596,8 @@ void x264_sei_buffering_period_write( x264_t *h, bs_t *s )
 {
     x264_sps_t *sps = h->sps;
     bs_t q;
-    uint8_t tmp_buf[100];
+    ALIGNED_4( uint8_t tmp_buf[100] );
+    M32( tmp_buf ) = 0; // shut up gcc
     bs_init( &q, tmp_buf, 100 );
 
     bs_realign( &q );
@@ -617,7 +619,8 @@ void x264_sei_pic_timing_write( x264_t *h, bs_t *s )
 {
     x264_sps_t *sps = h->sps;
     bs_t q;
-    uint8_t tmp_buf[100];
+    ALIGNED_4( uint8_t tmp_buf[100] );
+    M32( tmp_buf ) = 0; // shut up gcc
     bs_init( &q, tmp_buf, 100 );
 
     bs_realign( &q );
@@ -648,7 +651,8 @@ void x264_sei_frame_packing_write( x264_t *h, bs_t *s )
 {
     int quincunx_sampling_flag = h->param.i_frame_packing == 0;
     bs_t q;
-    uint8_t tmp_buf[100];
+    ALIGNED_4( uint8_t tmp_buf[100] );
+    M32( tmp_buf ) = 0; // shut up gcc
     bs_init( &q, tmp_buf, 100 );
 
     bs_realign( &q );
@@ -701,7 +705,8 @@ void x264_sei_dec_ref_pic_marking_write( x264_t *h, bs_t *s )
 {
     x264_slice_header_t *sh = &h->sh_backup;
     bs_t q;
-    uint8_t tmp_buf[100];
+    ALIGNED_4( uint8_t tmp_buf[100] );
+    M32( tmp_buf ) = 0; // shut up gcc
     bs_init( &q, tmp_buf, 100 );
 
     bs_realign( &q );
