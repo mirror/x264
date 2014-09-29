@@ -517,7 +517,7 @@ int x264_param_apply_profile( x264_param_t *param, const char *profile )
 static int parse_enum( const char *arg, const char * const *names, int *dst )
 {
     for( int i = 0; names[i]; i++ )
-        if( !strcmp( arg, names[i] ) )
+        if( !strcasecmp( arg, names[i] ) )
         {
             *dst = i;
             return 0;
@@ -540,12 +540,12 @@ static int parse_cqm( const char *str, uint8_t *cqm, int length )
 static int x264_atobool( const char *str, int *b_error )
 {
     if( !strcmp(str, "1") ||
-        !strcmp(str, "true") ||
-        !strcmp(str, "yes") )
+        !strcasecmp(str, "true") ||
+        !strcasecmp(str, "yes") )
         return 1;
     if( !strcmp(str, "0") ||
-        !strcmp(str, "false") ||
-        !strcmp(str, "no") )
+        !strcasecmp(str, "false") ||
+        !strcasecmp(str, "no") )
         return 0;
     *b_error = 1;
     return 0;
@@ -614,7 +614,7 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
     OPT("asm")
     {
         p->cpu = isdigit(value[0]) ? atoi(value) :
-                 !strcmp(value, "auto") || atobool(value) ? x264_cpu_detect() : 0;
+                 !strcasecmp(value, "auto") || atobool(value) ? x264_cpu_detect() : 0;
         if( b_error )
         {
             char *buf = strdup(value);
@@ -635,14 +635,14 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
     }
     OPT("threads")
     {
-        if( !strcmp(value, "auto") )
+        if( !strcasecmp(value, "auto") )
             p->i_threads = X264_THREADS_AUTO;
         else
             p->i_threads = atoi(value);
     }
     OPT("lookahead-threads")
     {
-        if( !strcmp(value, "auto") )
+        if( !strcasecmp(value, "auto") )
             p->i_lookahead_threads = X264_THREADS_AUTO;
         else
             p->i_lookahead_threads = atoi(value);
@@ -651,7 +651,7 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->b_sliced_threads = atobool(value);
     OPT("sync-lookahead")
     {
-        if( !strcmp(value, "auto") )
+        if( !strcasecmp(value, "auto") )
             p->i_sync_lookahead = X264_SYNC_LOOKAHEAD_AUTO;
         else
             p->i_sync_lookahead = atoi(value);
