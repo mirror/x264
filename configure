@@ -684,7 +684,7 @@ case $host_cpu in
     arm*)
         ARCH="ARM"
         if [ "$SYS" = MACOSX ] ; then
-            AS="${AS-extras/gas-preprocessor.pl $CC}"
+            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -- ${CC}}"
             ASFLAGS="$ASFLAGS -DPREFIX -DPIC"  # apple's ld doesn't support movw/movt relocations at all
             # build for armv7 by default
             if ! echo $CFLAGS | grep -Eq '\-arch' ; then
@@ -698,7 +698,7 @@ case $host_cpu in
     aarch64)
         ARCH="AARCH64"
         if [ "$SYS" = MACOSX ] ; then
-            AS="${AS-extras/gas-preprocessor.pl $CC}"
+            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -- ${CC}}"
             ASFLAGS="$ASFLAGS -DPREFIX"
         else
             AS="${AS-${CC}}"
