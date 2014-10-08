@@ -90,7 +90,9 @@ static inline uint32_t read_time(void)
 {
     uint32_t a = 0;
 #if HAVE_X86_INLINE_ASM
-    asm volatile( "rdtsc" : "=a"(a) :: "edx", "memory" );
+    asm volatile( "lfence \n"
+                  "rdtsc  \n"
+                  : "=a"(a) :: "edx", "memory" );
 #elif ARCH_PPC
     asm volatile( "mftb %0" : "=r"(a) :: "memory" );
 #elif ARCH_ARM     // ARMv7 only
