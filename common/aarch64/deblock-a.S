@@ -275,6 +275,173 @@ function x264_deblock_h_chroma_neon, export=1
     ret
 endfunc
 
+.macro h264_loop_filter_start_intra
+    orr             w4,  w2,  w3
+    cmp             w4,  #0
+    b.ne            1f
+    ret
+1:
+    dup             v30.16b, w2                // alpha
+    dup             v31.16b, w3                // beta
+.endm
+
+.macro h264_loop_filter_chroma_intra, width=16
+    uabd            v26.16b, v16.16b, v17.16b  // abs(p0 - q0)
+    uabd            v27.16b, v18.16b, v16.16b  // abs(p1 - p0)
+    uabd            v28.16b, v19.16b, v17.16b  // abs(q1 - q0)
+    cmhi            v26.16b, v30.16b, v26.16b  // < alpha
+    cmhi            v27.16b, v31.16b, v27.16b  // < beta
+    cmhi            v28.16b, v31.16b, v28.16b  // < beta
+    and             v26.16b, v26.16b, v27.16b
+    and             v26.16b, v26.16b, v28.16b
+
+    ushll           v4.8h,   v18.8b,  #1
+    ushll           v6.8h,   v19.8b,  #1
+.ifc \width, 16
+    ushll2          v5.8h,   v18.16b, #1
+    ushll2          v7.8h,   v19.16b, #1
+    uaddl2          v21.8h,  v16.16b, v19.16b
+    uaddl2          v23.8h,  v17.16b, v18.16b
+.endif
+    uaddl           v20.8h,  v16.8b,  v19.8b
+    uaddl           v22.8h,  v17.8b,  v18.8b
+    add             v20.8h,  v20.8h,  v4.8h     // mlal?
+    add             v22.8h,  v22.8h,  v6.8h
+.ifc \width, 16
+    add             v21.8h,  v21.8h,  v5.8h
+    add             v23.8h,  v23.8h,  v7.8h
+.endif
+    uqrshrn         v24.8b,  v20.8h,  #2
+    uqrshrn         v25.8b,  v22.8h,  #2
+.ifc \width, 16
+    uqrshrn2        v24.16b, v21.8h,  #2
+    uqrshrn2        v25.16b, v23.8h,  #2
+.endif
+    bit             v16.16b, v24.16b, v26.16b
+    bit             v17.16b, v25.16b, v26.16b
+.endm
+
+function x264_deblock_v_chroma_intra_neon, export=1
+    h264_loop_filter_start_intra
+
+    sub             x0,  x0,  x1, lsl #1
+    ld1             {v18.16b}, [x0], x1
+    ld1             {v16.16b}, [x0], x1
+    ld1             {v17.16b}, [x0], x1
+    ld1             {v19.16b}, [x0]
+
+    h264_loop_filter_chroma_intra
+
+    sub             x0,  x0,  x1, lsl #1
+    st1             {v16.16b}, [x0], x1
+    st1             {v17.16b}, [x0], x1
+
+    ret
+endfunc
+
+function x264_deblock_h_chroma_intra_mbaff_neon, export=1
+    h264_loop_filter_start_intra
+
+    sub             x4,  x0,  #4
+    sub             x0,  x0,  #2
+    ld1             {v18.8b}, [x4], x1
+    ld1             {v16.8b}, [x4], x1
+    ld1             {v17.8b}, [x4], x1
+    ld1             {v19.8b}, [x4], x1
+
+    transpose4x4.h  v18, v16, v17, v19, v26, v27, v28, v29
+
+    h264_loop_filter_chroma_intra, width=8
+
+    st2             {v16.h,v17.h}[0], [x0], x1
+    st2             {v16.h,v17.h}[1], [x0], x1
+    st2             {v16.h,v17.h}[2], [x0], x1
+    st2             {v16.h,v17.h}[3], [x0], x1
+
+    ret
+endfunc
+
+function x264_deblock_h_chroma_intra_neon, export=1
+    h264_loop_filter_start_intra
+
+    sub             x4,  x0,  #4
+    sub             x0,  x0,  #2
+    ld1             {v18.d}[0], [x4], x1
+    ld1             {v16.d}[0], [x4], x1
+    ld1             {v17.d}[0], [x4], x1
+    ld1             {v19.d}[0], [x4], x1
+    ld1             {v18.d}[1], [x4], x1
+    ld1             {v16.d}[1], [x4], x1
+    ld1             {v17.d}[1], [x4], x1
+    ld1             {v19.d}[1], [x4], x1
+
+    transpose4x8.h  v18, v16, v17, v19, v26, v27, v28, v29
+
+    h264_loop_filter_chroma_intra
+
+    st2             {v16.h,v17.h}[0], [x0], x1
+    st2             {v16.h,v17.h}[1], [x0], x1
+    st2             {v16.h,v17.h}[2], [x0], x1
+    st2             {v16.h,v17.h}[3], [x0], x1
+    st2             {v16.h,v17.h}[4], [x0], x1
+    st2             {v16.h,v17.h}[5], [x0], x1
+    st2             {v16.h,v17.h}[6], [x0], x1
+    st2             {v16.h,v17.h}[7], [x0], x1
+
+    ret
+endfunc
+
+function x264_deblock_h_chroma_422_intra_neon, export=1
+    h264_loop_filter_start_intra
+
+    sub             x4,  x0,  #4
+    sub             x0,  x0,  #2
+    ld1             {v18.d}[0], [x4], x1
+    ld1             {v16.d}[0], [x4], x1
+    ld1             {v17.d}[0], [x4], x1
+    ld1             {v19.d}[0], [x4], x1
+    ld1             {v18.d}[1], [x4], x1
+    ld1             {v16.d}[1], [x4], x1
+    ld1             {v17.d}[1], [x4], x1
+    ld1             {v19.d}[1], [x4], x1
+
+    transpose4x8.h  v18, v16, v17, v19, v26, v27, v28, v29
+
+    h264_loop_filter_chroma_intra
+
+    st2             {v16.h,v17.h}[0], [x0], x1
+    st2             {v16.h,v17.h}[1], [x0], x1
+    st2             {v16.h,v17.h}[2], [x0], x1
+    st2             {v16.h,v17.h}[3], [x0], x1
+    st2             {v16.h,v17.h}[4], [x0], x1
+    st2             {v16.h,v17.h}[5], [x0], x1
+    st2             {v16.h,v17.h}[6], [x0], x1
+    st2             {v16.h,v17.h}[7], [x0], x1
+
+    ld1             {v18.d}[0], [x4], x1
+    ld1             {v16.d}[0], [x4], x1
+    ld1             {v17.d}[0], [x4], x1
+    ld1             {v19.d}[0], [x4], x1
+    ld1             {v18.d}[1], [x4], x1
+    ld1             {v16.d}[1], [x4], x1
+    ld1             {v17.d}[1], [x4], x1
+    ld1             {v19.d}[1], [x4], x1
+
+    transpose4x8.h  v18, v16, v17, v19, v26, v27, v28, v29
+
+    h264_loop_filter_chroma_intra
+
+    st2             {v16.h,v17.h}[0], [x0], x1
+    st2             {v16.h,v17.h}[1], [x0], x1
+    st2             {v16.h,v17.h}[2], [x0], x1
+    st2             {v16.h,v17.h}[3], [x0], x1
+    st2             {v16.h,v17.h}[4], [x0], x1
+    st2             {v16.h,v17.h}[5], [x0], x1
+    st2             {v16.h,v17.h}[6], [x0], x1
+    st2             {v16.h,v17.h}[7], [x0], x1
+
+    ret
+endfunc
 
 //static void deblock_strength_c( uint8_t nnz[X264_SCAN8_SIZE],
 //                                int8_t ref[2][X264_SCAN8_LUMA_SIZE],
