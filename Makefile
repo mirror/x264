@@ -36,6 +36,8 @@ OBJCLI =
 
 OBJCHK = tools/checkasm.o
 
+OBJEXAMPLE = example.o
+
 CONFIG := $(shell cat config.h)
 
 # GPL-only files
@@ -176,9 +178,10 @@ $(SONAME): $(GENERATED) .depend $(OBJS) $(OBJASM) $(OBJSO)
 	$(LD)$@ $(OBJS) $(OBJASM) $(OBJSO) $(SOFLAGS) $(LDFLAGS)
 
 ifneq ($(EXE),)
-.PHONY: x264 checkasm
+.PHONY: x264 checkasm example
 x264: x264$(EXE)
 checkasm: checkasm$(EXE)
+example: example$(EXE)
 endif
 
 x264$(EXE): $(GENERATED) .depend $(OBJCLI) $(CLI_LIBX264)
@@ -187,7 +190,10 @@ x264$(EXE): $(GENERATED) .depend $(OBJCLI) $(CLI_LIBX264)
 checkasm$(EXE): $(GENERATED) .depend $(OBJCHK) $(LIBX264)
 	$(LD)$@ $(OBJCHK) $(LIBX264) $(LDFLAGS)
 
-$(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK): .depend
+example$(EXE): $(GENERATED) .depend $(OBJEXAMPLE) $(LIBX264)
+	$(LD)$@ $(OBJEXAMPLE) $(LIBX264) $(LDFLAGS)
+
+$(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK) $(OBJEXAMPLE): .depend
 
 %.o: %.asm common/x86/x86inc.asm common/x86/x86util.asm
 	$(AS) $(ASFLAGS) -o $@ $<
@@ -254,6 +260,7 @@ endif
 clean:
 	rm -f $(OBJS) $(OBJASM) $(OBJCLI) $(OBJSO) $(SONAME) *.a *.lib *.exp *.pdb x264 x264.exe .depend TAGS
 	rm -f checkasm checkasm.exe $(OBJCHK) $(GENERATED) x264_lookahead.clbin
+	rm -f example example.exe $(OBJEXAMPLE)
 	rm -f $(SRC2:%.c=%.gcda) $(SRC2:%.c=%.gcno) *.dyn pgopti.dpi pgopti.dpi.lock *.pgd *.pgc
 
 distclean: clean
