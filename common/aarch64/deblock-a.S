@@ -275,6 +275,60 @@ function x264_deblock_h_chroma_neon, export=1
     ret
 endfunc
 
+.macro h264_loop_filter_chroma8
+    dup             v22.8b,  w2                 // alpha
+    uxtl            v24.8h,  v24.8b
+    uabd            v26.8b,  v16.8b,  v17.8b    // abs(p0 - q0)
+    uxtl            v4.8h,   v17.8b
+    uabd            v28.8b,  v18.8b,  v16.8b    // abs(p1 - p0)
+    usubw           v4.8h,   v4.8h,   v16.8b
+    sli             v24.8h,  v24.8h,  #8
+    shl             v4.8h,   v4.8h,   #2
+    uabd            v30.8b,  v19.8b,  v17.8b    // abs(q1 - q0)
+    uaddw           v4.8h,   v4.8h,   v18.8b
+    cmhi            v26.8b,  v22.8b,  v26.8b    // < alpha
+    usubw           v4.8h,   v4.8h,   v19.8b
+    dup             v22.8b,  w3                 // beta
+    rshrn           v4.8b,   v4.8h,   #3
+    cmhi            v28.8b,  v22.8b,  v28.8b    // < beta
+    cmhi            v30.8b,  v22.8b,  v30.8b    // < beta
+    smin            v4.8b,   v4.8b,   v24.8b
+    neg             v25.8b,  v24.8b
+    and             v26.8b,  v26.8b,  v28.8b
+    smax            v4.8b,   v4.8b,   v25.8b
+    and             v26.8b,  v26.8b,  v30.8b
+    uxtl            v22.8h,  v17.8b
+    and             v4.8b,   v4.8b,   v26.8b
+    uxtl            v28.8h,  v16.8b
+    saddw           v28.8h,  v28.8h,  v4.8b
+    ssubw           v22.8h,  v22.8h,  v4.8b
+    sqxtun          v16.8b,  v28.8h
+    sqxtun          v17.8b,  v22.8h
+.endm
+
+function x264_deblock_h_chroma_mbaff_neon, export=1
+    h264_loop_filter_start
+
+    sub             x4,  x0,  #4
+    sub             x0,  x0,  #2
+
+    ld1             {v18.8b}, [x4], x1
+    ld1             {v16.8b}, [x4], x1
+    ld1             {v17.8b},  [x4], x1
+    ld1             {v19.8b},  [x4]
+
+    transpose4x4.h  v18, v16, v17, v19, v28, v29, v30, v31
+
+    h264_loop_filter_chroma8
+
+    st2             {v16.h,v17.h}[0], [x0], x1
+    st2             {v16.h,v17.h}[1], [x0], x1
+    st2             {v16.h,v17.h}[2], [x0], x1
+    st2             {v16.h,v17.h}[3], [x0]
+
+    ret
+endfunc
+
 .macro h264_loop_filter_start_intra
     orr             w4,  w2,  w3
     cmp             w4,  #0
