@@ -247,6 +247,7 @@ function x264_deblock_h_chroma_neon, export=1
     h264_loop_filter_start
 
     sub             x0,  x0,  #4
+deblock_h_chroma:
     ld1             {v18.d}[0], [x0], x1
     ld1             {v16.d}[0], [x0], x1
     ld1             {v0.d}[0],  [x0], x1
@@ -273,6 +274,18 @@ function x264_deblock_h_chroma_neon, export=1
     st1             {v2.d}[1],  [x0], x1
 
     ret
+endfunc
+
+function x264_deblock_h_chroma_422_neon, export=1
+    add             x5,  x0,  x1
+    add             x1,  x1,  x1
+    mov             x7,  x30
+    bl              X(x264_deblock_h_chroma_neon)
+    ldr             w6,  [x4]
+    mov             x30, x7
+    sub             x0,  x5,  #4
+    mov             v24.s[0], w6
+    b               deblock_h_chroma
 endfunc
 
 .macro h264_loop_filter_chroma8
