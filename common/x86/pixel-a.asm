@@ -727,15 +727,11 @@ SSD_NV12
 %endmacro
 
 %macro VAR_END 2
-%if HIGH_BIT_DEPTH
-%if mmsize == 8 && %1*%2 == 256
+%if HIGH_BIT_DEPTH && mmsize == 8 && %1*%2 == 256
     HADDUW  m5, m2
 %else
     HADDW   m5, m2
 %endif
-%else ; !HIGH_BIT_DEPTH
-    HADDW   m5, m2
-%endif ; HIGH_BIT_DEPTH
     HADDD   m6, m1
 %if ARCH_X86_64
     punpckldq m5, m6
@@ -772,20 +768,17 @@ SSD_NV12
     mova      m4, [r0+%1+mmsize]
 %else ; !HIGH_BIT_DEPTH
     mova      m0, [r0]
-    punpckhbw m1, m0, m7
     mova      m3, [r0+%1]
-    mova      m4, m3
+    punpckhbw m1, m0, m7
     punpcklbw m0, m7
+    punpckhbw m4, m3, m7
+    punpcklbw m3, m7
 %endif ; HIGH_BIT_DEPTH
 %ifidn %1, r1
     lea       r0, [r0+%1*2]
 %else
     add       r0, r1
 %endif
-%if HIGH_BIT_DEPTH == 0
-    punpcklbw m3, m7
-    punpckhbw m4, m7
-%endif ; !HIGH_BIT_DEPTH
     VAR_CORE
     dec r2d
     jg .loop
@@ -900,17 +893,26 @@ INIT_XMM avx
 VAR
 INIT_XMM xop
 VAR
+%endif ; !HIGH_BIT_DEPTH
 
 INIT_YMM avx2
 cglobal pixel_var_16x16, 2,4,7
+    FIX_STRIDES r1
     VAR_START 0
     mov      r2d, 4
     lea       r3, [r1*3]
 .loop:
+%if HIGH_BIT_DEPTH
+    mova      m0, [r0]
+    mova      m3, [r0+r1]
+    mova      m1, [r0+r1*2]
+    mova      m4, [r0+r3]
+%else
     pmovzxbw  m0, [r0]
     pmovzxbw  m3, [r0+r1]
     pmovzxbw  m1, [r0+r1*2]
     pmovzxbw  m4, [r0+r3]
+%endif
     lea       r0, [r0+r1*4]
     VAR_CORE
     dec r2d
@@ -929,7 +931,6 @@ cglobal pixel_var_16x16, 2,4,7
     movd   edx, xm6
 %endif
     RET
-%endif ; !HIGH_BIT_DEPTH
 
 %macro VAR2_END 3
     HADDW   %2, xm1

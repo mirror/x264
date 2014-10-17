@@ -1040,6 +1040,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         INIT2_NAME( sad_aligned, sad, _avx2 );
         INIT2( sad_x3, _avx2 );
         INIT2( sad_x4, _avx2 );
+        pixf->var[PIXEL_16x16] = x264_pixel_var_16x16_avx2;
         pixf->vsad = x264_pixel_vsad_avx2;
         pixf->ssd_nv12_core = x264_pixel_ssd_nv12_core_avx2;
         pixf->intra_sad_x3_8x8 = x264_intra_sad_x3_8x8_avx2;
