@@ -497,3 +497,80 @@ function x264_coeff_last64_neon, export=1
     sub         w0,  w3,  w2
     ret
 endfunc
+
+.macro coeff_level_run_start size
+    add         x6,  x1,  #23            // runlevel->mask
+    mov         w7,  #0
+    mov         w8,  #0
+    mov         w9,  #1
+    and         x6,  x6,  #~15
+    mov         w4,  #\size - 1
+.endm
+
+.macro coeff_level_run shift
+    clz         x3,  x2
+    subs        w4,  w4,  w3, lsr #\shift
+    str         w4,  [x1], #4
+1:
+    ldrh        w5,  [x0, x4, lsl #1]
+    strh        w5,  [x6], #2
+    add         w7,  w7,  #1
+    lsl         w10, w9, w4
+    orr         w8,  w8,  w10
+    b.le        2f
+    add         w3,  w3,  #1 << \shift
+    sub         w4,  w4,  #1
+    and         x3,  x3,  #~((1 << \shift) - 1)
+    lsl         x2,  x2,  x3
+    clz         x3,  x2
+    subs        w4,  w4,  w3, lsr #\shift
+    b.ge        1b
+2:
+    str         w8,  [x1]
+    mov         w0,  w7
+.endm
+
+function x264_coeff_level_run4_aarch64, export=1
+    ldr         x2,  [x0]
+
+    coeff_level_run_start 4
+
+    coeff_level_run 4
+
+    ret
+endfunc
+
+.macro X264_COEFF_LEVEL_RUN size
+function x264_coeff_level_run\size\()_neon, export=1
+.if \size == 15
+    sub         x0,  x0,  #2
+.endif
+.if         \size < 15
+    .equ        shiftw, 3
+    ld1         {v0.8h}, [x0]
+    uqxtn       v0.8b,  v0.8h
+    cmtst       v0.8b,  v0.8b,  v0.8b
+.else
+    .equ        shiftw, 2
+    ld1         {v0.8h,v1.8h}, [x0]
+    uqxtn       v0.8b,  v0.8h
+    uqxtn2      v0.16b, v1.8h
+    cmtst       v0.16b, v0.16b, v0.16b
+    shrn        v0.8b,  v0.8h,  #4
+.endif
+    fmov        x2,  d0
+.if \size == 15
+    add         x0,  x0,  #2
+.endif
+
+    coeff_level_run_start \size
+
+    coeff_level_run shiftw
+
+    ret
+endfunc
+.endm
+
+X264_COEFF_LEVEL_RUN 8
+X264_COEFF_LEVEL_RUN 15
+X264_COEFF_LEVEL_RUN 16

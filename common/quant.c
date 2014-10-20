@@ -754,9 +754,13 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
     {
         pf->coeff_last4 = x264_coeff_last4_aarch64;
         pf->coeff_last8 = x264_coeff_last8_aarch64;
+        pf->coeff_level_run4 = x264_coeff_level_run4_aarch64;
     }
     if( cpu&X264_CPU_NEON )
     {
+        pf->coeff_level_run8 = x264_coeff_level_run8_neon;
+        pf->coeff_level_run[  DCT_LUMA_AC] = x264_coeff_level_run15_neon;
+        pf->coeff_level_run[ DCT_LUMA_4x4] = x264_coeff_level_run16_neon;
         pf->decimate_score15 = x264_decimate_score15_neon;
         pf->decimate_score16 = x264_decimate_score16_neon;
         pf->decimate_score64 = x264_decimate_score64_neon;

@@ -49,4 +49,8 @@ int x264_coeff_last15_neon( int16_t * );
 int x264_coeff_last16_neon( int16_t * );
 int x264_coeff_last64_neon( int16_t * );
 
+int x264_coeff_level_run4_aarch64( int16_t *, x264_run_level_t * );
+int x264_coeff_level_run8_neon( int16_t *, x264_run_level_t * );
+int x264_coeff_level_run15_neon( int16_t *, x264_run_level_t * );
+int x264_coeff_level_run16_neon( int16_t *, x264_run_level_t * );
 #endif
