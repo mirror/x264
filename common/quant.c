@@ -764,6 +764,7 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->decimate_score15 = x264_decimate_score15_neon;
         pf->decimate_score16 = x264_decimate_score16_neon;
         pf->decimate_score64 = x264_decimate_score64_neon;
+        pf->denoise_dct = x264_denoise_dct_neon;
     }
 #endif
 #endif // HIGH_BIT_DEPTH

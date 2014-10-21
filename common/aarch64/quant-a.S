@@ -574,3 +574,28 @@ endfunc
 X264_COEFF_LEVEL_RUN 8
 X264_COEFF_LEVEL_RUN 15
 X264_COEFF_LEVEL_RUN 16
+
+function x264_denoise_dct_neon, export=1
+1:  subs        w3,  w3,  #16
+    ld1         {v0.8h,v1.8h}, [x0]
+    ld1         {v4.4s,v5.4s,v6.4s,v7.4s}, [x1]
+    abs         v16.8h,  v0.8h
+    abs         v17.8h,  v1.8h
+    ld1         {v2.8h,v3.8h}, [x2], #32
+    cmlt        v18.8h,  v0.8h,   #0
+    cmlt        v19.8h,  v1.8h,   #0
+    uaddw       v4.4s,   v4.4s,   v16.4h
+    uaddw2      v5.4s,   v5.4s,   v16.8h
+    uqsub       v20.8h,  v16.8h,  v2.8h
+    uqsub       v21.8h,  v17.8h,  v3.8h
+    uaddw       v6.4s,   v6.4s,   v17.4h
+    uaddw2      v7.4s,   v7.4s,   v17.8h
+    neg         v22.8h,  v20.8h
+    neg         v23.8h,  v21.8h
+    bsl         v18.16b, v22.16b, v20.16b
+    bsl         v19.16b, v23.16b, v21.16b
+    st1         {v4.4s,v5.4s,v6.4s,v7.4s}, [x1], #64
+    st1         {v18.8h,v19.8h}, [x0], #32
+    b.gt        1b
+    ret
+endfunc
