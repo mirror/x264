@@ -49,6 +49,8 @@ void x264_pixel_avg2_w8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t
 void x264_pixel_avg2_w16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
 void x264_pixel_avg2_w20_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
 
+void x264_plane_copy_neon( pixel *dst, intptr_t i_dst,
+                           pixel *src, intptr_t i_src, int w, int h );
 void x264_plane_copy_deinterleave_neon(  pixel *dstu, intptr_t i_dstu,
                                          pixel *dstv, intptr_t i_dstv,
                                          pixel *src,  intptr_t i_src, int w, int h );
@@ -304,6 +306,7 @@ void x264_mc_init_aarch64( int cpu, x264_mc_functions_t *pf )
     pf->copy[PIXEL_8x8]      = x264_mc_copy_w8_neon;
     pf->copy[PIXEL_4x4]      = x264_mc_copy_w4_neon;
 
+    pf->plane_copy                  = x264_plane_copy_neon;
     pf->plane_copy_deinterleave     = x264_plane_copy_deinterleave_neon;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_neon;
     pf->plane_copy_interleave       = x264_plane_copy_interleave_neon;
@@ -340,5 +343,8 @@ void x264_mc_init_aarch64( int cpu, x264_mc_functions_t *pf )
 
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
     pf->mbtree_propagate_list = x264_mbtree_propagate_list_neon;
+
+    pf->memcpy_aligned  = x264_memcpy_aligned_neon;
+    pf->memzero_aligned = x264_memzero_aligned_neon;
 #endif // !HIGH_BIT_DEPTH
 }

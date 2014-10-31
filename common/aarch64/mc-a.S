@@ -1253,6 +1253,34 @@ load_deinterleave_chroma:
     ret
 endfunc
 
+function x264_plane_copy_neon, export=1
+    add         x8,  x4,  #15
+    and         x4,  x8,  #~15
+    sub         x1,  x1,  x4
+    sub         x3,  x3,  x4
+1:
+    mov         w8,  w4
+16:
+    tst         w8,  #16
+    b.eq        32f
+    subs        w8,  w8,  #16
+    ldr         q0,  [x2], #16
+    str         q0,  [x0], #16
+    b.eq        0f
+32:
+    subs        w8,  w8,  #32
+    ldp         q0,  q1,  [x2], #32
+    stp         q0,  q1,  [x0], #32
+    b.gt        32b
+0:
+    subs        w5,  w5,  #1
+    add         x2,  x2,  x3
+    add         x0,  x0,  x1
+    b.gt        1b
+
+    ret
+endfunc
+
 function x264_plane_copy_deinterleave_neon, export=1
     add         w9,  w6,  #15
     and         w9,  w9,  #0xfffffff0
@@ -1599,5 +1627,43 @@ function x264_mbtree_propagate_list_internal_neon, export=1
     st1         {v0.8h,v1.8h},  [x3], #32
     st1         {v2.8h,v3.8h},  [x3], #32
     b.ge        8b
+    ret
+endfunc
+
+function x264_memcpy_aligned_neon, export=1
+    tst         x2,  #16
+    b.eq        32f
+    sub         x2,  x2,  #16
+    ldr         q0,  [x1], #16
+    str         q0,  [x0], #16
+32:
+    tst         x2,  #32
+    b.eq        640f
+    sub         x2,  x2,  #32
+    ldp         q0,  q1,  [x1], #32
+    stp         q0,  q1,  [x0], #32
+640:
+    cbz         x2,  1f
+64:
+    subs        x2,  x2,  #64
+    ldp         q0,  q1,  [x1, #32]
+    ldp         q2,  q3,  [x1], #64
+    stp         q0,  q1,  [x0, #32]
+    stp         q2,  q3,  [x0], #64
+    b.gt        64b
+1:
+    ret
+endfunc
+
+function x264_memzero_aligned_neon, export=1
+    movi        v0.16b,  #0
+    movi        v1.16b,  #0
+1:
+    subs        x1,  x1,  #128
+    stp         q0,  q1,  [x0, #96]
+    stp         q0,  q1,  [x0, #64]
+    stp         q0,  q1,  [x0, #32]
+    stp         q0,  q1,  [x0], 128
+    b.gt        1b
     ret
 endfunc
