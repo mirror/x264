@@ -128,7 +128,8 @@ endif
 # AArch64 NEON optims
 ifeq ($(ARCH),AARCH64)
 ifneq ($(AS),)
-ASMSRC += common/aarch64/dct-a.S     \
+ASMSRC += common/aarch64/bitstream-a.S \
+          common/aarch64/dct-a.S     \
           common/aarch64/deblock-a.S \
           common/aarch64/mc-a.S      \
           common/aarch64/pixel-a.S   \
