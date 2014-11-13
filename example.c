@@ -24,25 +24,13 @@
  *****************************************************************************/
 
 #ifdef _WIN32
-/* The following two defines must be located before the inclusion of any system header files. */
-#define WINVER       0x0500
-#define _WIN32_WINNT 0x0500
-#include <windows.h>
 #include <io.h>       /* _setmode() */
 #include <fcntl.h>    /* _O_BINARY */
 #endif
 
 #include <stdint.h>
 #include <stdio.h>
-#include <signal.h>
 #include <x264.h>
-
-/* Ctrl-C handler */
-static volatile int b_ctrl_c = 0;
-static void sigint_handler( int a )
-{
-    b_ctrl_c = 1;
-}
 
 #define FAIL_IF_ERROR( cond, ... )\
 do\
@@ -71,9 +59,6 @@ int main( int argc, char **argv )
     _setmode( _fileno( stdout ), _O_BINARY );
     _setmode( _fileno( stderr ), _O_BINARY );
 #endif
-
-    /* Control-C handler */
-    signal( SIGINT, sigint_handler );
 
     FAIL_IF_ERROR( !(argc > 1), "Example usage: example 352x288 <input.yuv >output.h264\n" );
     FAIL_IF_ERROR( 2 != sscanf( argv[1], "%dx%d", &width, &height ), "resolution not specified or incorrect\n" );
@@ -105,17 +90,17 @@ int main( int argc, char **argv )
 #undef fail
 #define fail fail3
 
+    int luma_size = width * height;
+    int chroma_size = luma_size / 4;
     /* Encode frames */
-    for( ; !b_ctrl_c; i_frame++ )
+    for( ;; i_frame++ )
     {
         /* Read input frame */
-        int plane_size = width * height;
-        if( fread( pic.img.plane[0], 1, plane_size, stdin ) != plane_size )
+        if( fread( pic.img.plane[0], 1, luma_size, stdin ) != luma_size )
             break;
-        plane_size = ((width + 1) >> 1) * ((height + 1) >> 1);
-        if( fread( pic.img.plane[1], 1, plane_size, stdin ) != plane_size )
+        if( fread( pic.img.plane[1], 1, chroma_size, stdin ) != chroma_size )
             break;
-        if( fread( pic.img.plane[2], 1, plane_size, stdin ) != plane_size )
+        if( fread( pic.img.plane[2], 1, chroma_size, stdin ) != chroma_size )
             break;
 
         pic.i_pts = i_frame;
@@ -129,7 +114,7 @@ int main( int argc, char **argv )
         }
     }
     /* Flush delayed frames */
-    while( !b_ctrl_c && x264_encoder_delayed_frames( h ) )
+    while( x264_encoder_delayed_frames( h ) )
     {
         i_frame_size = x264_encoder_encode( h, &nal, &i_nal, NULL, &pic_out );
         if( i_frame_size < 0 )
