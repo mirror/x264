@@ -129,13 +129,15 @@ endif
 ifeq ($(ARCH),AARCH64)
 ifneq ($(AS),)
 ASMSRC += common/aarch64/bitstream-a.S \
+          common/aarch64/cabac-a.S     \
           common/aarch64/dct-a.S     \
           common/aarch64/deblock-a.S \
           common/aarch64/mc-a.S      \
           common/aarch64/pixel-a.S   \
           common/aarch64/predict-a.S \
           common/aarch64/quant-a.S
-SRCS   += common/aarch64/mc-c.c      \
+SRCS   += common/aarch64/asm-offsets.c \
+          common/aarch64/mc-c.c        \
           common/aarch64/predict-c.c
 OBJASM  = $(ASMSRC:%.S=%.o)
 endif

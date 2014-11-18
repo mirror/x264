@@ -2437,6 +2437,8 @@ static void run_cabac_terminal_##cpu( x264_t *h, uint8_t *dst )\
 DECL_CABAC(c)
 #if HAVE_MMX
 DECL_CABAC(asm)
+#elif defined(ARCH_AARCH64)
+DECL_CABAC(asm)
 #else
 #define run_cabac_decision_asm run_cabac_decision_c
 #define run_cabac_bypass_asm run_cabac_bypass_c
