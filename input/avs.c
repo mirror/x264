@@ -27,15 +27,15 @@
 #if USE_AVXSYNTH
 #include <dlfcn.h>
 #if SYS_MACOSX
-#define avs_open dlopen( "libavxsynth.dylib", RTLD_NOW )
+#define avs_open() dlopen( "libavxsynth.dylib", RTLD_NOW )
 #else
-#define avs_open dlopen( "libavxsynth.so", RTLD_NOW )
+#define avs_open() dlopen( "libavxsynth.so", RTLD_NOW )
 #endif
 #define avs_close dlclose
 #define avs_address dlsym
 #else
 #include <windows.h>
-#define avs_open LoadLibraryW( L"avisynth" )
+#define avs_open() LoadLibraryW( L"avisynth" )
 #define avs_close FreeLibrary
 #define avs_address GetProcAddress
 #endif
@@ -80,7 +80,7 @@ typedef struct
 {
     AVS_Clip *clip;
     AVS_ScriptEnvironment *env;
-    HMODULE library;
+    void *library;
     int num_frames;
     struct
     {
@@ -102,7 +102,7 @@ typedef struct
 /* load the library and functions we require from it */
 static int x264_avs_load_library( avs_hnd_t *h )
 {
-    h->library = avs_open;
+    h->library = avs_open();
     if( !h->library )
         return -1;
     LOAD_AVS_FUNC( avs_clip_get_error, 0 );
