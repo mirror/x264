@@ -913,64 +913,63 @@ HPEL
 %undef sfence
 %endif ; !HIGH_BIT_DEPTH
 
+%macro PREFETCHNT_ITER 2 ; src, bytes/iteration
+    %assign %%i 4*(%2) ; prefetch 4 iterations ahead. is this optimal?
+    %rep (%2+63) / 64  ; assume 64 byte cache lines
+        prefetchnta [%1+%%i]
+        %assign %%i %%i + 64
+    %endrep
+%endmacro
+
 ;-----------------------------------------------------------------------------
 ; void plane_copy_core( pixel *dst, intptr_t i_dst,
 ;                       pixel *src, intptr_t i_src, int w, int h )
 ;-----------------------------------------------------------------------------
-; assumes i_dst and w are multiples of 16, and i_dst>w
-INIT_MMX
-cglobal plane_copy_core_mmx2, 6,7
+; assumes i_dst and w are multiples of mmsize, and i_dst>w
+%macro PLANE_COPY_CORE 0
+cglobal plane_copy_core, 6,7
     FIX_STRIDES r1, r3, r4d
 %if HIGH_BIT_DEPTH == 0
     movsxdifnidn r4, r4d
 %endif
-    sub    r1,  r4
-    sub    r3,  r4
+    add    r0, r4
+    add    r2, r4
+    neg    r4
 .loopy:
-    lea   r6d, [r4-63]
+    lea    r6, [r4+4*mmsize]
 .loopx:
-    prefetchnta [r2+256]
-    movq   m0, [r2   ]
-    movq   m1, [r2+ 8]
-    movntq [r0   ], m0
-    movntq [r0+ 8], m1
-    movq   m2, [r2+16]
-    movq   m3, [r2+24]
-    movntq [r0+16], m2
-    movntq [r0+24], m3
-    movq   m4, [r2+32]
-    movq   m5, [r2+40]
-    movntq [r0+32], m4
-    movntq [r0+40], m5
-    movq   m6, [r2+48]
-    movq   m7, [r2+56]
-    movntq [r0+48], m6
-    movntq [r0+56], m7
-    add    r2,  64
-    add    r0,  64
-    sub    r6d, 64
-    jg .loopx
-    prefetchnta [r2+256]
-    add    r6d, 63
-    jle .end16
-.loop16:
-    movq   m0, [r2  ]
-    movq   m1, [r2+8]
-    movntq [r0  ], m0
-    movntq [r0+8], m1
-    add    r2,  16
-    add    r0,  16
-    sub    r6d, 16
-    jg .loop16
-.end16:
+    PREFETCHNT_ITER r2+r6, 4*mmsize
+    movu   m0, [r2+r6-4*mmsize]
+    movu   m1, [r2+r6-3*mmsize]
+    movu   m2, [r2+r6-2*mmsize]
+    movu   m3, [r2+r6-1*mmsize]
+    movnta [r0+r6-4*mmsize], m0
+    movnta [r0+r6-3*mmsize], m1
+    movnta [r0+r6-2*mmsize], m2
+    movnta [r0+r6-1*mmsize], m3
+    add    r6, 4*mmsize
+    jle .loopx
+    PREFETCHNT_ITER r2+r6, 4*mmsize
+    sub    r6, 4*mmsize
+    jz .end
+.loop_end:
+    movu   m0, [r2+r6]
+    movnta [r0+r6], m0
+    add    r6, mmsize
+    jl .loop_end
+.end:
     add    r0, r1
     add    r2, r3
-    dec    r5d
+    dec   r5d
     jg .loopy
     sfence
-    emms
     RET
+%endmacro
 
+INIT_XMM sse
+PLANE_COPY_CORE
+INIT_YMM avx
+PLANE_COPY_CORE
 
 %macro INTERLEAVE 4-5 ; dst, srcu, srcv, is_aligned, nt_hint
 %if HIGH_BIT_DEPTH

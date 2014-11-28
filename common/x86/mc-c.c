@@ -90,7 +90,8 @@ void x264_mc_copy_w16_aligned_avx( uint16_t *, intptr_t, uint16_t *, intptr_t, i
 void x264_prefetch_fenc_420_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_prefetch_fenc_422_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_prefetch_ref_mmx2( pixel *, intptr_t, int );
-void x264_plane_copy_core_mmx2( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
+void x264_plane_copy_core_sse( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
+void x264_plane_copy_core_avx( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 void x264_plane_copy_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 void x264_plane_copy_interleave_core_mmx2( pixel *dst,  intptr_t i_dst,
                                            pixel *srcu, intptr_t i_srcu,
@@ -489,22 +490,34 @@ HPEL(32, avx2, avx2, avx2, avx2)
 #endif
 #endif // HIGH_BIT_DEPTH
 
-static void x264_plane_copy_mmx2( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )
-{
-    int c_w = 16/sizeof(pixel) - 1;
-    if( w < 256 ) { // tiny resolutions don't want non-temporal hints. dunno the exact threshold.
-        x264_plane_copy_c( dst, i_dst, src, i_src, w, h );
-    } else if( !(w&c_w) ) {
-        x264_plane_copy_core_mmx2( dst, i_dst, src, i_src, w, h );
-    } else if( i_src > 0 ) {
-        // have to use plain memcpy on the last line (in memory order) to avoid overreading src
-        x264_plane_copy_core_mmx2( dst, i_dst, src, i_src, (w+c_w)&~c_w, h-1 );
-        memcpy( dst+i_dst*(h-1), src+i_src*(h-1), w*sizeof(pixel) );
-    } else {
-        memcpy( dst, src, w*sizeof(pixel) );
-        x264_plane_copy_core_mmx2( dst+i_dst, i_dst, src+i_src, i_src, (w+c_w)&~c_w, h-1 );
-    }
+#define PLANE_COPY(align, cpu)\
+static void x264_plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
+{\
+    int c_w = (align) / sizeof(pixel) - 1;\
+    if( w < 256 ) /* tiny resolutions don't want non-temporal hints. dunno the exact threshold. */\
+        x264_plane_copy_c( dst, i_dst, src, i_src, w, h );\
+    else if( !(w&c_w) )\
+        x264_plane_copy_core_##cpu( dst, i_dst, src, i_src, w, h );\
+    else\
+    {\
+        if( --h > 0 )\
+        {\
+            if( i_src > 0 )\
+            {\
+                x264_plane_copy_core_##cpu( dst, i_dst, src, i_src, (w+c_w)&~c_w, h );\
+                dst += i_dst * h;\
+                src += i_src * h;\
+            }\
+            else\
+                x264_plane_copy_core_##cpu( dst+i_dst, i_dst, src+i_src, i_src, (w+c_w)&~c_w, h );\
+        }\
+        /* use plain memcpy on the last line (in memory order) to avoid overreading src. */\
+        memcpy( dst, src, w*sizeof(pixel) );\
+    }\
 }
+
+PLANE_COPY(16, sse)
+PLANE_COPY(32, avx)
 
 #define PLANE_INTERLEAVE(cpu) \
 static void x264_plane_copy_interleave_##cpu( pixel *dst,  intptr_t i_dst,\
@@ -663,7 +676,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->prefetch_fenc_422 = x264_prefetch_fenc_422_mmx2;
     pf->prefetch_ref  = x264_prefetch_ref_mmx2;
 
-    pf->plane_copy = x264_plane_copy_mmx2;
     pf->plane_copy_interleave = x264_plane_copy_interleave_mmx2;
     pf->store_interleave_chroma = x264_store_interleave_chroma_mmx2;
 
@@ -692,6 +704,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     {
         pf->memcpy_aligned  = x264_memcpy_aligned_sse;
         pf->memzero_aligned = x264_memzero_aligned_sse;
+        pf->plane_copy = x264_plane_copy_sse;
     }
 
 #if HIGH_BIT_DEPTH
@@ -929,6 +942,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( !(cpu&X264_CPU_AVX) )
         return;
     pf->memzero_aligned = x264_memzero_aligned_avx;
+    pf->plane_copy = x264_plane_copy_avx;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx;
     pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx;
 
