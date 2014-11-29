@@ -1496,7 +1496,7 @@ static int check_mc( int cpu_ref, int cpu_new )
     if( mc_a.plane_copy_deinterleave_v210 != mc_ref.plane_copy_deinterleave_v210 )
     {
         set_func_name( "plane_copy_deinterleave_v210" );
-        used_asm = 1;
+        ok = 1; used_asm = 1;
         for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
         {
             int w = (plane_specs[i].w + 1) >> 1;
@@ -1517,8 +1517,8 @@ static int check_mc( int cpu_ref, int cpu_new )
                     break;
                 }
         }
+        report( "v210 :" );
     }
-    report( "v210 :" );
 
     if( mc_a.hpel_filter != mc_ref.hpel_filter )
     {
