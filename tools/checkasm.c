@@ -2311,12 +2311,16 @@ static int check_intra( int cpu_ref, int cpu_new )
             {\
                 fprintf( stderr, #name "[%d] :  [FAILED]\n", dir );\
                 ok = 0;\
-                for( int k = -1; k < 16; k++ )\
-                    printf( "%2x ", edge[16+k] );\
-                printf( "\n" );\
+                if( ip_c.name == (void *)ip_c.predict_8x8 )\
+                {\
+                    for( int k = -1; k < 16; k++ )\
+                        printf( "%2x ", edge[16+k] );\
+                    printf( "\n" );\
+                }\
                 for( int j = 0; j < h; j++ )\
                 {\
-                    printf( "%2x ", edge[14-j] );\
+                    if( ip_c.name == (void *)ip_c.predict_8x8 )\
+                        printf( "%2x ", edge[14-j] );\
                     for( int k = 0; k < w; k++ )\
                         printf( "%2x ", pbuf4[48+k+j*FDEC_STRIDE] );\
                     printf( "\n" );\
@@ -2324,7 +2328,8 @@ static int check_intra( int cpu_ref, int cpu_new )
                 printf( "\n" );\
                 for( int j = 0; j < h; j++ )\
                 {\
-                    printf( "   " );\
+                    if( ip_c.name == (void *)ip_c.predict_8x8 )\
+                        printf( "   " );\
                     for( int k = 0; k < w; k++ )\
                         printf( "%2x ", pbuf3[48+k+j*FDEC_STRIDE] );\
                     printf( "\n" );\
