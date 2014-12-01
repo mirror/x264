@@ -40,6 +40,7 @@ hpel_shuf: times 2 db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
 deinterleave_shuf: times 2 db 0,2,4,6,8,10,12,14,1,3,5,7,9,11,13,15
 
 %if HIGH_BIT_DEPTH
+copy_swap_shuf: times 2 db 2,3,0,1,6,7,4,5,10,11,8,9,14,15,12,13
 v210_mask: times 4 dq 0xc00ffc003ff003ff
 v210_luma_shuf: times 2 db 1,2,4,5,6,7,9,10,12,13,14,15,12,13,14,15
 v210_chroma_shuf: times 2 db 0,1,2,3,5,6,8,9,10,11,13,14,10,11,13,14
@@ -50,6 +51,7 @@ v210_mult: dw 0x2000,0x7fff,0x0801,0x2000,0x7ffa,0x0800,0x7ffc,0x0800
 deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
 deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
 %else
+copy_swap_shuf: times 2 db 1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14
 deinterleave_rgb_shuf: db 0,3,6,9,1,4,7,10,2,5,8,11,-1,-1,-1,-1
                        db 0,4,8,12,1,5,9,13,2,6,10,14,-1,-1,-1,-1
 
@@ -922,14 +924,23 @@ HPEL
 %endmacro
 
 ;-----------------------------------------------------------------------------
-; void plane_copy_core( pixel *dst, intptr_t i_dst,
-;                       pixel *src, intptr_t i_src, int w, int h )
+; void plane_copy(_swap)_core( pixel *dst, intptr_t i_dst,
+;                              pixel *src, intptr_t i_src, int w, int h )
 ;-----------------------------------------------------------------------------
 ; assumes i_dst and w are multiples of mmsize, and i_dst>w
-%macro PLANE_COPY_CORE 0
+%macro PLANE_COPY_CORE 1 ; swap
+%if %1
+cglobal plane_copy_swap_core, 6,7
+    mova   m4, [copy_swap_shuf]
+%else
 cglobal plane_copy_core, 6,7
-    FIX_STRIDES r1, r3, r4d
-%if HIGH_BIT_DEPTH == 0
+%endif
+    FIX_STRIDES r1, r3
+%if %1 && HIGH_BIT_DEPTH
+    shl   r4d, 2
+%elif %1 || HIGH_BIT_DEPTH
+    add   r4d, r4d
+%else
     movsxdifnidn r4, r4d
 %endif
     add    r0, r4
@@ -937,23 +948,37 @@ cglobal plane_copy_core, 6,7
     neg    r4
 .loopy:
     lea    r6, [r4+4*mmsize]
+%if %1
+    test  r6d, r6d
+    jg .skip
+%endif
 .loopx:
     PREFETCHNT_ITER r2+r6, 4*mmsize
     movu   m0, [r2+r6-4*mmsize]
     movu   m1, [r2+r6-3*mmsize]
     movu   m2, [r2+r6-2*mmsize]
     movu   m3, [r2+r6-1*mmsize]
+%if %1
+    pshufb m0, m4
+    pshufb m1, m4
+    pshufb m2, m4
+    pshufb m3, m4
+%endif
     movnta [r0+r6-4*mmsize], m0
     movnta [r0+r6-3*mmsize], m1
     movnta [r0+r6-2*mmsize], m2
     movnta [r0+r6-1*mmsize], m3
     add    r6, 4*mmsize
     jle .loopx
+.skip:
     PREFETCHNT_ITER r2+r6, 4*mmsize
     sub    r6, 4*mmsize
     jz .end
 .loop_end:
     movu   m0, [r2+r6]
+%if %1
+    pshufb m0, m4
+%endif
     movnta [r0+r6], m0
     add    r6, mmsize
     jl .loop_end
@@ -967,9 +992,13 @@ cglobal plane_copy_core, 6,7
 %endmacro
 
 INIT_XMM sse
-PLANE_COPY_CORE
+PLANE_COPY_CORE 0
+INIT_XMM ssse3
+PLANE_COPY_CORE 1
 INIT_YMM avx
-PLANE_COPY_CORE
+PLANE_COPY_CORE 0
+INIT_YMM avx2
+PLANE_COPY_CORE 1
 
 %macro INTERLEAVE 4-5 ; dst, srcu, srcv, is_aligned, nt_hint
 %if HIGH_BIT_DEPTH
