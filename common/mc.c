@@ -189,8 +189,8 @@ static void hpel_filter( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
     }
 }
 
-static const uint8_t hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
-static const uint8_t hpel_ref1[16] = {0,0,0,0,2,2,3,2,2,2,3,2,2,2,3,2};
+const uint8_t x264_hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
+const uint8_t x264_hpel_ref1[16] = {0,0,1,0,2,2,3,2,2,2,3,2,2,2,3,2};
 
 static void mc_luma( pixel *dst,    intptr_t i_dst_stride,
                      pixel *src[4], intptr_t i_src_stride,
@@ -199,11 +199,11 @@ static void mc_luma( pixel *dst,    intptr_t i_dst_stride,
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     int offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    pixel *src1 = src[hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
+    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        pixel *src2 = src[hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         pixel_avg( dst, i_dst_stride, src1, i_src_stride,
                    src2, i_src_stride, i_width, i_height );
         if( weight->weightfn )
@@ -222,11 +222,11 @@ static pixel *get_ref( pixel *dst,   intptr_t *i_dst_stride,
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     int offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    pixel *src1 = src[hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
+    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        pixel *src2 = src[hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         pixel_avg( dst, *i_dst_stride, src1, i_src_stride,
                    src2, i_src_stride, i_width, i_height );
         if( weight->weightfn )

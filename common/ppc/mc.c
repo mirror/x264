@@ -40,23 +40,18 @@
 typedef void (*pf_mc_t)( uint8_t *src, intptr_t i_src,
                          uint8_t *dst, intptr_t i_dst, int i_height );
 
-
-static const uint8_t hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
-static const uint8_t hpel_ref1[16] = {0,0,0,0,2,2,3,2,2,2,3,2,2,2,3,2};
-
-
 static inline int x264_tapfilter( uint8_t *pix, int i_pix_next )
 {
     return pix[-2*i_pix_next] - 5*pix[-1*i_pix_next] + 20*(pix[0] +
            pix[1*i_pix_next]) - 5*pix[ 2*i_pix_next] +
            pix[ 3*i_pix_next];
 }
+
 static inline int x264_tapfilter1( uint8_t *pix )
 {
     return pix[-2] - 5*pix[-1] + 20*(pix[0] + pix[1]) - 5*pix[ 2] +
            pix[ 3];
 }
-
 
 static inline void x264_pixel_avg2_w4_altivec( uint8_t *dst,  intptr_t i_dst,
                                                uint8_t *src1, intptr_t i_src1,
@@ -181,10 +176,10 @@ static void mc_luma_altivec( uint8_t *dst,    intptr_t i_dst_stride,
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     intptr_t offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    uint8_t *src1 = src[hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
+    uint8_t *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        uint8_t *src2 = src[hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        uint8_t *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
 
         switch( i_width )
         {
@@ -229,10 +224,10 @@ static uint8_t *get_ref_altivec( uint8_t *dst,   intptr_t *i_dst_stride,
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     intptr_t offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    uint8_t *src1 = src[hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
+    uint8_t *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        uint8_t *src2 = src[hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        uint8_t *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         switch( i_width )
         {
             case 4:

@@ -132,9 +132,6 @@ static void (* const x264_mc_copy_wtab_neon[5])( uint8_t *, intptr_t, uint8_t *,
     x264_mc_copy_w16_neon,
 };
 
-static const uint8_t hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
-static const uint8_t hpel_ref1[16] = {0,0,0,0,2,2,3,2,2,2,3,2,2,2,3,2};
-
 static void mc_luma_neon( uint8_t *dst,    intptr_t i_dst_stride,
                           uint8_t *src[4], intptr_t i_src_stride,
                           int mvx, int mvy,
@@ -142,13 +139,13 @@ static void mc_luma_neon( uint8_t *dst,    intptr_t i_dst_stride,
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     intptr_t offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    uint8_t *src1 = src[hpel_ref0[qpel_idx]] + offset;
+    uint8_t *src1 = src[x264_hpel_ref0[qpel_idx]] + offset;
     if ( (mvy&3) == 3 )             // explict if() to force conditional add
         src1 += i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        uint8_t *src2 = src[hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        uint8_t *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         x264_pixel_avg_wtab_neon[i_width>>2](
                 dst, i_dst_stride, src1, i_src_stride,
                 src2, i_height );
@@ -168,13 +165,13 @@ static uint8_t *get_ref_neon( uint8_t *dst,   intptr_t *i_dst_stride,
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     intptr_t offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    uint8_t *src1 = src[hpel_ref0[qpel_idx]] + offset;
+    uint8_t *src1 = src[x264_hpel_ref0[qpel_idx]] + offset;
     if ( (mvy&3) == 3 )             // explict if() to force conditional add
         src1 += i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        uint8_t *src2 = src[hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        uint8_t *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         x264_pixel_avg_wtab_neon[i_width>>2](
                 dst, *i_dst_stride, src1, i_src_stride,
                 src2, i_height );

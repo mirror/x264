@@ -363,9 +363,6 @@ static void x264_weight_cache_ssse3( x264_t *h, x264_weight_t *w )
 }
 #endif // !HIGH_BIT_DEPTH
 
-static const uint8_t hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
-static const uint8_t hpel_ref1[16] = {0,0,0,0,2,2,3,2,2,2,3,2,2,2,3,2};
-
 #define MC_LUMA(name,instr1,instr2)\
 static void mc_luma_##name( pixel *dst,    intptr_t i_dst_stride,\
                             pixel *src[4], intptr_t i_src_stride,\
@@ -374,10 +371,10 @@ static void mc_luma_##name( pixel *dst,    intptr_t i_dst_stride,\
 {\
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);\
     int offset = (mvy>>2)*i_src_stride + (mvx>>2);\
-    pixel *src1 = src[hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;\
+    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;\
     if( qpel_idx & 5 ) /* qpel interpolation needed */\
     {\
-        pixel *src2 = src[hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);\
+        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);\
         x264_pixel_avg_wtab_##instr1[i_width>>2](\
                 dst, i_dst_stride, src1, i_src_stride,\
                 src2, i_height );\
@@ -412,10 +409,10 @@ static pixel *get_ref_##name( pixel *dst,   intptr_t *i_dst_stride,\
 {\
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);\
     int offset = (mvy>>2)*i_src_stride + (mvx>>2);\
-    pixel *src1 = src[hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;\
+    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;\
     if( qpel_idx & 5 ) /* qpel interpolation needed */\
     {\
-        pixel *src2 = src[hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);\
+        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);\
         x264_pixel_avg_wtab_##name[i_width>>2](\
                 dst, *i_dst_stride, src1, i_src_stride,\
                 src2, i_height );\

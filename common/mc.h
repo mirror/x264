@@ -41,6 +41,8 @@ typedef struct x264_weight_t
 } ALIGNED_16( x264_weight_t );
 
 extern const x264_weight_t x264_weight_none[3];
+extern const uint8_t x264_hpel_ref0[16];
+extern const uint8_t x264_hpel_ref1[16];
 
 #define SET_WEIGHT( w, b, s, d, o )\
 {\
