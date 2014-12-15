@@ -32,6 +32,9 @@
 #include "ratecontrol.h"
 #include "macroblock.h"
 #include "me.h"
+#if HAVE_INTEL_DISPATCHER
+#include "extras/intel_dispatcher.h"
+#endif
 
 //#define DEBUG_MB_TYPE
 
@@ -1389,6 +1392,10 @@ x264_t *x264_encoder_open( x264_param_t *param )
 
     if( param->param_free )
         param->param_free( param );
+
+#if HAVE_INTEL_DISPATCHER
+    x264_intel_dispatcher_override();
+#endif
 
     if( x264_threading_init() )
     {

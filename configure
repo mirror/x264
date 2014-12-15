@@ -311,7 +311,7 @@ NL="
 
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
-             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC"
+             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER"
 
 # parse options
 
@@ -1091,6 +1091,12 @@ fi
 
 if cc_check '' -Wmaybe-uninitialized ; then
     CFLAGS="-Wno-maybe-uninitialized $CFLAGS"
+fi
+
+if [ $compiler = ICC -o $compiler = ICL ] ; then
+    if cc_check 'extras/intel_dispatcher.h' '' 'x264_intel_dispatcher_override();' ; then
+        define HAVE_INTEL_DISPATCHER
+    fi
 fi
 
 if [ "$bit_depth" -gt "8" ]; then

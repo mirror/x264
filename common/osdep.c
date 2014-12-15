@@ -94,51 +94,6 @@ int x264_threading_init( void )
 }
 #endif
 
-#if HAVE_MMX
-#ifdef __INTEL_COMPILER
-/* Agner's patch to Intel's CPU dispatcher from pages 131-132 of
- * http://agner.org/optimize/optimizing_cpp.pdf (2011-01-30)
- * adapted to x264's cpu schema. */
-
-// Global variable indicating cpu
-int __intel_cpu_indicator = 0;
-// CPU dispatcher function
-void x264_intel_cpu_indicator_init( void )
-{
-    unsigned int cpu = x264_cpu_detect();
-    if( cpu&X264_CPU_AVX )
-        __intel_cpu_indicator = 0x20000;
-    else if( cpu&X264_CPU_SSE42 )
-        __intel_cpu_indicator = 0x8000;
-    else if( cpu&X264_CPU_SSE4 )
-        __intel_cpu_indicator = 0x2000;
-    else if( cpu&X264_CPU_SSSE3 )
-        __intel_cpu_indicator = 0x1000;
-    else if( cpu&X264_CPU_SSE3 )
-        __intel_cpu_indicator = 0x800;
-    else if( cpu&X264_CPU_SSE2 && !(cpu&X264_CPU_SSE2_IS_SLOW) )
-        __intel_cpu_indicator = 0x200;
-    else if( cpu&X264_CPU_SSE )
-        __intel_cpu_indicator = 0x80;
-    else if( cpu&X264_CPU_MMX2 )
-        __intel_cpu_indicator = 8;
-    else
-        __intel_cpu_indicator = 1;
-}
-
-/* __intel_cpu_indicator_init appears to have a non-standard calling convention that
- * assumes certain registers aren't preserved, so we'll route it through a function
- * that backs up all the registers. */
-void __intel_cpu_indicator_init( void )
-{
-    x264_safe_intel_cpu_indicator_init();
-}
-#else
-void x264_intel_cpu_indicator_init( void )
-{}
-#endif
-#endif
-
 #ifdef _WIN32
 /* Functions for dealing with Unicode on Windows. */
 FILE *x264_fopen( const char *filename, const char *mode )
