@@ -77,7 +77,7 @@ cc_cflags() {
     # several non gcc compilers issue an incredibly large number of warnings on any warning level,
     # suppress them by disabling all warnings rather than having to use #pragmas to disable most of them
     for arg in $*; do
-        [ $arg = -ffast-math ] && arg=
+        [ "$arg" = -ffast-math ] && arg=
         [[ "$arg" = -falign-loops* ]] && arg=
         [ "$arg" = -fno-tree-vectorize ] && arg=
         [ "$arg" = -Wshadow ] && arg=
@@ -105,10 +105,10 @@ cc_cflags() {
 cl_ldflags() {
     for arg in $*; do
         arg=${arg/LIBPATH/libpath}
-        [ ${arg#-libpath:} == $arg -a ${arg#-l} != $arg ] && arg=${arg#-l}.lib
-        [ ${arg#-L} != $arg ] && arg=-libpath:${arg#-L}
-        [ $arg = -Wl,--large-address-aware ] && arg=-largeaddressaware
-        [ $arg = -s ] && arg=
+        [ "${arg#-libpath:}" == "$arg" -a "${arg#-l}" != "$arg" ] && arg=${arg#-l}.lib
+        [ "${arg#-L}" != "$arg" ] && arg=-libpath:${arg#-L}
+        [ "$arg" = -Wl,--large-address-aware ] && arg=-largeaddressaware
+        [ "$arg" = -s ] && arg=
         [ "$arg" = -Wl,-Bsymbolic ] && arg=
         [ "$arg" = -fno-tree-vectorize ] && arg=
         [ "$arg" = -Werror ] && arg=
@@ -119,6 +119,7 @@ cl_ldflags() {
         arg=${arg/pthreadGC/pthreadVC}
         [ "$arg" = avifil32.lib ] && arg=vfw32.lib
         [ "$arg" = gpac_static.lib ] && arg=libgpac_static.lib
+        [ "$arg" = x264.lib ] && arg=libx264.lib
 
         [ -n "$arg" ] && echo -n "$arg "
     done
@@ -143,7 +144,9 @@ cc_check() {
         log_check "for $3 in $1";
     fi
     rm -f conftest.c
-    [ -n "$1" ] && echo "#include <$1>" > conftest.c
+    for arg in $1; do
+        echo "#include <$arg>" >> conftest.c
+    done
     echo "int main (void) { $3 return 0; }" >> conftest.c
     if [ $compiler_style = MS ]; then
         cc_cmd="$CC conftest.c $(cc_cflags $CFLAGS $CHECK_CFLAGS $2) -link $(cl_ldflags $2 $LDFLAGSCLI $LDFLAGS)"
@@ -172,7 +175,9 @@ cc_check() {
 cpp_check() {
     log_check "whether $3 is true"
     rm -f conftest.c
-    [ -n "$1" ] && echo "#include <$1>" > conftest.c
+    for arg in $1; do
+        echo "#include <$arg>" >> conftest.c
+    done
     echo -e "#if !($3) \n#error $4 \n#endif " >> conftest.c
     if [ $compiler_style = MS ]; then
         cpp_cmd="$CC conftest.c $(cc_cflags $CFLAGS $2) -P"
@@ -254,6 +259,54 @@ die() {
     log_msg "DIED: $@"
     echo "$@"
     exit 1
+}
+
+configure_system_override() {
+    log_check "system libx264 configuration"
+    x264_config_path=
+    for arg in $1; do
+        if [ "${arg#-I}" != "$arg" -a -e "${arg#-I}/x264_config.h" ]; then
+            x264_config_path=${arg#-I}/x264_config.h
+            break
+        fi
+    done
+    if [ -n "$x264_config_path" ]; then
+        res=$?
+        log_ok
+        arg=$(grep '#define X264_GPL ' $x264_config_path | sed -e 's/#define X264_GPL *//; s/ *$//')
+        if [ -n "$arg" ]; then
+            [ "$arg" = 0 ] && arg="no" || arg="yes"
+            [ "$arg" != "$gpl" ] && die "Incompatible license with system libx264"
+        fi
+        arg=$(grep '#define X264_BIT_DEPTH ' $x264_config_path | sed -e 's/#define X264_BIT_DEPTH *//; s/ *$//')
+        if [ -n "$arg" ]; then
+            if [ "$arg" != "$bit_depth" ]; then
+                echo "Override output bit depth with system libx264 configuration"
+                bit_depth=$arg
+            fi
+        fi
+        arg=$(grep '#define X264_CHROMA_FORMAT ' $x264_config_path | sed -e 's/#define X264_CHROMA_FORMAT *//; s/ *$//')
+        if [ -n "$arg" ]; then
+            [ "$arg" = 0 ] && arg="all" || arg="${arg#X264_CSP_I}"
+            if [ "$arg" != "$chroma_format" ]; then
+                echo "Override output chroma format with system libx264 configuration"
+                chroma_format=$arg
+            fi
+        fi
+        arg=$(grep '#define X264_INTERLACED ' $x264_config_path | sed -e 's/#define X264_INTERLACED *//; s/ *$//')
+        if [ -n "$arg" ]; then
+            [ "$arg" = 0 ] && arg="no" || arg="yes"
+            if [ "$arg" != "$interlaced" ]; then
+                echo "Override interlaced encoding support with system libx264 configuration"
+                interlaced=$arg
+            fi
+        fi
+    else
+        res=$?
+        log_fail
+        log_msg "Failed search path was: $1"
+    fi
+    return $res
 }
 
 rm -f x264_config.h config.h config.mak config.log x264.pc x264.def conftest*
@@ -457,6 +510,8 @@ host_cpu="${host%%-*}"
 host="${host#*-}"
 host_vendor="${host%%-*}"
 host_os="${host#*-}"
+
+trap 'rm -f conftest*' EXIT
 
 # test for use of compilers that require specific handling
 cc_base=`basename "$CC"`
@@ -825,6 +880,17 @@ if [ $compiler = GNU ]; then
     fi
 fi
 
+if [ "$cli_libx264" = "system" -a "$shared" != "yes" ] ; then
+    [ "$static" = "yes" ] && die "Option --system-libx264 can not be used together with --enable-static"
+    if ${cross_prefix}pkg-config --exists x264 2>/dev/null; then
+        X264_LIBS="$X264_LIBS $(${cross_prefix}pkg-config --libs x264)"
+        X264_CFLAGS="$X264_CFLAGS $(${cross_prefix}pkg-config --cflags x264)"
+        configure_system_override "$X264_CFLAGS" || die "Detection of system libx264 configuration failed"
+    else
+        die "Can not find system libx264"
+    fi
+fi
+
 # autodetect options that weren't forced nor disabled
 
 # pthread-win32 is lgpl, prevent its use if --disable-gpl is specified and targeting windows
@@ -1137,6 +1203,31 @@ for var in $CONFIG_HAVE; do
     grep -q "HAVE_$var 1" config.h || define HAVE_$var 0
 done
 
+# generate exported config file
+
+config_chroma_format="X264_CSP_I$chroma_format"
+[ "$config_chroma_format" == "X264_CSP_Iall" ] && config_chroma_format="0"
+cat > x264_config.h << EOF
+#define X264_BIT_DEPTH     $bit_depth
+#define X264_GPL           $x264_gpl
+#define X264_INTERLACED    $x264_interlaced
+#define X264_CHROMA_FORMAT $config_chroma_format
+EOF
+
+${SRCPATH}/version.sh "${SRCPATH}" >> x264_config.h
+
+if [ "$cli_libx264" = "system" ] ; then
+    if [ "$shared" = "yes" ]; then
+        CLI_LIBX264='$(SONAME)'
+    else
+        CLI_LIBX264=
+        LDFLAGSCLI="$X264_LIBS $LDFLAGSCLI"
+        cc_check 'stdint.h x264.h' '' 'x264_encoder_open(0);' || die "System libx264 can't be used for compilation of this version"
+    fi
+else
+    CLI_LIBX264='$(LIBX264)'
+fi
+
 DEPMM="${QPRE}MM"
 DEPMT="${QPRE}MT"
 if [ $compiler_style = MS ]; then
@@ -1188,19 +1279,6 @@ else
     PROF_USE_CC="-fprofile-use"
     PROF_USE_LD="-fprofile-use"
 fi
-
-rm -f conftest*
-
-# generate exported config file
-
-config_chroma_format="X264_CSP_I$chroma_format"
-[ "$config_chroma_format" == "X264_CSP_Iall" ] && config_chroma_format="0"
-cat > x264_config.h << EOF
-#define X264_BIT_DEPTH     $bit_depth
-#define X264_GPL           $x264_gpl
-#define X264_INTERLACED    $x264_interlaced
-#define X264_CHROMA_FORMAT $config_chroma_format
-EOF
 
 # generate config files
 
@@ -1290,22 +1368,8 @@ if [ "$static" = "yes" ]; then
     echo 'install: install-lib-static' >> config.mak
 fi
 
-if [ "$cli_libx264" = "system" ] ; then
-    if [ "$shared" = "yes" ]; then
-        CLI_LIBX264='$(SONAME)'
-    elif ${cross_prefix}pkg-config --exists x264 2>/dev/null; then
-        LDFLAGSCLI="$LDFLAGSCLI $(${cross_prefix}pkg-config --libs x264)"
-        CLI_LIBX264=
-    else
-        die "Can not find system libx264"
-    fi
-else
-    CLI_LIBX264='$(LIBX264)'
-fi
 echo "LDFLAGSCLI = $LDFLAGSCLI" >> config.mak
 echo "CLI_LIBX264 = $CLI_LIBX264" >> config.mak
-
-${SRCPATH}/version.sh "${SRCPATH}" >> x264_config.h
 
 cat > x264.pc << EOF
 prefix=$prefix
@@ -1354,7 +1418,6 @@ EOF
 echo >> config.log
 cat conftest.log >> config.log
 cat conftest.log
-rm conftest.log
 
 [ "$SRCPATH" != "." ] && ln -sf ${SRCPATH}/Makefile ./Makefile
 mkdir -p common/{aarch64,arm,ppc,x86} encoder extras filters/video input output tools

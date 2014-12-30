@@ -267,7 +267,7 @@ clean:
 	rm -f $(SRC2:%.c=%.gcda) $(SRC2:%.c=%.gcno) *.dyn pgopti.dpi pgopti.dpi.lock *.pgd *.pgc
 
 distclean: clean
-	rm -f config.mak x264_config.h config.h config.log x264.pc x264.def
+	rm -f config.mak x264_config.h config.h config.log x264.pc x264.def conftest*
 
 install-cli: cli
 	$(INSTALL) -d $(DESTDIR)$(bindir)
