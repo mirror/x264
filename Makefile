@@ -87,12 +87,12 @@ X86SRC0 += sad-a.asm
 endif
 X86SRC = $(X86SRC0:%=common/x86/%)
 
-ifeq ($(ARCH),X86)
+ifeq ($(SYS_ARCH),X86)
 ARCH_X86 = yes
 ASMSRC   = $(X86SRC) common/x86/pixel-32.asm
 endif
 
-ifeq ($(ARCH),X86_64)
+ifeq ($(SYS_ARCH),X86_64)
 ARCH_X86 = yes
 ASMSRC   = $(X86SRC:-32.asm=-64.asm) common/x86/trellis-64.asm
 endif
@@ -106,7 +106,7 @@ endif
 endif
 
 # AltiVec optims
-ifeq ($(ARCH),PPC)
+ifeq ($(SYS_ARCH),PPC)
 ifneq ($(AS),)
 SRCS += common/ppc/mc.c common/ppc/pixel.c common/ppc/dct.c \
         common/ppc/quant.c common/ppc/deblock.c \
@@ -115,7 +115,7 @@ endif
 endif
 
 # NEON optims
-ifeq ($(ARCH),ARM)
+ifeq ($(SYS_ARCH),ARM)
 ifneq ($(AS),)
 ASMSRC += common/arm/cpu-a.S common/arm/pixel-a.S common/arm/mc-a.S \
           common/arm/dct-a.S common/arm/quant-a.S common/arm/deblock-a.S \
@@ -126,7 +126,7 @@ endif
 endif
 
 # AArch64 NEON optims
-ifeq ($(ARCH),AARCH64)
+ifeq ($(SYS_ARCH),AARCH64)
 ifneq ($(AS),)
 ASMSRC += common/aarch64/bitstream-a.S \
           common/aarch64/cabac-a.S     \
