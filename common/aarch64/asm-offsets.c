@@ -1,7 +1,7 @@
 /*****************************************************************************
  * asm-offsets.c: check asm offsets for aarch64
  *****************************************************************************
- * Copyright (C) 2014 x264 project
+ * Copyright (C) 2014-2015 x264 project
  *
  * Authors: Janne Grunau <janne-x264@jannau.net>
  *
