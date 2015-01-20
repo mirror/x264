@@ -586,7 +586,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.i_dpb_size = 1;
     }
 
-    if( h->param.i_frame_packing < -1 || h->param.i_frame_packing > 5 )
+    if( h->param.i_frame_packing < -1 || h->param.i_frame_packing > 6 )
     {
         x264_log( h, X264_LOG_WARNING, "ignoring unknown frame packing value\n" );
         h->param.i_frame_packing = -1;

@@ -663,7 +663,7 @@ void x264_sei_frame_packing_write( x264_t *h, bs_t *s )
     bs_write1( &q, quincunx_sampling_flag );      // quincunx_sampling_flag
 
     // 0: views are unrelated, 1: left view is on the left, 2: left view is on the right
-    bs_write ( &q, 6, 1 );                        // content_interpretation_type
+    bs_write ( &q, 6, h->param.i_frame_packing != 6 ); // content_interpretation_type
 
     bs_write1( &q, 0 );                           // spatial_flipping_flag
     bs_write1( &q, 0 );                           // frame0_flipped_flag
