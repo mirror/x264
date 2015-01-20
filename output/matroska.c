@@ -62,9 +62,14 @@ static int open_file( char *psz_filename, hnd_t *p_handle, cli_output_opt_t *opt
     return 0;
 }
 
+#define STEREO_COUNT 6
+static const uint8_t stereo_modes[STEREO_COUNT] = {5,9,7,1,3,13};
+static const uint8_t stereo_w_div[STEREO_COUNT] = {1,2,1,2,1,1};
+static const uint8_t stereo_h_div[STEREO_COUNT] = {1,1,2,1,2,1};
+
 static int set_param( hnd_t handle, x264_param_t *p_param )
 {
-    mkv_hnd_t   *p_mkv = handle;
+    mkv_hnd_t *p_mkv = handle;
     int64_t dw, dh;
 
     if( p_param->i_fps_num > 0 && !p_param->b_vfr_input )
@@ -77,25 +82,27 @@ static int set_param( hnd_t handle, x264_param_t *p_param )
         p_mkv->frame_duration = 0;
     }
 
-    p_mkv->width = p_mkv->d_width = p_param->i_width;
-    p_mkv->height = p_mkv->d_height = p_param->i_height;
+    dw = p_mkv->width = p_param->i_width;
+    dh = p_mkv->height = p_param->i_height;
     p_mkv->display_size_units = DS_PIXELS;
-    p_mkv->stereo_mode = p_param->i_frame_packing;
-
+    p_mkv->stereo_mode = -1;
+    if( p_param->i_frame_packing >= 0 && p_param->i_frame_packing < STEREO_COUNT )
+    {
+        p_mkv->stereo_mode = stereo_modes[p_param->i_frame_packing];
+        dw /= stereo_w_div[p_param->i_frame_packing];
+        dh /= stereo_h_div[p_param->i_frame_packing];
+    }
     if( p_param->vui.i_sar_width && p_param->vui.i_sar_height
         && p_param->vui.i_sar_width != p_param->vui.i_sar_height )
     {
         if ( p_param->vui.i_sar_width > p_param->vui.i_sar_height ) {
-            dw = (int64_t)p_param->i_width * p_param->vui.i_sar_width / p_param->vui.i_sar_height;
-            dh = p_param->i_height;
+            dw = dw * p_param->vui.i_sar_width / p_param->vui.i_sar_height;
         } else {
-            dw = p_param->i_width;
-            dh = (int64_t)p_param->i_height * p_param->vui.i_sar_height / p_param->vui.i_sar_width;
+            dh = dh * p_param->vui.i_sar_height / p_param->vui.i_sar_width;
         }
-
-        p_mkv->d_width = (int)dw;
-        p_mkv->d_height = (int)dh;
     }
+    p_mkv->d_width = (int)dw;
+    p_mkv->d_height = (int)dh;
 
     p_mkv->i_timebase_num = p_param->i_timebase_num;
     p_mkv->i_timebase_den = p_param->i_timebase_den;
