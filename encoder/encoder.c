@@ -496,32 +496,37 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         return -1;
     }
 
-    if( i_csp < X264_CSP_I444 && h->param.i_width % 2 )
+    int w_mod = i_csp < X264_CSP_I444 ? 2 : 1;
+    int h_mod = (i_csp < X264_CSP_I422 ? 2 : 1) << PARAM_INTERLACED;
+    if( h->param.i_width % w_mod )
     {
-        x264_log( h, X264_LOG_ERROR, "width not divisible by 2 (%dx%d)\n",
-                  h->param.i_width, h->param.i_height );
+        x264_log( h, X264_LOG_ERROR, "width not divisible by %d (%dx%d)\n",
+                  w_mod, h->param.i_width, h->param.i_height );
+        return -1;
+    }
+    if( h->param.i_height % h_mod )
+    {
+        x264_log( h, X264_LOG_ERROR, "height not divisible by %d (%dx%d)\n",
+                  h_mod, h->param.i_width, h->param.i_height );
         return -1;
     }
 
-    if( i_csp < X264_CSP_I422 && PARAM_INTERLACED && h->param.i_height % 4 )
-    {
-        x264_log( h, X264_LOG_ERROR, "height not divisible by 4 (%dx%d)\n",
-                  h->param.i_width, h->param.i_height );
-        return -1;
-    }
-
-    if( (i_csp < X264_CSP_I422 || PARAM_INTERLACED) && h->param.i_height % 2 )
-    {
-        x264_log( h, X264_LOG_ERROR, "height not divisible by 2 (%dx%d)\n",
-                  h->param.i_width, h->param.i_height );
-        return -1;
-    }
-
-    if( (h->param.crop_rect.i_left + h->param.crop_rect.i_right ) >= h->param.i_width ||
-        (h->param.crop_rect.i_top  + h->param.crop_rect.i_bottom) >= h->param.i_height )
+    if( h->param.crop_rect.i_left   >= h->param.i_width ||
+        h->param.crop_rect.i_right  >= h->param.i_width ||
+        h->param.crop_rect.i_top    >= h->param.i_height ||
+        h->param.crop_rect.i_bottom >= h->param.i_height ||
+        h->param.crop_rect.i_left + h->param.crop_rect.i_right  >= h->param.i_width ||
+        h->param.crop_rect.i_top  + h->param.crop_rect.i_bottom >= h->param.i_height )
     {
         x264_log( h, X264_LOG_ERROR, "invalid crop-rect %u,%u,%u,%u\n", h->param.crop_rect.i_left,
                   h->param.crop_rect.i_top, h->param.crop_rect.i_right,  h->param.crop_rect.i_bottom );
+        return -1;
+    }
+    if( h->param.crop_rect.i_left % w_mod || h->param.crop_rect.i_right  % w_mod ||
+        h->param.crop_rect.i_top  % h_mod || h->param.crop_rect.i_bottom % h_mod )
+    {
+        x264_log( h, X264_LOG_ERROR, "crop-rect %u,%u,%u,%u not divisible by %dx%d\n", h->param.crop_rect.i_left,
+                  h->param.crop_rect.i_top, h->param.crop_rect.i_right,  h->param.crop_rect.i_bottom, w_mod, h_mod );
         return -1;
     }
 
