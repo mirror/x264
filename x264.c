@@ -704,7 +704,8 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - 3: side by side - L is on the left, R on the right\n"
         "                                  - 4: top bottom - L is on top, R on bottom\n"
         "                                  - 5: frame alternation - one view per frame\n"
-        "                                  - 6: mono - 2D frame without any frame packing\n" );
+        "                                  - 6: mono - 2D frame without any frame packing\n"
+        "                                  - 7: tile format - L is on top-left, R split across\n" );
     H0( "\n" );
     H0( "Ratecontrol:\n" );
     H0( "\n" );

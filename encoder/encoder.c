@@ -591,10 +591,19 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.i_dpb_size = 1;
     }
 
-    if( h->param.i_frame_packing < -1 || h->param.i_frame_packing > 6 )
+    if( h->param.i_frame_packing < -1 || h->param.i_frame_packing > 7 )
     {
         x264_log( h, X264_LOG_WARNING, "ignoring unknown frame packing value\n" );
         h->param.i_frame_packing = -1;
+    }
+    if( h->param.i_frame_packing == 7 &&
+        ((h->param.i_width - h->param.crop_rect.i_left - h->param.crop_rect.i_right)  % 3 ||
+         (h->param.i_height - h->param.crop_rect.i_top - h->param.crop_rect.i_bottom) % 3) )
+    {
+        x264_log( h, X264_LOG_ERROR, "cropped resolution %dx%d not compatible with tile format frame packing\n",
+                  h->param.i_width - h->param.crop_rect.i_left - h->param.crop_rect.i_right,
+                  h->param.i_height - h->param.crop_rect.i_top - h->param.crop_rect.i_bottom );
+        return -1;
     }
 
     /* Detect default ffmpeg settings and terminate with an error. */
