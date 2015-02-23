@@ -1297,11 +1297,11 @@ static int init_vid_filters( char *sequence, hnd_t *handle, video_info_t *info, 
     /* force the output csp to what the user specified (or the default) */
     param->i_csp = info->csp;
     int csp = info->csp & X264_CSP_MASK;
-    if( output_csp == X264_CSP_I420 && (csp < X264_CSP_I420 || csp > X264_CSP_NV12) )
+    if( output_csp == X264_CSP_I420 && (csp < X264_CSP_I420 || csp >= X264_CSP_I422) )
         param->i_csp = X264_CSP_I420;
-    else if( output_csp == X264_CSP_I422 && (csp < X264_CSP_I422 || csp > X264_CSP_V210) )
+    else if( output_csp == X264_CSP_I422 && (csp < X264_CSP_I422 || csp >= X264_CSP_I444) )
         param->i_csp = X264_CSP_I422;
-    else if( output_csp == X264_CSP_I444 && (csp < X264_CSP_I444 || csp > X264_CSP_YV24) )
+    else if( output_csp == X264_CSP_I444 && (csp < X264_CSP_I444 || csp >= X264_CSP_BGR) )
         param->i_csp = X264_CSP_I444;
     else if( output_csp == X264_CSP_RGB && (csp < X264_CSP_BGR || csp > X264_CSP_RGB) )
         param->i_csp = X264_CSP_RGB;
