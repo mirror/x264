@@ -263,48 +263,42 @@ die() {
 
 configure_system_override() {
     log_check "system libx264 configuration"
-    x264_config_path=
-    for arg in $1; do
-        if [ "${arg#-I}" != "$arg" -a -e "${arg#-I}/x264_config.h" ]; then
-            x264_config_path=${arg#-I}/x264_config.h
-            break
-        fi
-    done
-    if [ -n "$x264_config_path" ]; then
+    x264_config_path="$1/x264_config.h"
+    if [ -e "$x264_config_path" ]; then
         res=$?
         log_ok
-        arg=$(grep '#define X264_GPL ' $x264_config_path | sed -e 's/#define X264_GPL *//; s/ *$//')
+        arg="$(grep '#define X264_GPL ' $x264_config_path | sed -e 's/#define X264_GPL *//; s/ *$//')"
         if [ -n "$arg" ]; then
             [ "$arg" = 0 ] && arg="no" || arg="yes"
             [ "$arg" != "$gpl" ] && die "Incompatible license with system libx264"
         fi
-        arg=$(grep '#define X264_BIT_DEPTH ' $x264_config_path | sed -e 's/#define X264_BIT_DEPTH *//; s/ *$//')
+        arg="$(grep '#define X264_BIT_DEPTH ' $x264_config_path | sed -e 's/#define X264_BIT_DEPTH *//; s/ *$//')"
         if [ -n "$arg" ]; then
             if [ "$arg" != "$bit_depth" ]; then
                 echo "Override output bit depth with system libx264 configuration"
-                bit_depth=$arg
+                bit_depth="$arg"
             fi
         fi
-        arg=$(grep '#define X264_CHROMA_FORMAT ' $x264_config_path | sed -e 's/#define X264_CHROMA_FORMAT *//; s/ *$//')
+        arg="$(grep '#define X264_CHROMA_FORMAT ' $x264_config_path | sed -e 's/#define X264_CHROMA_FORMAT *//; s/ *$//')"
         if [ -n "$arg" ]; then
             [ "$arg" = 0 ] && arg="all" || arg="${arg#X264_CSP_I}"
             if [ "$arg" != "$chroma_format" ]; then
                 echo "Override output chroma format with system libx264 configuration"
-                chroma_format=$arg
+                chroma_format="$arg"
             fi
         fi
-        arg=$(grep '#define X264_INTERLACED ' $x264_config_path | sed -e 's/#define X264_INTERLACED *//; s/ *$//')
+        arg="$(grep '#define X264_INTERLACED ' $x264_config_path | sed -e 's/#define X264_INTERLACED *//; s/ *$//')"
         if [ -n "$arg" ]; then
             [ "$arg" = 0 ] && arg="no" || arg="yes"
             if [ "$arg" != "$interlaced" ]; then
                 echo "Override interlaced encoding support with system libx264 configuration"
-                interlaced=$arg
+                interlaced="$arg"
             fi
         fi
     else
         res=$?
         log_fail
-        log_msg "Failed search path was: $1"
+        log_msg "Failed search path was: $x264_config_path"
     fi
     return $res
 }
@@ -883,9 +877,9 @@ fi
 if [ "$cli_libx264" = "system" -a "$shared" != "yes" ] ; then
     [ "$static" = "yes" ] && die "Option --system-libx264 can not be used together with --enable-static"
     if ${cross_prefix}pkg-config --exists x264 2>/dev/null; then
-        X264_LIBS="$X264_LIBS $(${cross_prefix}pkg-config --libs x264)"
-        X264_CFLAGS="$X264_CFLAGS $(${cross_prefix}pkg-config --cflags x264)"
-        configure_system_override "$X264_CFLAGS" || die "Detection of system libx264 configuration failed"
+        X264_LIBS="$(${cross_prefix}pkg-config --libs x264)"
+        X264_INCLUDE_DIR="${X264_INCLUDE_DIR-$(${cross_prefix}pkg-config --variable=includedir x264)}"
+        configure_system_override "$X264_INCLUDE_DIR" || die "Detection of system libx264 configuration failed"
     else
         die "Can not find system libx264"
     fi
