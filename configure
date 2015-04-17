@@ -358,7 +358,8 @@ NL="
 
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
-             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER"
+             LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
+             MSA"
 
 # parse options
 
@@ -727,8 +728,10 @@ case $host_cpu in
     sparc)
         ARCH="SPARC"
         ;;
-    mips|mipsel|mips64|mips64el)
+    mips*)
         ARCH="MIPS"
+        AS="${AS-${CC}}"
+        AS_EXT=".c"
         ;;
     arm*)
         ARCH="ARM"
@@ -852,6 +855,20 @@ fi
 if [ $asm = auto -a \( $ARCH = ARM -o $ARCH = AARCH64 \) ] ; then
     # check if the assembler supports '.func' (clang 3.5 does not)
     as_check ".func test${NL}.endfunc" && define HAVE_AS_FUNC 1
+fi
+
+if [ $asm = auto -a $ARCH = MIPS ] ; then
+    if ! echo $CFLAGS | grep -Eq '(-march|-mmsa|-mno-msa)' ; then
+        cc_check '' '-mmsa -mfp64 -mhard-float' && CFLAGS="-mmsa -mfp64 -mhard-float $CFLAGS"
+    fi
+
+    if cc_check '' '' '__asm__("addvi.b $w0, $w1, 1");' ; then
+        define HAVE_MSA
+    else
+        echo "You specified a pre-MSA CPU in your CFLAGS."
+        echo "If you really want to run on such a CPU, configure with --disable-asm."
+        exit 1
+    fi
 fi
 
 [ $asm = no ] && AS=""

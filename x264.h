@@ -41,7 +41,7 @@
 
 #include "x264_config.h"
 
-#define X264_BUILD 147
+#define X264_BUILD 148
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -157,6 +157,9 @@ typedef struct
 #define X264_CPU_NEON            0x0000002  /* ARM NEON */
 #define X264_CPU_FAST_NEON_MRC   0x0000004  /* Transfer from NEON to ARM register is fast (Cortex-A9) */
 #define X264_CPU_ARMV8           0x0000008
+
+/* MIPS */
+#define X264_CPU_MSA             0x0000001  /* MIPS MSA */
 
 /* Analyse flags */
 #define X264_ANALYSE_I4x4       0x0001  /* Analyse i4x4 */

@@ -92,6 +92,8 @@ const x264_cpu_name_t x264_cpu_names[] =
 #elif ARCH_AARCH64
     {"ARMv8",           X264_CPU_ARMV8},
     {"NEON",            X264_CPU_NEON},
+#elif ARCH_MIPS
+    {"MSA",             X264_CPU_MSA},
 #endif
     {"", 0},
 };
@@ -417,6 +419,17 @@ uint32_t x264_cpu_detect( void )
 uint32_t x264_cpu_detect( void )
 {
     return X264_CPU_ARMV8 | X264_CPU_NEON;
+}
+
+#elif ARCH_MIPS
+
+uint32_t x264_cpu_detect( void )
+{
+    uint32_t flags = 0;
+#if HAVE_MSA
+    flags |= X264_CPU_MSA;
+#endif
+    return flags;
 }
 
 #else
