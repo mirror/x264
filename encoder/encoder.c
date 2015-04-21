@@ -3238,6 +3238,12 @@ int     x264_encoder_encode( x264_t *h,
     /* ------------------- Setup new frame from picture -------------------- */
     if( pic_in != NULL )
     {
+        if( h->lookahead->b_exit_thread )
+        {
+            x264_log( h, X264_LOG_ERROR, "lookahead thread is already stopped\n" );
+            return -1;
+        }
+
         /* 1: Copy the picture to a frame and move it to a buffer */
         x264_frame_t *fenc = x264_frame_pop_unused( h, 0 );
         if( !fenc )
