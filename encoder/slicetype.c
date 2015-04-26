@@ -612,7 +612,6 @@ static void x264_slicetype_mb_cost( x264_t *h, x264_mb_analysis_t *a,
 
     if( b_bidir )
     {
-        int16_t *mvr = fref1->lowres_mvs[0][p1-p0-1][i_mb_xy];
         ALIGNED_ARRAY_8( int16_t, dmv,[2],[2] );
 
         m[1].i_pixel = PIXEL_8x8;
@@ -624,14 +623,20 @@ static void x264_slicetype_mb_cost( x264_t *h, x264_mb_analysis_t *a,
         LOAD_HPELS_LUMA( m[1].p_fref, fref1->lowres );
         m[1].p_fref_w = m[1].p_fref[0];
 
-        dmv[0][0] = ( mvr[0] * dist_scale_factor + 128 ) >> 8;
-        dmv[0][1] = ( mvr[1] * dist_scale_factor + 128 ) >> 8;
-        dmv[1][0] = dmv[0][0] - mvr[0];
-        dmv[1][1] = dmv[0][1] - mvr[1];
-        CLIP_MV( dmv[0] );
-        CLIP_MV( dmv[1] );
-        if( h->param.analyse.i_subpel_refine <= 1 )
-            M64( dmv ) &= ~0x0001000100010001ULL; /* mv & ~1 */
+        if( fref1->lowres_mvs[0][p1-p0-1][0][0] != 0x7FFF )
+        {
+            int16_t *mvr = fref1->lowres_mvs[0][p1-p0-1][i_mb_xy];
+            dmv[0][0] = ( mvr[0] * dist_scale_factor + 128 ) >> 8;
+            dmv[0][1] = ( mvr[1] * dist_scale_factor + 128 ) >> 8;
+            dmv[1][0] = dmv[0][0] - mvr[0];
+            dmv[1][1] = dmv[0][1] - mvr[1];
+            CLIP_MV( dmv[0] );
+            CLIP_MV( dmv[1] );
+            if( h->param.analyse.i_subpel_refine <= 1 )
+                M64( dmv ) &= ~0x0001000100010001ULL; /* mv & ~1 */
+        }
+        else
+            M64( dmv ) = 0;
 
         TRY_BIDIR( dmv[0], dmv[1], 0 );
         if( M64( dmv ) )
