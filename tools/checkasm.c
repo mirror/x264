@@ -101,6 +101,8 @@ static inline uint32_t read_time(void)
     uint64_t b = 0;
     asm volatile( "mrs %0, pmccntr_el0" : "=r"(b) :: "memory" );
     a = b;
+#elif ARCH_MIPS
+    asm volatile( "rdhwr %0, $2" : "=r"(a) :: "memory" );
 #endif
     return a;
 }
@@ -193,6 +195,8 @@ static void print_bench(void)
 #elif ARCH_AARCH64
                     b->cpu&X264_CPU_NEON ? "neon" :
                     b->cpu&X264_CPU_ARMV8 ? "armv8" :
+#elif ARCH_MIPS
+                    b->cpu&X264_CPU_MSA ? "msa" :
 #endif
                     "c",
 #if HAVE_MMX
@@ -2786,6 +2790,9 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_ARMV8, "ARMv8" );
     if( cpu_detect & X264_CPU_NEON )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_NEON, "NEON" );
+#elif ARCH_MIPS
+    if( cpu_detect & X264_CPU_MSA )
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_MSA, "MSA" );
 #endif
     return ret;
 }
@@ -2796,7 +2803,7 @@ int main(int argc, char *argv[])
 
     if( argc > 1 && !strncmp( argv[1], "--bench", 7 ) )
     {
-#if !ARCH_X86 && !ARCH_X86_64 && !ARCH_PPC && !ARCH_ARM && !ARCH_AARCH64
+#if !ARCH_X86 && !ARCH_X86_64 && !ARCH_PPC && !ARCH_ARM && !ARCH_AARCH64 && !ARCH_MIPS
         fprintf( stderr, "no --bench for your cpu until you port rdtsc\n" );
         return 1;
 #endif
