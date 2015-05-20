@@ -641,7 +641,7 @@ static int check_pixel( int cpu_ref, int cpu_new )
             } \
             predict_8x8[res_c>>16]( fdec1, edge ); \
             int res_a = call_a( pixel_asm.name, fenc, fdec2, edge, bitcosts+8-pred_mode, satds_a ); \
-            if( res_c != res_a || memcmp(satds_c, satds_a, sizeof(satds_c)) ) \
+            if( res_c != res_a || memcmp(satds_c, satds_a, 16 * sizeof(*satds_c)) ) \
             { \
                 ok = 0; \
                 fprintf( stderr, #name": %d,%d != %d,%d [FAILED]\n", res_c>>16, res_c&0xffff, res_a>>16, res_a&0xffff ); \
