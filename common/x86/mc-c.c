@@ -524,17 +524,27 @@ static void x264_plane_copy_interleave_##cpu( pixel *dst,  intptr_t i_dst,\
                                               pixel *srcu, intptr_t i_srcu,\
                                               pixel *srcv, intptr_t i_srcv, int w, int h )\
 {\
-    if( !(w&15) ) {\
+    int c_w = 16 / sizeof(pixel) - 1;\
+    if( !(w&c_w) )\
         x264_plane_copy_interleave_core_##cpu( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
-    } else if( w < 16 || (i_srcu ^ i_srcv) ) {\
-        x264_plane_copy_interleave_c( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
-    } else if( i_srcu > 0 ) {\
-        x264_plane_copy_interleave_core_##cpu( dst, i_dst, srcu, i_srcu, srcv, i_srcv, (w+15)&~15, h-1 );\
-        x264_plane_copy_interleave_c( dst+i_dst*(h-1), 0, srcu+i_srcu*(h-1), 0, srcv+i_srcv*(h-1), 0, w, 1 );\
-    } else {\
+    else if( w > c_w && (i_srcu ^ i_srcv) >= 0 ) /* only works correctly for strides with identical signs */\
+    {\
+        if( --h > 0 )\
+        {\
+            if( i_srcu > 0 )\
+            {\
+                x264_plane_copy_interleave_core_##cpu( dst, i_dst, srcu, i_srcu, srcv, i_srcv, (w+c_w)&~c_w, h );\
+                dst  += i_dst  * h;\
+                srcu += i_srcu * h;\
+                srcv += i_srcv * h;\
+            }\
+            else\
+                x264_plane_copy_interleave_core_##cpu( dst+i_dst, i_dst, srcu+i_srcu, i_srcu, srcv+i_srcv, i_srcv, (w+c_w)&~c_w, h );\
+        }\
         x264_plane_copy_interleave_c( dst, 0, srcu, 0, srcv, 0, w, 1 );\
-        x264_plane_copy_interleave_core_##cpu( dst+i_dst, i_dst, srcu+i_srcu, i_srcu, srcv+i_srcv, i_srcv, (w+15)&~15, h-1 );\
     }\
+    else\
+        x264_plane_copy_interleave_c( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
 }
 
 PLANE_INTERLEAVE(mmx2)
