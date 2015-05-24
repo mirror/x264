@@ -1104,7 +1104,7 @@ fi
 cc_check "stdint.h" "" "uint32_t test_vec __attribute__ ((vector_size (16))) = {0,1,2,3};" && define HAVE_VECTOREXT
 
 if [ "$pic" = "yes" ] ; then
-    CFLAGS="$CFLAGS -fPIC"
+    [ "$SYS" != WINDOWS -a "$SYS" != CYGWIN ] && CFLAGS="$CFLAGS -fPIC"
     ASFLAGS="$ASFLAGS -DPIC"
     # resolve textrels in the x86 asm
     cc_check stdio.h "-shared -Wl,-Bsymbolic" && SOFLAGS="$SOFLAGS -Wl,-Bsymbolic"
