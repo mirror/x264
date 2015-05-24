@@ -138,7 +138,7 @@ int x264_pthread_cond_init( x264_pthread_cond_t *cond, const x264_pthread_condat
     if( !win32_cond )
         return -1;
     cond->ptr = win32_cond;
-    win32_cond->semaphore = CreateSemaphore( NULL, 0, 0x7fffffff, NULL );
+    win32_cond->semaphore = CreateSemaphoreW( NULL, 0, 0x7fffffff, NULL );
     if( !win32_cond->semaphore )
         return -1;
 
@@ -147,7 +147,7 @@ int x264_pthread_cond_init( x264_pthread_cond_t *cond, const x264_pthread_condat
     if( x264_pthread_mutex_init( &win32_cond->mtx_broadcast, NULL ) )
         return -1;
 
-    win32_cond->waiters_done = CreateEvent( NULL, FALSE, FALSE, NULL );
+    win32_cond->waiters_done = CreateEventW( NULL, FALSE, FALSE, NULL );
     if( !win32_cond->waiters_done )
         return -1;
 
