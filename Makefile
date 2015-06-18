@@ -143,6 +143,13 @@ OBJASM  = $(ASMSRC:%.S=%.o)
 endif
 endif
 
+# MSA optims
+ifeq ($(SYS_ARCH),MIPS)
+ifneq ($(findstring HAVE_MSA 1, $(CONFIG)),)
+SRCS += common/mips/mc-c.c
+endif
+endif
+
 ifneq ($(HAVE_GETOPT_LONG),1)
 SRCCLI += extras/getopt.c
 endif
