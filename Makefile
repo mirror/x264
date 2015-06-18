@@ -147,7 +147,7 @@ endif
 ifeq ($(SYS_ARCH),MIPS)
 ifneq ($(findstring HAVE_MSA 1, $(CONFIG)),)
 SRCS += common/mips/mc-c.c common/mips/dct-c.c \
-        common/mips/deblock-c.c
+        common/mips/deblock-c.c common/mips/pixel-c.c
 endif
 endif
 

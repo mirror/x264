@@ -42,6 +42,9 @@
 #   include "aarch64/pixel.h"
 #   include "aarch64/predict.h"
 #endif
+#if ARCH_MIPS
+#   include "mips/pixel.h"
+#endif
 
 
 /****************************************************************************
@@ -1448,6 +1451,38 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->ssim_end4         = x264_pixel_ssim_end4_neon;
     }
 #endif // ARCH_AARCH64
+
+#if HAVE_MSA
+    if( cpu&X264_CPU_MSA )
+    {
+        INIT8( sad, _msa );
+        INIT8_NAME( sad_aligned, sad, _msa );
+        INIT8( ssd, _msa );
+        INIT7( sad_x3, _msa );
+        INIT7( sad_x4, _msa );
+        INIT8( satd, _msa );
+        INIT4( hadamard_ac, _msa );
+
+        pixf->intra_sad_x3_4x4   = x264_intra_sad_x3_4x4_msa;
+        pixf->intra_sad_x3_8x8   = x264_intra_sad_x3_8x8_msa;
+        pixf->intra_sad_x3_8x8c  = x264_intra_sad_x3_8x8c_msa;
+        pixf->intra_sad_x3_16x16 = x264_intra_sad_x3_16x16_msa;
+        pixf->intra_satd_x3_4x4   = x264_intra_satd_x3_4x4_msa;
+        pixf->intra_satd_x3_16x16 = x264_intra_satd_x3_16x16_msa;
+        pixf->intra_satd_x3_8x8c  = x264_intra_satd_x3_8x8c_msa;
+        pixf->intra_sa8d_x3_8x8   = x264_intra_sa8d_x3_8x8_msa;
+
+        pixf->ssim_4x4x2_core = x264_ssim_4x4x2_core_msa;
+
+        pixf->var[PIXEL_16x16] = x264_pixel_var_16x16_msa;
+        pixf->var[PIXEL_8x16]  = x264_pixel_var_8x16_msa;
+        pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_msa;
+        pixf->var2[PIXEL_8x16]  = x264_pixel_var2_8x16_msa;
+        pixf->var2[PIXEL_8x8]   = x264_pixel_var2_8x8_msa;
+        pixf->sa8d[PIXEL_16x16] = x264_pixel_sa8d_16x16;
+        pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8;
+    }
+#endif // HAVE_MSA
 
 #endif // HIGH_BIT_DEPTH
 #if HAVE_ALTIVEC
