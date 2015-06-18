@@ -43,6 +43,9 @@
 #if ARCH_AARCH64
 #   include "aarch64/predict.h"
 #endif
+#if ARCH_MIPS
+#   include "mips/predict.h"
+#endif
 
 /****************************************************************************
  * 16x16 prediction for intra luma block
@@ -906,6 +909,21 @@ void x264_predict_16x16_init( int cpu, x264_predict_t pf[7] )
 #if ARCH_AARCH64
     x264_predict_16x16_init_aarch64( cpu, pf );
 #endif
+
+#if !HIGH_BIT_DEPTH
+#if HAVE_MSA
+    if( cpu&X264_CPU_MSA )
+    {
+        pf[I_PRED_16x16_V ]     = x264_intra_predict_vert_16x16_msa;
+        pf[I_PRED_16x16_H ]     = x264_intra_predict_hor_16x16_msa;
+        pf[I_PRED_16x16_DC]     = x264_intra_predict_dc_16x16_msa;
+        pf[I_PRED_16x16_P ]     = x264_intra_predict_plane_16x16_msa;
+        pf[I_PRED_16x16_DC_LEFT]= x264_intra_predict_dc_left_16x16_msa;
+        pf[I_PRED_16x16_DC_TOP ]= x264_intra_predict_dc_top_16x16_msa;
+        pf[I_PRED_16x16_DC_128 ]= x264_intra_predict_dc_128_16x16_msa;
+    }
+#endif
+#endif
 }
 
 void x264_predict_8x8c_init( int cpu, x264_predict_t pf[7] )
@@ -933,6 +951,15 @@ void x264_predict_8x8c_init( int cpu, x264_predict_t pf[7] )
 
 #if ARCH_AARCH64
     x264_predict_8x8c_init_aarch64( cpu, pf );
+#endif
+
+#if !HIGH_BIT_DEPTH
+#if HAVE_MSA
+    if( cpu&X264_CPU_MSA )
+    {
+        pf[I_PRED_CHROMA_P ]     = x264_intra_predict_plane_8x8_msa;
+    }
+#endif
 #endif
 }
 
@@ -981,6 +1008,15 @@ void x264_predict_8x8_init( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_
 
 #if ARCH_AARCH64
     x264_predict_8x8_init_aarch64( cpu, pf, predict_filter );
+#endif
+
+#if !HIGH_BIT_DEPTH
+#if HAVE_MSA
+    if( cpu&X264_CPU_MSA )
+    {
+        pf[I_PRED_8x8_DDL]    = x264_intra_predict_ddl_8x8_msa;
+    }
+#endif
 #endif
 }
 
