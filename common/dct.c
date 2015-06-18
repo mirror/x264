@@ -38,6 +38,9 @@
 #if ARCH_AARCH64
 #   include "aarch64/dct.h"
 #endif
+#if ARCH_MIPS
+#   include "mips/dct.h"
+#endif
 
 /* the inverse of the scaling factors introduced by 8x8 fdct */
 /* uint32 is for the asm implementation of trellis. the actual values fit in uint16. */
@@ -752,6 +755,27 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
 #endif
     }
 #endif
+
+#if HAVE_MSA
+    if( cpu&X264_CPU_MSA )
+    {
+        dctf->sub4x4_dct       = x264_sub4x4_dct_msa;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_msa;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_msa;
+        dctf->sub8x8_dct_dc    = x264_sub8x8_dct_dc_msa;
+        dctf->sub8x16_dct_dc   = x264_sub8x16_dct_dc_msa;
+        dctf->dct4x4dc         = x264_dct4x4dc_msa;
+        dctf->idct4x4dc        = x264_idct4x4dc_msa;
+        dctf->add4x4_idct      = x264_add4x4_idct_msa;
+        dctf->add8x8_idct      = x264_add8x8_idct_msa;
+        dctf->add8x8_idct_dc   = x264_add8x8_idct_dc_msa;
+        dctf->add16x16_idct    = x264_add16x16_idct_msa;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_msa;
+        dctf->add8x8_idct8     = x264_add8x8_idct8_msa;
+        dctf->add16x16_idct8   = x264_add16x16_idct8_msa;
+    }
+#endif
+
 #endif // HIGH_BIT_DEPTH
 }
 
@@ -1072,4 +1096,12 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     }
 #endif // ARCH_AARCH64
 #endif // !HIGH_BIT_DEPTH
+#if !HIGH_BIT_DEPTH
+#if HAVE_MSA
+    if( cpu&X264_CPU_MSA )
+    {
+        pf_progressive->scan_4x4  = x264_zigzag_scan_4x4_frame_msa;
+    }
+#endif
+#endif
 }

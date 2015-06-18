@@ -146,7 +146,7 @@ endif
 # MSA optims
 ifeq ($(SYS_ARCH),MIPS)
 ifneq ($(findstring HAVE_MSA 1, $(CONFIG)),)
-SRCS += common/mips/mc-c.c
+SRCS += common/mips/mc-c.c common/mips/dct-c.c
 endif
 endif
 
