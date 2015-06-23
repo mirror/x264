@@ -1274,29 +1274,36 @@ REDUCE_FRACTION( x264_reduce_fraction64, uint64_t )
 char *x264_slurp_file( const char *filename )
 {
     int b_error = 0;
-    size_t i_size;
+    int64_t i_size;
     char *buf;
     FILE *fh = x264_fopen( filename, "rb" );
     if( !fh )
         return NULL;
+
     b_error |= fseek( fh, 0, SEEK_END ) < 0;
     b_error |= ( i_size = ftell( fh ) ) <= 0;
+    if( WORD_SIZE == 4 )
+        b_error |= i_size > INT32_MAX;
     b_error |= fseek( fh, 0, SEEK_SET ) < 0;
     if( b_error )
         goto error;
+
     buf = x264_malloc( i_size+2 );
     if( !buf )
         goto error;
+
     b_error |= fread( buf, 1, i_size, fh ) != i_size;
-    if( buf[i_size-1] != '\n' )
-        buf[i_size++] = '\n';
-    buf[i_size] = 0;
     fclose( fh );
     if( b_error )
     {
         x264_free( buf );
         return NULL;
     }
+
+    if( buf[i_size-1] != '\n' )
+        buf[i_size++] = '\n';
+    buf[i_size] = '\0';
+
     return buf;
 error:
     fclose( fh );
