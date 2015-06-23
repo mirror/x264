@@ -301,15 +301,22 @@ static int write_frame( hnd_t handle, uint8_t *p_nalu, int i_size, x264_picture_
     return i_size;
 }
 
-static void rewrite_amf_double( FILE *fp, uint64_t position, double value )
+static int rewrite_amf_double( FILE *fp, uint64_t position, double value )
 {
     uint64_t x = endian_fix64( flv_dbl2int( value ) );
-    fseek( fp, position, SEEK_SET );
-    fwrite( &x, 8, 1, fp );
+    return !fseek( fp, position, SEEK_SET ) && fwrite( &x, 8, 1, fp ) == 1 ? 0 : -1;
 }
+
+#undef CHECK
+#define CHECK(x)\
+do {\
+    if( (x) < 0 )\
+        goto error;\
+} while( 0 )
 
 static int close_file( hnd_t handle, int64_t largest_pts, int64_t second_largest_pts )
 {
+    int ret = -1;
     flv_hnd_t *p_flv = handle;
     flv_buffer *c = p_flv->c;
 
@@ -325,20 +332,22 @@ static int close_file( hnd_t handle, int64_t largest_pts, int64_t second_largest
         if( p_flv->i_framerate_pos )
         {
             framerate = (double)p_flv->i_framenum / total_duration;
-            rewrite_amf_double( c->fp, p_flv->i_framerate_pos, framerate );
+            CHECK( rewrite_amf_double( c->fp, p_flv->i_framerate_pos, framerate ) );
         }
 
-        rewrite_amf_double( c->fp, p_flv->i_duration_pos, total_duration );
-        rewrite_amf_double( c->fp, p_flv->i_filesize_pos, filesize );
-        rewrite_amf_double( c->fp, p_flv->i_bitrate_pos, filesize * 8 / ( total_duration * 1000 ) );
+        CHECK( rewrite_amf_double( c->fp, p_flv->i_duration_pos, total_duration ) );
+        CHECK( rewrite_amf_double( c->fp, p_flv->i_filesize_pos, filesize ) );
+        CHECK( rewrite_amf_double( c->fp, p_flv->i_bitrate_pos, filesize * 8 / ( total_duration * 1000 ) ) );
     }
+    ret = 0;
 
+error:
     fclose( c->fp );
     free( c->data );
     free( c );
     free( p_flv );
 
-    return 0;
+    return ret;
 }
 
 const cli_output_t flv_output = { open_file, set_param, write_headers, write_frame, close_file };
