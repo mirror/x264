@@ -596,6 +596,8 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
     {
         char *c;
         name_buf = strdup(name);
+        if( !name_buf )
+            return X264_PARAM_BAD_NAME;
         while( (c = strchr( name_buf, '_' )) )
             *c = '-';
         name = name_buf;
@@ -618,20 +620,23 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
                  !strcasecmp(value, "auto") || atobool(value) ? x264_cpu_detect() : 0;
         if( b_error )
         {
-            char *buf = strdup(value);
-            char *tok, UNUSED *saveptr=NULL, *init;
-            b_error = 0;
-            p->cpu = 0;
-            for( init=buf; (tok=strtok_r(init, ",", &saveptr)); init=NULL )
+            char *buf = strdup( value );
+            if( buf )
             {
-                for( i=0; x264_cpu_names[i].flags && strcasecmp(tok, x264_cpu_names[i].name); i++ );
-                p->cpu |= x264_cpu_names[i].flags;
-                if( !x264_cpu_names[i].flags )
-                    b_error = 1;
+                char *tok, UNUSED *saveptr=NULL, *init;
+                b_error = 0;
+                p->cpu = 0;
+                for( init=buf; (tok=strtok_r(init, ",", &saveptr)); init=NULL )
+                {
+                    for( i=0; x264_cpu_names[i].flags && strcasecmp(tok, x264_cpu_names[i].name); i++ );
+                    p->cpu |= x264_cpu_names[i].flags;
+                    if( !x264_cpu_names[i].flags )
+                        b_error = 1;
+                }
+                free( buf );
+                if( (p->cpu&X264_CPU_SSSE3) && !(p->cpu&X264_CPU_SSE2_IS_SLOW) )
+                    p->cpu |= X264_CPU_SSE2_IS_FAST;
             }
-            free( buf );
-            if( (p->cpu&X264_CPU_SSSE3) && !(p->cpu&X264_CPU_SSE2_IS_SLOW) )
-                p->cpu |= X264_CPU_SSE2_IS_FAST;
         }
     }
     OPT("threads")
