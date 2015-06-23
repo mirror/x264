@@ -579,6 +579,7 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
 {
     char *name_buf = NULL;
     int b_error = 0;
+    int errortype = X264_PARAM_BAD_VALUE;
     int name_was_bool;
     int value_was_null = !value;
     int i;
@@ -1049,7 +1050,10 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
     OPT("opencl-device")
         p->i_opencl_device = atoi( value );
     else
-        return X264_PARAM_BAD_NAME;
+    {
+        b_error = 1;
+        errortype = X264_PARAM_BAD_NAME;
+    }
 #undef OPT
 #undef OPT2
 #undef atobool
@@ -1060,7 +1064,7 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         free( name_buf );
 
     b_error |= value_was_null && !name_was_bool;
-    return b_error ? X264_PARAM_BAD_VALUE : 0;
+    return b_error ? errortype : 0;
 }
 
 /****************************************************************************
