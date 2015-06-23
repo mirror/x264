@@ -75,21 +75,29 @@ static int write_header( flv_buffer *c )
 
 static int open_file( char *psz_filename, hnd_t *p_handle, cli_output_opt_t *opt )
 {
-    *p_handle = NULL;
     flv_hnd_t *p_flv = calloc( 1, sizeof(flv_hnd_t) );
-    if( !p_flv )
-        return -1;
+    if( p_flv )
+    {
+        flv_buffer *c = flv_create_writer( psz_filename );
+        if( c )
+        {
+            if( !write_header( c ) )
+            {
+                p_flv->c = c;
+                p_flv->b_dts_compress = opt->use_dts_compress;
+                *p_handle = p_flv;
+                return 0;
+            }
 
-    p_flv->b_dts_compress = opt->use_dts_compress;
+            fclose( c->fp );
+            free( c->data );
+            free( c );
+        }
+        free( p_flv );
+    }
 
-    p_flv->c = flv_create_writer( psz_filename );
-    if( !p_flv->c )
-        return -1;
-
-    CHECK( write_header( p_flv->c ) );
-    *p_handle = p_flv;
-
-    return 0;
+    *p_handle = NULL;
+    return -1;
 }
 
 static int set_param( hnd_t handle, x264_param_t *p_param )
@@ -326,8 +334,9 @@ static int close_file( hnd_t handle, int64_t largest_pts, int64_t second_largest
     }
 
     fclose( c->fp );
-    free( p_flv );
+    free( c->data );
     free( c );
+    free( p_flv );
 
     return 0;
 }
