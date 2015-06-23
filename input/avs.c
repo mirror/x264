@@ -175,8 +175,9 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     FILE *fh = x264_fopen( psz_filename, "r" );
     if( !fh )
         return -1;
-    FAIL_IF_ERROR( !x264_is_regular_file( fh ), "AVS input is incompatible with non-regular file `%s'\n", psz_filename );
+    int b_regular = x264_is_regular_file( fh );
     fclose( fh );
+    FAIL_IF_ERROR( !b_regular, "AVS input is incompatible with non-regular file `%s'\n", psz_filename );
 
     avs_hnd_t *h = malloc( sizeof(avs_hnd_t) );
     if( !h )
