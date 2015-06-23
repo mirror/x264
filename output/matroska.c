@@ -157,10 +157,10 @@ static int write_headers( hnd_t handle, x264_nal_t *p_nal )
                            avcC, avcC_len, p_mkv->frame_duration, 50000,
                            p_mkv->width, p_mkv->height,
                            p_mkv->d_width, p_mkv->d_height, p_mkv->display_size_units, p_mkv->stereo_mode );
+    free( avcC );
+
     if( ret < 0 )
         return ret;
-
-    free( avcC );
 
     // SEI
 
