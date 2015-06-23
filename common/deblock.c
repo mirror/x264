@@ -612,8 +612,10 @@ void x264_macroblock_deblock( x264_t *h )
     uint8_t (*bs)[8][4] = h->mb.cache.deblock_strength;
     if( intra_cur )
     {
-        memset( &bs[0][1], 3, 3*4*sizeof(uint8_t) );
-        memset( &bs[1][1], 3, 3*4*sizeof(uint8_t) );
+        M32( bs[0][1] ) = 0x03030303;
+        M64( bs[0][2] ) = 0x0303030303030303ULL;
+        M32( bs[1][1] ) = 0x03030303;
+        M64( bs[1][2] ) = 0x0303030303030303ULL;
     }
     else
         h->loopf.deblock_strength( h->mb.cache.non_zero_count, h->mb.cache.ref, h->mb.cache.mv,

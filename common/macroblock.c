@@ -1436,8 +1436,10 @@ void x264_macroblock_deblock_strength( x264_t *h )
     uint8_t (*bs)[8][4] = h->mb.cache.deblock_strength;
     if( IS_INTRA( h->mb.i_type ) )
     {
-        memset( bs[0][1], 3, 3*4*sizeof(uint8_t) );
-        memset( bs[1][1], 3, 3*4*sizeof(uint8_t) );
+        M32( bs[0][1] ) = 0x03030303;
+        M64( bs[0][2] ) = 0x0303030303030303ULL;
+        M32( bs[1][1] ) = 0x03030303;
+        M64( bs[1][2] ) = 0x0303030303030303ULL;
         return;
     }
 
@@ -1450,7 +1452,9 @@ void x264_macroblock_deblock_strength( x264_t *h )
             M32( bs[0][0] ) = 0x02020202;
             M32( bs[0][2] ) = 0x02020202;
             M32( bs[0][4] ) = 0x02020202;
-            memset( bs[1][0], 2, 5*4*sizeof(uint8_t) ); /* [1][1] and [1][3] has to be set for 4:2:2 */
+            M64( bs[1][0] ) = 0x0202020202020202ULL; /* [1][1] and [1][3] has to be set for 4:2:2 */
+            M64( bs[1][2] ) = 0x0202020202020202ULL;
+            M32( bs[1][4] ) = 0x02020202;
             return;
         }
     }
