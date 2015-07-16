@@ -537,7 +537,13 @@ static int x264_validate_parameters( x264_t *h, int b_open )
     }
 
     if( h->param.i_threads == X264_THREADS_AUTO )
+    {
         h->param.i_threads = x264_cpu_num_processors() * (h->param.b_sliced_threads?2:3)/2;
+        /* Avoid too many threads as they don't improve performance and
+         * complicate VBV. Capped at an arbitrary 2 rows per thread. */
+        int max_threads = X264_MAX( 1, (h->param.i_height+15)/16 / 2 );
+        h->param.i_threads = X264_MIN( h->param.i_threads, max_threads );
+    }
     int max_sliced_threads = X264_MAX( 1, (h->param.i_height+15)/16 / 4 );
     if( h->param.i_threads > 1 )
     {
