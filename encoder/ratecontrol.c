@@ -832,6 +832,7 @@ int x264_ratecontrol_new( x264_t *h )
     int num_preds = h->param.b_sliced_threads * h->param.i_threads + 1;
     CHECKED_MALLOC( rc->pred, 5 * sizeof(predictor_t) * num_preds );
     CHECKED_MALLOC( rc->pred_b_from_p, sizeof(predictor_t) );
+    static const float pred_coeff_table[3] = { 1.0, 1.0, 1.5 };
     for( int i = 0; i < 3; i++ )
     {
         rc->last_qscale_for[i] = qp2qscale( ABR_INIT_QP );
@@ -839,8 +840,8 @@ int x264_ratecontrol_new( x264_t *h )
         rc->lmax[i] = qp2qscale( h->param.rc.i_qp_max );
         for( int j = 0; j < num_preds; j++ )
         {
-            rc->pred[i+j*5].coeff_min = 2.0 / 4;
-            rc->pred[i+j*5].coeff = 2.0;
+            rc->pred[i+j*5].coeff_min = pred_coeff_table[i] / 2;
+            rc->pred[i+j*5].coeff = pred_coeff_table[i];
             rc->pred[i+j*5].count = 1.0;
             rc->pred[i+j*5].decay = 0.5;
             rc->pred[i+j*5].offset = 0.0;
@@ -854,7 +855,11 @@ int x264_ratecontrol_new( x264_t *h )
             rc->row_preds[i][j].offset = 0.0;
         }
     }
-    *rc->pred_b_from_p = rc->pred[0];
+    rc->pred_b_from_p->coeff_min = 0.5 / 2;
+    rc->pred_b_from_p->coeff = 0.5;
+    rc->pred_b_from_p->count = 1.0;
+    rc->pred_b_from_p->decay = 0.5;
+    rc->pred_b_from_p->offset = 0.0;
 
     if( parse_zones( h ) < 0 )
     {
