@@ -388,7 +388,15 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
         return -1;
     }
 
-    dst->i_type     = src->i_type;
+    if( src->i_type < X264_TYPE_AUTO || src->i_type > X264_TYPE_KEYFRAME )
+    {
+        x264_log( h, X264_LOG_WARNING, "forced frame type (%d) at %d is unknown\n", src->i_type, h->frames.i_input );
+        dst->i_forced_type = X264_TYPE_AUTO;
+    }
+    else
+        dst->i_forced_type = src->i_type;
+
+    dst->i_type     = dst->i_forced_type;
     dst->i_qpplus1  = src->i_qpplus1;
     dst->i_pts      = dst->i_reordered_pts = src->i_pts;
     dst->param      = src->param;
