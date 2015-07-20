@@ -711,7 +711,7 @@ case $host_cpu in
             ASFLAGS="$ASFLAGS -f elf64"
         fi
         ;;
-    powerpc|powerpc64)
+    powerpc*)
         ARCH="PPC"
         if [ $asm = auto ] ; then
             define HAVE_ALTIVEC
@@ -881,11 +881,13 @@ define STACK_ALIGNMENT $stack_alignment
 ASFLAGS="$ASFLAGS -DSTACK_ALIGNMENT=$stack_alignment"
 
 # skip endianness check for Intel Compiler and MSVS, as all supported platforms are little. each have flags that will cause the check to fail as well
+CPU_ENDIAN="little-endian"
 if [ $compiler = GNU ]; then
     echo "int i[2] = {0x42494745,0}; double f[2] = {0x1.0656e6469616ep+102,0};" > conftest.c
     $CC $CFLAGS conftest.c -c -o conftest.o 2>/dev/null || die "endian test failed"
     if (${cross_prefix}strings -a conftest.o | grep -q BIGE) && (${cross_prefix}strings -a conftest.o | grep -q FPendian) ; then
         define WORDS_BIGENDIAN
+        CPU_ENDIAN="big-endian"
     elif !(${cross_prefix}strings -a conftest.o | grep -q EGIB && ${cross_prefix}strings -a conftest.o | grep -q naidnePF) ; then
         die "endian test failed"
     fi
@@ -1403,6 +1405,7 @@ gpl_filters=""
 
 cat > conftest.log <<EOF
 platform:      $ARCH
+byte order:    $CPU_ENDIAN
 system:        $SYS
 cli:           $cli
 libx264:       $cli_libx264
