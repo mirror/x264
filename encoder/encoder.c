@@ -1701,6 +1701,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
         else if( !x264_is_regular_file( f ) )
         {
             x264_log( h, X264_LOG_ERROR, "dump_yuv: incompatible with non-regular file %s\n", h->param.psz_dump_yuv );
+            fclose( f );
             goto fail;
         }
         fclose( f );
