@@ -703,14 +703,12 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
     }
     OPT("fps")
     {
-        if( sscanf( value, "%u/%u", &p->i_fps_num, &p->i_fps_den ) == 2 )
-            ;
-        else
+        if( sscanf( value, "%u/%u", &p->i_fps_num, &p->i_fps_den ) != 2 )
         {
-            float fps = atof(value);
-            if( fps > 0 && fps <= INT_MAX/1000 )
+            double fps = atof(value);
+            if( fps > 0.0 && fps <= INT_MAX/1000.0 )
             {
-                p->i_fps_num = (int)(fps * 1000 + .5);
+                p->i_fps_num = (int)(fps * 1000.0 + .5);
                 p->i_fps_den = 1000;
             }
             else
