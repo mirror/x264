@@ -91,22 +91,24 @@ static void x264_frame_dump( x264_t *h )
 
     /* Write the frame in display order */
     int frame_size = FRAME_SIZE( h->param.i_height * h->param.i_width * sizeof(pixel) );
-    fseek( f, (uint64_t)h->fdec->i_frame * frame_size, SEEK_SET );
-    for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
-        for( int y = 0; y < h->param.i_height; y++ )
-            fwrite( &h->fdec->plane[p][y*h->fdec->i_stride[p]], sizeof(pixel), h->param.i_width, f );
-    if( !CHROMA444 )
+    if( !fseek( f, (int64_t)h->fdec->i_frame * frame_size, SEEK_SET ) )
     {
-        int cw = h->param.i_width>>1;
-        int ch = h->param.i_height>>CHROMA_V_SHIFT;
-        pixel *planeu = x264_malloc( (cw*ch*2+32)*sizeof(pixel) );
-        if( planeu )
+        for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
+            for( int y = 0; y < h->param.i_height; y++ )
+                fwrite( &h->fdec->plane[p][y*h->fdec->i_stride[p]], sizeof(pixel), h->param.i_width, f );
+        if( !CHROMA444 )
         {
-            pixel *planev = planeu + cw*ch + 16;
-            h->mc.plane_copy_deinterleave( planeu, cw, planev, cw, h->fdec->plane[1], h->fdec->i_stride[1], cw, ch );
-            fwrite( planeu, 1, cw*ch*sizeof(pixel), f );
-            fwrite( planev, 1, cw*ch*sizeof(pixel), f );
-            x264_free( planeu );
+            int cw = h->param.i_width>>1;
+            int ch = h->param.i_height>>CHROMA_V_SHIFT;
+            pixel *planeu = x264_malloc( (cw*ch*2+32)*sizeof(pixel) );
+            if( planeu )
+            {
+                pixel *planev = planeu + cw*ch + 16;
+                h->mc.plane_copy_deinterleave( planeu, cw, planev, cw, h->fdec->plane[1], h->fdec->i_stride[1], cw, ch );
+                fwrite( planeu, 1, cw*ch*sizeof(pixel), f );
+                fwrite( planev, 1, cw*ch*sizeof(pixel), f );
+                x264_free( planeu );
+            }
         }
     }
     fclose( f );
