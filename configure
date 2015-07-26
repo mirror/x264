@@ -1243,7 +1243,13 @@ DEPMT="${QPRE}MT"
 if [ $compiler_style = MS ]; then
     AR="lib -nologo -out:"
     LD="link -out:"
-    [ $compiler = ICL ] && AR="xi$AR" && LD="xi$LD"
+    if [ $compiler = ICL ]; then
+        AR="xi$AR"
+        LD="xi$LD"
+    else
+        mslink="$(dirname "$(command -v cl 2>/dev/null)")/link"
+        [ -x "$mslink" ] && LD="\"$mslink\" -out:"
+    fi
     HAVE_GETOPT_LONG=0
     LDFLAGS="-nologo -incremental:no $(cl_ldflags $LDFLAGS)"
     LDFLAGSCLI="$(cl_ldflags $LDFLAGSCLI)"
