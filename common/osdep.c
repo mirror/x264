@@ -141,8 +141,12 @@ int x264_vfprintf( FILE *stream, const char *format, va_list arg )
     {
         char buf[4096];
         wchar_t buf_utf16[4096];
+        va_list arg2;
 
-        int length = vsnprintf( buf, sizeof(buf), format, arg );
+        va_copy( arg2, arg );
+        int length = vsnprintf( buf, sizeof(buf), format, arg2 );
+        va_end( arg2 );
+
         if( length > 0 && length < sizeof(buf) )
         {
             /* WriteConsoleW is the most reliable way to output Unicode to a console. */

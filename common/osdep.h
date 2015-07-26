@@ -57,6 +57,10 @@
 #define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
 #endif
 
+#if !defined(va_copy) && defined(__INTEL_COMPILER)
+#define va_copy(dst, src) ((dst) = (src))
+#endif
+
 #if !defined(isfinite) && (SYS_OPENBSD || SYS_SunOS)
 #define isfinite finite
 #endif
