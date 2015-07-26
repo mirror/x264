@@ -52,9 +52,11 @@
 #define inline __inline
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
-#define snprintf _snprintf
 #define strtok_r strtok_s
 #define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
+#if _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
 #endif
 
 #if !defined(va_copy) && defined(__INTEL_COMPILER)
