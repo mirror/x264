@@ -341,7 +341,7 @@ int mk_write_header( mk_writer *w, const char *writing_app,
     CHECK( mk_write_uint( c, 0x42f3, 8 ) ); // EBMLMaxSizeLength
     CHECK( mk_write_string( c, 0x4282, "matroska") ); // DocType
     CHECK( mk_write_uint( c, 0x4287, stereo_mode >= 0 ? 3 : 2 ) ); // DocTypeVersion
-    CHECK( mk_write_uint( c, 0x4285, 2 ) ); // DocTypeReadversion
+    CHECK( mk_write_uint( c, 0x4285, 2 ) ); // DocTypeReadVersion
     CHECK( mk_close_context( c, 0 ) );
 
     if( !(c = mk_create_context( w, w->root, 0x18538067 )) ) // Segment
@@ -351,14 +351,14 @@ int mk_write_header( mk_writer *w, const char *writing_app,
 
     if( !(c = mk_create_context( w, w->root, 0x1549a966 )) ) // SegmentInfo
         return -1;
-    CHECK( mk_write_string( c, 0x4d80, "Haali Matroska Writer b0" ) );
-    CHECK( mk_write_string( c, 0x5741, writing_app ) );
-    CHECK( mk_write_uint( c, 0x2ad7b1, w->timescale ) );
-    CHECK( mk_write_float( c, 0x4489, 0) );
+    CHECK( mk_write_string( c, 0x4d80, "Haali Matroska Writer b0" ) ); // MuxingApp
+    CHECK( mk_write_string( c, 0x5741, writing_app ) ); // WritingApp
+    CHECK( mk_write_uint( c, 0x2ad7b1, w->timescale ) ); // TimecodeScale
+    CHECK( mk_write_float( c, 0x4489, 0) ); // Duration
     w->duration_ptr = c->d_cur - 4;
     CHECK( mk_close_context( c, &w->duration_ptr ) );
 
-    if( !(c = mk_create_context( w, w->root, 0x1654ae6b )) ) // tracks
+    if( !(c = mk_create_context( w, w->root, 0x1654ae6b )) ) // Tracks
         return -1;
     if( !(ti = mk_create_context( w, c, 0xae )) ) // TrackEntry
         return -1;
@@ -366,21 +366,21 @@ int mk_write_header( mk_writer *w, const char *writing_app,
     CHECK( mk_write_uint( ti, 0x73c5, 1 ) ); // TrackUID
     CHECK( mk_write_uint( ti, 0x83, 1 ) ); // TrackType
     CHECK( mk_write_uint( ti, 0x9c, 0 ) ); // FlagLacing
-    CHECK( mk_write_string( ti, 0x86, codec_id ) ); // codec_id
+    CHECK( mk_write_string( ti, 0x86, codec_id ) ); // CodecID
     if( codec_private_size )
-        CHECK( mk_write_bin( ti, 0x63a2, codec_private, codec_private_size ) ); // codec_private
+        CHECK( mk_write_bin( ti, 0x63a2, codec_private, codec_private_size ) ); // CodecPrivate
     if( default_frame_duration )
         CHECK( mk_write_uint( ti, 0x23e383, default_frame_duration ) ); // DefaultDuration
 
     if( !(v = mk_create_context( w, ti, 0xe0 ) ) ) // Video
         return -1;
-    CHECK( mk_write_uint( v, 0xb0, width ) );
-    CHECK( mk_write_uint( v, 0xba, height ) );
-    CHECK( mk_write_uint( v, 0x54b2, display_size_units ) );
-    CHECK( mk_write_uint( v, 0x54b0, d_width ) );
-    CHECK( mk_write_uint( v, 0x54ba, d_height ) );
+    CHECK( mk_write_uint( v, 0xb0, width ) ); // PixelWidth
+    CHECK( mk_write_uint( v, 0xba, height ) ); // PixelHeight
+    CHECK( mk_write_uint( v, 0x54b2, display_size_units ) ); // DisplayUnit
+    CHECK( mk_write_uint( v, 0x54b0, d_width ) ); // DisplayWidth
+    CHECK( mk_write_uint( v, 0x54ba, d_height ) ); // DisplayHeight
     if( stereo_mode >= 0 )
-        CHECK( mk_write_uint( v, 0x53b8, stereo_mode ) );
+        CHECK( mk_write_uint( v, 0x53b8, stereo_mode ) ); // StereoMode
     CHECK( mk_close_context( v, 0 ) );
 
     CHECK( mk_close_context( ti, 0 ) );
@@ -432,16 +432,16 @@ static int mk_flush_frame( mk_writer *w )
     fsize = w->frame ? w->frame->d_cur : 0;
 
     CHECK( mk_write_id( w->cluster, 0xa3 ) ); // SimpleBlock
-    CHECK( mk_write_size( w->cluster, fsize + 4 ) );
-    CHECK( mk_write_size( w->cluster, 1 ) ); // track number
+    CHECK( mk_write_size( w->cluster, fsize + 4 ) ); // Size
+    CHECK( mk_write_size( w->cluster, 1 ) ); // TrackNumber
 
     c_delta_flags[0] = delta >> 8;
     c_delta_flags[1] = delta;
     c_delta_flags[2] = (w->keyframe << 7) | w->skippable;
-    CHECK( mk_append_context_data( w->cluster, c_delta_flags, 3 ) );
+    CHECK( mk_append_context_data( w->cluster, c_delta_flags, 3 ) ); // Timecode, Flags
     if( w->frame )
     {
-        CHECK( mk_append_context_data( w->cluster, w->frame->data, w->frame->d_cur ) );
+        CHECK( mk_append_context_data( w->cluster, w->frame->data, w->frame->d_cur ) ); // Data
         w->frame->d_cur = 0;
     }
 
