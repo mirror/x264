@@ -895,9 +895,6 @@ struct x264_t
     /* stats */
     struct
     {
-        /* Current frame stats */
-        x264_frame_stat_t frame;
-
         /* Cumulated stats */
 
         /* per slice info */
@@ -927,6 +924,8 @@ struct x264_t
         /* num p-frames weighted */
         int     i_wpred[2];
 
+        /* Current frame stats */
+        x264_frame_stat_t frame;
     } stat;
 
     /* 0 = luma 4x4, 1 = luma 8x8, 2 = chroma 4x4, 3 = chroma 8x8 */

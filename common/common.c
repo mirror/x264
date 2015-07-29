@@ -582,7 +582,6 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
     int errortype = X264_PARAM_BAD_VALUE;
     int name_was_bool;
     int value_was_null = !value;
-    int i;
 
     if( !name )
         return X264_PARAM_BAD_NAME;
@@ -603,10 +602,11 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         name = name_buf;
     }
 
-    if( (!strncmp( name, "no-", 3 ) && (i = 3)) ||
-        (!strncmp( name, "no", 2 ) && (i = 2)) )
+    if( !strncmp( name, "no", 2 ) )
     {
-        name += i;
+        name += 2;
+        if( name[0] == '-' )
+            name++;
         value = atobool(value) ? "false" : "true";
     }
     name_was_bool = 0;
@@ -628,7 +628,9 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
                 p->cpu = 0;
                 for( init=buf; (tok=strtok_r(init, ",", &saveptr)); init=NULL )
                 {
-                    for( i=0; x264_cpu_names[i].flags && strcasecmp(tok, x264_cpu_names[i].name); i++ );
+                    int i = 0;
+                    while( x264_cpu_names[i].flags && strcasecmp(tok, x264_cpu_names[i].name) )
+                        i++;
                     p->cpu |= x264_cpu_names[i].flags;
                     if( !x264_cpu_names[i].flags )
                         b_error = 1;

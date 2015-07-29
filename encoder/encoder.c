@@ -1010,9 +1010,9 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         h->param.i_fps_num = 25;
         h->param.i_fps_den = 1;
     }
-    float fps = (float) h->param.i_fps_num / h->param.i_fps_den;
+    float fps = (float)h->param.i_fps_num / h->param.i_fps_den;
     if( h->param.i_keyint_min == X264_KEYINT_MIN_AUTO )
-        h->param.i_keyint_min = X264_MIN( h->param.i_keyint_max / 10, fps );
+        h->param.i_keyint_min = X264_MIN( h->param.i_keyint_max / 10, (int)fps );
     h->param.i_keyint_min = x264_clip3( h->param.i_keyint_min, 1, h->param.i_keyint_max/2+1 );
     h->param.rc.i_lookahead = x264_clip3( h->param.rc.i_lookahead, 0, X264_LOOKAHEAD_MAX );
     {
@@ -3043,9 +3043,8 @@ static void x264_thread_sync_context( x264_t *dst, x264_t *src )
 
 static void x264_thread_sync_stat( x264_t *dst, x264_t *src )
 {
-    if( dst == src )
-        return;
-    memcpy( &dst->stat.i_frame_count, &src->stat.i_frame_count, sizeof(dst->stat) - sizeof(dst->stat.frame) );
+    if( dst != src )
+        memcpy( &dst->stat, &src->stat, offsetof(x264_t, stat.frame) - offsetof(x264_t, stat) );
 }
 
 static void *x264_slices_write( x264_t *h )
