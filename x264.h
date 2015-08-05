@@ -28,6 +28,10 @@
 #ifndef X264_X264_H
 #define X264_X264_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(_STDINT_H) && !defined(_STDINT_H_) && !defined(_STDINT_H_INCLUDED) && !defined(_STDINT) &&\
     !defined(_SYS_STDINT_H_) && !defined(_INTTYPES_H) && !defined(_INTTYPES_H_) && !defined(_INTTYPES)
 # ifdef _MSC_VER
@@ -90,7 +94,7 @@ enum nal_priority_e
  * All data returned in an x264_nal_t, including the data in p_payload, is no longer
  * valid after the next call to x264_encoder_encode.  Thus it must be used or copied
  * before calling x264_encoder_encode or x264_encoder_headers again. */
-typedef struct
+typedef struct x264_nal_t
 {
     int i_ref_idc;  /* nal_priority_e */
     int i_type;     /* nal_unit_type_e */
@@ -261,7 +265,7 @@ static const char * const x264_nal_hrd_names[] = { "none", "vbr", "cbr", 0 };
 /* Zones: override ratecontrol or other options for specific sections of the video.
  * See x264_encoder_reconfig() for which options can be changed.
  * If zones overlap, whichever comes later in the list takes precedence. */
-typedef struct
+typedef struct x264_zone_t
 {
     int i_start, i_end; /* range of frame numbers */
     int b_force_qp; /* whether to use qp vs bitrate factor */
@@ -555,7 +559,7 @@ void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
  * H.264 level restriction information
  ****************************************************************************/
 
-typedef struct
+typedef struct x264_level_t
 {
     int level_idc;
     int mbps;        /* max macroblock processing rate (macroblocks/sec) */
@@ -692,7 +696,7 @@ enum pic_struct_e
     PIC_STRUCT_TRIPLE            = 9, // triple frame
 };
 
-typedef struct
+typedef struct x264_hrd_t
 {
     double cpb_initial_arrival_time;
     double cpb_final_arrival_time;
@@ -710,14 +714,14 @@ typedef struct
  * Payloads are written first in order of input, apart from in the case when HRD
  * is enabled where payloads are written after the Buffering Period SEI. */
 
-typedef struct
+typedef struct x264_sei_payload_t
 {
     int payload_size;
     int payload_type;
     uint8_t *payload;
 } x264_sei_payload_t;
 
-typedef struct
+typedef struct x264_sei_t
 {
     int num_payloads;
     x264_sei_payload_t *payloads;
@@ -725,7 +729,7 @@ typedef struct
     void (*sei_free)( void* );
 } x264_sei_t;
 
-typedef struct
+typedef struct x264_image_t
 {
     int     i_csp;       /* Colorspace */
     int     i_plane;     /* Number of image planes */
@@ -733,7 +737,7 @@ typedef struct
     uint8_t *plane[4];   /* Pointers to each plane */
 } x264_image_t;
 
-typedef struct
+typedef struct x264_image_properties_t
 {
     /* All arrays of data here are ordered as follows:
      * each array contains one offset per macroblock, in raster scan order.  In interlaced
@@ -789,7 +793,7 @@ typedef struct
     double f_crf_avg;
 } x264_image_properties_t;
 
-typedef struct
+typedef struct x264_picture_t
 {
     /* In: force picture type (if not auto)
      *     If x264 encoding parameters are violated in the forcing of picture types,
@@ -947,5 +951,9 @@ void    x264_encoder_intra_refresh( x264_t * );
  *
  *      Returns 0 on success, negative on failure. */
 int x264_encoder_invalidate_reference( x264_t *, int64_t pts );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
