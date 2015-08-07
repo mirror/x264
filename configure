@@ -532,8 +532,8 @@ if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
         compiler=CL
         compiler_style=MS
         CFLAGS="$CFLAGS -nologo -DHAVE_STRING_H -I\$(SRCPATH)/extras"
-        `$CC 2>&1 | grep -q 'for x86'` && host_cpu=i486
-        `$CC 2>&1 | grep -q 'for x64'` && host_cpu=x86_64
+        `$CC 2>&1 | grep -q 'x86'` && host_cpu=i486
+        `$CC 2>&1 | grep -q 'x64'` && host_cpu=x86_64
         cpp_check '' '' '_MSC_VER > 1800 || (_MSC_VER == 1800 && _MSC_FULL_VER >= 180030324)' || die "Microsoft Visual Studio support requires Visual Studio 2013 Update 2 or newer"
     fi
 else
