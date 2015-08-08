@@ -1224,7 +1224,7 @@ cat > x264_config.h << EOF
 #define X264_CHROMA_FORMAT $config_chroma_format
 EOF
 
-${SRCPATH}/version.sh "${SRCPATH}" >> x264_config.h
+${SRCPATH}/version.sh >> x264_config.h
 
 if [ "$cli_libx264" = "system" ] ; then
     if [ "$shared" = "yes" ]; then
