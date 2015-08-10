@@ -74,10 +74,9 @@ log_msg() {
 }
 
 cc_cflags() {
-    # several non gcc compilers issue an incredibly large number of warnings on any warning level,
-    # suppress them by disabling all warnings rather than having to use #pragmas to disable most of them
+    # several non gcc compilers issue an incredibly large number of warnings on high warning levels,
+    # suppress them by reducing the warning level rather than having to use #pragmas
     for arg in $*; do
-        [ "$arg" = -ffast-math ] && arg=
         [[ "$arg" = -falign-loops* ]] && arg=
         [ "$arg" = -fno-tree-vectorize ] && arg=
         [ "$arg" = -Wshadow ] && arg=
@@ -86,14 +85,16 @@ cc_cflags() {
         [[ "$arg" = -l* ]] && arg=
         [[ "$arg" = -L* ]] && arg=
         if [ $compiler_style = MS ]; then
-            [ "$arg" = -Wall ] && arg=-W0
+            [ "$arg" = -ffast-math ] && arg="-fp:fast"
+            [ "$arg" = -Wall ] && arg=
             [ "$arg" = -Werror ] && arg="-W3 -WX"
             [ "$arg" = -g ] && arg=-Z7
             [ "$arg" = -fomit-frame-pointer ] && arg=
             [ "$arg" = -s ] && arg=
             [ "$arg" = -fPIC ] && arg=
         else
-            [ "$arg" = -Wall ] && arg=-w0
+            [ "$arg" = -ffast-math ] && arg=
+            [ "$arg" = -Wall ] && arg=
             [ "$arg" = -Werror ] && arg="-w3 -Werror"
         fi
         [ $compiler = CL -a "$arg" = -O3 ] && arg=-O2
@@ -542,7 +543,7 @@ if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
         # Standard Microsoft Visual Studio
         compiler=CL
         compiler_style=MS
-        CFLAGS="$CFLAGS -nologo -DHAVE_STRING_H -I\$(SRCPATH)/extras"
+        CFLAGS="$CFLAGS -nologo -GS- -DHAVE_STRING_H -I\$(SRCPATH)/extras"
         `$CC 2>&1 | grep -q 'x86'` && host_cpu=i486
         `$CC 2>&1 | grep -q 'x64'` && host_cpu=x86_64
         cpp_check '' '' '_MSC_VER > 1800 || (_MSC_VER == 1800 && _MSC_FULL_VER >= 180030324)' || die "Microsoft Visual Studio support requires Visual Studio 2013 Update 2 or newer"
