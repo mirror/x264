@@ -670,7 +670,7 @@ case $host_cpu in
                 CFLAGS="$CFLAGS -march=i686"
             fi
             if [[ "$asm" == auto && "$CFLAGS" != *-mfpmath* ]]; then
-                CFLAGS="$CFLAGS -mfpmath=sse -msse"
+                CFLAGS="$CFLAGS -mfpmath=sse -msse -msse2"
             fi
             CFLAGS="-m32 $CFLAGS"
             LDFLAGS="-m32 $LDFLAGS"
