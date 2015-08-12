@@ -305,9 +305,22 @@ configure_system_override() {
 
 rm -f x264_config.h config.h config.mak config.log x264.pc x264.def conftest*
 
-SRCPATH="$(cd $(dirname $0); pwd)"
-[ "$SRCPATH" = "$(pwd)" ] && SRCPATH=.
-[ -n "$(echo $SRCPATH | grep ' ')" ] && die "Out of tree builds are impossible with whitespace in source path."
+# Construct a path to the specified directory relative to the working directory
+relative_path() {
+    local base="${PWD%/}"
+    local path="$(cd "$1" >/dev/null; printf '%s/.' "${PWD%/}")"
+    local up=''
+
+    while [[ $path != "$base/"* ]]; do
+        base="${base%/*}"
+        up="../$up"
+    done
+
+    dirname "$up${path#"$base/"}"
+}
+
+SRCPATH="$(relative_path "$(dirname "$0")")"
+echo "$SRCPATH" | grep -q ' ' && die "Out of tree builds are impossible with whitespace in source path."
 [ -e "$SRCPATH/config.h" -o -e "$SRCPATH/x264_config.h" ] && die "Out of tree builds are impossible with config.h/x264_config.h in source dir."
 
 prefix='/usr/local'
