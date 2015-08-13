@@ -750,9 +750,7 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
 
         dctf->add8x8_idct8  = x264_add8x8_idct8_neon;
         dctf->add16x16_idct8= x264_add16x16_idct8_neon;
-#if ARCH_AARCH64
         dctf->sub8x16_dct_dc= x264_sub8x16_dct_dc_neon;
-#endif
     }
 #endif
 

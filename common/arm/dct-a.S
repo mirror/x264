@@ -4,6 +4,7 @@
  * Copyright (C) 2009-2015 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
+ *          Martin Storsjo <martin@martin.st>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -655,6 +656,99 @@ function x264_sub8x8_dct_dc_neon
     vpadd.s16       d1,  d1,  d3
     vpadd.s16       d0,  d0,  d1
     vst1.64         {d0}, [r0,:64]
+    bx              lr
+endfunc
+
+function x264_sub8x16_dct_dc_neon
+    mov             r3,  #FENC_STRIDE
+    mov             ip,  #FDEC_STRIDE
+    vld1.64         {d16}, [r1,:64], r3
+    vld1.64         {d17}, [r2,:64], ip
+    vsubl.u8        q8,  d16, d17
+    vld1.64         {d18}, [r1,:64], r3
+    vld1.64         {d19}, [r2,:64], ip
+    vsubl.u8        q9,  d18, d19
+    vld1.64         {d20}, [r1,:64], r3
+    vld1.64         {d21}, [r2,:64], ip
+    vsubl.u8        q10, d20, d21
+    vld1.64         {d22}, [r1,:64], r3
+    vadd.s16        q0,  q8,  q9
+    vld1.64         {d23}, [r2,:64], ip
+    vsubl.u8        q11, d22, d23
+    vld1.64         {d24}, [r1,:64], r3
+    vadd.s16        q0,  q0,  q10
+    vld1.64         {d25}, [r2,:64], ip
+    vsubl.u8        q12, d24, d25
+    vld1.64         {d26}, [r1,:64], r3
+    vadd.s16        q0,  q0,  q11
+    vld1.64         {d27}, [r2,:64], ip
+    vsubl.u8        q13, d26, d27
+    vld1.64         {d28}, [r1,:64], r3
+    vld1.64         {d29}, [r2,:64], ip
+    vsubl.u8        q14, d28, d29
+    vld1.64         {d30}, [r1,:64], r3
+    vadd.s16        q1,  q12, q13
+    vld1.64         {d31}, [r2,:64], ip
+    vsubl.u8        q15, d30, d31
+
+    vld1.64         {d16}, [r1,:64], r3
+    vadd.s16        q1,  q1,  q14
+    vld1.64         {d17}, [r2,:64], ip
+    vadd.s16        q1,  q1,  q15
+    vld1.64         {d18}, [r1,:64], r3
+    vsubl.u8        q8,  d16, d17
+    vld1.64         {d19}, [r2,:64], ip
+    vsubl.u8        q9,  d18, d19
+    vld1.64         {d20}, [r1,:64], r3
+    vld1.64         {d21}, [r2,:64], ip
+    vsubl.u8        q10, d20, d21
+    vld1.64         {d22}, [r1,:64], r3
+    vadd.s16        q2,  q8,  q9
+    vld1.64         {d23}, [r2,:64], ip
+    vsubl.u8        q11, d22, d23
+    vld1.64         {d24}, [r1,:64], r3
+    vadd.s16        q2,  q2,  q10
+    vld1.64         {d25}, [r2,:64], ip
+    vsubl.u8        q12, d24, d25
+    vld1.64         {d26}, [r1,:64], r3
+    vadd.s16        q2,  q2,  q11
+    vld1.64         {d27}, [r2,:64], ip
+    vsubl.u8        q13, d26, d27
+    vld1.64         {d28}, [r1,:64], r3
+    vld1.64         {d29}, [r2,:64], ip
+    vsubl.u8        q14, d28, d29
+    vld1.64         {d30}, [r1,:64], r3
+    vadd.s16        q3,  q12, q13
+    vld1.64         {d31}, [r2,:64], ip
+    vsubl.u8        q15, d30, d31
+    vadd.s16        q3,  q3,  q14
+
+    vadd.s16        d16, d0,  d1  @ b0
+    vadd.s16        q3,  q3,  q15
+    vsub.s16        d17, d0,  d1  @ b4
+    vadd.s16        d18, d2,  d3  @ b1
+    vsub.s16        d19, d2,  d3  @ b5
+    vadd.s16        d20, d4,  d5  @ b2
+    vsub.s16        d21, d4,  d5  @ b6
+    vadd.s16        d22, d6,  d7  @ b3
+    vsub.s16        d23, d6,  d7  @ b7
+    vadd.s16        q0,  q8,  q9  @ b0 + b1, b4 + b5; a0, a2
+    vsub.s16        q1,  q8,  q9  @ b0 - b1, b4 - b5; a4, a6
+    vadd.s16        q2,  q10, q11 @ b2 + b3, b6 + b7; a1, a3
+    vsub.s16        q3,  q10, q11 @ b2 - b3, b6 - b7; a5, a7
+
+    vadd.s16        q8,  q0,  q2  @ a0 + a1, a2 + a3
+    vsub.s16        q9,  q0,  q2  @ a0 - a1, a2 - a3
+    vsub.s16        q10, q1,  q3  @ a4 - a5, a6 - a7
+    vadd.s16        q11, q1,  q3  @ a4 + a5, a6 + a7
+
+    vpadd.s16       d0,  d16, d17
+    vpadd.s16       d1,  d18, d19
+    vpadd.s16       d2,  d20, d21
+    vpadd.s16       d3,  d22, d23
+    vpadd.s16       d0,  d0,  d1
+    vpadd.s16       d1,  d2,  d3
+    vst1.64         {q0}, [r0,:64]
     bx              lr
 endfunc
 
