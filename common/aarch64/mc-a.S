@@ -1569,7 +1569,7 @@ function x264_mbtree_propagate_list_internal_neon, export=1
     dup         v31.8h,  w4             // bipred_weight
     movi        v30.8h,  #0xc0, lsl #8
     ld1         {v29.8h},  [x11] //h->mb.i_mb_x,h->mb.i_mb_y
-    movi        v28.4s,  #4//, lsl #16
+    movi        v28.4s,  #4
     movi        v27.8h,  #31
     movi        v26.8h,  #32
     dup         v24.8h,  w5             // mb_y
