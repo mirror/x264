@@ -1403,7 +1403,7 @@ endfunc
 .endm
 
 function integral_init4h_neon, export=1
-    sub         x3,  x0,  x2
+    sub         x3,  x0,  x2, lsl #1
     ld1        {v6.8b,v7.8b}, [x1], #16
 1:
     subs        x2,  x2,  #16
@@ -1438,7 +1438,7 @@ endfunc
 .endm
 
 function integral_init8h_neon, export=1
-    sub         x3,  x0,  x2
+    sub         x3,  x0,  x2, lsl #1
     ld1        {v16.8b,v17.8b}, [x1], #16
 1:
     subs        x2,  x2,  #16
