@@ -337,10 +337,8 @@ endfunc
 function x264_coeff_last\size\()_neon
 .if \size == 15
     sub         r0,  r0,  #2
-    vld1.64     {d0-d3}, [r0]
-.else
-    vld1.64     {d0-d3}, [r0,:128]
 .endif
+    vld1.64     {d0-d3}, [r0,:128]
     vtst.16     q0,  q0
     vtst.16     q1,  q1
     vshrn.u16   d0,  q0,  #8
