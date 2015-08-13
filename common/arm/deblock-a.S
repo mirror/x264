@@ -205,11 +205,13 @@ endfunc
     vshl.i16        q2,  q2,  #2
     vshl.i16        q3,  q3,  #2
     vabd.u8         q15, q1,  q0    // abs(q1 - q0)
+    vmovl.u8        q12, d24
     vaddw.u8        q2,  q2,  d18
     vaddw.u8        q3,  q3,  d19
     vclt.u8         q13, q13, q11   // < alpha
     vsubw.u8        q2,  q2,  d2
     vsubw.u8        q3,  q3,  d3
+    vsli.16         q12, q12, #8
     vdup.8          q11, r3         // beta
     vclt.s8         q10, q12, #0
     vrshrn.i16      d4,  q2,  #3
@@ -241,16 +243,16 @@ function x264_deblock_v_chroma_neon
     h264_loop_filter_start
 
     sub             r0,  r0,  r1, lsl #1
-    vld2.8          {d18,d19}, [r0,:128], r1
-    vld2.8          {d16,d17}, [r0,:128], r1
-    vld2.8          {d0, d1},  [r0,:128], r1
-    vld2.8          {d2, d3},  [r0,:128]
+    vld1.8          {d18,d19}, [r0,:128], r1
+    vld1.8          {d16,d17}, [r0,:128], r1
+    vld1.8          {d0, d1},  [r0,:128], r1
+    vld1.8          {d2, d3},  [r0,:128]
 
     h264_loop_filter_chroma
 
     sub             r0,  r0,  r1, lsl #1
-    vst2.8          {d16,d17}, [r0,:128], r1
-    vst2.8          {d0, d1},  [r0,:128], r1
+    vst1.8          {d16,d17}, [r0,:128], r1
+    vst1.8          {d0, d1},  [r0,:128], r1
 
     bx              lr
 endfunc
@@ -268,37 +270,22 @@ function x264_deblock_h_chroma_neon
     vld1.8          {d1},  [r0], r1
     vld1.8          {d3},  [r0], r1
 
-    vuzp.8          d18, d19
-    vuzp.8          d16, d17
-    vuzp.8          d0,  d1
-    vuzp.8          d2,  d3
-
-    vtrn.16         q9,  q0
-    vtrn.16         q8,  q1
-    vtrn.8          q9,  q8
-    vtrn.8          q0,  q1
+    TRANSPOSE4x4_16 q9, q8, q0, q1
 
     h264_loop_filter_chroma
 
-    vtrn.16         q9,  q0
-    vtrn.16         q8,  q1
-    vtrn.8          q9,  q8
-    vtrn.8          q0,  q1
-
-    vzip.8          d18, d19
-    vzip.8          d16, d17
-    vzip.8          d0,  d1
-    vzip.8          d2,  d3
+    vtrn.16         q8,  q0
 
     sub             r0,  r0,  r1, lsl #3
-    vst1.8          {d18}, [r0], r1
-    vst1.8          {d16}, [r0], r1
-    vst1.8          {d0},  [r0], r1
-    vst1.8          {d2},  [r0], r1
-    vst1.8          {d19}, [r0], r1
-    vst1.8          {d17}, [r0], r1
-    vst1.8          {d1},  [r0], r1
-    vst1.8          {d3},  [r0], r1
+    add             r0,  r0,  #2
+    vst1.32         {d16[0]}, [r0], r1
+    vst1.32         {d0[0]},  [r0], r1
+    vst1.32         {d16[1]}, [r0], r1
+    vst1.32         {d0[1]},  [r0], r1
+    vst1.32         {d17[0]}, [r0], r1
+    vst1.32         {d1[0]},  [r0], r1
+    vst1.32         {d17[1]}, [r0], r1
+    vst1.32         {d1[1]},  [r0], r1
 
     bx              lr
 endfunc
