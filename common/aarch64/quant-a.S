@@ -328,17 +328,13 @@ function x264_decimate_score\size\()_neon, export=1
     lsr         x6,  x3,  #2
     lsl         x1,  x1,  x3
     ldrb        w7,  [x5, x6]
-    cbz         x1,  2f
     lsl         x1,  x1,  #4
     add         w0,  w0,  w7
     cbnz        x1,  1b
     ret
-2:
-    add         w0,  w0,  w7
-0:
-    ret
 9:
     mov         w0,  #9
+0:
     ret
 endfunc
 .endm
@@ -399,17 +395,13 @@ function x264_decimate_score64_neon, export=1
     clz         x3,  x1
     lsl         x1,  x1,  x3
     ldrb        w7,  [x5, x3]
-    cbz         x1,  2f
     lsl         x1,  x1,  #1
     add         w0,  w0,  w7
     cbnz        x1,  1b
     ret
-2:
-    add         w0,  w0,  w7
-0:
-    ret
 9:
     mov         w0,  #9
+0:
     ret
 endfunc
 
