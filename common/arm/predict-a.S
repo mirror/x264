@@ -535,17 +535,12 @@ function x264_predict_8x8c_p_neon
     vadd.i16    d16, d16, d0
     vshl.i16    d2,  d16, #4
     vsub.i16    d2,  d2,  d3
-    vshl.i16    d3,  d4,  #3
     vext.16     q0,  q0,  q0,  #7
-    vsub.i16    d6,  d5,  d3
     vmov.16     d0[0], r3
     vmul.i16    q0,  q0,  d4[0]
     vdup.16     q1,  d2[0]
-    vdup.16     q2,  d4[0]
-    vdup.16     q3,  d6[0]
-    vshl.i16    q2,  q2,  #3
+    vdup.16     q3,  d5[0]
     vadd.i16    q1,  q1,  q0
-    vadd.i16    q3,  q3,  q2
     mov         r3,  #8
 1:
     vqshrun.s16 d0,  q1,  #5
