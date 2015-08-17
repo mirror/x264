@@ -29,10 +29,12 @@
 
 void x264_predict_4x4_h_aarch64( uint8_t *src );
 void x264_predict_4x4_v_aarch64( uint8_t *src );
+void x264_predict_8x8c_v_aarch64( uint8_t *src );
 
 // for the merged 4x4 intra sad/satd which expects unified suffix
 #define x264_predict_4x4_h_neon x264_predict_4x4_h_aarch64
 #define x264_predict_4x4_v_neon x264_predict_4x4_v_aarch64
+#define x264_predict_8x8c_v_neon x264_predict_8x8c_v_aarch64
 
 void x264_predict_4x4_dc_neon( uint8_t *src );
 void x264_predict_8x8_v_neon( uint8_t *src, uint8_t edge[36] );
@@ -40,7 +42,6 @@ void x264_predict_8x8_h_neon( uint8_t *src, uint8_t edge[36] );
 void x264_predict_8x8_dc_neon( uint8_t *src, uint8_t edge[36] );
 void x264_predict_8x8c_dc_neon( uint8_t *src );
 void x264_predict_8x8c_h_neon( uint8_t *src );
-void x264_predict_8x8c_v_neon( uint8_t *src );
 void x264_predict_8x16c_v_neon( uint8_t *src );
 void x264_predict_8x16c_h_neon( uint8_t *src );
 void x264_predict_8x16c_dc_neon( uint8_t *src );
