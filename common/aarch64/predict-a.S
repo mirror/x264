@@ -63,22 +63,19 @@ endconst
 
 
 function x264_predict_4x4_h_aarch64, export=1
-    ldrb    w1, [x0, #0*FDEC_STRIDE-1]
-    ldrb    w2, [x0, #1*FDEC_STRIDE-1]
-    ldrb    w3, [x0, #2*FDEC_STRIDE-1]
-    ldrb    w4, [x0, #3*FDEC_STRIDE-1]
-    add     w1, w1, w1, lsl #8
-    add     w2, w2, w2, lsl #8
-    add     w3, w3, w3, lsl #8
-    add     w4, w4, w4, lsl #8
-    add     w1, w1, w1, lsl #16
-    str     w1, [x0, #0*FDEC_STRIDE]
-    add     w2, w2, w2, lsl #16
-    str     w2, [x0, #1*FDEC_STRIDE]
-    add     w3, w3, w3, lsl #16
-    str     w3, [x0, #2*FDEC_STRIDE]
-    add     w4, w4, w4, lsl #16
-    str     w4, [x0, #3*FDEC_STRIDE]
+    ldrb    w1,  [x0, #0*FDEC_STRIDE-1]
+    mov     w5,  #0x01010101
+    ldrb    w2,  [x0, #1*FDEC_STRIDE-1]
+    ldrb    w3,  [x0, #2*FDEC_STRIDE-1]
+    mul     w1,  w1,  w5
+    ldrb    w4,  [x0, #3*FDEC_STRIDE-1]
+    mul     w2,  w2,  w5
+    str     w1,  [x0, #0*FDEC_STRIDE]
+    mul     w3,  w3,  w5
+    str     w2,  [x0, #1*FDEC_STRIDE]
+    mul     w4,  w4,  w5
+    str     w3,  [x0, #2*FDEC_STRIDE]
+    str     w4,  [x0, #3*FDEC_STRIDE]
     ret
 endfunc
 
