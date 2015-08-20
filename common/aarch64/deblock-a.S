@@ -31,9 +31,9 @@
     ldr             w6,  [x4]
     ccmp            w3,  #0, #0, ne
     mov             v24.s[0], w6
-    and             w6,  w6,  w6,  lsl #16
+    and             w8,  w6,  w6,  lsl #16
     b.eq            1f
-    ands            w6,  w6,  w6,  lsl #8
+    ands            w8,  w8,  w8,  lsl #8
     b.ge            2f
 1:
     ret
@@ -474,10 +474,11 @@ endfunc
 
 function x264_deblock_h_chroma_422_neon, export=1
     add             x5,  x0,  x1
+    sub             x0,  x0,  #4
     add             x1,  x1,  x1
+    h264_loop_filter_start
     mov             x7,  x30
-    bl              X(x264_deblock_h_chroma_neon)
-    ldr             w6,  [x4]
+    bl              deblock_h_chroma
     mov             x30, x7
     sub             x0,  x5,  #4
     mov             v24.s[0], w6
