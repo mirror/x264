@@ -144,6 +144,10 @@ void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
     }
 #endif
 #endif
+#if HAVE_ARMV6
+    if( cpu&X264_CPU_NEON )
+        pf->nal_escape = x264_nal_escape_neon;
+#endif
 #if ARCH_AARCH64
     if( cpu&X264_CPU_NEON )
         pf->nal_escape = x264_nal_escape_neon;

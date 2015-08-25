@@ -119,7 +119,7 @@ ifeq ($(SYS_ARCH),ARM)
 ifneq ($(AS),)
 ASMSRC += common/arm/cpu-a.S common/arm/pixel-a.S common/arm/mc-a.S \
           common/arm/dct-a.S common/arm/quant-a.S common/arm/deblock-a.S \
-          common/arm/predict-a.S
+          common/arm/predict-a.S common/arm/bitstream-a.S
 SRCS   += common/arm/mc-c.c common/arm/predict-c.c
 OBJASM  = $(ASMSRC:%.S=%.o)
 endif
