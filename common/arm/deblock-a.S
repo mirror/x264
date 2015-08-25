@@ -365,6 +365,122 @@ function x264_deblock_h_chroma_mbaff_neon
     bx              lr
 endfunc
 
+.macro h264_loop_filter_chroma_intra, width=16
+    vdup.8          q11, r2         @ alpha
+    vabd.u8         q13, q8,  q0    @ abs(p0 - q0)
+    vabd.u8         q14, q9,  q8    @ abs(p1 - p0)
+    vabd.u8         q15, q1,  q0    @ abs(q1 - q0)
+    vclt.u8         q13, q13, q11   @ < alpha
+    vdup.8          q11, r3         @ beta
+    vclt.u8         q14, q14, q11   @ < beta
+    vclt.u8         q15, q15, q11   @ < beta
+    vand            q13, q13, q14
+    vand            q13, q13, q15
+
+    vshll.u8        q14, d18, #1
+    vshll.u8        q2,  d2,  #1
+.ifc \width, 16
+    vshll.u8        q15, d19, #1
+    vshll.u8        q3,  d3,  #1
+    vaddl.u8        q12, d17, d3
+    vaddl.u8        q10, d1,  d19
+.endif
+    vaddl.u8        q11, d16, d2
+    vaddl.u8        q1,  d18, d0    @ or vaddw q2, to not clobber q1
+    vadd.u16        q14, q14, q11
+    vadd.u16        q2,  q2,  q1
+.ifc \width, 16
+    vadd.u16        q15, q15, q12
+    vadd.u16        q3,  q3,  q10
+.endif
+    vqrshrn.u16     d28, q14, #2
+    vqrshrn.u16     d4,  q2, #2
+.ifc \width, 16
+    vqrshrn.u16     d29, q15, #2
+    vqrshrn.u16     d5,  q3, #2
+.endif
+    vbit            q8,  q14, q13
+    vbit            q0,  q2,  q13
+.endm
+
+function x264_deblock_v_chroma_intra_neon
+    sub             r0,  r0,  r1, lsl #1
+    vld2.8          {d18,d19}, [r0,:128], r1
+    vld2.8          {d16,d17}, [r0,:128], r1
+    vld2.8          {d0, d1},  [r0,:128], r1
+    vld2.8          {d2, d3},  [r0,:128]
+
+    h264_loop_filter_chroma_intra
+
+    sub             r0,  r0,  r1, lsl #1
+    vst2.8          {d16,d17}, [r0,:128], r1
+    vst2.8          {d0, d1},  [r0,:128], r1
+
+    bx              lr
+endfunc
+
+function x264_deblock_h_chroma_intra_neon
+    sub             r0,  r0,  #4
+    vld1.8          {d18}, [r0], r1
+    vld1.8          {d16}, [r0], r1
+    vld1.8          {d0},  [r0], r1
+    vld1.8          {d2},  [r0], r1
+    vld1.8          {d19}, [r0], r1
+    vld1.8          {d17}, [r0], r1
+    vld1.8          {d1},  [r0], r1
+    vld1.8          {d3},  [r0], r1
+
+    TRANSPOSE4x4_16 q9, q8, q0, q1
+
+    h264_loop_filter_chroma_intra
+
+    vtrn.16         q8,  q0
+
+    sub             r0,  r0,  r1, lsl #3
+    add             r0,  r0,  #2
+    vst1.32         {d16[0]}, [r0], r1
+    vst1.32         {d0[0]},  [r0], r1
+    vst1.32         {d16[1]}, [r0], r1
+    vst1.32         {d0[1]},  [r0], r1
+    vst1.32         {d17[0]}, [r0], r1
+    vst1.32         {d1[0]},  [r0], r1
+    vst1.32         {d17[1]}, [r0], r1
+    vst1.32         {d1[1]},  [r0], r1
+
+    bx              lr
+endfunc
+
+function x264_deblock_h_chroma_422_intra_neon
+    push            {lr}
+    bl              X(x264_deblock_h_chroma_intra_neon)
+    add             r0, r0,  #2
+    pop             {lr}
+    b               X(x264_deblock_h_chroma_intra_neon)
+endfunc
+
+function x264_deblock_h_chroma_intra_mbaff_neon
+    sub             r0,  r0,  #4
+    vld1.8          {d18}, [r0], r1
+    vld1.8          {d16}, [r0], r1
+    vld1.8          {d0},  [r0], r1
+    vld1.8          {d2},  [r0], r1
+
+    TRANSPOSE4x4_16 d18, d16, d0, d2
+
+    h264_loop_filter_chroma_intra width=8
+
+    vtrn.16         d16, d0
+
+    sub             r0,  r0,  r1, lsl #2
+    add             r0,  r0,  #2
+    vst1.32         {d16[0]}, [r0], r1
+    vst1.32         {d0[0]},  [r0], r1
+    vst1.32         {d16[1]}, [r0], r1
+    vst1.32         {d0[1]},  [r0]
+
+    bx              lr
+endfunc
+
 function x264_deblock_strength_neon
     ldr             ip,  [sp]
     vmov.i8         q8,  #0
