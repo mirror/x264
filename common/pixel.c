@@ -1375,6 +1375,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         INIT4( hadamard_ac, _neon );
         pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_neon;
         pixf->sa8d[PIXEL_16x16] = x264_pixel_sa8d_16x16_neon;
+        pixf->sa8d_satd[PIXEL_16x16] = x264_pixel_sa8d_satd_16x16_neon;
         pixf->var[PIXEL_8x8]    = x264_pixel_var_8x8_neon;
         pixf->var[PIXEL_8x16]   = x264_pixel_var_8x16_neon;
         pixf->var[PIXEL_16x16]  = x264_pixel_var_16x16_neon;

@@ -1130,7 +1130,35 @@ endfunc
     SUMSUB_ABCD \r1, \r3, \r2, \r4, \t1, \t3, \t2, \t4
 .endm
 
-function x264_sa8d_8x8_neon, export=0
+.macro integrated_satd dst, s0, s1, s2, s3
+    vmov            q0,  \s0
+    vmov            q1,  \s1
+    vmov            q2,  \s2
+    vmov            q3,  \s3
+
+    vtrn.16         q0,  q1
+    vtrn.16         q2,  q3
+
+    SUMSUB_AB       q6,  q7,  q0,  q1
+    SUMSUB_AB       q0,  q1,  q2,  q3
+
+    vtrn.32         q6,  q0
+    vtrn.32         q7,  q1
+
+    vabs.s16        q6,  q6
+    vabs.s16        q0,  q0
+    vabs.s16        q7,  q7
+    vabs.s16        q1,  q1
+
+    vmax.u16        q6,  q6,  q0
+    vmax.u16        q7,  q7,  q1
+
+    vadd.i16        q6,  q6,  q7
+    vpadal.u16      \dst,  q6
+.endm
+
+.macro sa8d_satd_8x8 satd=
+function x264_sa8d_\satd\()8x8_neon, export=0
     LOAD_DIFF_8x4   q8,  q9,  q10, q11
     vld1.64         {d7}, [r2], r3
     SUMSUB_AB       q0,  q1,  q8,  q9
@@ -1150,6 +1178,12 @@ function x264_sa8d_8x8_neon, export=0
     vsubl.u8        q15, d0,  d1
 
     HADAMARD4_V     q12, q13, q14, q15,  q0,  q1,  q2,  q3
+
+.ifc \satd, satd_
+    integrated_satd q4,  q8,  q9,  q10, q11
+    integrated_satd q4,  q12, q13, q14, q15
+.endif
+
     SUMSUB_ABCD     q0,  q8,  q1,  q9,   q8,  q12, q9,  q13
     SUMSUB_AB       q2,  q10, q10, q14
     vtrn.16         q8,  q9
@@ -1185,7 +1219,39 @@ function x264_sa8d_8x8_neon, export=0
     vmax.s16        q11, q3,  q15
     vadd.i16        q8,  q8,  q9
     vadd.i16        q9,  q10, q11
+.ifc \satd, satd_
+    vpadal.u16      q5,  q8
+    vpadal.u16      q5,  q9
+.endif
     bx              lr
+endfunc
+.endm
+
+sa8d_satd_8x8
+sa8d_satd_8x8 satd_
+
+function x264_pixel_sa8d_satd_16x16_neon
+    push            {lr}
+    vpush           {q4-q7}
+    vmov.u32        q4,  #0
+    vmov.u32        q5,  #0
+    bl              x264_sa8d_satd_8x8_neon
+    bl              x264_sa8d_satd_8x8_neon
+    sub             r0,  r0,  r1,  lsl #4
+    sub             r2,  r2,  r3,  lsl #4
+    add             r0,  r0,  #8
+    add             r2,  r2,  #8
+    bl              x264_sa8d_satd_8x8_neon
+    bl              x264_sa8d_satd_8x8_neon
+    vadd.u32        d1,  d10, d11
+    vadd.u32        d0,  d8,  d9
+    vpadd.u32       d1,  d1,  d1
+    vpadd.u32       d0,  d0,  d0
+    vrshr.u32       d1,  d1,  #1
+    vmov.32         r1,  d0[0]
+    vmov.32         r0,  d1[0]
+    vpop            {q4-q7}
+    pop             {pc}
 endfunc
 
 
