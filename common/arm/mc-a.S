@@ -1603,3 +1603,128 @@ function x264_store_interleave_chroma_neon
 
     pop             {pc}
 endfunc
+
+.macro integral4h p1, p2
+    vext.8          d1,  \p1, \p2,  #1
+    vext.8          d2,  \p1, \p2,  #2
+    vext.8          d3,  \p1, \p2,  #3
+    vaddl.u8        q0,  \p1, d1
+    vaddl.u8        q1,  d2,  d3
+    vadd.u16        q0,  q0,  q1
+    vadd.u16        q0,  q0,  q2
+.endm
+
+function integral_init4h_neon
+    sub             r3,  r0,  r2, lsl #1
+    vld1.8          {d6, d7}, [r1, :128]!
+1:
+    subs            r2,  r2,  #16
+    vld1.16         {q2},  [r3, :128]!
+    integral4h      d6, d7
+    vld1.8          {d6},  [r1, :64]!
+    vld1.16         {q2},  [r3, :128]!
+    vst1.16         {q0},  [r0, :128]!
+    integral4h      d7, d6
+    vld1.8          {d7},  [r1, :64]!
+    vst1.16         {q0},  [r0, :128]!
+    bgt             1b
+    bx              lr
+endfunc
+
+.macro integral8h p1, p2, s
+    vext.8          d1,  \p1,  \p2,  #1
+    vext.8          d2,  \p1,  \p2,  #2
+    vext.8          d3,  \p1,  \p2,  #3
+    vext.8          d4,  \p1,  \p2,  #4
+    vext.8          d5,  \p1,  \p2,  #5
+    vext.8          d6,  \p1,  \p2,  #6
+    vext.8          d7,  \p1,  \p2,  #7
+    vaddl.u8        q0,  \p1,  d1
+    vaddl.u8        q1,  d2,   d3
+    vaddl.u8        q2,  d4,   d5
+    vaddl.u8        q3,  d6,   d7
+    vadd.u16        q0,  q0,   q1
+    vadd.u16        q2,  q2,   q3
+    vadd.u16        q0,  q0,   q2
+    vadd.u16        q0,  q0,   \s
+.endm
+
+function integral_init8h_neon
+    sub             r3,  r0,  r2, lsl #1
+    vld1.8          {d16, d17}, [r1, :128]!
+1:
+    subs            r2,  r2,  #16
+    vld1.16         {q9},  [r3, :128]!
+    integral8h      d16, d17, q9
+    vld1.8          {d16}, [r1, :64]!
+    vld1.16         {q9},  [r3, :128]!
+    vst1.16         {q0},  [r0, :128]!
+    integral8h      d17, d16, q9
+    vld1.8          {d17}, [r1, :64]!
+    vst1.16         {q0},  [r0, :128]!
+    bgt             1b
+    bx              lr
+endfunc
+
+function integral_init4v_neon
+    push            {r4-r5}
+    mov             r3,   r0
+    add             r4,   r0,   r2,  lsl #3
+    add             r5,   r0,   r2,  lsl #4
+    sub             r2,   r2,   #8
+    vld1.16         {q11, q12}, [r3]!
+    vld1.16         {q8,  q9},  [r5]!
+    vld1.16         {q13}, [r3]!
+    vld1.16         {q10}, [r5]!
+1:
+    subs            r2,   r2,   #16
+    vld1.16         {q14, q15}, [r4]!
+    vext.8          q0,   q11,  q12, #8
+    vext.8          q1,   q12,  q13, #8
+    vext.8          q2,   q8,   q9,  #8
+    vext.8          q3,   q9,   q10, #8
+    vsub.u16        q14,  q14,  q11
+    vsub.u16        q15,  q15,  q12
+    vadd.u16        q0,   q0,   q11
+    vadd.u16        q1,   q1,   q12
+    vadd.u16        q2,   q2,   q8
+    vadd.u16        q3,   q3,   q9
+    vst1.16         {q14},  [r1]!
+    vst1.16         {q15},  [r1]!
+    vmov            q11,  q13
+    vmov            q8,   q10
+    vsub.u16        q0,   q2,   q0
+    vsub.u16        q1,   q3,   q1
+    vld1.16         {q12, q13}, [r3]!
+    vld1.16         {q9,  q10}, [r5]!
+    vst1.16         {q0}, [r0]!
+    vst1.16         {q1}, [r0]!
+    bgt             1b
+2:
+    pop             {r4-r5}
+    bx              lr
+endfunc
+
+function integral_init8v_neon
+    add             r2,  r0,  r1,  lsl #4
+    sub             r1,  r1,  #8
+    ands            r3,  r1,  #16 - 1
+    beq             1f
+    subs            r1,  r1,  #8
+    vld1.16         {q0}, [r0]
+    vld1.16         {q2}, [r2]!
+    vsub.u16        q8,  q2,  q0
+    vst1.16         {q8}, [r0]!
+    ble             2f
+1:
+    subs            r1,  r1,  #16
+    vld1.16         {q0, q1}, [r0]
+    vld1.16         {q2, q3}, [r2]!
+    vsub.u16        q8,  q2,  q0
+    vsub.u16        q9,  q3,  q1
+    vst1.16         {q8},  [r0]!
+    vst1.16         {q9},  [r0]!
+    bgt             1b
+2:
+    bx              lr
+endfunc
