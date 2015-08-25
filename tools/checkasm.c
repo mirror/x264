@@ -227,6 +227,10 @@ intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
 #define x264_stack_pagealign( func, align ) func()
 #endif
 
+#if ARCH_AARCH64
+intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
+#endif
+
 #define call_c1(func,...) func(__VA_ARGS__)
 
 #if ARCH_X86_64
@@ -244,7 +248,7 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
     uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
     x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
     x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_X86
+#elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__))
 #define call_a1(func,...) x264_checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
 #else
 #define call_a1 call_c1

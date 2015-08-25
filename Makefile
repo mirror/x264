@@ -140,6 +140,7 @@ SRCS   += common/aarch64/asm-offsets.c \
           common/aarch64/mc-c.c        \
           common/aarch64/predict-c.c
 OBJASM  = $(ASMSRC:%.S=%.o)
+OBJCHK += tools/checkasm-aarch64.o
 endif
 endif
 
