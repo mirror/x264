@@ -1616,7 +1616,7 @@ static int check_mc( int cpu_ref, int cpu_new )
         report( "lowres init :" );
     }
 
-#define INTEGRAL_INIT( name, size, ... )\
+#define INTEGRAL_INIT( name, size, offset, cmp_len, ... )\
     if( mc_a.name != mc_ref.name )\
     {\
         intptr_t stride = 96;\
@@ -1625,20 +1625,20 @@ static int check_mc( int cpu_ref, int cpu_new )
         memcpy( buf3, buf1, size*2*stride );\
         memcpy( buf4, buf1, size*2*stride );\
         uint16_t *sum = (uint16_t*)buf3;\
-        call_c1( mc_c.name, __VA_ARGS__ );\
+        call_c1( mc_c.name, sum+offset, __VA_ARGS__ );\
         sum = (uint16_t*)buf4;\
-        call_a1( mc_a.name, __VA_ARGS__ );\
-        if( memcmp( buf3, buf4, (stride-8)*2 ) \
+        call_a1( mc_a.name, sum+offset, __VA_ARGS__ );\
+        if( memcmp( buf3+2*offset, buf4+2*offset, cmp_len*2 )\
             || (size>9 && memcmp( buf3+18*stride, buf4+18*stride, (stride-8)*2 )))\
             ok = 0;\
-        call_c2( mc_c.name, __VA_ARGS__ );\
-        call_a2( mc_a.name, __VA_ARGS__ );\
+        call_c2( mc_c.name, sum+offset, __VA_ARGS__ );\
+        call_a2( mc_a.name, sum+offset, __VA_ARGS__ );\
     }
     ok = 1; used_asm = 0;
-    INTEGRAL_INIT( integral_init4h, 2, sum+stride, pbuf2, stride );
-    INTEGRAL_INIT( integral_init8h, 2, sum+stride, pbuf2, stride );
-    INTEGRAL_INIT( integral_init4v, 14, sum, sum+9*stride, stride );
-    INTEGRAL_INIT( integral_init8v, 9, sum, stride );
+    INTEGRAL_INIT( integral_init4h, 2, stride, stride-4, pbuf2, stride );
+    INTEGRAL_INIT( integral_init8h, 2, stride, stride-8, pbuf2, stride );
+    INTEGRAL_INIT( integral_init4v, 14, 0, stride-8, sum+9*stride, stride );
+    INTEGRAL_INIT( integral_init8v, 9, 0, stride-8, stride );
     report( "integral init :" );
 
     ok = 1; used_asm = 0;
