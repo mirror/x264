@@ -4,6 +4,7 @@
  * Copyright (C) 2009-2015 x264 project
  *
  * Authors: Mans Rullgard <mans@mansr.com>
+ *          Martin Storsjo <martin@martin.st>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -261,6 +262,7 @@ function x264_deblock_h_chroma_neon
     h264_loop_filter_start
 
     sub             r0,  r0,  #4
+deblock_h_chroma:
     vld1.8          {d18}, [r0], r1
     vld1.8          {d16}, [r0], r1
     vld1.8          {d0},  [r0], r1
@@ -288,6 +290,22 @@ function x264_deblock_h_chroma_neon
     vst1.32         {d1[1]},  [r0], r1
 
     bx              lr
+endfunc
+
+function x264_deblock_h_chroma_422_neon
+    h264_loop_filter_start
+    push            {lr}
+    sub             r0,  r0,  #4
+    add             r1,  r1,  r1
+    bl              deblock_h_chroma
+    ldr             ip,  [sp, #4]
+    ldr             ip,  [ip]
+    vdup.32         d24, ip
+    sub             r0,  r0,  r1, lsl #3
+    add             r0,  r0,  r1, lsr #1
+    sub             r0,  r0,  #2
+    pop             {lr}
+    b               deblock_h_chroma
 endfunc
 
 function x264_deblock_strength_neon
