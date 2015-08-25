@@ -308,6 +308,63 @@ function x264_deblock_h_chroma_422_neon
     b               deblock_h_chroma
 endfunc
 
+.macro h264_loop_filter_chroma8
+    vdup.8          d22, r2         @ alpha
+    vmovl.u8        q12, d24
+    vabd.u8         d26, d16, d0    @ abs(p0 - q0)
+    vabd.u8         d28, d18, d16   @ abs(p1 - p0)
+    vsubl.u8        q2,  d0,  d16
+    vsli.16         d24, d24, #8
+    vshl.i16        q2,  q2,  #2
+    vabd.u8         d30, d2,  d0    @ abs(q1 - q0)
+    vaddw.u8        q2,  q2,  d18
+    vclt.u8         d26, d26, d22   @ < alpha
+    vsubw.u8        q2,  q2,  d2
+    vdup.8          d22, r3         @ beta
+    vclt.s8         d20, d24, #0
+    vrshrn.i16      d4,  q2,  #3
+    vclt.u8         d28, d28, d22   @ < beta
+    vbic            d26, d26, d20
+    vclt.u8         d30, d30, d22   @ < beta
+    vand            d26, d26, d28
+    vneg.s8         d20, d24
+    vand            d26, d26, d30
+    vmin.s8         d4,  d4,  d24
+    vmovl.u8        q14, d16
+    vand            d4,  d4,  d26
+    vmax.s8         d4,  d4,  d20
+    vmovl.u8        q11, d0
+    vaddw.s8        q14, q14, d4
+    vsubw.s8        q11, q11, d4
+    vqmovun.s16     d16, q14
+    vqmovun.s16     d0,  q11
+.endm
+
+function x264_deblock_h_chroma_mbaff_neon
+    h264_loop_filter_start
+
+    sub             r0,  r0,  #4
+    vld1.8          {d18}, [r0], r1
+    vld1.8          {d16}, [r0], r1
+    vld1.8          {d0},  [r0], r1
+    vld1.8          {d2},  [r0], r1
+
+    TRANSPOSE4x4_16 d18, d16, d0, d2
+
+    h264_loop_filter_chroma8
+
+    vtrn.16         d16, d0
+
+    sub             r0,  r0,  r1, lsl #2
+    add             r0,  r0,  #2
+    vst1.32         {d16[0]}, [r0], r1
+    vst1.32         {d0[0]},  [r0], r1
+    vst1.32         {d16[1]}, [r0], r1
+    vst1.32         {d0[1]},  [r0]
+
+    bx              lr
+endfunc
+
 function x264_deblock_strength_neon
     ldr             ip,  [sp]
     vmov.i8         q8,  #0
