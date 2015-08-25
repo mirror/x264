@@ -32,6 +32,14 @@ pmovmskb_byte:
 .byte 1,2,4,8,16,32,64,128
 .byte 1,2,4,8,16,32,64,128
 
+mask_2bit:
+.byte 3,12,48,192,3,12,48,192
+.byte 3,12,48,192,3,12,48,192
+
+mask_1bit:
+.byte 128,64,32,16,8,4,2,1
+.byte 128,64,32,16,8,4,2,1
+
 .text
 
 .macro QUANT_TWO bias0 bias1 mf0 mf1 mf2 mf3 mask load_mf=no
@@ -308,6 +316,136 @@ dequant_4x4_dc_rshift:
     bx          lr
 endfunc
 
+.macro decimate_score_1x size
+function x264_decimate_score\size\()_neon
+    vld1.16     {q0, q1}, [r0, :128]
+    movrel      r3, mask_2bit
+    vmov.s8     q3,  #0x01
+    vqmovn.s16  d0,  q0
+    vqmovn.s16  d1,  q1
+    vqabs.s8    q2,  q0
+    vld1.8      {q8}, [r3, :128]
+    vceq.s8     q1,  q0,  #0
+    vcgt.s8     q2,  q2,  q3
+    vand.u8     q1,  q1,  q8
+    vshrn.u16   d4,  q2,  #4
+    vpadd.u8    d2,  d2,  d3
+    vpadd.u8    d4,  d4,  d4
+    vpadd.u8    d2,  d2,  d2
+    vmov.32     r2,  d4[0]
+    vmov.32     r1,  d2[0]
+    cmp         r2,  #0
+    beq         0f
+    mov         r0,  #9
+    bx          lr
+0:
+    mvns        r1,  r1
+    mov         r0,  #0
+    bxeq        lr
+.ifc \size, 15
+    lsr         r1,  r1,  #2
+.endif
+    rbit        r1,  r1
+    movrel      r3,  X(x264_decimate_table4)
+1:
+    clz         r2,  r1
+    lsl         r1,  r1,  r2
+    lsr         r12, r2,  #1
+    ldrb        r2,  [r3, r12]
+    lsls        r1,  r1,  #2
+    add         r0,  r0,  r2
+    bne         1b
+    bx          lr
+endfunc
+.endm
+
+decimate_score_1x 15
+decimate_score_1x 16
+
+function x264_decimate_score64_neon
+    push        {lr}
+    vld1.16     {q8,  q9},  [r0, :128]!
+    vld1.16     {q10, q11}, [r0, :128]!
+    vld1.16     {q12, q13}, [r0, :128]!
+    vld1.16     {q14, q15}, [r0, :128]
+    movrel      r3, mask_1bit
+    vmov.s8     q3,  #0x01
+    vqmovn.s16  d17, q8
+    vqmovn.s16  d16, q9
+    vqmovn.s16  d19, q10
+    vqmovn.s16  d18, q11
+    vqmovn.s16  d21, q12
+    vqmovn.s16  d20, q13
+    vqmovn.s16  d23, q14
+    vqmovn.s16  d22, q15
+    vqabs.s8    q12, q8
+    vqabs.s8    q13, q9
+    vqabs.s8    q14, q10
+    vqabs.s8    q15, q11
+    vld1.8      {q2}, [r3, :128]
+    vceq.s8     q8,  q8,  #0
+    vceq.s8     q9,  q9,  #0
+    vceq.s8     q10, q10, #0
+    vceq.s8     q11, q11, #0
+    vmax.s8     q12, q12, q13
+    vmax.s8     q14, q14, q15
+    vand.u8     q8,  q8,  q2
+    vand.u8     q9,  q9,  q2
+    vand.u8     q10, q10, q2
+    vand.u8     q11, q11, q2
+    vmax.s8     q12, q12, q14
+    vpadd.u8    d18, d18, d19
+    vpadd.u8    d19, d16, d17
+    vcgt.s8     q12, q12, q3
+    vpadd.u8    d22, d22, d23
+    vpadd.u8    d23, d20, d21
+    vshrn.u16   d24, q12, #4
+    vpadd.u8    d16, d22, d23
+    vpadd.u8    d17, d18, d19
+    vpadd.u8    d24, d24, d24
+    vpadd.u8    d16, d16, d17
+    vmov.32     r2,  d24[0]
+    vmov        r12, r1,  d16
+    cmp         r2,  #0
+    beq         0f
+    mov         r0,  #9
+    pop         {pc}
+0:
+    mvns        r1,  r1
+    mvn         r12, r12
+    mov         r0,  #0
+    mov         lr,  #32
+    movrel      r3,  X(x264_decimate_table8)
+    beq         2f
+1:
+    clz         r2,  r1
+    lsl         r1,  r1,  r2
+    sub         lr,  lr,  r2
+    ldrb        r2,  [r3, r2]
+    lsls        r1,  r1,  #1
+    sub         lr,  lr,  #1
+    add         r0,  r0,  r2
+    bne         1b
+2:
+    cmp         r12, #0
+    popeq       {pc}
+
+    clz         r2,  r12
+    lsl         r1,  r12, r2
+    add         r2,  r2,  lr
+    ldrb        r2,  [r3, r2]
+    lsls        r1,  r1,  #1
+    add         r0,  r0,  r2
+    popeq       {pc}
+3:
+    clz         r2,  r1
+    lsl         r1,  r1,  r2
+    ldrb        r2,  [r3, r2]
+    lsls        r1,  r1,  #1
+    add         r0,  r0,  r2
+    bne         3b
+    pop         {pc}
+endfunc
 
 // int coeff_last( int16_t *l )
 function x264_coeff_last4_arm
