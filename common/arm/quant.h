@@ -44,4 +44,6 @@ int x264_coeff_last15_neon( int16_t * );
 int x264_coeff_last16_neon( int16_t * );
 int x264_coeff_last64_neon( int16_t * );
 
+void x264_denoise_dct_neon( dctcoef *, uint32_t *, udctcoef *, int );
+
 #endif

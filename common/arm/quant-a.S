@@ -4,6 +4,7 @@
  * Copyright (C) 2009-2015 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
+ *          Janne Grunau <janne-x264@jannau.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -402,5 +403,33 @@ function x264_coeff_last64_neon
     addge       r0,  r1,  #32
     subslt      r0,  ip,  r0
     movlt       r0,  #0
+    bx          lr
+endfunc
+
+function x264_denoise_dct_neon
+1:  subs        r3,  r3,  #16
+    vld1.16     {q0,  q1},  [r0]
+    vld1.32     {q12, q13}, [r1]!
+    vld1.32     {q14, q15}, [r1]
+    sub         r1,  #32
+    vabs.s16    q8,  q0
+    vabs.s16    q9,  q1
+    vld1.16     {q2, q3}, [r2]!
+    vclt.s16    q10, q0,  #0
+    vclt.s16    q11, q1,  #0
+    vaddw.u16   q12, q12, d16
+    vaddw.u16   q13, q13, d17
+    vqsub.u16   q0,  q8,  q2
+    vqsub.u16   q1,  q9,  q3
+    vaddw.u16   q14, q14, d18
+    vaddw.u16   q15, q15, d19
+    vneg.s16    q8,  q0
+    vneg.s16    q9,  q1
+    vbsl        q10, q8,  q0
+    vbsl        q11, q9,  q1
+    vst1.32     {q12, q13}, [r1]!
+    vst1.32     {q14, q15}, [r1]!
+    vst1.16     {q10, q11}, [r0]!
+    bgt         1b
     bx          lr
 endfunc
