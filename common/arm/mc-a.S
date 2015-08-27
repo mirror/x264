@@ -6,6 +6,7 @@
  * Authors: David Conrad <lessen42@gmail.com>
  *          Mans Rullgard <mans@mansr.com>
  *          Stefan Groenroos <stefan.gronroos@gmail.com>
+ *          Janne Grunau <janne-x264@jannau.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1459,6 +1460,37 @@ function x264_load_deinterleave_chroma_fenc_neon
     bgt             1b
 
     bx              lr
+endfunc
+
+function x264_plane_copy_neon
+    push            {r4,lr}
+    ldr             r4,  [sp, #8]
+    ldr             lr,  [sp, #12]
+    add             r12, r4,  #15
+    bic             r4,  r12, #15
+    sub             r1,  r1,  r4
+    sub             r3,  r3,  r4
+1:
+    mov             r12, r4
+16:
+    tst             r12, #16
+    beq             32f
+    subs            r12, r12, #16
+    vld1.8          {q0}, [r2]!
+    vst1.8          {q0}, [r0]!
+    beq             0f
+32:
+    subs            r12, r12, #32
+    vld1.8          {q0, q1}, [r2]!
+    vst1.8          {q0, q1}, [r0]!
+    bgt             32b
+0:
+    subs            lr,  lr,  #1
+    add             r2,  r2,  r3
+    add             r0,  r0,  r1
+    bgt             1b
+
+    pop             {r4,pc}
 endfunc
 
 function x264_plane_copy_deinterleave_neon
