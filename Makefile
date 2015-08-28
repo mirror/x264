@@ -122,6 +122,7 @@ ASMSRC += common/arm/cpu-a.S common/arm/pixel-a.S common/arm/mc-a.S \
           common/arm/predict-a.S common/arm/bitstream-a.S
 SRCS   += common/arm/mc-c.c common/arm/predict-c.c
 OBJASM  = $(ASMSRC:%.S=%.o)
+OBJCHK += tools/checkasm-arm.o
 endif
 endif
 

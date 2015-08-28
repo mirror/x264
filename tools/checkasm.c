@@ -231,6 +231,12 @@ intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
 intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
 #endif
 
+#if ARCH_ARM
+intptr_t x264_checkasm_call_neon( intptr_t (*func)(), int *ok, ... );
+intptr_t x264_checkasm_call_noneon( intptr_t (*func)(), int *ok, ... );
+intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checkasm_call_noneon;
+#endif
+
 #define call_c1(func,...) func(__VA_ARGS__)
 
 #if ARCH_X86_64
@@ -248,10 +254,16 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
     uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
     x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
     x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__))
+#elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__)) || ARCH_ARM
 #define call_a1(func,...) x264_checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
 #else
 #define call_a1 call_c1
+#endif
+
+#if ARCH_ARM
+#define call_a1_64(func,...) ((uint64_t (*)(intptr_t(*)(), int*, ...))x264_checkasm_call)( (intptr_t(*)())func, &ok, __VA_ARGS__ )
+#else
+#define call_a1_64 call_a1
 #endif
 
 #define call_bench(func,cpu,...)\
@@ -286,6 +298,7 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 #define call_c(func,...) ({ call_c2(func,__VA_ARGS__); call_c1(func,__VA_ARGS__); })
 #define call_a2(func,...) ({ call_bench(func,cpu_new,__VA_ARGS__); })
 #define call_c2(func,...) ({ call_bench(func,0,__VA_ARGS__); })
+#define call_a64(func,...) ({ call_a2(func,__VA_ARGS__); call_a1_64(func,__VA_ARGS__); })
 
 
 static int check_pixel( int cpu_ref, int cpu_new )
@@ -372,7 +385,7 @@ static int check_pixel( int cpu_ref, int cpu_new )
         {
             uint32_t cost8_c = pixel_c.sa8d[PIXEL_16x16]( pbuf1, 16, pbuf2, 64 );
             uint32_t cost4_c = pixel_c.satd[PIXEL_16x16]( pbuf1, 16, pbuf2, 64 );
-            uint64_t res_a = call_a( pixel_asm.sa8d_satd[PIXEL_16x16], pbuf1, (intptr_t)16, pbuf2, (intptr_t)64 );
+            uint64_t res_a = call_a64( pixel_asm.sa8d_satd[PIXEL_16x16], pbuf1, (intptr_t)16, pbuf2, (intptr_t)64 );
             uint32_t cost8_a = res_a;
             uint32_t cost4_a = res_a >> 32;
             if( cost8_a != cost8_c || cost4_a != cost4_c )
@@ -2786,6 +2799,8 @@ static int check_all_flags( void )
         ret = check_all_funcs( 0, X264_CPU_ALTIVEC );
     }
 #elif ARCH_ARM
+    if( cpu_detect & X264_CPU_NEON )
+        x264_checkasm_call = x264_checkasm_call_neon;
     if( cpu_detect & X264_CPU_ARMV6 )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_ARMV6, "ARMv6" );
     if( cpu_detect & X264_CPU_NEON )
