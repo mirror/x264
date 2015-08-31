@@ -5,6 +5,7 @@
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *          Mans Rullgard <mans@mansr.com>
+ *          Martin Storsjo <martin@martin.st>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +47,26 @@ p16weight: .short 1,2,3,4,5,6,7,8
     vld1.8          {\rd[6]}, [\rs], \rt
     vld1.8          {\rd[7]}, [\rs], \rt
 .endif
+.endm
+
+.macro ldcol.16  rd1,  rd2,  rs,  rt,  ru
+    add             \ru, \rs, \rt, lsl #3
+    vld1.8          {\rd1[0]}, [\rs], \rt
+    vld1.8          {\rd2[0]}, [\ru], \rt
+    vld1.8          {\rd1[1]}, [\rs], \rt
+    vld1.8          {\rd2[1]}, [\ru], \rt
+    vld1.8          {\rd1[2]}, [\rs], \rt
+    vld1.8          {\rd2[2]}, [\ru], \rt
+    vld1.8          {\rd1[3]}, [\rs], \rt
+    vld1.8          {\rd2[3]}, [\ru], \rt
+    vld1.8          {\rd1[4]}, [\rs], \rt
+    vld1.8          {\rd2[4]}, [\ru], \rt
+    vld1.8          {\rd1[5]}, [\rs], \rt
+    vld1.8          {\rd2[5]}, [\ru], \rt
+    vld1.8          {\rd1[6]}, [\rs], \rt
+    vld1.8          {\rd2[6]}, [\ru], \rt
+    vld1.8          {\rd1[7]}, [\rs], \rt
+    vld1.8          {\rd2[7]}, [\ru], \rt
 .endm
 
 .macro add16x8  dq,  dl,  dh,  rl,  rh
@@ -542,6 +563,101 @@ function x264_predict_8x8c_p_neon
     vdup.16     q3,  d5[0]
     vadd.i16    q1,  q1,  q0
     mov         r3,  #8
+1:
+    vqshrun.s16 d0,  q1,  #5
+    vadd.i16    q1,  q1,  q3
+    vst1.8      {d0}, [r0,:64], r1
+    subs        r3,  r3,  #1
+    bne         1b
+    bx          lr
+endfunc
+
+
+function x264_predict_8x16c_dc_top_neon
+    sub         r2,  r0,  #FDEC_STRIDE
+    mov         r1,  #FDEC_STRIDE
+    vld1.8      {d0}, [r2,:64]
+    vpaddl.u8   d0,  d0
+    vpadd.u16   d0,  d0,  d0
+    vrshrn.u16  d0,  q0,  #2
+    vdup.8      d1,  d0[1]
+    vdup.8      d0,  d0[0]
+    vtrn.32     d0,  d1
+
+    add         r2,  r0,  r1,  lsl #2
+.rept 4
+    vst1.8      {d0}, [r0,:64], r1
+    vst1.8      {d1}, [r2,:64], r1
+.endr
+    add         r2,  r2,  r1,  lsl #2
+    add         r0,  r0,  r1,  lsl #2
+.rept 4
+    vst1.8      {d0}, [r0,:64], r1
+    vst1.8      {d1}, [r2,:64], r1
+.endr
+    bx          lr
+endfunc
+
+function x264_predict_8x16c_h_neon
+    sub         r1, r0, #1
+    mov         ip, #FDEC_STRIDE
+.rept 8
+    vld1.8      {d0[]}, [r1], ip
+    vld1.8      {d2[]}, [r1], ip
+    vst1.64     {d0}, [r0,:64], ip
+    vst1.64     {d2}, [r0,:64], ip
+.endr
+    bx          lr
+endfunc
+
+function x264_predict_8x16c_p_neon
+    sub         r3,  r0,  #FDEC_STRIDE
+    mov         r1,  #FDEC_STRIDE
+    add         r2,  r3,  #4
+    sub         r3,  r3,  #1
+    vld1.32     {d0[0]}, [r3]
+    vld1.32     {d2[0]}, [r2,:32], r1
+    ldcol.8     d1,  r3,  r1
+    add         r3,  r3,  r1
+    ldcol.8     d3,  r3,  r1
+    vrev64.32   d16, d3
+    vaddl.u8    q8,  d2,  d16
+    vrev32.8    d0,  d0
+    vsubl.u8    q2,  d2,  d0
+    vrev64.8    d1,  d1
+    vsubl.u8    q3,  d3,  d1
+    movrel      r3,  p16weight
+    vld1.16     {q0}, [r3,:128]
+    vmul.s16    d4,  d4,  d0
+    vmul.s16    q3,  q3,  q0
+    vpadd.i16   d4,  d4,  d5
+    vpadd.i16   d6,  d6,  d7
+    vpaddl.s16  d4,  d4        @ d4[0] = H
+    vpaddl.s16  d6,  d6
+    vpadd.s32   d6,  d6        @ d6[0] = V
+    vshl.i32    d5,  d4,  #4
+    vadd.s32    d4,  d4,  d5   @ d4[0] = 17*H
+    vshl.i32    d7,  d6,  #2
+    vrshrn.s32  d4,  q2,  #5   @ d4[0] = b
+    vadd.s32    d6,  d6,  d7   @ d6[0] = 5*V
+    vrshrn.s32  d6,  q3,  #6   @ d6[0] = c
+    mov         r3,  #0
+    vshl.i16    d3,  d4,  #2
+    vsub.i16    d3,  d3,  d4   @ d2[0] = 3 * b
+    vshl.i16    d2,  d6,  #3
+    vadd.i16    d3,  d3,  d2   @ d2[0] = 3 * b + 8 * c
+    vsub.i16    d3,  d3,  d6   @ d2[0] = 3 * b + 7 * c
+    vrev64.16   d16, d16
+    vadd.i16    d16, d16, d0   @ d16[0] = src[]+src[] + 1
+    vshl.i16    d2,  d16, #4   @ d3[0] = a + 16
+    vsub.i16    d2,  d2,  d3   @ i00
+    vext.16     q0,  q0,  q0,  #7
+    vmov.16     d0[0], r3
+    vmul.i16    q0,  q0,  d4[0]
+    vdup.16     q1,  d2[0]
+    vdup.16     q3,  d6[0]
+    vadd.i16    q1,  q1,  q0
+    mov         r3,  #16
 1:
     vqshrun.s16 d0,  q1,  #5
     vadd.i16    q1,  q1,  q3

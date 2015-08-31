@@ -977,6 +977,10 @@ void x264_predict_8x16c_init( int cpu, x264_predict_t pf[7] )
     x264_predict_8x16c_init_mmx( cpu, pf );
 #endif
 
+#if HAVE_ARMV6
+    x264_predict_8x16c_init_arm( cpu, pf );
+#endif
+
 #if ARCH_AARCH64
     x264_predict_8x16c_init_aarch64( cpu, pf );
 #endif
