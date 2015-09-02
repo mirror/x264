@@ -745,10 +745,8 @@ void x264_deblock_h_chroma_intra_mbaff_neon( uint8_t *pix, intptr_t stride, int 
 void x264_deblock_h_chroma_intra_neon( uint8_t *pix, intptr_t stride, int alpha, int beta );
 void x264_deblock_h_chroma_422_intra_neon( uint8_t *pix, intptr_t stride, int alpha, int beta );
 void x264_deblock_v_chroma_intra_neon( uint8_t *pix, intptr_t stride, int alpha, int beta );
-#if ARCH_AARCH64
 void x264_deblock_h_luma_intra_neon( uint8_t *pix, intptr_t stride, int alpha, int beta );
 void x264_deblock_v_luma_intra_neon( uint8_t *pix, intptr_t stride, int alpha, int beta );
-#endif
 #endif
 
 #if !HIGH_BIT_DEPTH
@@ -879,10 +877,8 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
         pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_neon;
         pf->deblock_h_chroma_422_intra = x264_deblock_h_chroma_422_intra_neon;
         pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_neon;
-#if ARCH_AARCH64
         pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_neon;
         pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_neon;
-#endif
         pf->deblock_strength     = x264_deblock_strength_neon;
     }
 #endif

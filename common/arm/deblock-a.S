@@ -195,6 +195,211 @@ function x264_deblock_h_luma_neon
     bx              lr
 endfunc
 
+.macro h264_loop_filter_luma_intra
+    vdup.8          q14, r2         @ alpha
+    vabd.u8         q4,  q8,  q0    @ abs(p0 - q0)
+    vabd.u8         q5,  q9,  q8    @ abs(p1 - p0)
+    vabd.u8         q6,  q1,  q0    @ abs(q1 - q0)
+    vdup.8          q15, r3         @ beta
+    vmov.u8         q13, #2
+    vclt.u8         q7,  q4,  q14   @ < alpha
+    vshr.u8         q14, q14, #2    @ alpha >> 2
+    vclt.u8         q5,  q5,  q15   @ < beta
+    vadd.u8         q14, q14, q13   @ (alpha >> 2) + 2
+    vand            q7,  q7,  q5
+    vclt.u8         q6,  q6,  q15   @ < beta
+    vclt.u8         q13, q4,  q14   @ < (alpha >> 2) + 2 if_2
+    vand            q12, q7,  q6    @ if_1
+    vshrn.u16       d28, q12,  #4
+    vcmp.f64        d28, #0
+    vmrs            APSR_nzcv, FPSCR
+    beq             9f
+
+    sub             sp,  sp,  #32
+    vst1.8         {q12-q13}, [sp,:128]
+
+    vshll.u8        q4,  d18, #1    @ 2*p1
+    vshll.u8        q5,  d19, #1
+    vaddw.u8        q4,  q4,  d16   @ 2*p1 + p0
+    vaddw.u8        q5,  q5,  d17
+    vaddw.u8        q4,  q4,  d2    @ 2*p1 + p0 + q1
+    vaddw.u8        q5,  q5,  d3
+    vrshrn.u16      d24, q4,  #2
+    vrshrn.u16      d25, q5,  #2
+
+    vaddl.u8        q6,  d20, d16   @ p2 + p0
+    vaddl.u8        q7,  d21, d17
+    vaddw.u8        q6,  q6,  d0    @ p2 + p0 + q0
+    vaddw.u8        q7,  q7,  d1
+    vadd.u16        q4,  q4,  q6    @ p2 + 2*p1 + 2*p0 + q0 + q1
+    vadd.u16        q5,  q5,  q7
+    vaddw.u8        q4,  q4,  d0    @ p2 + 2*p1 + 2*p0 + 2*q0 + q1
+    vaddw.u8        q5,  q5,  d1
+    vrshrn.u16      d26, q4,  #3    @ p0'_2
+    vrshrn.u16      d27, q5,  #3
+    vaddw.u8        q6,  q6,  d18   @ p2 + p1 + p0 + q0
+    vaddw.u8        q7,  q7,  d19
+    vrshrn.u16      d28, q6,  #2    @ p1'_2
+    vrshrn.u16      d29, q7,  #2
+    vaddl.u8        q4,  d22, d20   @ p3 + p2
+    vaddl.u8        q5,  d23, d21
+    vshl.u16        q4,  q4,  #1    @ 2*p3 + 2*p2
+    vshl.u16        q5,  q5,  #1
+    vadd.u16        q4,  q4,  q6    @ 2*p3 + 3*p2 + p1 + p0 + q0
+    vadd.u16        q5,  q5,  q7
+    vrshrn.u16      d30, q4,  #3    @ p2'_2
+    vrshrn.u16      d31, q5,  #3
+
+    vdup.8          q4,  r3         @ beta
+    vabd.u8         q5,  q10, q8    @ abs(p2 - p0)
+    vld1.8         {q6-q7}, [sp,:128]   @ if_1, if_2
+    vclt.u8         q5,  q5,  q4    @ < beta if_3
+
+    vand            q7,  q7,  q5    @ if_2 && if_3
+    vmvn            q4,  q7
+    vand            q7,  q7,  q6    @ if_1 && if_2 && if_3
+    vand            q6,  q4,  q6    @ if_1 && !(if_2 && if_3)
+
+    @ copy p0 to q15 so it can be clobbered
+    vbit            q10, q15, q7
+    vmov            q15, q8
+    vbit            q8,  q12, q6
+
+    @ wait for q9 to clobber
+    vshll.u8        q4,  d2,  #1    @ 2*q1
+    vshll.u8        q5,  d3,  #1
+
+    vbit            q8,  q12, q6
+
+    vaddw.u8        q4,  q4,  d0    @ 2*q1 + q0
+    vaddw.u8        q5,  q5,  d1
+
+    vbit            q8,  q13, q7
+
+    vaddw.u8        q4,  q4,  d18   @ 2*q1 + q0 + p1
+    vaddw.u8        q5,  q5,  d19
+
+    vbit            q9,  q14, q7
+
+    vrshrn.u16      d24, q4,  #2
+    vrshrn.u16      d25, q5,  #2
+
+    vaddl.u8        q6,  d4,  d0    @ q2 + q0
+    vaddl.u8        q7,  d5,  d1
+    vaddw.u8        q6,  q6,  d30   @ q2 + q0 + p0
+    vaddw.u8        q7,  q7,  d31
+    vadd.u16        q4,  q4,  q6    @ q2 + 2*q1 + 2*q0 + p0 + p1
+    vadd.u16        q5,  q5,  q7
+    vaddw.u8        q4,  q4,  d30   @ q2 + 2*q1 + 2*q0 + 2*p0 + p1
+    vaddw.u8        q5,  q5,  d31
+    vrshrn.u16      d26, q4,  #3    @ q0'_2
+    vrshrn.u16      d27, q5,  #3
+    vaddw.u8        q6,  q6,  d2    @ q2 + q1 + q0 + p0
+    vaddw.u8        q7,  q7,  d3
+    vrshrn.u16      d28, q6,  #2    @ q1'_2
+    vrshrn.u16      d29, q7,  #2
+    vaddl.u8        q4,  d6,  d4    @ q3 + q2
+    vaddl.u8        q5,  d7,  d5
+    vshl.u16        q4,  q4,  #1    @ 2*q3 + 2*q2
+    vshl.u16        q5,  q5,  #1
+    vadd.u16        q4,  q4,  q6    @ 2*q3 + 3*q2 + q1 + q0 + p0
+    vadd.u16        q5,  q5,  q7
+    vrshrn.u16      d30, q4,  #3    @ q2'_2
+    vrshrn.u16      d31, q5,  #3
+
+    vdup.8          q4,  r3         @ beta
+    vabd.u8         q5,  q2,  q0    @ abs(q2 - q0)
+    vld1.8         {q6-q7}, [sp,:128]!   @ if_1, if_2
+    vclt.u8         q5,  q5,  q4    @ < beta if_4
+
+    vand            q7,  q7,  q5    @ if_2 && if_4
+    vmvn            q4,  q7
+    vand            q7,  q6,  q7    @ if_1 && if_2 && if_4
+    vand            q6,  q6,  q4    @ if_1 && !(if_2 && if_4)
+
+    vbit            q0,  q12, q6
+    vbit            q1,  q14, q7
+    vbit            q0,  q13, q7
+    vbit            q2,  q15, q7
+
+.endm
+
+function x264_deblock_v_luma_intra_neon
+    vld1.64         {d0, d1},  [r0,:128], r1
+    vld1.64         {d2, d3},  [r0,:128], r1
+    vld1.64         {d4, d5},  [r0,:128], r1
+    vld1.64         {d6, d7},  [r0,:128], r1
+    sub             r0,  r0,  r1, lsl #3
+    vld1.64         {d22,d23}, [r0,:128], r1
+    vld1.64         {d20,d21}, [r0,:128], r1
+    vld1.64         {d18,d19}, [r0,:128], r1
+    vld1.64         {d16,d17}, [r0,:128]
+
+    align_push_regs
+
+    h264_loop_filter_luma_intra
+
+    sub             r0,  r0,  r1, lsl #1
+    vst1.64         {d20,d21}, [r0,:128], r1
+    vst1.64         {d18,d19}, [r0,:128], r1
+    vst1.64         {d16,d17}, [r0,:128], r1
+    vst1.64         {d0, d1},  [r0,:128], r1
+    vst1.64         {d2, d3},  [r0,:128], r1
+    vst1.64         {d4, d5},  [r0,:128]
+9:
+    align_pop_regs
+    bx              lr
+endfunc
+
+function x264_deblock_h_luma_intra_neon
+    sub             r0,  r0,  #4
+    vld1.64         {d22}, [r0], r1
+    vld1.64         {d20}, [r0], r1
+    vld1.64         {d18}, [r0], r1
+    vld1.64         {d16}, [r0], r1
+    vld1.64         {d0},  [r0], r1
+    vld1.64         {d2},  [r0], r1
+    vld1.64         {d4},  [r0], r1
+    vld1.64         {d6},  [r0], r1
+    vld1.64         {d23}, [r0], r1
+    vld1.64         {d21}, [r0], r1
+    vld1.64         {d19}, [r0], r1
+    vld1.64         {d17}, [r0], r1
+    vld1.64         {d1},  [r0], r1
+    vld1.64         {d3},  [r0], r1
+    vld1.64         {d5},  [r0], r1
+    vld1.64         {d7},  [r0], r1
+
+    TRANSPOSE8x8    q11, q10, q9, q8, q0, q1, q2, q3
+
+    align_push_regs
+
+    h264_loop_filter_luma_intra
+
+    TRANSPOSE8x8    q11, q10, q9, q8, q0, q1, q2, q3
+
+    sub             r0,  r0,  r1, lsl #4
+    vst1.64         {d22}, [r0], r1
+    vst1.64         {d20}, [r0], r1
+    vst1.64         {d18}, [r0], r1
+    vst1.64         {d16}, [r0], r1
+    vst1.64         {d0},  [r0], r1
+    vst1.64         {d2},  [r0], r1
+    vst1.64         {d4},  [r0], r1
+    vst1.64         {d6},  [r0], r1
+    vst1.64         {d23}, [r0], r1
+    vst1.64         {d21}, [r0], r1
+    vst1.64         {d19}, [r0], r1
+    vst1.64         {d17}, [r0], r1
+    vst1.64         {d1},  [r0], r1
+    vst1.64         {d3},  [r0], r1
+    vst1.64         {d5},  [r0], r1
+    vst1.64         {d7},  [r0], r1
+9:
+    align_pop_regs
+    bx              lr
+endfunc
+
 .macro h264_loop_filter_chroma
     vdup.8          q11, r2         // alpha
     vmovl.u8        q12, d24
