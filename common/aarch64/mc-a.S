@@ -1556,7 +1556,7 @@ function x264_mbtree_propagate_cost_neon, export=1
     sqxtn       v0.4h,  v20.4s
     sqxtn2      v0.8h,  v21.4s
     st1         {v0.8h},  [x0], #16
-    b.ge        8b
+    b.gt        8b
     ret
 endfunc
 
