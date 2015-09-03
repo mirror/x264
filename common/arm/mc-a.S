@@ -28,6 +28,11 @@
 
 #include "asm.S"
 
+.section .rodata
+.align 4
+pw_0to15:
+.short 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+
 .text
 
 // note: prefetch stuff assumes 64-byte cacheline, true for the Cortex-A8
@@ -1758,5 +1763,119 @@ function integral_init8v_neon
     vst1.16         {q9},  [r0]!
     bgt             1b
 2:
+    bx              lr
+endfunc
+
+function x264_mbtree_propagate_cost_neon
+    push            {r4-r5,lr}
+    ldrd            r4, r5, [sp, #12]
+    ldr             lr, [sp, #20]
+    vld1.32         {d6[], d7[]},  [r5]
+8:
+    subs            lr,  lr,  #8
+    vld1.16         {q8},  [r1]!
+    vld1.16         {q9},  [r2]!
+    vld1.16         {q10}, [r3]!
+    vld1.16         {q11}, [r4]!
+    vbic.u16        q10, #0xc000
+    vmin.u16        q10, q9,  q10
+    vmull.u16       q12, d18, d22           @ propagate_intra
+    vmull.u16       q13, d19, d23           @ propagate_intra
+    vsubl.u16       q14, d18, d20           @ propagate_num
+    vsubl.u16       q15, d19, d21           @ propagate_num
+    vmovl.u16       q10, d18                @ propagate_denom
+    vmovl.u16       q11, d19                @ propagate_denom
+    vmovl.u16       q9,  d17
+    vmovl.u16       q8,  d16
+    vcvt.f32.s32    q12, q12
+    vcvt.f32.s32    q13, q13
+    vcvt.f32.s32    q14, q14
+    vcvt.f32.s32    q15, q15
+    vcvt.f32.s32    q10, q10
+    vcvt.f32.s32    q11, q11
+    vrecpe.f32      q0,  q10
+    vrecpe.f32      q1,  q11
+    vcvt.f32.s32    q8,  q8
+    vcvt.f32.s32    q9,  q9
+    vrecps.f32      q10, q0,  q10
+    vrecps.f32      q11, q1,  q11
+    vmla.f32        q8,  q12, q3            @ propagate_amount
+    vmla.f32        q9,  q13, q3            @ propagate_amount
+    vmul.f32        q0,  q0,  q10
+    vmul.f32        q1,  q1,  q11
+    vmul.f32        q8,  q8,  q14
+    vmul.f32        q9,  q9,  q15
+    vmul.f32        q0,  q8,  q0
+    vmul.f32        q1,  q9,  q1
+    vcvt.s32.f32    q0,  q0
+    vcvt.s32.f32    q1,  q1
+    vqmovn.s32      d0,  q0
+    vqmovn.s32      d1,  q1
+    vst1.16         {q0},  [r0]!
+    bgt             8b
+    pop             {r4-r5,pc}
+endfunc
+
+function x264_mbtree_propagate_list_internal_neon
+    vld2.16         {d4[], d5[]}, [sp]      @ bipred_weight, mb_y
+    movrel          r12, pw_0to15
+    vmov.u16        q10, #0xc000
+    vld1.16         {q0},  [r12, :128]      @h->mb.i_mb_x,h->mb.i_mb_y
+    vmov.u32        q11, #4
+    vmov.u8         q3,  #32
+    vdup.u16        q8,  d5[0]              @ mb_y
+    vzip.u16        q0,  q8
+    ldr             r12, [sp, #8]
+8:
+    subs            r12, r12,  #8
+    vld1.16         {q14},  [r1, :128]!      @ propagate_amount
+    vld1.16         {q15},  [r2, :128]!      @ lowres_cost
+    vld1.16         {q8, q9},  [r0, :128]!
+    vand            q15, q15, q10
+    vceq.u16        q1,  q15, q10
+    vmull.u16       q12, d28, d4
+    vmull.u16       q13, d29, d4
+    vrshrn.u32      d30, q12, #6
+    vrshrn.u32      d31, q13, #6
+    vbsl            q1,  q15, q14           @ if( lists_used == 3 )
+    @ propagate_amount = (propagate_amount * bipred_weight + 32) >> 6
+    vshr.s16        q12, q8,  #5
+    vshr.s16        q13, q9,  #5
+    vuzp.16         q8,  q9                 @ x & 31, y & 31
+    vadd.s16        q12, q12, q0
+    vadd.s16        q0,  q0,  q11
+    vmovn.i16       d16, q8
+    vmovn.i16       d17, q9
+    vadd.s16        q13, q13, q0
+    vbic.i16        q8,  #128+64+32
+    vadd.s16        q0,  q0,  q11
+    vbic.i16        q8,  #(128+64+32)<<8
+    vst1.16         {q12, q13},  [r3, :128]!
+    vsub.i8         q9,  q3,  q8
+    vmull.u8        q12, d17, d16           @ idx3weight = y*x
+    vmull.u8        q14, d19, d16           @ idx1weight = (32-y)*x
+    vmull.u8        q15, d19, d18           @ idx0weight = (32-y)*(32-x)
+    vmull.u8        q13, d17, d18           @ idx2weight = y*(32-x)
+    vmull.u16       q9,  d28, d2            @ idx1weight
+    vmull.u16       q8,  d29, d3
+    vmull.u16       q14, d30, d2            @ idx0weight
+    vmull.u16       q15, d31, d3
+    vrshrn.u32      d18, q9,  #10           @ idx1weight
+    vrshrn.u32      d19, q8,  #10
+    vrshrn.u32      d16, q14, #10           @ idx0weight
+    vrshrn.u32      d17, q15, #10
+    vmull.u16       q14, d24, d2            @ idx3weight
+    vmull.u16       q15, d25, d3
+    vzip.16         q8,  q9
+    vmull.u16       q12, d26, d2            @ idx2weight
+    vmull.u16       q13, d27, d3
+    vst1.16         {q8, q9},   [r3, :128]!
+    vrshrn.u32      d19, q15, #10           @ idx3weight
+    vrshrn.u32      d18, q14, #10
+    vrshrn.u32      d16, q12, #10           @ idx2weight
+    vrshrn.u32      d17, q13, #10
+    vzip.16         q8,  q9
+    vst1.16         {q8, q9},   [r3, :128]!
+    bge             8b
     bx              lr
 endfunc

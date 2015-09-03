@@ -4,6 +4,7 @@
  * Copyright (C) 2009-2015 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
+ *          Janne Grunau <janne-x264@jannau.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,6 +104,8 @@ void integral_init4h_neon( uint16_t *, uint8_t *, intptr_t );
 void integral_init4v_neon( uint16_t *, uint16_t *, intptr_t );
 void integral_init8h_neon( uint16_t *, uint8_t *, intptr_t );
 void integral_init8v_neon( uint16_t *, intptr_t );
+
+void x264_mbtree_propagate_cost_neon( int16_t *, uint16_t *, uint16_t *, uint16_t *, uint16_t *, float *, int );
 
 #if !HIGH_BIT_DEPTH
 static void x264_weight_cache_neon( x264_t *h, x264_weight_t *w )
@@ -226,6 +229,8 @@ static void hpel_filter_neon( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8
 }
 #endif // !HIGH_BIT_DEPTH
 
+PROPAGATE_LIST(neon)
+
 void x264_mc_init_arm( int cpu, x264_mc_functions_t *pf )
 {
     if( !(cpu&X264_CPU_ARMV6) )
@@ -281,6 +286,9 @@ void x264_mc_init_arm( int cpu, x264_mc_functions_t *pf )
     pf->integral_init8h = integral_init8h_neon;
     pf->integral_init4v = integral_init4v_neon;
     pf->integral_init8v = integral_init8v_neon;
+
+    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
+    pf->mbtree_propagate_list = x264_mbtree_propagate_list_neon;
 #endif // !HIGH_BIT_DEPTH
 
 // Apple's gcc stupidly cannot align stack variables, and ALIGNED_ARRAY can't work on structs
