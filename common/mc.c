@@ -526,7 +526,6 @@ static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs
 
     for( unsigned i = 0; i < len; i++ )
     {
-#define CLIP_ADD(s,x) (s) = X264_MIN((s)+(x),(1<<15)-1)
         int lists_used = lowres_costs[i]>>LOWRES_COST_SHIFT;
 
         if( !(lists_used & (1 << list)) )
@@ -540,7 +539,7 @@ static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs
         /* Early termination for simple case of mv0. */
         if( !M32( mvs[i] ) )
         {
-            CLIP_ADD( ref_costs[mb_y*stride + i], listamount );
+            MC_CLIP_ADD( ref_costs[mb_y*stride + i], listamount );
             continue;
         }
 
@@ -563,10 +562,10 @@ static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs
 
         if( mbx < width-1 && mby < height-1 )
         {
-            CLIP_ADD( ref_costs[idx0+0], idx0weight );
-            CLIP_ADD( ref_costs[idx0+1], idx1weight );
-            CLIP_ADD( ref_costs[idx2+0], idx2weight );
-            CLIP_ADD( ref_costs[idx2+1], idx3weight );
+            MC_CLIP_ADD( ref_costs[idx0+0], idx0weight );
+            MC_CLIP_ADD( ref_costs[idx0+1], idx1weight );
+            MC_CLIP_ADD( ref_costs[idx2+0], idx2weight );
+            MC_CLIP_ADD( ref_costs[idx2+1], idx3weight );
         }
         else
         {
@@ -575,20 +574,19 @@ static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs
             if( mby < height )
             {
                 if( mbx < width )
-                    CLIP_ADD( ref_costs[idx0+0], idx0weight );
+                    MC_CLIP_ADD( ref_costs[idx0+0], idx0weight );
                 if( mbx+1 < width )
-                    CLIP_ADD( ref_costs[idx0+1], idx1weight );
+                    MC_CLIP_ADD( ref_costs[idx0+1], idx1weight );
             }
             if( mby+1 < height )
             {
                 if( mbx < width )
-                    CLIP_ADD( ref_costs[idx2+0], idx2weight );
+                    MC_CLIP_ADD( ref_costs[idx2+0], idx2weight );
                 if( mbx+1 < width )
-                    CLIP_ADD( ref_costs[idx2+1], idx3weight );
+                    MC_CLIP_ADD( ref_costs[idx2+1], idx3weight );
             }
         }
     }
-#undef CLIP_ADD
 }
 
 void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )

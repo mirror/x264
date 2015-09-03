@@ -26,6 +26,80 @@
 #ifndef X264_MC_H
 #define X264_MC_H
 
+#define MC_CLIP_ADD(s,x) (s) = X264_MIN((s)+(x),(1<<15)-1)
+#define MC_CLIP_ADD2(s,x)\
+do\
+{\
+    MC_CLIP_ADD((s)[0], (x)[0]);\
+    MC_CLIP_ADD((s)[1], (x)[1]);\
+} while(0)
+
+#define PROPAGATE_LIST(cpu)\
+void x264_mbtree_propagate_list_internal_##cpu( int16_t (*mvs)[2], int16_t *propagate_amount,\
+                                                uint16_t *lowres_costs, int16_t *output,\
+                                                int bipred_weight, int mb_y, int len );\
+\
+static void x264_mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],\
+                                              int16_t *propagate_amount, uint16_t *lowres_costs,\
+                                              int bipred_weight, int mb_y, int len, int list )\
+{\
+    int16_t *current = h->scratch_buffer2;\
+\
+    x264_mbtree_propagate_list_internal_##cpu( mvs, propagate_amount, lowres_costs,\
+                                               current, bipred_weight, mb_y, len );\
+\
+    unsigned stride = h->mb.i_mb_stride;\
+    unsigned width = h->mb.i_mb_width;\
+    unsigned height = h->mb.i_mb_height;\
+\
+    for( unsigned i = 0; i < len; current += 32 )\
+    {\
+        int end = X264_MIN( i+8, len );\
+        for( ; i < end; i++, current += 2 )\
+        {\
+            if( !(lowres_costs[i] & (1 << (list+LOWRES_COST_SHIFT))) )\
+                continue;\
+\
+            unsigned mbx = current[0];\
+            unsigned mby = current[1];\
+            unsigned idx0 = mbx + mby * stride;\
+            unsigned idx2 = idx0 + stride;\
+\
+            /* Shortcut for the simple/common case of zero MV */\
+            if( !M32( mvs[i] ) )\
+            {\
+                MC_CLIP_ADD( ref_costs[idx0], current[16] );\
+                continue;\
+            }\
+\
+            if( mbx < width-1 && mby < height-1 )\
+            {\
+                MC_CLIP_ADD2( ref_costs+idx0, current+16 );\
+                MC_CLIP_ADD2( ref_costs+idx2, current+32 );\
+            }\
+            else\
+            {\
+                /* Note: this takes advantage of unsigned representation to\
+                 * catch negative mbx/mby. */\
+                if( mby < height )\
+                {\
+                    if( mbx < width )\
+                        MC_CLIP_ADD( ref_costs[idx0+0], current[16] );\
+                    if( mbx+1 < width )\
+                        MC_CLIP_ADD( ref_costs[idx0+1], current[17] );\
+                }\
+                if( mby+1 < height )\
+                {\
+                    if( mbx < width )\
+                        MC_CLIP_ADD( ref_costs[idx2+0], current[32] );\
+                    if( mbx+1 < width )\
+                        MC_CLIP_ADD( ref_costs[idx2+1], current[33] );\
+                }\
+            }\
+        }\
+    }\
+}
+
 struct x264_weight_t;
 typedef void (* weight_fn_t)( pixel *, intptr_t, pixel *,intptr_t, const struct x264_weight_t *, int );
 typedef struct x264_weight_t
