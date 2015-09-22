@@ -32,8 +32,9 @@ char **x264_split_string( char *string, char *sep, int limit )
     if( !string )
         return NULL;
     int sep_count = 0;
+    int sep_len = strlen( sep );
     char *tmp = string;
-    while( ( tmp = ( tmp = strstr( tmp, sep ) ) ? tmp + strlen( sep ) : 0 ) )
+    while( ( tmp = ( tmp = strstr( tmp, sep ) ) ? tmp + sep_len : 0 ) )
         ++sep_count;
     if( sep_count == 0 )
     {
@@ -61,7 +62,7 @@ char **x264_split_string( char *string, char *sep, int limit )
             int j = i-1;
             if( esc )
                 esc[0] = '\0';
-            split[j] = realloc( split[j], strlen( split[j] ) + strlen( sep ) + strlen( tok ) + 1 );
+            split[j] = realloc( split[j], strlen( split[j] ) + sep_len + strlen( tok ) + 1 );
             assert( split[j] );
             strcat( split[j], sep );
             strcat( split[j], tok );

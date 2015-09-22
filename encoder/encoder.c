@@ -3962,13 +3962,13 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
     {
         pic_out->prop.f_ssim = h->stat.frame.f_ssim / h->stat.frame.i_ssim_cnt;
         h->stat.f_ssim_mean_y[h->sh.i_type] += pic_out->prop.f_ssim * dur;
-        snprintf( psz_message + strlen(psz_message), 80 - strlen(psz_message),
-                  " SSIM Y:%.5f", pic_out->prop.f_ssim );
+        int msg_len = strlen(psz_message);
+        snprintf( psz_message + msg_len, 80 - msg_len, " SSIM Y:%.5f", pic_out->prop.f_ssim );
     }
     psz_message[79] = '\0';
 
     x264_log( h, X264_LOG_DEBUG,
-                  "frame=%4d QP=%.2f NAL=%d Slice:%c Poc:%-3d I:%-4d P:%-4d SKIP:%-4d size=%d bytes%s\n",
+              "frame=%4d QP=%.2f NAL=%d Slice:%c Poc:%-3d I:%-4d P:%-4d SKIP:%-4d size=%d bytes%s\n",
               h->i_frame,
               h->fdec->f_qp_avg_aq,
               h->i_nal_ref_idc,
