@@ -2089,7 +2089,8 @@ static void update_predictor( predictor_t *p, float q, float var, float bits )
     if( var < 10 )
         return;
     float old_coeff = p->coeff / p->count;
-    float new_coeff = X264_MAX( bits*q / var, p->coeff_min );
+    float old_offset = p->offset / p->count;
+    float new_coeff = X264_MAX( (bits*q - old_offset) / var, p->coeff_min );
     float new_coeff_clipped = x264_clip3f( new_coeff, old_coeff/range, old_coeff*range );
     float new_offset = bits*q - new_coeff_clipped * var;
     if( new_offset >= 0 )
