@@ -740,7 +740,7 @@ lowres_intra_mb:
             }
         }
 
-        i_icost += intra_penalty + lowres_penalty;
+        i_icost = ((i_icost + intra_penalty) >> (BIT_DEPTH - 8)) + lowres_penalty;
         fenc->i_intra_cost[i_mb_xy] = i_icost;
         int i_icost_aq = i_icost;
         if( h->param.rc.i_aq_mode )
@@ -752,7 +752,7 @@ lowres_intra_mb:
             output_intra[COST_EST_AQ] += i_icost_aq;
         }
     }
-    i_bcost += lowres_penalty;
+    i_bcost = (i_bcost >> (BIT_DEPTH - 8)) + lowres_penalty;
 
     /* forbid intra-mbs in B-frames, because it's rare and not worth checking */
     /* FIXME: Should we still forbid them now that we cache intra scores? */
@@ -2069,9 +2069,5 @@ int x264_rc_analyse_slice( x264_t *h )
         }
     }
 
-    if( BIT_DEPTH > 8 )
-        for( int y = 0; y < h->mb.i_mb_height; y++ )
-            h->fdec->i_row_satd[y] >>= (BIT_DEPTH - 8);
-
-    return cost >> (BIT_DEPTH - 8);
+    return cost;
 }

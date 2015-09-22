@@ -201,11 +201,11 @@ static void update_predictor( predictor_t *p, float q, float var, float bits );
  */
 static inline float qp2qscale( float qp )
 {
-    return 0.85f * powf( 2.0f, ( qp - 12.0f ) / 6.0f );
+    return 0.85f * powf( 2.0f, ( qp - (12.0f + QP_BD_OFFSET) ) / 6.0f );
 }
 static inline float qscale2qp( float qscale )
 {
-    return 12.0f + 6.0f * log2f( qscale/0.85f );
+    return (12.0f + QP_BD_OFFSET) + 6.0f * log2f( qscale/0.85f );
 }
 
 /* Texture bitrate is not quite inversely proportional to qscale,
@@ -828,7 +828,7 @@ int x264_ratecontrol_new( x264_t *h )
     h->mb.ip_offset = rc->ip_offset + 0.5;
 
     rc->lstep = pow( 2, h->param.rc.i_qp_step / 6.0 );
-    rc->last_qscale = qp2qscale( 26 );
+    rc->last_qscale = qp2qscale( 26 + QP_BD_OFFSET );
     int num_preds = h->param.b_sliced_threads * h->param.i_threads + 1;
     CHECKED_MALLOC( rc->pred, 5 * sizeof(predictor_t) * num_preds );
     CHECKED_MALLOC( rc->pred_b_from_p, sizeof(predictor_t) );
@@ -1024,7 +1024,7 @@ int x264_ratecontrol_new( x264_t *h )
         {
             ratecontrol_entry_t *rce = &rc->entry[i];
             rce->pict_type = SLICE_TYPE_P;
-            rce->qscale = rce->new_qscale = qp2qscale( 20 );
+            rce->qscale = rce->new_qscale = qp2qscale( 20 + QP_BD_OFFSET );
             rce->misc_bits = rc->nmb + 10;
             rce->new_qp = 0;
         }
