@@ -661,7 +661,7 @@ esac
 
 LDFLAGS="$LDFLAGS $libm"
 
-stack_alignment=16
+stack_alignment=4
 case $host_cpu in
     i*86)
         ARCH="X86"
@@ -677,21 +677,6 @@ case $host_cpu in
             fi
             CFLAGS="-m32 $CFLAGS"
             LDFLAGS="-m32 $LDFLAGS"
-        elif [ $compiler = ICC ]; then
-            # icc on linux has various degrees of mod16 stack support
-            if [ $SYS = LINUX ]; then
-                # < 11 is completely incapable of keeping a mod16 stack
-                if cpp_check "" "" "__INTEL_COMPILER < 1100" ; then
-                    stack_alignment=4
-                # 11 <= x < 12 is capable of keeping a mod16 stack, but defaults to not doing so.
-                elif cpp_check "" "" "__INTEL_COMPILER < 1200" ; then
-                    CFLAGS="$CFLAGS -falign-stack=assume-16-byte"
-                fi
-                # >= 12 defaults to a mod16 stack
-            fi
-        else # ICL/CL
-            # always a mod4 stack
-            stack_alignment=4
         fi
         if [ "$SYS" = MACOSX ]; then
             ASFLAGS="$ASFLAGS -f macho32 -DPREFIX"
@@ -709,6 +694,7 @@ case $host_cpu in
         AS="${AS-yasm}"
         AS_EXT=".asm"
         ASFLAGS="$ASFLAGS -DARCH_X86_64=1 -I\$(SRCPATH)/common/x86/"
+        stack_alignment=16
         [ $compiler = GNU ] && CFLAGS="-m64 $CFLAGS" && LDFLAGS="-m64 $LDFLAGS"
         if [ "$SYS" = MACOSX ]; then
             ASFLAGS="$ASFLAGS -f macho64 -DPIC -DPREFIX"
@@ -764,6 +750,7 @@ case $host_cpu in
         ;;
     aarch64)
         ARCH="AARCH64"
+        stack_alignment=16
         if [ "$SYS" = MACOSX ] ; then
             AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -- ${CC}}"
             ASFLAGS="$ASFLAGS -DPREFIX"
@@ -822,6 +809,29 @@ if [ $shared = yes -a \( $ARCH = "X86_64" -o $ARCH = "PPC" -o $ARCH = "ALPHA" -o
     pic="yes"
 fi
 
+if [ $compiler = GNU -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
+    if cc_check '' -mpreferred-stack-boundary=5 ; then
+        CFLAGS="$CFLAGS -mpreferred-stack-boundary=5"
+        stack_alignment=32
+    elif [ $stack_alignment -lt 16 ] && cc_check '' -mpreferred-stack-boundary=4 ; then
+        CFLAGS="$CFLAGS -mpreferred-stack-boundary=4"
+        stack_alignment=16
+    fi
+elif [ $compiler = ICC -a $ARCH = X86 ]; then
+    # icc on linux has various degrees of mod16 stack support
+    if [ $SYS = LINUX ]; then
+        # >= 12 defaults to a mod16 stack
+        if cpp_check "" "" "__INTEL_COMPILER >= 1200" ; then
+            stack_alignment=16
+        # 11 <= x < 12 is capable of keeping a mod16 stack, but defaults to not doing so.
+        elif cpp_check "" "" "__INTEL_COMPILER >= 1100" ; then
+            CFLAGS="$CFLAGS -falign-stack=assume-16-byte"
+            stack_alignment=16
+        fi
+        # < 11 is completely incapable of keeping a mod16 stack
+    fi
+fi
+
 if [ $asm = auto -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
     if ! as_check "vpmovzxwd ymm0, xmm0" ; then
         VER=`($AS --version || echo no assembler) 2>/dev/null | head -n 1`
@@ -833,10 +843,6 @@ if [ $asm = auto -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
     cc_check '' '' '__asm__("pabsw %xmm0, %xmm0");' && define HAVE_X86_INLINE_ASM
     ASFLAGS="$ASFLAGS -Worphan-labels"
     define HAVE_MMX
-    if [ $compiler = GNU ] && cc_check '' -mpreferred-stack-boundary=5 ; then
-        CFLAGS="$CFLAGS -mpreferred-stack-boundary=5"
-        stack_alignment=32
-    fi
 fi
 
 if [ $asm = auto -a $ARCH = ARM ] ; then
