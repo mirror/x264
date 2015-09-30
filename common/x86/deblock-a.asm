@@ -1266,11 +1266,7 @@ cglobal deblock_h_luma, 5,9,0,0x60+16*WIN64
     lea    r8, [r1*3]
     lea    r6, [r0-4]
     lea    r5, [r0-4+r8]
-%if WIN64
-    %define pix_tmp rsp+0x30 ; shadow space + r4
-%else
-    %define pix_tmp rsp
-%endif
+    %xdefine pix_tmp rsp+0x30*WIN64 ; shadow space + r4
 
     ; transpose 6x16 -> tmp space
     TRANSPOSE6x8_MEM  PASS8ROWS(r6, r5, r1, r8), pix_tmp

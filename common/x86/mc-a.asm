@@ -1912,11 +1912,7 @@ ALIGN 4
 
 %macro MC_CHROMA_SSSE3 0
 cglobal mc_chroma
-%if cpuflag(avx2)
-    MC_CHROMA_START 9
-%else
-    MC_CHROMA_START 10
-%endif
+    MC_CHROMA_START 10-cpuflag(avx2)
     and       r5d, 7
     and       t2d, 7
     mov       t0d, r5d

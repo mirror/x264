@@ -2093,8 +2093,8 @@ MBTREE
 %endmacro
 
 ; FIXME: align loads to 16 bytes
-%macro MBTREE_AVX 1
-cglobal mbtree_propagate_cost, 6,6,%1
+%macro MBTREE_AVX 0
+cglobal mbtree_propagate_cost, 6,6,8-cpuflag(avx2)
     vbroadcastss m6, [r5]
     mov         r5d, r6m
     lea          r0, [r0+r5*2]
@@ -2165,9 +2165,9 @@ cglobal mbtree_propagate_cost, 6,6,%1
 %endmacro
 
 INIT_YMM avx
-MBTREE_AVX 8
+MBTREE_AVX
 INIT_YMM avx2
-MBTREE_AVX 7
+MBTREE_AVX
 
 %macro MBTREE_PROPAGATE_LIST 0
 ;-----------------------------------------------------------------------------
