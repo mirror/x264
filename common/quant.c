@@ -553,6 +553,8 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->dequant_8x8 = x264_dequant_8x8_avx2;
         pf->dequant_4x4_dc = x264_dequant_4x4dc_avx2;
         pf->denoise_dct = x264_denoise_dct_avx2;
+        if( cpu&X264_CPU_LZCNT )
+            pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx2_lzcnt;
     }
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH
