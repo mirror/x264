@@ -2016,7 +2016,7 @@ cglobal mc_chroma
     movhps [r1+r2], xm2
 %else
     movu       m0, [r3]
-    pshufb     m0, xm5
+    pshufb     m0, m5
 .loop4:
     movu       m1, [r3+r4]
     pshufb     m1, m5
@@ -2033,13 +2033,19 @@ cglobal mc_chroma
     pmulhrsw   m3, shiftround
     mova       m0, m4
     packuswb   m1, m3
+    movd     [r0], m1
+%if cpuflag(sse4)
+    pextrd    [r1], m1, 1
+    pextrd [r0+r2], m1, 2
+    pextrd [r1+r2], m1, 3
+%else
     movhlps    m3, m1
-    movd     [r0], xm1
     movd  [r0+r2], m3
     psrldq     m1, 4
     psrldq     m3, 4
     movd     [r1], m1
     movd  [r1+r2], m3
+%endif
     lea        r3, [r3+r4*2]
     lea        r0, [r0+r2*2]
     lea        r1, [r1+r2*2]

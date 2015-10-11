@@ -869,8 +869,8 @@ DEBLOCK_LUMA_INTRA
     mova       m2, m0
     punpckldq  m0, m1
     punpckhdq  m2, m1
-    movhlps    m1, m0
-    movhlps    m3, m2
+    MOVHL      m1, m0
+    MOVHL      m3, m2
 %endif
 %endmacro
 
@@ -883,7 +883,7 @@ DEBLOCK_LUMA_INTRA
     punpcklwd  m1, m2
 %else
     punpcklwd  m1, m2
-    movhlps    m0, m1
+    MOVHL      m0, m1
 %endif
     movd       %3, m0
     movd       %1, m1

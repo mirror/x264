@@ -2676,7 +2676,7 @@ cglobal intra_satd_x3_8x8c, 0,6
     psignw    m%1, [pw_pmpmpmpm]
     paddw      m0, m%1
     psllw      m0, 2 ; hadamard(top), hadamard(left)
-    movhlps    m3, m0
+    MOVHL      m3, m0
     pshufb     m1, m0, [intrax9b_v1]
     pshufb     m2, m0, [intrax9b_v2]
     paddw      m0, m3
@@ -2713,7 +2713,7 @@ cglobal intra_satd_x3_8x8c, 0,6
     SBUTTERFLY qdq, 3, 0, 2
     paddw      m3, m0
 %endif
-    movhlps    m2, m1
+    MOVHL      m2, m1
     paddw      m1, m2
 %if cpuflag(xop)
     vphaddwq   m3, m3
@@ -2904,7 +2904,7 @@ cglobal intra_satd_x9_4x4, 3,4,16
     movddup    m0, m2
     pshufd     m1, m2, q3232
     movddup    m2, m3
-    movhlps    m3, m3
+    punpckhqdq m3, m3
     call .satd_8x4 ; ddr, ddl
     movddup    m2, m5
     pshufd     m3, m5, q3232
@@ -2956,11 +2956,7 @@ ALIGN 16
     psubw      m3, m11
     SATD_8x4_SSE 0, 0, 1, 2, 3, 13, 14, 0, swap
     pmaddwd    m0, [pw_1]
-%if cpuflag(sse4)
-    pshufd     m1, m0, q0032
-%else
-    movhlps    m1, m0
-%endif
+    MOVHL      m1, m0
     paddd    xmm0, m0, m1 ; consistent location of return value. only the avx version of hadamard permutes m0, so 3arg is free
     ret
 
@@ -2998,7 +2994,7 @@ cglobal intra_satd_x9_4x4, 3,4,8
     movddup    m0, m2
     pshufd     m1, m2, q3232
     movddup    m2, m3
-    movhlps    m3, m3
+    punpckhqdq m3, m3
     pmaddubsw  m0, m7
     pmaddubsw  m1, m7
     pmaddubsw  m2, m7
@@ -3010,18 +3006,18 @@ cglobal intra_satd_x9_4x4, 3,4,8
     mova       m3, [pred_buf+0x30]
     mova       m1, [pred_buf+0x20]
     movddup    m2, m3
-    movhlps    m3, m3
+    punpckhqdq m3, m3
     movq [spill+0x08], m0
     movddup    m0, m1
-    movhlps    m1, m1
+    punpckhqdq m1, m1
     call .satd_8x4 ; vr, vl
     mova       m3, [pred_buf+0x50]
     mova       m1, [pred_buf+0x40]
     movddup    m2, m3
-    movhlps    m3, m3
+    punpckhqdq m3, m3
     movq [spill+0x10], m0
     movddup    m0, m1
-    movhlps    m1, m1
+    punpckhqdq m1, m1
     call .satd_8x4 ; hd, hu
     movq [spill+0x18], m0
     mova       m1, [spill+0x20]
@@ -3064,17 +3060,11 @@ ALIGN 16
     psubw      m3, [fenc_buf+0x30]
     SATD_8x4_SSE 0, 0, 1, 2, 3, 4, 5, 0, swap
     pmaddwd    m0, [pw_1]
-%if cpuflag(sse4)
-    pshufd     m1, m0, q0032
-%else
-    movhlps    m1, m0
-%endif
+    MOVHL      m1, m0
     paddd    xmm0, m0, m1
     ret
 %endif ; ARCH
 %endmacro ; INTRA_X9
-
-
 
 %macro INTRA8_X9 0
 ;-----------------------------------------------------------------------------
@@ -3122,7 +3112,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     paddw       m1, m2
     paddw       m0, m3
     paddw       m0, m1
-    movhlps     m1, m0
+    MOVHL       m1, m0
     paddw       m0, m1
     movd    [r4+0], m0
 
@@ -3143,7 +3133,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     psadbw      m2, fenc57
     paddw       m1, m3
     paddw       m1, m2
-    movhlps     m2, m1
+    MOVHL       m2, m1
     paddw       m1, m2
     movd    [r4+2], m1
 
@@ -3154,7 +3144,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     movhps      m0, [r2+16]
     pxor        m2, m2
     psadbw      m0, m2
-    movhlps     m1, m0
+    MOVHL       m1, m0
     paddw       m0, m1
     psrlw       m0, 3
     pavgw       m0, m2
@@ -3170,7 +3160,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     paddw       m1, m2
     paddw       m0, m3
     paddw       m0, m1
-    movhlps     m1, m0
+    MOVHL       m1, m0
     paddw       m0, m1
     movd    [r4+4], m0
 
@@ -3203,7 +3193,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     mova pred(3,3), m2
     psadbw      m2, fenc57
     paddw       m1, m2
-    movhlps     m2, m1
+    MOVHL       m2, m1
     paddw       m1, m2
     movd    [r4+6], m1
 
@@ -3231,7 +3221,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     paddw       m1, m2
     paddw       m0, m3
     paddw       m0, m1
-    movhlps     m1, m0
+    MOVHL       m1, m0
     paddw       m0, m1
 %if cpuflag(sse4)
     pextrw [r4+14], m0, 0
@@ -3270,7 +3260,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     mova pred(4,3), m2
     psadbw      m2, fenc57
     paddw       m1, m2
-    movhlps     m2, m1
+    MOVHL       m2, m1
     paddw       m1, m2
     movd    [r4+8], m1
 
@@ -3304,7 +3294,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     mova pred(5,3), m2
     psadbw      m2, fenc57
     paddw       m1, m2
-    movhlps     m2, m1
+    MOVHL       m2, m1
     paddw       m1, m2
     movd   [r4+10], m1
 
@@ -3340,7 +3330,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     psadbw      m3, fenc57
     paddw       m1, m2
     paddw       m1, m3
-    movhlps     m2, m1
+    MOVHL       m2, m1
     paddw       m1, m2
     ; don't just store to [r4+12]. this is too close to the load of dqword [r4] and would cause a forwarding stall
     pslldq      m1, 12
@@ -3378,7 +3368,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     psadbw      m0, fenc57
     paddw       m1, m2
     paddw       m1, m0
-    movhlps     m2, m1
+    MOVHL       m2, m1
     paddw       m1, m2
     movd       r2d, m1
 
@@ -3398,7 +3388,7 @@ cglobal intra_sad_x9_8x8, 5,6,9
     paddusw    m0, m0
     paddusw    m0, m0
     paddw      m0, [off(pw_s00112233)]
-    movhlps    m1, m0
+    MOVHL      m1, m0
     pminsw     m0, m1
     pshuflw    m1, m0, q0032
     pminsw     m0, m1
@@ -3626,7 +3616,7 @@ cglobal intra_sa8d_x9_8x8, 5,6,16
 
     pmaddwd     m0, [pw_1]
     phaddw     m10, m11
-    movhlps     m1, m0
+    MOVHL       m1, m0
     paddw       m0, m1
     pshuflw     m1, m0, q0032
     pavgw       m0, m1
@@ -3648,7 +3638,7 @@ cglobal intra_sa8d_x9_8x8, 5,6,16
     ; 8x8 sa8d is up to 15 bits; +bitcosts and saturate -> 15 bits; pack with 1 bit index
     paddusw    m0, m0
     paddw      m0, [off(pw_s00001111)]
-    movhlps    m1, m0
+    MOVHL      m1, m0
     pminsw     m0, m1
     pshuflw    m1, m0, q0032
     mova       m2, m0
@@ -4578,7 +4568,7 @@ cglobal intra_sad_x9_8x8, 5,7,8
     paddw       m1, m2
     vextracti128 xm2, m1, 1
     paddw      xm1, xm2
-    movhlps    xm2, xm1
+    MOVHL      xm2, xm1
     paddw      xm1, xm2
     movd       r2d, xm1
 
@@ -4842,7 +4832,7 @@ cglobal pixel_asd8, 5,5
     HADDW    m0, m1
     ABSD     m1, m0
 %else
-    movhlps  m1, m0
+    MOVHL    m1, m0
     paddw    m0, m1
     ABSW     m1, m0
 %endif
