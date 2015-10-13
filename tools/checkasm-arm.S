@@ -99,16 +99,23 @@ function x264_checkasm_call_\variant
     mov         r3,  #0
 .endif
 
-.macro check_reg reg1, reg2
+.macro check_reg reg1, reg2=
     ldrd        r0,  r1,  [r12], #8
     eor         r0,  r0, \reg1
-    eor         r1,  r1, \reg2
     orr         r3,  r3, r0
+.ifnb \reg2
+    eor         r1,  r1, \reg2
     orr         r3,  r3, r1
+.endif
 .endm
     check_reg   r4,  r5
     check_reg   r6,  r7
+@ r9 is a volatile register in the ios ABI
+#if SYS_MACOSX
+    check_reg   r8
+#else
     check_reg   r8,  r9
+#endif
     check_reg   r10, r11
 .purgem check_reg
 
@@ -118,7 +125,7 @@ function x264_checkasm_call_\variant
     mov         r12, #0
     str         r12, [r2]
     movrel      r0, error_message
-    bl          puts
+    blx         X(puts)
 0:
     pop         {r0, r1}
 .ifc \variant, neon
