@@ -346,7 +346,7 @@ function x264_decimate_score\size\()_neon
     lsr         r1,  r1,  #2
 .endif
     rbit        r1,  r1
-    movrel      r3,  X(x264_decimate_table4)
+    movrelx     r3,  X(x264_decimate_table4), r2
 1:
     clz         r2,  r1
     lsl         r1,  r1,  r2
@@ -415,7 +415,7 @@ function x264_decimate_score64_neon
     mvn         r12, r12
     mov         r0,  #0
     mov         lr,  #32
-    movrel      r3,  X(x264_decimate_table8)
+    movrelx     r3,  X(x264_decimate_table8), r2
     beq         2f
 1:
     clz         r2,  r1
