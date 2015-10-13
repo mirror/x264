@@ -3339,7 +3339,7 @@ int     x264_encoder_encode( x264_t *h,
         if( x264_threadpool_wait_all( h ) < 0 )
             return -1;
 
-    if( h->i_frame == h->i_thread_frames - 1 )
+    if( h->i_frame == 0 )
         h->i_reordered_pts_delay = h->fenc->i_reordered_pts;
     if( h->reconfig )
     {
