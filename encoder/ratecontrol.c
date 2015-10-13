@@ -58,6 +58,7 @@ typedef struct
     int refs;
     int64_t i_duration;
     int64_t i_cpb_duration;
+    int out_num;
 } ratecontrol_entry_t;
 
 typedef struct
@@ -127,6 +128,7 @@ struct x264_ratecontrol_t
 
     int num_entries;            /* number of ratecontrol_entry_ts */
     ratecontrol_entry_t *entry; /* FIXME: copy needed data and free this once init is done */
+    ratecontrol_entry_t **entry_out;
     double last_qscale;
     double last_qscale_for[3];  /* last qscale for a specific pict type, used for max_diff & ipb factor stuff */
     int last_non_b_pict_type;
@@ -1017,6 +1019,7 @@ int x264_ratecontrol_new( x264_t *h )
         }
 
         CHECKED_MALLOCZERO( rc->entry, rc->num_entries * sizeof(ratecontrol_entry_t) );
+        CHECKED_MALLOC( rc->entry_out, rc->num_entries * sizeof(ratecontrol_entry_t*) );
 
         /* init all to skipped p frames */
         for( int i = 0; i < rc->num_entries; i++ )
@@ -1026,6 +1029,7 @@ int x264_ratecontrol_new( x264_t *h )
             rce->qscale = rce->new_qscale = qp2qscale( 20 + QP_BD_OFFSET );
             rce->misc_bits = rc->nmb + 10;
             rce->new_qp = 0;
+            rc->entry_out[i] = rce;
         }
 
         /* read stats */
@@ -1034,8 +1038,9 @@ int x264_ratecontrol_new( x264_t *h )
         for( int i = 0; i < rc->num_entries; i++ )
         {
             ratecontrol_entry_t *rce;
-            int frame_number;
-            char pict_type;
+            int frame_number = 0;
+            int frame_out_number = 0;
+            char pict_type = 0;
             int e;
             char *next;
             float qp_rc, qp_aq;
@@ -1044,14 +1049,20 @@ int x264_ratecontrol_new( x264_t *h )
             next= strchr(p, ';');
             if( next )
                 *next++ = 0; //sscanf is unbelievably slow on long strings
-            e = sscanf( p, " in:%d ", &frame_number );
+            e = sscanf( p, " in:%d out:%d ", &frame_number, &frame_out_number );
 
             if( frame_number < 0 || frame_number >= rc->num_entries )
             {
                 x264_log( h, X264_LOG_ERROR, "bad frame number (%d) at stats line %d\n", frame_number, i );
                 return -1;
             }
+            if( frame_out_number < 0 || frame_out_number >= rc->num_entries )
+            {
+                x264_log( h, X264_LOG_ERROR, "bad frame output number (%d) at stats line %d\n", frame_out_number, i );
+                return -1;
+            }
             rce = &rc->entry[frame_number];
+            rc->entry_out[frame_out_number] = rce;
             rce->direct_mode = 0;
 
             e += sscanf( p, " in:%*d out:%*d type:%c dur:%"SCNd64" cpbdur:%"SCNd64" q:%f aq:%f tex:%d mv:%d misc:%d imb:%d pmb:%d smb:%d d:%c",
@@ -1120,7 +1131,7 @@ int x264_ratecontrol_new( x264_t *h )
                     break;
                 default:  e = -1; break;
             }
-            if( e < 13 )
+            if( e < 14 )
             {
 parse_error:
                 x264_log( h, X264_LOG_ERROR, "statistics are damaged at line %d, parser out=%d\n", i, e );
@@ -1375,6 +1386,7 @@ void x264_ratecontrol_delete( x264_t *h )
     x264_free( rc->pred );
     x264_free( rc->pred_b_from_p );
     x264_free( rc->entry );
+    x264_free( rc->entry_out );
     x264_macroblock_tree_rescale_destroy( rc );
     if( rc->zones )
     {
@@ -2466,7 +2478,7 @@ static float rate_estimate_qscale( x264_t *h )
             /* Adjust ABR buffer based on distance to the end of the video. */
             if( rcc->num_entries > h->i_frame )
             {
-                double final_bits = rcc->entry[rcc->num_entries-1].expected_bits;
+                double final_bits = rcc->entry_out[rcc->num_entries-1]->expected_bits;
                 double video_pos = rce.expected_bits / final_bits;
                 double scale_factor = sqrt( (1 - video_pos) * rcc->num_entries );
                 abr_buffer *= 0.5 * X264_MAX( scale_factor, 0.5 );
@@ -2772,8 +2784,8 @@ static int find_underflow( x264_t *h, double *fills, int *t0, int *t1, int over 
     int start = -1, end = -1;
     for( int i = *t0; i < rcc->num_entries; i++ )
     {
-        fill += (rcc->entry[i].i_cpb_duration * rcc->vbv_max_rate * h->sps->vui.i_num_units_in_tick / h->sps->vui.i_time_scale -
-                 qscale2bits( &rcc->entry[i], rcc->entry[i].new_qscale )) * parity;
+        fill += (rcc->entry_out[i]->i_cpb_duration * rcc->vbv_max_rate * h->sps->vui.i_num_units_in_tick / h->sps->vui.i_time_scale -
+                 qscale2bits( rcc->entry_out[i], rcc->entry_out[i]->new_qscale )) * parity;
         fill = x264_clip3f(fill, 0, rcc->buffer_size);
         fills[i] = fill;
         if( fill <= buffer_min || i == 0 )
@@ -2790,7 +2802,7 @@ static int find_underflow( x264_t *h, double *fills, int *t0, int *t1, int over 
     return start >= 0 && end >= 0;
 }
 
-static int fix_underflow( x264_t *h, int t0, int t1, double adjustment, double qscale_min, double qscale_max)
+static int fix_underflow( x264_t *h, int t0, int t1, double adjustment, double qscale_min, double qscale_max )
 {
     x264_ratecontrol_t *rcc = h->rc;
     double qscale_orig, qscale_new;
@@ -2799,11 +2811,11 @@ static int fix_underflow( x264_t *h, int t0, int t1, double adjustment, double q
         t0++;
     for( int i = t0; i <= t1; i++ )
     {
-        qscale_orig = rcc->entry[i].new_qscale;
+        qscale_orig = rcc->entry_out[i]->new_qscale;
         qscale_orig = x264_clip3f( qscale_orig, qscale_min, qscale_max );
         qscale_new  = qscale_orig * adjustment;
         qscale_new  = x264_clip3f( qscale_new, qscale_min, qscale_max );
-        rcc->entry[i].new_qscale = qscale_new;
+        rcc->entry_out[i]->new_qscale = qscale_new;
         adjusted = adjusted || (qscale_new != qscale_orig);
     }
     return adjusted;
@@ -2815,7 +2827,7 @@ static double count_expected_bits( x264_t *h )
     double expected_bits = 0;
     for( int i = 0; i < rcc->num_entries; i++ )
     {
-        ratecontrol_entry_t *rce = &rcc->entry[i];
+        ratecontrol_entry_t *rce = rcc->entry_out[i];
         rce->expected_bits = expected_bits;
         expected_bits += qscale2bits( rce, rce->new_qscale );
     }
@@ -2878,7 +2890,7 @@ static int vbv_pass2( x264_t *h, double all_available_bits )
 
     /* store expected vbv filling values for tracking when encoding */
     for( int i = 0; i < rcc->num_entries; i++ )
-        rcc->entry[i].expected_vbv = rcc->buffer_size - fills[i];
+        rcc->entry_out[i]->expected_vbv = rcc->buffer_size - fills[i];
 
     x264_free( fills-1 );
     return 0;
