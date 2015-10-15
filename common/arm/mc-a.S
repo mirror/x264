@@ -1829,8 +1829,8 @@ function x264_mbtree_propagate_list_internal_neon
 8:
     subs            r12, r12,  #8
     vld1.16         {q14},  [r1, :128]!      @ propagate_amount
-    vld1.16         {q15},  [r2, :128]!      @ lowres_cost
-    vld1.16         {q8, q9},  [r0, :128]!
+    vld1.16         {q15},  [r2]!            @ lowres_cost
+    vld1.16         {q8, q9},  [r0]!
     vand            q15, q15, q10
     vceq.u16        q1,  q15, q10
     vmull.u16       q12, d28, d4
