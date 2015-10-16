@@ -28,7 +28,7 @@ Configuration options:
   --disable-opencl         disable OpenCL features
   --disable-gpl            disable GPL-only features
   --disable-thread         disable multithreaded encoding
-  --enable-win32thread     use win32threads (windows only)
+  --disable-win32thread    disable win32threads (windows only)
   --disable-interlaced     disable interlaced encoding support
   --bit-depth=BIT_DEPTH    set output bit depth (8-10) [8]
   --chroma-format=FORMAT   output chroma format (420, 422, 444, all) [all]
@@ -446,8 +446,8 @@ for opt do
         --disable-thread)
             thread="no"
             ;;
-        --enable-win32thread)
-            thread="win32"
+        --disable-win32thread)
+            [ "$thread" != "no" ] && thread="posix"
             ;;
         --disable-swscale)
             swscale="no"
@@ -924,11 +924,25 @@ fi
 
 # autodetect options that weren't forced nor disabled
 
-# pthread-win32 is lgpl, prevent its use if --disable-gpl is specified and targeting windows
-[ "$SYS" = "WINDOWS" -a "$gpl" = "no" -a "$thread" = "auto" ] && thread="win32"
-
 libpthread=""
-if [ "$thread" = "auto" ]; then
+if [ "$SYS" = "WINDOWS" -a "$thread" = "posix" ] ; then
+    if [ "$gpl" = "no" ] ; then
+        echo "Warning: pthread-win32 is LGPL and is therefore not supported with --disable-gpl"
+        thread="no"
+    elif cc_check pthread.h -lpthread "pthread_create(0,0,0,0);" ; then
+        libpthread="-lpthread"
+    elif cc_check pthread.h -lpthreadGC2 "pthread_create(0,0,0,0);" ; then
+        libpthread="-lpthreadGC2"
+    elif cc_check pthread.h "-lpthreadGC2 -lwsock32 -DPTW32_STATIC_LIB" "pthread_create(0,0,0,0);" ; then
+        libpthread="-lpthreadGC2 -lwsock32"
+        define PTW32_STATIC_LIB
+    elif cc_check pthread.h "-lpthreadGC2 -lws2_32 -DPTW32_STATIC_LIB" "pthread_create(0,0,0,0);" ; then
+        libpthread="-lpthreadGC2 -lws2_32"
+        define PTW32_STATIC_LIB
+    else
+        thread="no"
+    fi
+elif [ "$thread" != "no" ] ; then
     thread="no"
     case $SYS in
         BEOS)
@@ -936,24 +950,8 @@ if [ "$thread" = "auto" ]; then
             define HAVE_BEOSTHREAD
             ;;
         WINDOWS)
-            if cc_check pthread.h -lpthread "pthread_create(0,0,0,0);" ; then
-                thread="posix"
-                libpthread="-lpthread"
-            elif cc_check pthread.h -lpthreadGC2 "pthread_create(0,0,0,0);" ; then
-                thread="posix"
-                libpthread="-lpthreadGC2"
-            elif cc_check pthread.h "-lpthreadGC2 -lwsock32 -DPTW32_STATIC_LIB" "pthread_create(0,0,0,0);" ; then
-                thread="posix"
-                libpthread="-lpthreadGC2 -lwsock32"
-                define PTW32_STATIC_LIB
-            elif cc_check pthread.h "-lpthreadGC2 -lws2_32 -DPTW32_STATIC_LIB" "pthread_create(0,0,0,0);" ; then
-                thread="posix"
-                libpthread="-lpthreadGC2 -lws2_32"
-                define PTW32_STATIC_LIB
-            else
-                # default to native threading if pthread-win32 is unavailable
-                thread="win32"
-            fi
+            thread="win32"
+            define HAVE_WIN32THREAD
             ;;
         QNX)
             cc_check pthread.h -lc "pthread_create(0,0,0,0);" && thread="posix" && libpthread="-lc"
@@ -973,14 +971,6 @@ if [ "$thread" = "posix" ]; then
     define HAVE_POSIXTHREAD
     if [ "$SYS" = "LINUX" ] && cc_check sched.h "-D_GNU_SOURCE -Werror" "cpu_set_t p_aff; return CPU_COUNT(&p_aff);" ; then
         define HAVE_CPU_COUNT
-    fi
-fi
-if [ "$thread" = "win32" ]; then
-    # cygwin does not support win32 threads
-    if [ "$SYS" = "WINDOWS" ]; then
-        define HAVE_WIN32THREAD
-    else
-        thread="no"
     fi
 fi
 [ "$thread" != "no" ] && define HAVE_THREAD
