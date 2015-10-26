@@ -65,7 +65,7 @@ static int read_frame_internal( cli_pic_t *p_pic, lavf_hnd_t *h, int i_frame, vi
             XCHG( cli_image_t, p_pic->img, h->first_pic->img );
             p_pic->pts = h->first_pic->pts;
         }
-        lavf_input.picture_clean( h->first_pic );
+        lavf_input.picture_clean( h->first_pic, h );
         free( h->first_pic );
         h->first_pic = NULL;
         if( !i_frame )
@@ -192,7 +192,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
 
     /* prefetch the first frame and set/confirm flags */
     h->first_pic = malloc( sizeof(cli_pic_t) );
-    FAIL_IF_ERROR( !h->first_pic || lavf_input.picture_alloc( h->first_pic, X264_CSP_OTHER, info->width, info->height ),
+    FAIL_IF_ERROR( !h->first_pic || lavf_input.picture_alloc( h->first_pic, h, X264_CSP_OTHER, info->width, info->height ),
                    "malloc failed\n" )
     else if( read_frame_internal( h->first_pic, h, 0, info ) )
         return -1;
@@ -215,7 +215,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     return 0;
 }
 
-static int picture_alloc( cli_pic_t *pic, int csp, int width, int height )
+static int picture_alloc( cli_pic_t *pic, hnd_t handle, int csp, int width, int height )
 {
     if( x264_cli_pic_alloc( pic, X264_CSP_NONE, width, height ) )
         return -1;
@@ -229,7 +229,7 @@ static int read_frame( cli_pic_t *pic, hnd_t handle, int i_frame )
     return read_frame_internal( pic, handle, i_frame, NULL );
 }
 
-static void picture_clean( cli_pic_t *pic )
+static void picture_clean( cli_pic_t *pic, hnd_t handle )
 {
     memset( pic, 0, sizeof(cli_pic_t) );
 }
