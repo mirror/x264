@@ -85,7 +85,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     if( h->fh == NULL )
         return -1;
 
-    h->frame_header_len = strlen( Y4M_FRAME_MAGIC )+1;
+    h->frame_header_len = sizeof(Y4M_FRAME_MAGIC);
 
     /* Read header */
     for( i = 0; i < MAX_YUV4_HEADER; i++ )
@@ -100,13 +100,13 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
             break;
         }
     }
-    if( i == MAX_YUV4_HEADER || strncmp( header, Y4M_MAGIC, strlen( Y4M_MAGIC ) ) )
+    if( i == MAX_YUV4_HEADER || strncmp( header, Y4M_MAGIC, sizeof(Y4M_MAGIC)-1 ) )
         return -1;
 
     /* Scan properties */
     header_end = &header[i+1]; /* Include space */
     h->seq_header_len = i+1;
-    for( char *tokstart = &header[strlen( Y4M_MAGIC )+1]; tokstart < header_end; tokstart++ )
+    for( char *tokstart = header + sizeof(Y4M_MAGIC); tokstart < header_end; tokstart++ )
     {
         if( *tokstart == 0x20 )
             continue;
@@ -225,7 +225,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
 
 static int read_frame_internal( cli_pic_t *pic, y4m_hnd_t *h, int bit_depth_uc )
 {
-    size_t slen = strlen( Y4M_FRAME_MAGIC );
+    static const size_t slen = sizeof(Y4M_FRAME_MAGIC)-1;
     int pixel_depth = x264_cli_csp_depth_factor( pic->img.csp );
     int i = 0;
     char header[16];
