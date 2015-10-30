@@ -278,18 +278,7 @@ static uint16_t x264_cost_ref[QP_MAX+1][3][33];
 static UNUSED x264_pthread_mutex_t cost_ref_mutex = X264_PTHREAD_MUTEX_INITIALIZER;
 static uint16_t x264_cost_i4x4_mode[(QP_MAX+2)*32];
 
-float *x264_analyse_prepare_costs( x264_t *h )
-{
-    float *logs = x264_malloc( (2*4*2048+1)*sizeof(float) );
-    if( !logs )
-        return NULL;
-    logs[0] = 0.718f;
-    for( int i = 1; i <= 2*4*2048; i++ )
-        logs[i] = log2f(i+1)*2 + 1.718f;
-    return logs;
-}
-
-int x264_analyse_init_costs( x264_t *h, float *logs, int qp )
+static int init_costs( x264_t *h, float *logs, int qp )
 {
     int lambda = x264_lambda_tab[qp];
     if( h->cost_mv[qp] )
@@ -322,6 +311,30 @@ int x264_analyse_init_costs( x264_t *h, float *logs, int qp )
         cost_i4x4_mode[i] = 3*lambda*(i!=8);
     return 0;
 fail:
+    return -1;
+}
+
+int x264_analyse_init_costs( x264_t *h )
+{
+    float *logs = x264_malloc( (2*4*2048+1) * sizeof(float) );
+    if( !logs )
+        return -1;
+
+    logs[0] = 0.718f;
+    for( int i = 1; i <= 2*4*2048; i++ )
+        logs[i] = log2f( i+1 ) * 2.0f + 1.718f;
+
+    for( int qp = X264_MIN( h->param.rc.i_qp_min, QP_MAX_SPEC ); qp <= h->param.rc.i_qp_max; qp++ )
+        if( init_costs( h, logs, qp ) )
+            goto fail;
+
+    if( init_costs( h, logs, X264_LOOKAHEAD_QP ) )
+        goto fail;
+
+    x264_free( logs );
+    return 0;
+fail:
+    x264_free( logs );
     return -1;
 }
 

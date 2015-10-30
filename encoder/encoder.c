@@ -1409,7 +1409,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
 {
     x264_t *h;
     char buf[1000], *p;
-    int qp, i_slicetype_length;
+    int i_slicetype_length;
 
     CHECKED_MALLOCZERO( h, sizeof(x264_t) );
 
@@ -1576,15 +1576,8 @@ x264_t *x264_encoder_open( x264_param_t *param )
         p += sprintf( p, " none!" );
     x264_log( h, X264_LOG_INFO, "%s\n", buf );
 
-    float *logs = x264_analyse_prepare_costs( h );
-    if( !logs )
+    if( x264_analyse_init_costs( h ) )
         goto fail;
-    for( qp = X264_MIN( h->param.rc.i_qp_min, QP_MAX_SPEC ); qp <= h->param.rc.i_qp_max; qp++ )
-        if( x264_analyse_init_costs( h, logs, qp ) )
-            goto fail;
-    if( x264_analyse_init_costs( h, logs, X264_LOOKAHEAD_QP ) )
-        goto fail;
-    x264_free( logs );
 
     static const uint16_t cost_mv_correct[7] = { 24, 47, 95, 189, 379, 757, 1515 };
     /* Checks for known miscompilation issues. */
