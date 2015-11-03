@@ -601,28 +601,17 @@ case $host_os in
         define HAVE_MALLOC_H
         libm="-lm"
         ;;
-    cygwin*)
+    cygwin*|mingw*|msys*)
         EXE=".exe"
-        if [ $compiler_style = GNU ] && cc_check "" -mno-cygwin; then
-            CFLAGS="$CFLAGS -mno-cygwin"
-            LDFLAGS="$LDFLAGS -mno-cygwin"
-        fi
-        if cpp_check "" "" "defined(__CYGWIN__)" ; then
-            define HAVE_MALLOC_H
+        if [[ $host_os = cygwin* ]] && cpp_check "" "" "defined(__CYGWIN__)" ; then
             SYS="CYGWIN"
+            define HAVE_MALLOC_H
         else
             SYS="WINDOWS"
             DEVNULL="NUL"
             LDFLAGSCLI="$LDFLAGSCLI -lshell32"
-            RC="${RC-${cross_prefix}windres}"
+            [ $compiler = GNU ] && RC="${RC-${cross_prefix}windres}" || RC="${RC-rc}"
         fi
-        ;;
-    mingw*)
-        SYS="WINDOWS"
-        EXE=".exe"
-        DEVNULL="NUL"
-        LDFLAGSCLI="$LDFLAGSCLI -lshell32"
-        [ $compiler = GNU ] && RC="${RC-${cross_prefix}windres}" || RC="${RC-rc}"
         ;;
     sunos*|solaris*)
         SYS="SunOS"
