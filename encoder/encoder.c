@@ -1951,22 +1951,10 @@ static int x264_encoder_encapsulate_nals( x264_t *h, int start )
 
     for( int i = start; i < h->out.i_nal; i++ )
     {
-        int old_payload_len = h->out.nal[i].i_payload;
         h->out.nal[i].b_long_startcode = !i || h->out.nal[i].i_type == NAL_SPS || h->out.nal[i].i_type == NAL_PPS ||
                                          h->param.i_avcintra_class;
         x264_nal_encode( h, nal_buffer, &h->out.nal[i] );
         nal_buffer += h->out.nal[i].i_payload;
-        if( h->param.i_avcintra_class )
-        {
-            h->out.nal[i].i_padding -= h->out.nal[i].i_payload - (old_payload_len + NALU_OVERHEAD);
-            if( h->out.nal[i].i_padding > 0 )
-            {
-                memset( nal_buffer, 0, h->out.nal[i].i_padding );
-                nal_buffer += h->out.nal[i].i_padding;
-                h->out.nal[i].i_payload += h->out.nal[i].i_padding;
-            }
-            h->out.nal[i].i_padding = X264_MAX( h->out.nal[i].i_padding, 0 );
-        }
     }
 
     x264_emms();
@@ -3830,21 +3818,32 @@ static int x264_encoder_frame_end( x264_t *h, x264_t *thread_current,
      * We don't know the size of the last slice until encapsulation so we add filler to the encapsulated NAL */
     if( h->param.i_avcintra_class )
     {
-        x264_t *h0 = h->thread[0];
-        int ret = x264_check_encapsulated_buffer( h, h0, h->out.i_nal, frame_size, frame_size + filler );
-        if( ret < 0 )
+        if( x264_check_encapsulated_buffer( h, h->thread[0], h->out.i_nal, frame_size, frame_size + filler ) < 0 )
             return -1;
-        memset( h->out.nal[0].p_payload + frame_size, 0, filler );
-        h->out.nal[h->out.i_nal-1].i_payload += filler;
-        h->out.nal[h->out.i_nal-1].i_padding = filler;
+
+        x264_nal_t *nal = &h->out.nal[h->out.i_nal-1];
+        memset( nal->p_payload + nal->i_payload, 0, filler );
+        nal->i_payload += filler;
+        nal->i_padding = filler;
         frame_size += filler;
+
+        /* Fix up the size header for mp4/etc */
+        if( !h->param.b_annexb )
+        {
+            /* Size doesn't include the size of the header we're writing now. */
+            uint8_t *nal_data = nal->p_payload;
+            int chunk_size = nal->i_payload - 4;
+            nal_data[0] = chunk_size >> 24;
+            nal_data[1] = chunk_size >> 16;
+            nal_data[2] = chunk_size >> 8;
+            nal_data[3] = chunk_size >> 0;
+        }
     }
     else
     {
         while( filler > 0 )
         {
-            int f, overhead;
-            overhead = (FILLER_OVERHEAD - h->param.b_annexb);
+            int f, overhead = FILLER_OVERHEAD - h->param.b_annexb;
             if( h->param.i_slice_max_size && filler > h->param.i_slice_max_size )
             {
                 int next_size = filler - h->param.i_slice_max_size;
