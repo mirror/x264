@@ -64,7 +64,7 @@ static int parse_csp_and_depth( char *csp_name, int *bit_depth )
 
 static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, cli_input_opt_t *opt )
 {
-    y4m_hnd_t *h = malloc( sizeof(y4m_hnd_t) );
+    y4m_hnd_t *h = calloc( 1, sizeof(y4m_hnd_t) );
     int i;
     uint32_t n, d;
     char header[MAX_YUV4_HEADER+10];
@@ -75,7 +75,6 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     if( !h )
         return -1;
 
-    h->next_frame = 0;
     info->vfr = 0;
 
     if( !strcmp( psz_filename, "-" ) )
@@ -84,8 +83,6 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         h->fh = x264_fopen(psz_filename, "rb");
     if( h->fh == NULL )
         return -1;
-
-    h->frame_header_len = sizeof(Y4M_FRAME_MAGIC);
 
     /* Read header */
     for( i = 0; i < MAX_YUV4_HEADER; i++ )
@@ -194,7 +191,6 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     info->thread_safe = 1;
     info->num_frames  = 0;
     info->csp         = colorspace;
-    h->frame_size     = h->frame_header_len;
 
     if( h->bit_depth > 8 )
         info->csp |= X264_CSP_HIGH_DEPTH;
@@ -209,10 +205,18 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         h->plane_size[i] /= x264_cli_csp_depth_factor( info->csp );
     }
 
-    /* Most common case: frame_header = "FRAME" */
     if( x264_is_regular_file( h->fh ) )
     {
         uint64_t init_pos = ftell( h->fh );
+
+        /* Find out the length of the frame header */
+        int len = 1;
+        while( len <= MAX_FRAME_HEADER && fgetc( h->fh ) != '\n' )
+            len++;
+        FAIL_IF_ERROR( len > MAX_FRAME_HEADER || len < sizeof(Y4M_FRAME_MAGIC), "bad frame header length\n" )
+        h->frame_header_len = len;
+        h->frame_size += len;
+
         fseek( h->fh, 0, SEEK_END );
         uint64_t i_size = ftell( h->fh );
         fseek( h->fh, init_pos, SEEK_SET );
@@ -242,8 +246,6 @@ static int read_frame_internal( cli_pic_t *pic, y4m_hnd_t *h, int bit_depth_uc )
     while( i < MAX_FRAME_HEADER && fgetc( h->fh ) != '\n' )
         i++;
     FAIL_IF_ERROR( i == MAX_FRAME_HEADER, "bad frame header!\n" )
-    h->frame_size = h->frame_size - h->frame_header_len + i+slen+1;
-    h->frame_header_len = i+slen+1;
 
     int error = 0;
     for( i = 0; i < pic->img.planes && !error; i++ )
