@@ -316,7 +316,7 @@ uint32_t x264_cpu_detect( void )
     return cpu;
 }
 
-#elif ARCH_PPC
+#elif ARCH_PPC && HAVE_ALTIVEC
 
 #if SYS_MACOSX || SYS_OPENBSD || SYS_FREEBSD
 #include <sys/sysctl.h>
