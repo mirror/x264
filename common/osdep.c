@@ -126,6 +126,7 @@ int x264_stat( const char *path, x264_struct_stat *buf )
     return -1;
 }
 
+#if !HAVE_WINRT
 int x264_vfprintf( FILE *stream, const char *format, va_list arg )
 {
     HANDLE console = NULL;
@@ -166,4 +167,5 @@ int x264_is_pipe( const char *path )
         return WaitNamedPipeW( path_utf16, 0 );
     return 0;
 }
+#endif
 #endif

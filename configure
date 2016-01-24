@@ -373,7 +373,7 @@ NL="
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
              LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
-             MSA MMAP"
+             MSA MMAP WINRT"
 
 # parse options
 
@@ -767,6 +767,21 @@ esac
 if [ $SYS = WINDOWS ]; then
     if ! rc_check "0 RCDATA {0}" ; then
         RC=""
+    fi
+
+    if cpp_check "winapifamily.h" "" "!WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)" ; then
+        [ $compiler = CL ] || die "WinRT requires MSVC"
+        define HAVE_WINRT
+        CFLAGS="$CFLAGS -MD"
+        LDFLAGS="$LDFLAGS -appcontainer"
+        if ! cpp_check "" "" "defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0603" ; then
+            die "_WIN32_WINNT must be defined to at least 0x0603 (Windows 8.1) for WinRT"
+        elif cpp_check "" "" "_WIN32_WINNT >= 0x0A00" ; then
+            # Universal Windows Platform (Windows 10)
+            LDFLAGS="$LDFLAGS -lWindowsApp"
+        fi
+        cli="no"
+        opencl="no"
     fi
 fi
 

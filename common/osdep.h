@@ -79,16 +79,20 @@ int x264_rename( const char *oldname, const char *newname );
 #define x264_struct_stat struct _stati64
 #define x264_fstat _fstati64
 int x264_stat( const char *path, x264_struct_stat *buf );
-int x264_vfprintf( FILE *stream, const char *format, va_list arg );
-int x264_is_pipe( const char *path );
 #else
 #define x264_fopen       fopen
 #define x264_rename      rename
 #define x264_struct_stat struct stat
 #define x264_fstat       fstat
 #define x264_stat        stat
-#define x264_vfprintf    vfprintf
-#define x264_is_pipe(x)  0
+#endif
+
+#if defined(_WIN32) && !HAVE_WINRT
+int x264_vfprintf( FILE *stream, const char *format, va_list arg );
+int x264_is_pipe( const char *path );
+#else
+#define x264_vfprintf vfprintf
+#define x264_is_pipe(x) 0
 #endif
 
 #ifdef _MSC_VER
