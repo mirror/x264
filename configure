@@ -976,6 +976,16 @@ if [ "$SYS" = "LINUX" -a \( "$ARCH" = "X86" -o "$ARCH" = "X86_64" \) ] && cc_che
     define HAVE_THP
 fi
 
+if [ "$cli" = "no" ] ; then
+    avs="no"
+    lavf="no"
+    ffms="no"
+    gpac="no"
+    lsmash="no"
+    mp4="no"
+    swscale="no"
+fi
+
 if [ "$swscale" = "auto" ] ; then
     swscale="no"
     if ${cross_prefix}pkg-config --exists libswscale 2>/dev/null; then
