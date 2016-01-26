@@ -1889,7 +1889,7 @@ int x264_ratecontrol_end( x264_t *h, int bits, int *filler )
             uint8_t i_type = h->sh.i_type;
             /* Values are stored as big-endian FIX8.8 */
             for( int i = 0; i < h->mb.i_mb_count; i++ )
-                rc->mbtree.qp_buffer[0][i] = endian_fix16( h->fenc->f_qp_offset[i]*256.0 );
+                rc->mbtree.qp_buffer[0][i] = endian_fix16( (int16_t)(h->fenc->f_qp_offset[i]*256.0) );
             if( fwrite( &i_type, 1, 1, rc->p_mbtree_stat_file_out ) < 1 )
                 goto fail;
             if( fwrite( rc->mbtree.qp_buffer[0], sizeof(uint16_t), h->mb.i_mb_count, rc->p_mbtree_stat_file_out ) < h->mb.i_mb_count )
