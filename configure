@@ -693,10 +693,15 @@ case $host_cpu in
             fi
         elif [ "$SYS" = WINDOWS -o "$SYS" = CYGWIN ]; then
             ASFLAGS="$ASFLAGS -f win64"
-            # only the GNU toolchain is inconsistent in prefixing function names with _
-            [ $compiler = GNU ] && cc_check "" "-S" && grep -q "_main:" conftest && ASFLAGS="$ASFLAGS -DPREFIX"
-            [ $compiler = GNU ] && LDFLAGS="$LDFLAGS -Wl,--dynamicbase,--nxcompat,--tsaware"
-            [ $compiler = GNU ] && RCFLAGS="--target=pe-x86-64 $RCFLAGS"
+            if [ $compiler = GNU ]; then
+                # only the GNU toolchain is inconsistent in prefixing function names with _
+                cc_check "" "-S" && grep -q "_main:" conftest && ASFLAGS="$ASFLAGS -DPREFIX"
+                cc_check "" "-Wl,--high-entropy-va" && LDFLAGS="$LDFLAGS -Wl,--high-entropy-va"
+                LDFLAGS="$LDFLAGS -Wl,--dynamicbase,--nxcompat,--tsaware"
+                LDFLAGSCLI="$LDFLAGSCLI -Wl,--image-base,0x140000000"
+                SOFLAGS="$SOFLAGS -Wl,--image-base,0x180000000"
+                RCFLAGS="--target=pe-x86-64 $RCFLAGS"
+            fi
         else
             ASFLAGS="$ASFLAGS -f elf64"
         fi
@@ -1389,7 +1394,7 @@ if [ "$shared" = "yes" ]; then
             grep "extern.*x264" ${SRCPATH}/x264.h | sed -e "s/.*\(x264\w*\)\W.*/\1 DATA/;" >> x264.def
         else
             echo 'IMPLIBNAME=libx264.dll.a' >> config.mak
-            echo "SOFLAGS=-shared -Wl,--out-implib,\$(IMPLIBNAME) -Wl,--enable-auto-image-base $SOFLAGS" >> config.mak
+            echo "SOFLAGS=-shared -Wl,--out-implib,\$(IMPLIBNAME) $SOFLAGS" >> config.mak
         fi
     elif [ "$SYS" = "MACOSX" ]; then
         echo "SOSUFFIX=dylib" >> config.mak
