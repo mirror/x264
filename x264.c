@@ -38,7 +38,6 @@
 #endif
 
 #include <signal.h>
-#define _GNU_SOURCE
 #include <getopt.h>
 #include "common/common.h"
 #include "x264cli.h"

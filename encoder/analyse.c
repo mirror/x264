@@ -25,8 +25,6 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#define _ISOC99_SOURCE
-
 #include "common/common.h"
 #include "macroblock.h"
 #include "me.h"

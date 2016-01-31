@@ -27,7 +27,6 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#define _ISOC99_SOURCE
 #undef NDEBUG // always check asserts, the speed effect is far too small to disable them
 
 #include "common/common.h"

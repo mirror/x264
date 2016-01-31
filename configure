@@ -806,7 +806,7 @@ cc_check || die "No working C compiler found."
 
 if [ $compiler_style = GNU ]; then
     if cc_check '' -std=gnu99 'for( int i = 0; i < 9; i++ );' ; then
-        CFLAGS="$CFLAGS -std=gnu99"
+        CFLAGS="$CFLAGS -std=gnu99 -D_POSIX_C_SOURCE=200112L -D_GNU_SOURCE"
     elif cc_check '' -std=c99 'for( int i = 0; i < 9; i++ );' ; then
         CFLAGS="$CFLAGS -std=c99 -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE"
     elif ! cc_check '' '' 'for( int i = 0; i < 9; i++ );' ; then

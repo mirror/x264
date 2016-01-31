@@ -23,7 +23,6 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#define _ISOC99_SOURCE
 #include "common.h"
 
 #define SHIFT(x,s) ((s)<=0 ? (x)<<-(s) : ((x)+(1<<((s)-1)))>>(s))
