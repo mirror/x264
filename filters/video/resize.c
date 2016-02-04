@@ -214,7 +214,7 @@ static int pick_closest_supported_csp( int csp )
     return ret;
 }
 
-static int handle_opts( const char **optlist, char **opts, video_info_t *info, resizer_hnd_t *h )
+static int handle_opts( const char * const *optlist, char **opts, video_info_t *info, resizer_hnd_t *h )
 {
     uint32_t out_sar_w, out_sar_h;
 
@@ -416,7 +416,7 @@ static int init( hnd_t *handle, cli_vid_filter_t *filter, video_info_t *info, x2
     if( !opt_string && !full_check( info, param ) )
         return 0;
 
-    static const char *optlist[] = { "width", "height", "sar", "fittobox", "csp", "method", NULL };
+    static const char * const optlist[] = { "width", "height", "sar", "fittobox", "csp", "method", NULL };
     char **opts = x264_split_options( opt_string, optlist );
     if( !opts && opt_string )
         return -1;
@@ -424,6 +424,9 @@ static int init( hnd_t *handle, cli_vid_filter_t *filter, video_info_t *info, x2
     resizer_hnd_t *h = calloc( 1, sizeof(resizer_hnd_t) );
     if( !h )
         return -1;
+
+    h->ctx_flags = convert_method_to_flag( x264_otos( x264_get_option( optlist[5], opts ), "" ) );
+
     if( opts )
     {
         h->dst_csp    = info->csp;
@@ -432,14 +435,20 @@ static int init( hnd_t *handle, cli_vid_filter_t *filter, video_info_t *info, x2
         h->dst.range  = info->fullrange; // maintain input range
         if( !strcmp( opt_string, "normcsp" ) )
         {
+            free( opts );
             /* only in normalization scenarios is the input capable of changing properties */
             h->variable_input = 1;
             h->dst_csp = pick_closest_supported_csp( info->csp );
             FAIL_IF_ERROR( h->dst_csp == X264_CSP_NONE,
                            "filter get invalid input pixel format %d (colorspace %d)\n", convert_csp_to_pix_fmt( info->csp ), info->csp )
         }
-        else if( handle_opts( optlist, opts, info, h ) )
-            return -1;
+        else
+        {
+            int err = handle_opts( optlist, opts, info, h );
+            free( opts );
+            if( err )
+                return -1;
+        }
     }
     else
     {
@@ -448,8 +457,6 @@ static int init( hnd_t *handle, cli_vid_filter_t *filter, video_info_t *info, x2
         h->dst.height = param->i_height;
         h->dst.range  = param->vui.b_fullrange; // change to libx264's range
     }
-    h->ctx_flags = convert_method_to_flag( x264_otos( x264_get_option( optlist[5], opts ), "" ) );
-    x264_free_string_array( opts );
 
     if( h->ctx_flags != SWS_FAST_BILINEAR )
         h->ctx_flags |= SWS_FULL_CHR_H_INT | SWS_FULL_CHR_H_INP | SWS_ACCURATE_RND;
