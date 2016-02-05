@@ -1279,7 +1279,10 @@ static int parse_zones( x264_t *h )
             int i_tok = strcspn( p, "/" );
             p[i_tok] = 0;
             if( parse_zone( h, &h->param.rc.zones[i], p ) )
+            {
+                x264_free( psz_zones );
                 return -1;
+            }
             p += i_tok + 1;
         }
         x264_free( psz_zones );
