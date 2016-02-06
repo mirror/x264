@@ -1171,6 +1171,7 @@ fi
 
 if [ "$debug" = "yes" ]; then
     CFLAGS="-O1 -g $CFLAGS"
+    RCFLAGS="$RCFLAGS -DDEBUG"
 else
     CFLAGS="-O3 -ffast-math $CFLAGS"
 fi
