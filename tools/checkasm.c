@@ -2823,6 +2823,11 @@ int main(int argc, char *argv[])
 {
     int ret = 0;
 
+#ifdef _WIN32
+    /* Disable the Windows Error Reporting dialog */
+    SetErrorMode( SEM_NOGPFAULTERRORBOX );
+#endif
+
     if( argc > 1 && !strncmp( argv[1], "--bench", 7 ) )
     {
 #if !ARCH_X86 && !ARCH_X86_64 && !ARCH_PPC && !ARCH_ARM && !ARCH_AARCH64 && !ARCH_MIPS
