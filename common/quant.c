@@ -486,6 +486,8 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->dequant_4x4 = x264_dequant_4x4_sse2;
         pf->dequant_8x8 = x264_dequant_8x8_sse2;
         pf->dequant_4x4_dc = x264_dequant_4x4dc_sse2;
+        pf->idct_dequant_2x4_dc = x264_idct_dequant_2x4_dc_sse2;
+        pf->idct_dequant_2x4_dconly = x264_idct_dequant_2x4_dconly_sse2;
         pf->denoise_dct = x264_denoise_dct_sse2;
         pf->decimate_score15 = x264_decimate_score15_sse2;
         pf->decimate_score16 = x264_decimate_score16_sse2;
@@ -532,6 +534,8 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
     }
     if( cpu&X264_CPU_AVX )
     {
+        pf->idct_dequant_2x4_dc = x264_idct_dequant_2x4_dc_avx;
+        pf->idct_dequant_2x4_dconly = x264_idct_dequant_2x4_dconly_avx;
         pf->denoise_dct = x264_denoise_dct_avx;
     }
     if( cpu&X264_CPU_XOP )
@@ -618,6 +622,8 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
             pf->dequant_4x4 = x264_dequant_4x4_flat16_sse2;
             pf->dequant_8x8 = x264_dequant_8x8_flat16_sse2;
         }
+        pf->idct_dequant_2x4_dc = x264_idct_dequant_2x4_dc_sse2;
+        pf->idct_dequant_2x4_dconly = x264_idct_dequant_2x4_dconly_sse2;
         pf->optimize_chroma_2x2_dc = x264_optimize_chroma_2x2_dc_sse2;
         pf->denoise_dct = x264_denoise_dct_sse2;
         pf->decimate_score15 = x264_decimate_score15_sse2;
@@ -680,6 +686,8 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
             pf->dequant_4x4 = x264_dequant_4x4_avx;
             pf->dequant_8x8 = x264_dequant_8x8_avx;
         }
+        pf->idct_dequant_2x4_dc = x264_idct_dequant_2x4_dc_avx;
+        pf->idct_dequant_2x4_dconly = x264_idct_dequant_2x4_dconly_avx;
         pf->optimize_chroma_2x2_dc = x264_optimize_chroma_2x2_dc_avx;
         pf->denoise_dct = x264_denoise_dct_avx;
     }

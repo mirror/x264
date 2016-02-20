@@ -829,6 +829,150 @@ INIT_YMM avx2
 DEQUANT_DC w, pmullw
 %endif
 
+%macro PEXTRW 4
+    %if cpuflag(sse4)
+        pextrw %1, %2, %3
+    %else
+        ; pextrw with a memory destination requires SSE4.1, go through a GPR as a fallback
+        %if %3
+            pextrw %4d, %2, %3
+        %else
+            movd %4d, %2
+        %endif
+        mov %1, %4w
+    %endif
+%endmacro
+
+;-----------------------------------------------------------------------------
+; void idct_dequant_2x4_dc( dctcoef dct[8], dctcoef dct4x4[8][16], int dequant_mf[6][16], int i_qp )
+; void idct_dequant_2x4_dconly( dctcoef dct[8], int dequant_mf[6][16], int i_qp )
+;-----------------------------------------------------------------------------
+
+%macro DEQUANT_2x4_DC 1
+%ifidn %1, dconly
+    DECLARE_REG_TMP 6,3,2
+    %define %%args dct, dmf, qp
+%else
+    DECLARE_REG_TMP 6,4,3
+    %define %%args dct, dct4x4, dmf, qp
+%endif
+
+%if ARCH_X86_64 == 0
+    DECLARE_REG_TMP 2,0,1
+%endif
+
+cglobal idct_dequant_2x4_%1, 0,3,5, %%args
+    movifnidn  t2d, qpm
+    imul       t0d, t2d, 0x2b
+    shr        t0d, 8         ; qp / 6
+    lea        t1d, [t0*5]
+    sub        t2d, t0d
+    sub        t2d, t1d       ; qp % 6
+    shl        t2d, 6         ; 16 * sizeof(int)
+%if ARCH_X86_64
+    imul       t2d, [dmfq+t2], -0xffff ; (-dmf) << 16 | dmf
+%else
+    mov       dctq, dctmp
+    add         t2, dmfmp
+    imul       t2d, [t2], -0xffff
+%endif
+%if HIGH_BIT_DEPTH
+    mova        m0, [dctq]
+    mova        m1, [dctq+16]
+    SUMSUB_BA    d, 1, 0, 2   ; 16-bit intermediate precision is enough for the first two sumsub steps,
+    packssdw    m1, m0        ; and by packing to words we can use pmaddwd instead of pmulld later.
+%else
+    movq        m0, [dctq]
+    movq        m1, [dctq+8]
+    SUMSUB_BA    w, 1, 0, 2
+    punpcklqdq  m1, m0        ; a0 a1 a2 a3 a4 a5 a6 a7
+%endif
+    pshufd      m0, m1, q2301 ; a2 a3 a0 a1 a6 a7 a4 a5
+    movd        m3, t2d
+    pshuflw     m3, m3, q1000 ; +  +  +  -
+    SUMSUB_BA    w, 0, 1, 2
+    punpcklqdq  m3, m3        ; +  +  +  -  +  +  +  -
+    pshufd      m1, m1, q0022
+    sub        t0d, 6
+    jl .rshift
+    movd        m2, t0d
+    psllw       m3, m2
+    pmaddwd     m0, m3
+    pmaddwd     m1, m3
+    jmp .end
+.rshift:
+    neg        t0d
+    movd        m2, t0d
+    pcmpeqd     m4, m4
+    pmaddwd     m0, m3
+    pmaddwd     m1, m3
+    pslld       m4, m2
+    psrad       m4, 1
+    psubd       m0, m4 ; + 1 << (qp/6-1)
+    psubd       m1, m4
+    psrad       m0, m2
+    psrad       m1, m2
+.end:
+%ifidn %1, dconly
+%if HIGH_BIT_DEPTH
+    mova    [dctq], m0
+    mova [dctq+16], m1
+%else
+    packssdw    m0, m1
+    mova    [dctq], m0
+%endif
+%else
+    movifnidn dct4x4q, dct4x4mp
+%if HIGH_BIT_DEPTH
+    movd   [dct4x4q+0*64], m0
+%if cpuflag(sse4)
+    pextrd [dct4x4q+1*64], m0, 1
+    add    dct4x4q, 4*64
+    pextrd [dct4x4q-2*64], m0, 2
+    pextrd [dct4x4q-1*64], m0, 3
+    movd   [dct4x4q+0*64], m1
+    pextrd [dct4x4q+1*64], m1, 1
+    pextrd [dct4x4q+2*64], m1, 2
+    pextrd [dct4x4q+3*64], m1, 3
+%else
+    MOVHL       m2, m0
+    psrlq       m0, 32
+    movd   [dct4x4q+1*64], m0
+    add    dct4x4q, 4*64
+    movd   [dct4x4q-2*64], m2
+    psrlq       m2, 32
+    movd   [dct4x4q-1*64], m2
+    movd   [dct4x4q+0*64], m1
+    MOVHL       m2, m1
+    psrlq       m1, 32
+    movd   [dct4x4q+1*64], m1
+    movd   [dct4x4q+2*64], m2
+    psrlq       m2, 32
+    movd   [dct4x4q+3*64], m2
+%endif
+%else
+    PEXTRW [dct4x4q+0*32], m0, 0, eax
+    PEXTRW [dct4x4q+1*32], m0, 2, eax
+    PEXTRW [dct4x4q+2*32], m0, 4, eax
+    PEXTRW [dct4x4q+3*32], m0, 6, eax
+    add    dct4x4q, 4*32
+    PEXTRW [dct4x4q+0*32], m1, 0, eax
+    PEXTRW [dct4x4q+1*32], m1, 2, eax
+    PEXTRW [dct4x4q+2*32], m1, 4, eax
+    PEXTRW [dct4x4q+3*32], m1, 6, eax
+%endif
+%endif
+    RET
+%endmacro
+
+; sse4 reduces code size compared to sse2 but isn't any faster, so just go with sse2+avx
+INIT_XMM sse2
+DEQUANT_2x4_DC dc
+DEQUANT_2x4_DC dconly
+INIT_XMM avx
+DEQUANT_2x4_DC dc
+DEQUANT_2x4_DC dconly
+
 ; t4 is eax for return value.
 %if ARCH_X86_64
     DECLARE_REG_TMP 0,1,2,3,6,4  ; Identical for both Windows and *NIX
