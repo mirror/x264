@@ -2090,7 +2090,7 @@ static int check_quant( int cpu_ref, int cpu_new )
         {
             set_func_name( "idct_dequant_2x4_dc_%s", i_cqm?"cqm":"flat" );
             used_asms[1] = 1;
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- )
+            for( int qp = h->chroma_qp_table[h->param.rc.i_qp_max]; qp >= h->chroma_qp_table[h->param.rc.i_qp_min]; qp-- )
             {
                 for( int i = 0; i < 8; i++ )
                     dct1[i] = rand()%(PIXEL_MAX*16*2+1) - PIXEL_MAX*16;
@@ -2110,9 +2110,9 @@ static int check_quant( int cpu_ref, int cpu_new )
 
         if( qf_a.idct_dequant_2x4_dconly != qf_ref.idct_dequant_2x4_dconly )
         {
-            set_func_name( "idct_dequant_2x4_dc_%s", i_cqm?"cqm":"flat" );
+            set_func_name( "idct_dequant_2x4_dconly_%s", i_cqm?"cqm":"flat" );
             used_asms[1] = 1;
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- )
+            for( int qp = h->chroma_qp_table[h->param.rc.i_qp_max]; qp >= h->chroma_qp_table[h->param.rc.i_qp_min]; qp-- )
             {
                 for( int i = 0; i < 8; i++ )
                     dct1[i] = rand()%(PIXEL_MAX*16*2+1) - PIXEL_MAX*16;
