@@ -1745,6 +1745,60 @@ static int check_mc( int cpu_ref, int cpu_new )
             call_a2( mc_a.mbtree_propagate_list, &h, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
         }
     }
+
+    if( mc_a.mbtree_fix8_pack != mc_ref.mbtree_fix8_pack )
+    {
+        set_func_name( "mbtree_fix8_pack" );
+        used_asm = 1;
+        float *fix8_src = (float*)(buf3 + 0x800);
+        uint16_t *dstc = (uint16_t*)buf3;
+        uint16_t *dsta = (uint16_t*)buf4;
+        for( int i = 0; i < 5; i++ )
+        {
+            int count = 256 + i;
+
+            for( int j = 0; j < count; j++ )
+                fix8_src[j] = (int16_t)(rand()) / 256.0f;
+            dsta[count] = 0xAAAA;
+
+            call_c( mc_c.mbtree_fix8_pack, dstc, fix8_src, count );
+            call_a( mc_a.mbtree_fix8_pack, dsta, fix8_src, count );
+
+            if( memcmp( dsta, dstc, count * sizeof(uint16_t) ) || dsta[count] != 0xAAAA )
+            {
+                ok = 0;
+                fprintf( stderr, "mbtree_fix8_pack FAILED\n" );
+                break;
+            }
+        }
+    }
+
+    if( mc_a.mbtree_fix8_unpack != mc_ref.mbtree_fix8_unpack )
+    {
+        set_func_name( "mbtree_fix8_unpack" );
+        used_asm = 1;
+        uint16_t *fix8_src = (uint16_t*)(buf3 + 0x800);
+        float *dstc = (float*)buf3;
+        float *dsta = (float*)buf4;
+        for( int i = 0; i < 5; i++ )
+        {
+            int count = 256 + i;
+
+            for( int j = 0; j < count; j++ )
+                fix8_src[j] = rand();
+            M32( &dsta[count] ) = 0xAAAAAAAA;
+
+            call_c( mc_c.mbtree_fix8_unpack, dstc, fix8_src, count );
+            call_a( mc_a.mbtree_fix8_unpack, dsta, fix8_src, count );
+
+            if( memcmp( dsta, dstc, count * sizeof(float) ) || M32( &dsta[count] ) != 0xAAAAAAAA )
+            {
+                ok = 0;
+                fprintf( stderr, "mbtree_fix8_unpack FAILED\n" );
+                break;
+            }
+        }
+    }
     report( "mbtree :" );
 
     if( mc_a.memcpy_aligned != mc_ref.memcpy_aligned )

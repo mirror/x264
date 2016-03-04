@@ -589,6 +589,19 @@ static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs
     }
 }
 
+/* Conversion between float and Q8.8 fixed point (big-endian) for storage */
+static void mbtree_fix8_pack( uint16_t *dst, float *src, int count )
+{
+    for( int i = 0; i < count; i++ )
+        dst[i] = endian_fix16( (int16_t)(src[i] * 256.0f) );
+}
+
+static void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
+{
+    for( int i = 0; i < count; i++ )
+        dst[i] = (int16_t)endian_fix16( src[i] ) * (1.0f/256.0f);
+}
+
 void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
 {
     pf->mc_luma   = mc_luma;
@@ -646,6 +659,8 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
 
     pf->mbtree_propagate_cost = mbtree_propagate_cost;
     pf->mbtree_propagate_list = mbtree_propagate_list;
+    pf->mbtree_fix8_pack      = mbtree_fix8_pack;
+    pf->mbtree_fix8_unpack    = mbtree_fix8_unpack;
 
 #if HAVE_MMX
     x264_mc_init_mmx( cpu, pf );

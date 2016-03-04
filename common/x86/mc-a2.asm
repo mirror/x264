@@ -59,6 +59,13 @@ deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
 %endif ; !HIGH_BIT_DEPTH
 
+mbtree_fix8_unpack_shuf: db -1,-1, 1, 0,-1,-1, 3, 2,-1,-1, 5, 4,-1,-1, 7, 6
+                         db -1,-1, 9, 8,-1,-1,11,10,-1,-1,13,12,-1,-1,15,14
+mbtree_fix8_pack_shuf:   db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
+
+pf_256:    times 4 dd 256.0
+pf_inv256: times 4 dd 0.00390625
+
 pd_16: times 4 dd 16
 pd_0f: times 4 dd 0xffff
 
@@ -2260,3 +2267,109 @@ INIT_XMM ssse3
 MBTREE_PROPAGATE_LIST
 INIT_XMM avx
 MBTREE_PROPAGATE_LIST
+
+%macro MBTREE_FIX8 0
+;-----------------------------------------------------------------------------
+; void mbtree_fix8_pack( uint16_t *dst, float *src, int count )
+;-----------------------------------------------------------------------------
+cglobal mbtree_fix8_pack, 3,4
+%if mmsize == 32
+    vbroadcastf128 m2, [pf_256]
+    vbroadcasti128 m3, [mbtree_fix8_pack_shuf]
+%else
+    movaps       m2, [pf_256]
+    mova         m3, [mbtree_fix8_pack_shuf]
+%endif
+    sub         r2d, mmsize/2
+    movsxdifnidn r2, r2d
+    lea          r1, [r1+4*r2]
+    lea          r0, [r0+2*r2]
+    neg          r2
+    jg .skip_loop
+.loop:
+    mulps        m0, m2, [r1+4*r2]
+    mulps        m1, m2, [r1+4*r2+mmsize]
+    cvttps2dq    m0, m0
+    cvttps2dq    m1, m1
+    packssdw     m0, m1
+    pshufb       m0, m3
+%if mmsize == 32
+    vpermq       m0, m0, q3120
+%endif
+    mova  [r0+2*r2], m0
+    add          r2, mmsize/2
+    jle .loop
+.skip_loop:
+    sub          r2, mmsize/2
+    jz .end
+    ; Do the remaining values in scalar in order to avoid overreading src.
+.scalar:
+    mulss       xm0, xm2, [r1+4*r2+2*mmsize]
+    cvttss2si   r3d, xm0
+    rol         r3w, 8
+    mov [r0+2*r2+mmsize], r3w
+    inc          r2
+    jl .scalar
+.end:
+    RET
+
+;-----------------------------------------------------------------------------
+; void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
+;-----------------------------------------------------------------------------
+cglobal mbtree_fix8_unpack, 3,4
+%if mmsize == 32
+    vbroadcastf128 m2, [pf_inv256]
+%else
+    movaps       m2, [pf_inv256]
+    mova         m4, [mbtree_fix8_unpack_shuf+16]
+%endif
+    mova         m3, [mbtree_fix8_unpack_shuf]
+    sub         r2d, mmsize/2
+    movsxdifnidn r2, r2d
+    lea          r1, [r1+2*r2]
+    lea          r0, [r0+4*r2]
+    neg          r2
+    jg .skip_loop
+.loop:
+%if mmsize == 32
+    vbroadcasti128 m0, [r1+2*r2]
+    vbroadcasti128 m1, [r1+2*r2+16]
+    pshufb       m0, m3
+    pshufb       m1, m3
+%else
+    mova         m1, [r1+2*r2]
+    pshufb       m0, m1, m3
+    pshufb       m1, m4
+%endif
+    psrad        m0, 16 ; sign-extend
+    psrad        m1, 16
+    cvtdq2ps     m0, m0
+    cvtdq2ps     m1, m1
+    mulps        m0, m2
+    mulps        m1, m2
+    movaps [r0+4*r2], m0
+    movaps [r0+4*r2+mmsize], m1
+    add          r2, mmsize/2
+    jle .loop
+.skip_loop:
+    sub          r2, mmsize/2
+    jz .end
+.scalar:
+    movzx       r3d, word [r1+2*r2+mmsize]
+    rol         r3w, 8
+    movsx       r3d, r3w
+    ; Use 3-arg cvtsi2ss as a workaround for the fact that the instruction has a stupid dependency on
+    ; dst which causes terrible performance when used in a loop otherwise. Blame Intel for poor design.
+    cvtsi2ss    xm0, xm2, r3d
+    mulss       xm0, xm2
+    movss [r0+4*r2+2*mmsize], xm0
+    inc          r2
+    jl .scalar
+.end:
+    RET
+%endmacro
+
+INIT_XMM ssse3
+MBTREE_FIX8
+INIT_YMM avx2
+MBTREE_FIX8

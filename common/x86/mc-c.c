@@ -173,6 +173,10 @@ void x264_mbtree_propagate_cost_fma4( int16_t *dst, uint16_t *propagate_in, uint
                                       uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
 void x264_mbtree_propagate_cost_avx2( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                       uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+void x264_mbtree_fix8_pack_ssse3( uint16_t *dst, float *src, int count );
+void x264_mbtree_fix8_pack_avx2 ( uint16_t *dst, float *src, int count );
+void x264_mbtree_fix8_unpack_ssse3( float *dst, uint16_t *src, int count );
+void x264_mbtree_fix8_unpack_avx2 ( float *dst, uint16_t *src, int count );
 
 #define MC_CHROMA(cpu)\
 void x264_mc_chroma_##cpu( pixel *dstu, pixel *dstv, intptr_t i_dst, pixel *src, intptr_t i_src,\
@@ -736,6 +740,8 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->plane_copy_swap = x264_plane_copy_swap_ssse3;
     pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_ssse3;
     pf->mbtree_propagate_list = x264_mbtree_propagate_list_ssse3;
+    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_ssse3;
+    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_ssse3;
 
     if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
         pf->integral_init4v = x264_integral_init4v_ssse3;
@@ -841,6 +847,8 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->plane_copy_swap = x264_plane_copy_swap_ssse3;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_ssse3;
     pf->mbtree_propagate_list = x264_mbtree_propagate_list_ssse3;
+    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_ssse3;
+    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_ssse3;
 
     if( !(cpu&X264_CPU_SLOW_PSHUFB) )
     {
@@ -928,4 +936,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->plane_copy_swap = x264_plane_copy_swap_avx2;
     pf->get_ref = get_ref_avx2;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2;
+    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_avx2;
+    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_avx2;
 }
