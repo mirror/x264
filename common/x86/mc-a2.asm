@@ -2094,15 +2094,15 @@ INIT_XMM fma4
 MBTREE
 
 %macro INT16_UNPACK 1
-    punpckhwd   xm4, xm%1, xm7
+    punpckhwd   xm6, xm%1, xm7
     punpcklwd  xm%1, xm7
-    vinsertf128 m%1, m%1, xm4, 1
+    vinsertf128 m%1, m%1, xm6, 1
 %endmacro
 
 ; FIXME: align loads to 16 bytes
 %macro MBTREE_AVX 0
-cglobal mbtree_propagate_cost, 6,6,8-cpuflag(avx2)
-    vbroadcastss m6, [r5]
+cglobal mbtree_propagate_cost, 6,6,8-2*cpuflag(avx2)
+    vbroadcastss m5, [r5]
     mov         r5d, r6m
     lea          r0, [r0+r5*2]
     add         r5d, r5d
@@ -2111,7 +2111,7 @@ cglobal mbtree_propagate_cost, 6,6,8-cpuflag(avx2)
     add          r3, r5
     add          r4, r5
     neg          r5
-    mova        xm5, [pw_3fff]
+    mova        xm4, [pw_3fff]
 %if notcpuflag(avx2)
     pxor        xm7, xm7
 %endif
@@ -2120,27 +2120,27 @@ cglobal mbtree_propagate_cost, 6,6,8-cpuflag(avx2)
     pmovzxwd     m0, [r2+r5]      ; intra
     pmovzxwd     m1, [r4+r5]      ; invq
     pmovzxwd     m2, [r1+r5]      ; prop
-    pand        xm3, xm5, [r3+r5] ; inter
+    pand        xm3, xm4, [r3+r5] ; inter
     pmovzxwd     m3, xm3
     pminsd       m3, m0
     pmaddwd      m1, m0
-    psubd        m4, m0, m3
+    psubd        m3, m0, m3
     cvtdq2ps     m0, m0
     cvtdq2ps     m1, m1
     cvtdq2ps     m2, m2
-    cvtdq2ps     m4, m4
-    fmaddps      m1, m1, m6, m2
-    rcpps        m3, m0
-    mulps        m2, m0, m3
-    mulps        m1, m4
-    addps        m4, m3, m3
-    fnmaddps     m4, m2, m3, m4
-    mulps        m1, m4
+    cvtdq2ps     m3, m3
+    fmaddps      m1, m1, m5, m2
+    rcpps        m2, m0
+    mulps        m0, m2
+    mulps        m1, m3
+    addps        m3, m2, m2
+    fnmaddps     m2, m2, m0, m3
+    mulps        m1, m2
 %else
     movu        xm0, [r2+r5]
     movu        xm1, [r4+r5]
     movu        xm2, [r1+r5]
-    pand        xm3, xm5, [r3+r5]
+    pand        xm3, xm4, [r3+r5]
     pminsw      xm3, xm0
     INT16_UNPACK 0
     INT16_UNPACK 1
@@ -2151,16 +2151,16 @@ cglobal mbtree_propagate_cost, 6,6,8-cpuflag(avx2)
     cvtdq2ps     m2, m2
     cvtdq2ps     m3, m3
     mulps        m1, m0
-    subps        m4, m0, m3
-    mulps        m1, m6         ; intra*invq*fps_factor>>8
+    subps        m3, m0, m3
+    mulps        m1, m5         ; intra*invq*fps_factor>>8
     addps        m1, m2         ; prop + (intra*invq*fps_factor>>8)
-    rcpps        m3, m0         ; 1 / intra 1st approximation
-    mulps        m2, m0, m3     ; intra * (1/intra 1st approx)
-    mulps        m2, m3         ; intra * (1/intra 1st approx)^2
-    mulps        m1, m4         ; (prop + (intra*invq*fps_factor>>8)) * (intra - inter)
-    addps        m3, m3         ; 2 * (1/intra 1st approx)
-    subps        m3, m2         ; 2nd approximation for 1/intra
-    mulps        m1, m3         ; / intra
+    rcpps        m2, m0         ; 1 / intra 1st approximation
+    mulps        m0, m2         ; intra * (1/intra 1st approx)
+    mulps        m0, m2         ; intra * (1/intra 1st approx)^2
+    mulps        m1, m3         ; (prop + (intra*invq*fps_factor>>8)) * (intra - inter)
+    addps        m2, m2         ; 2 * (1/intra 1st approx)
+    subps        m2, m0         ; 2nd approximation for 1/intra
+    mulps        m1, m2         ; / intra
 %endif
     vcvtps2dq    m1, m1
     vextractf128 xm2, m1, 1
