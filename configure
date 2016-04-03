@@ -510,6 +510,7 @@ done
 CC="${CC-${cross_prefix}gcc}"
 STRIP="${STRIP-${cross_prefix}strip}"
 INSTALL="${INSTALL-install}"
+PKGCONFIG="${PKGCONFIG-${cross_prefix}pkg-config}"
 
 # ar and ranlib doesn't load the LTO plugin by default, prefer the gcc-prefixed wrappers which does.
 if ${cross_prefix}gcc-ar --version >/dev/null 2>&1; then
@@ -940,9 +941,9 @@ fi
 
 if [ "$cli_libx264" = "system" -a "$shared" != "yes" ] ; then
     [ "$static" = "yes" ] && die "Option --system-libx264 can not be used together with --enable-static"
-    if ${cross_prefix}pkg-config --exists x264 2>/dev/null; then
-        X264_LIBS="$(${cross_prefix}pkg-config --libs x264)"
-        X264_INCLUDE_DIR="${X264_INCLUDE_DIR-$(${cross_prefix}pkg-config --variable=includedir x264)}"
+    if $PKGCONFIG --exists x264 2>/dev/null; then
+        X264_LIBS="$($PKGCONFIG --libs x264)"
+        X264_INCLUDE_DIR="${X264_INCLUDE_DIR-$($PKGCONFIG --variable=includedir x264)}"
         configure_system_override "$X264_INCLUDE_DIR" || die "Detection of system libx264 configuration failed"
     else
         die "Can not find system libx264"
@@ -1026,9 +1027,9 @@ fi
 
 if [ "$swscale" = "auto" ] ; then
     swscale="no"
-    if ${cross_prefix}pkg-config --exists libswscale 2>/dev/null; then
-        SWSCALE_LIBS="$SWSCALE_LIBS $(${cross_prefix}pkg-config --libs libswscale libavutil)"
-        SWSCALE_CFLAGS="$SWSCALE_CFLAGS $(${cross_prefix}pkg-config --cflags libswscale libavutil)"
+    if $PKGCONFIG --exists libswscale 2>/dev/null; then
+        SWSCALE_LIBS="$SWSCALE_LIBS $($PKGCONFIG --libs libswscale libavutil)"
+        SWSCALE_CFLAGS="$SWSCALE_CFLAGS $($PKGCONFIG --cflags libswscale libavutil)"
     fi
     [ -z "$SWSCALE_LIBS" ] && SWSCALE_LIBS="-lswscale -lavutil"
 
@@ -1043,9 +1044,9 @@ fi
 
 if [ "$lavf" = "auto" ] ; then
     lavf="no"
-    if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale 2>/dev/null; then
-        LAVF_LIBS="$LAVF_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libavutil libswscale)"
-        LAVF_CFLAGS="$LAVF_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libavutil libswscale)"
+    if $PKGCONFIG --exists libavformat libavcodec libswscale 2>/dev/null; then
+        LAVF_LIBS="$LAVF_LIBS $($PKGCONFIG --libs libavformat libavcodec libavutil libswscale)"
+        LAVF_CFLAGS="$LAVF_CFLAGS $($PKGCONFIG --cflags libavformat libavcodec libavutil libswscale)"
     fi
     if [ -z "$LAVF_LIBS" -a -z "$LAVF_CFLAGS" ]; then
         LAVF_LIBS="-lavformat"
@@ -1067,9 +1068,9 @@ if [ "$ffms" = "auto" ] ; then
     ffms_major="2"; ffms_minor="21"; ffms_micro="0"; ffms_bump="0"
     ffms="no"
 
-    if ${cross_prefix}pkg-config --exists ffms2 2>/dev/null; then
-        FFMS2_LIBS="$FFMS2_LIBS $(${cross_prefix}pkg-config --libs ffms2)"
-        FFMS2_CFLAGS="$FFMS2_CFLAGS $(${cross_prefix}pkg-config --cflags ffms2)"
+    if $PKGCONFIG --exists ffms2 2>/dev/null; then
+        FFMS2_LIBS="$FFMS2_LIBS $($PKGCONFIG --libs ffms2)"
+        FFMS2_CFLAGS="$FFMS2_CFLAGS $($PKGCONFIG --cflags ffms2)"
     fi
     [ -z "$FFMS2_LIBS" ] && FFMS2_LIBS="-lffms2"
 
@@ -1109,9 +1110,9 @@ fi
 
 if [ "$lsmash" = "auto" ] ; then
     lsmash="no"
-    if ${cross_prefix}pkg-config --exists liblsmash 2>/dev/null; then
-        LSMASH_LIBS="$LSMASH_LIBS $(${cross_prefix}pkg-config --libs liblsmash)"
-        LSMASH_CFLAGS="$LSMASH_CFLAGS $(${cross_prefix}pkg-config --cflags liblsmash)"
+    if $PKGCONFIG --exists liblsmash 2>/dev/null; then
+        LSMASH_LIBS="$LSMASH_LIBS $($PKGCONFIG --libs liblsmash)"
+        LSMASH_CFLAGS="$LSMASH_CFLAGS $($PKGCONFIG --cflags liblsmash)"
     fi
     [ -z "$LSMASH_LIBS" ] && LSMASH_LIBS="-llsmash"
 
