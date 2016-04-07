@@ -2320,7 +2320,7 @@ cglobal hadamard_load
 ; clobber: m1..m3
 %macro SUM4x3 3 ; dc, left, top
     movq        m4, %2
-%ifid %1
+%ifnum sizeof%1
     movq        m5, %1
 %else
     movd        m5, %1
@@ -2597,7 +2597,7 @@ cglobal intra_satd_x3_8x8c, 0,6
 
 
 %macro PRED4x4_LOWPASS 5
-%ifid %5
+%ifnum sizeof%5
     pavgb       %5, %2, %3
     pxor        %3, %2
     pand        %3, [pb_1]

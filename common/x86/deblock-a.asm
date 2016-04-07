@@ -423,7 +423,7 @@ DEBLOCK_LUMA_64
 %endif
 
 %macro SWAPMOVA 2
-%ifid %1
+%ifnum sizeof%1
     SWAP %1, %2
 %else
     mova %1, %2
