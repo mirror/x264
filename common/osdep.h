@@ -55,7 +55,10 @@
 #define strtok_r strtok_s
 #define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
 #if _MSC_VER < 1900
-#define snprintf _snprintf
+int x264_snprintf( char *s, size_t n, const char *fmt, ... );
+int x264_vsnprintf( char *s, size_t n, const char *fmt, va_list arg );
+#define snprintf  x264_snprintf
+#define vsnprintf x264_vsnprintf
 #endif
 #endif
 

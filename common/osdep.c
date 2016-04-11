@@ -168,4 +168,39 @@ int x264_is_pipe( const char *path )
     return 0;
 }
 #endif
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+/* MSVC pre-VS2015 has broken snprintf/vsnprintf implementations which are incompatible with C99. */
+int x264_snprintf( char *s, size_t n, const char *fmt, ... )
+{
+    va_list arg;
+    va_start( arg, fmt );
+    int length = x264_vsnprintf( s, n, fmt, arg );
+    va_end( arg );
+    return length;
+}
+
+int x264_vsnprintf( char *s, size_t n, const char *fmt, va_list arg )
+{
+    int length = -1;
+
+    if( n )
+    {
+        va_list arg2;
+        va_copy( arg2, arg );
+        length = _vsnprintf( s, n, fmt, arg2 );
+        va_end( arg2 );
+
+        /* _(v)snprintf adds a null-terminator only if the length is less than the buffer size. */
+        if( length < 0 || length >= n )
+            s[n-1] = '\0';
+    }
+
+    /* _(v)snprintf returns a negative number if the length is greater than the buffer size. */
+    if( length < 0 )
+        return _vscprintf( fmt, arg );
+
+    return length;
+}
+#endif
 #endif
