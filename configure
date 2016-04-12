@@ -570,6 +570,7 @@ case $host_os in
     darwin*)
         SYS="MACOSX"
         libm="-lm"
+        CFLAGS="$CFLAGS -D_DARWIN_C_SOURCE"
         if [ "$pic" = "no" ]; then
             cc_check "" -mdynamic-no-pic && CFLAGS="$CFLAGS -mdynamic-no-pic"
         fi
