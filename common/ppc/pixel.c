@@ -26,7 +26,6 @@
 
 #include "common/common.h"
 #include "ppccommon.h"
-#include "../predict.h"
 
 #if !HIGH_BIT_DEPTH
 /***********************************************************************

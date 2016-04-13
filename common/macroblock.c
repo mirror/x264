@@ -27,7 +27,6 @@
  *****************************************************************************/
 
 #include "common.h"
-#include "encoder/me.h"
 
 #define MC_LUMA(list,p) \
     h->mc.mc_luma( &h->mb.pic.p_fdec[p][4*y*FDEC_STRIDE+4*x], FDEC_STRIDE, \

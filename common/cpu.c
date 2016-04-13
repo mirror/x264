@@ -26,7 +26,6 @@
  *****************************************************************************/
 
 #include "common.h"
-#include "cpu.h"
 
 #if HAVE_POSIXTHREAD && SYS_LINUX
 #include <sched.h>

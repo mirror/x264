@@ -26,7 +26,6 @@
 
 #include "common.h"
 
-#include <stdarg.h>
 #include <ctype.h>
 
 #if HAVE_MALLOC_H

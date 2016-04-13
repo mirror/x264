@@ -973,6 +973,12 @@ struct x264_t
 #endif
 };
 
+typedef struct
+{
+    int sad;
+    int16_t mv[2];
+} mvsad_t;
+
 // included at the end because it needs x264_t
 #include "macroblock.h"
 

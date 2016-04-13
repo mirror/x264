@@ -55,12 +55,6 @@ typedef struct
     ALIGNED_4( int16_t mv[2] );
 } ALIGNED_16( x264_me_t );
 
-typedef struct
-{
-    int sad;
-    int16_t mv[2];
-} mvsad_t;
-
 void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, int *p_fullpel_thresh );
 #define x264_me_search( h, m, mvc, i_mvc )\
     x264_me_search_ref( h, m, mvc, i_mvc, NULL )
