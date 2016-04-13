@@ -60,6 +60,8 @@ int x264_vsnprintf( char *s, size_t n, const char *fmt, va_list arg );
 #define snprintf  x264_snprintf
 #define vsnprintf x264_vsnprintf
 #endif
+#else
+#include <strings.h>
 #endif
 
 #if !defined(va_copy) && defined(__INTEL_COMPILER)

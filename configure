@@ -547,6 +547,9 @@ if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
         `$CC 2>&1 | grep -q 'x86'` && host_cpu=i486
         `$CC 2>&1 | grep -q 'x64'` && host_cpu=x86_64
         cpp_check '' '' '_MSC_VER > 1800 || (_MSC_VER == 1800 && _MSC_FULL_VER >= 180030324)' || die "Microsoft Visual Studio support requires Visual Studio 2013 Update 2 or newer"
+    else
+        # MinGW uses broken pre-VS2015 Microsoft printf functions unless it's told to use the POSIX ones.
+        CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
     fi
 else
     if [[ "$cc_base" = icc || "$cc_base" = icc[\ .]* ]]; then
@@ -570,7 +573,6 @@ case $host_os in
     darwin*)
         SYS="MACOSX"
         libm="-lm"
-        CFLAGS="$CFLAGS -D_DARWIN_C_SOURCE"
         if [ "$pic" = "no" ]; then
             cc_check "" -mdynamic-no-pic && CFLAGS="$CFLAGS -mdynamic-no-pic"
         fi
@@ -807,7 +809,7 @@ cc_check || die "No working C compiler found."
 
 if [ $compiler_style = GNU ]; then
     if cc_check '' -std=gnu99 'for( int i = 0; i < 9; i++ );' ; then
-        CFLAGS="$CFLAGS -std=gnu99 -D_POSIX_C_SOURCE=200112L -D_GNU_SOURCE"
+        CFLAGS="$CFLAGS -std=gnu99 -D_GNU_SOURCE"
     elif cc_check '' -std=c99 'for( int i = 0; i < 9; i++ );' ; then
         CFLAGS="$CFLAGS -std=c99 -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE"
     elif ! cc_check '' '' 'for( int i = 0; i < 9; i++ );' ; then
