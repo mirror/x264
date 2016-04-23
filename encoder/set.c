@@ -184,20 +184,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->b_mb_adaptive_frame_field = param->b_interlaced;
     sps->b_direct8x8_inference = 1;
 
-    sps->crop.i_left   = param->crop_rect.i_left;
-    sps->crop.i_top    = param->crop_rect.i_top;
-    sps->crop.i_right  = param->crop_rect.i_right + sps->i_mb_width*16 - param->i_width;
-    sps->crop.i_bottom = (param->crop_rect.i_bottom + sps->i_mb_height*16 - param->i_height) >> !sps->b_frame_mbs_only;
-    sps->b_crop = sps->crop.i_left  || sps->crop.i_top ||
-                  sps->crop.i_right || sps->crop.i_bottom;
-
-    sps->vui.b_aspect_ratio_info_present = 0;
-    if( param->vui.i_sar_width > 0 && param->vui.i_sar_height > 0 )
-    {
-        sps->vui.b_aspect_ratio_info_present = 1;
-        sps->vui.i_sar_width = param->vui.i_sar_width;
-        sps->vui.i_sar_height= param->vui.i_sar_height;
-    }
+    x264_sps_init_reconfigurable( sps, param );
 
     sps->vui.b_overscan_info_present = param->vui.i_overscan > 0 && param->vui.i_overscan <= 2;
     if( sps->vui.b_overscan_info_present )
@@ -259,6 +246,24 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
         sps->vui.i_max_bits_per_mb_denom = 0;
         sps->vui.i_log2_max_mv_length_horizontal =
         sps->vui.i_log2_max_mv_length_vertical = (int)log2f( X264_MAX( 1, param->analyse.i_mv_range*4-1 ) ) + 1;
+    }
+}
+
+void x264_sps_init_reconfigurable( x264_sps_t *sps, x264_param_t *param )
+{
+    sps->crop.i_left   = param->crop_rect.i_left;
+    sps->crop.i_top    = param->crop_rect.i_top;
+    sps->crop.i_right  = param->crop_rect.i_right + sps->i_mb_width*16 - param->i_width;
+    sps->crop.i_bottom = (param->crop_rect.i_bottom + sps->i_mb_height*16 - param->i_height) >> !sps->b_frame_mbs_only;
+    sps->b_crop = sps->crop.i_left  || sps->crop.i_top ||
+                  sps->crop.i_right || sps->crop.i_bottom;
+
+    sps->vui.b_aspect_ratio_info_present = 0;
+    if( param->vui.i_sar_width > 0 && param->vui.i_sar_height > 0 )
+    {
+        sps->vui.b_aspect_ratio_info_present = 1;
+        sps->vui.i_sar_width = param->vui.i_sar_width;
+        sps->vui.i_sar_height= param->vui.i_sar_height;
     }
 }
 
