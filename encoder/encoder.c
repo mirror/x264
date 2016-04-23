@@ -3344,6 +3344,7 @@ int     x264_encoder_encode( x264_t *h,
             h->fenc->param = NULL;
         }
     }
+    x264_ratecontrol_zone_init( h );
 
     // ok to call this before encoding any frames, since the initial values of fdec have b_kept_as_ref=0
     if( x264_reference_update( h ) )

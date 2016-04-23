@@ -1409,6 +1409,15 @@ static void accum_p_qp_update( x264_t *h, float qp )
         rc->accum_p_qp += qp;
 }
 
+void x264_ratecontrol_zone_init( x264_t *h )
+{
+    x264_ratecontrol_t *rc = h->rc;
+    x264_zone_t *zone = get_zone( h, h->fenc->i_frame );
+    if( zone && (!rc->prev_zone || zone->param != rc->prev_zone->param) )
+        x264_encoder_reconfig_apply( h, zone->param );
+    rc->prev_zone = zone;
+}
+
 /* Before encoding a frame, choose a QP for it */
 void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
 {
@@ -1418,10 +1427,6 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
     float q;
 
     x264_emms();
-
-    if( zone && (!rc->prev_zone || zone->param != rc->prev_zone->param) )
-        x264_encoder_reconfig_apply( h, zone->param );
-    rc->prev_zone = zone;
 
     if( h->param.rc.b_stat_read )
     {
