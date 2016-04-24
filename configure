@@ -35,6 +35,7 @@ Configuration options:
 
 Advanced options:
   --disable-asm            disable platform-specific assembly optimizations
+  --enable-lto             enable link-time optimization
   --enable-debug           add -g
   --enable-gprof           add -pg
   --enable-strip           add -s
@@ -346,6 +347,7 @@ thread="auto"
 swscale="auto"
 asm="auto"
 interlaced="yes"
+lto="no"
 debug="no"
 gprof="no"
 strip="no"
@@ -452,6 +454,9 @@ for opt do
         --disable-swscale)
             swscale="no"
             ;;
+        --enable-lto)
+            lto="auto"
+            ;;
         --enable-debug)
             debug="yes"
             ;;
@@ -503,10 +508,20 @@ done
 [ "$cli" = "no" -a "$shared" = "no" -a "$static" = "no" ] && die "Nothing to build. Enable cli, shared or static."
 
 CC="${CC-${cross_prefix}gcc}"
-AR="${AR-${cross_prefix}ar}"
-RANLIB="${RANLIB-${cross_prefix}ranlib}"
 STRIP="${STRIP-${cross_prefix}strip}"
 INSTALL="${INSTALL-install}"
+
+# ar and ranlib doesn't load the LTO plugin by default, prefer the gcc-prefixed wrappers which does.
+if ${cross_prefix}gcc-ar --version >/dev/null 2>&1; then
+    AR="${AR-${cross_prefix}gcc-ar}"
+else
+    AR="${AR-${cross_prefix}ar}"
+fi
+if ${cross_prefix}gcc-ranlib --version >/dev/null 2>&1; then
+    RANLIB="${RANLIB-${cross_prefix}gcc-ranlib}"
+else
+    RANLIB="${RANLIB-${cross_prefix}ranlib}"
+fi
 
 if [ "x$host" = x ]; then
     host=`${SRCPATH}/config.guess`
@@ -1177,7 +1192,13 @@ if [ "$debug" = "yes" ]; then
     RCFLAGS="$RCFLAGS -DDEBUG"
 else
     CFLAGS="-O3 -ffast-math $CFLAGS"
+    if [ "$lto" = "auto" ] && [ $compiler = GNU ] && cc_check "" "-flto" ; then
+        lto="yes"
+        CFLAGS="$CFLAGS -flto"
+        LDFLAGS="$LDFLAGS -O3 -flto"
+    fi
 fi
+[ "$lto" = "auto" ] && lto="no"
 
 if cc_check '' -fno-tree-vectorize ; then
     CFLAGS="$CFLAGS -fno-tree-vectorize"
@@ -1462,6 +1483,7 @@ gpl:           $gpl
 thread:        $thread
 opencl:        $opencl
 filters:       $filters
+lto:           $lto
 debug:         $debug
 gprof:         $gprof
 strip:         $strip
