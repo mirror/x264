@@ -1667,3 +1667,60 @@ function x264_memzero_aligned_neon, export=1
     b.gt        1b
     ret
 endfunc
+
+// void mbtree_fix8_pack( int16_t *dst, float *src, int count )
+function x264_mbtree_fix8_pack_neon, export=1
+    subs        w3,  w2,  #8
+    b.lt        2f
+1:
+    subs        w3,  w3,  #8
+    ld1         {v0.4s,v1.4s}, [x1], #32
+    fcvtzs      v0.4s,  v0.4s,  #8
+    fcvtzs      v1.4s,  v1.4s,  #8
+    sqxtn       v2.4h,  v0.4s
+    sqxtn2      v2.8h,  v1.4s
+    rev16       v3.16b, v2.16b
+    st1         {v3.8h},  [x0], #16
+    b.ge        1b
+2:
+    adds        w3,  w3,  #8
+    b.eq        4f
+3:
+    subs        w3,  w3,  #1
+    ldr         s0, [x1], #4
+    fcvtzs      w4,  s0,  #8
+    rev16       w5,  w4
+    strh        w5, [x0], #2
+    b.gt        3b
+4:
+    ret
+endfunc
+
+// void mbtree_fix8_unpack( float *dst, int16_t *src, int count )
+function x264_mbtree_fix8_unpack_neon, export=1
+    subs        w3,  w2,  #8
+    b.lt        2f
+1:
+    subs        w3,  w3,  #8
+    ld1         {v0.8h}, [x1], #16
+    rev16       v1.16b, v0.16b
+    sxtl        v2.4s,  v1.4h
+    sxtl2       v3.4s,  v1.8h
+    scvtf       v4.4s,  v2.4s,  #8
+    scvtf       v5.4s,  v3.4s,  #8
+    st1         {v4.4s,v5.4s}, [x0], #32
+    b.ge        1b
+2:
+    adds        w3,  w3,  #8
+    b.eq        4f
+3:
+    subs        w3,  w3,  #1
+    ldrh        w4, [x1], #2
+    rev16       w5,  w4
+    sxth        w6,  w5
+    scvtf       s0,  w6,  #8
+    str         s0, [x0], #4
+    b.gt        3b
+4:
+    ret
+endfunc

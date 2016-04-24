@@ -100,6 +100,9 @@ void x264_frame_init_lowres_core_neon( uint8_t *, uint8_t *, uint8_t *, uint8_t 
 
 void x264_mbtree_propagate_cost_neon( int16_t *, uint16_t *, uint16_t *, uint16_t *, uint16_t *, float *, int );
 
+void x264_mbtree_fix8_pack_neon( uint16_t *dst, float *src, int count );
+void x264_mbtree_fix8_unpack_neon( float *dst, uint16_t *src, int count );
+
 #if !HIGH_BIT_DEPTH
 static void x264_weight_cache_neon( x264_t *h, x264_weight_t *w )
 {
@@ -262,6 +265,8 @@ void x264_mc_init_aarch64( int cpu, x264_mc_functions_t *pf )
 
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
     pf->mbtree_propagate_list = x264_mbtree_propagate_list_neon;
+    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_neon;
+    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_neon;
 
     pf->memcpy_aligned  = x264_memcpy_aligned_neon;
     pf->memzero_aligned = x264_memzero_aligned_neon;
