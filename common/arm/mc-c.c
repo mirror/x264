@@ -109,6 +109,9 @@ void integral_init8v_neon( uint16_t *, intptr_t );
 
 void x264_mbtree_propagate_cost_neon( int16_t *, uint16_t *, uint16_t *, uint16_t *, uint16_t *, float *, int );
 
+void x264_mbtree_fix8_pack_neon( uint16_t *dst, float *src, int count );
+void x264_mbtree_fix8_unpack_neon( float *dst, uint16_t *src, int count );
+
 #if !HIGH_BIT_DEPTH
 static void x264_weight_cache_neon( x264_t *h, x264_weight_t *w )
 {
@@ -291,6 +294,8 @@ void x264_mc_init_arm( int cpu, x264_mc_functions_t *pf )
 
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
     pf->mbtree_propagate_list = x264_mbtree_propagate_list_neon;
+    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_neon;
+    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_neon;
 #endif // !HIGH_BIT_DEPTH
 
 // Apple's gcc stupidly cannot align stack variables, and ALIGNED_ARRAY can't work on structs
