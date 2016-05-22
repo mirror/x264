@@ -1841,7 +1841,7 @@ static void x264_mb_analyse_inter_p4x4( x264_t *h, x264_mb_analysis_t *a, int i8
                             a->l0.me4x4[i8x8][3].cost +
                             REF_COST( 0, i_ref ) +
                             a->i_lambda * i_sub_mb_p_cost_table[D_L0_4x4];
-    if( h->mb.b_chroma_me )
+    if( h->mb.b_chroma_me && !CHROMA444 )
         a->l0.i_cost4x4[i8x8] += x264_mb_analyse_inter_p4x4_chroma( h, a, p_fref, i8x8, PIXEL_4x4 );
 }
 
@@ -1877,7 +1877,7 @@ static void x264_mb_analyse_inter_p8x4( x264_t *h, x264_mb_analysis_t *a, int i8
     a->l0.i_cost8x4[i8x8] = a->l0.me8x4[i8x8][0].cost + a->l0.me8x4[i8x8][1].cost +
                             REF_COST( 0, i_ref ) +
                             a->i_lambda * i_sub_mb_p_cost_table[D_L0_8x4];
-    if( h->mb.b_chroma_me )
+    if( h->mb.b_chroma_me && !CHROMA444 )
         a->l0.i_cost8x4[i8x8] += x264_mb_analyse_inter_p4x4_chroma( h, a, p_fref, i8x8, PIXEL_8x4 );
 }
 
@@ -1913,7 +1913,7 @@ static void x264_mb_analyse_inter_p4x8( x264_t *h, x264_mb_analysis_t *a, int i8
     a->l0.i_cost4x8[i8x8] = a->l0.me4x8[i8x8][0].cost + a->l0.me4x8[i8x8][1].cost +
                             REF_COST( 0, i_ref ) +
                             a->i_lambda * i_sub_mb_p_cost_table[D_L0_4x8];
-    if( h->mb.b_chroma_me )
+    if( h->mb.b_chroma_me && !CHROMA444 )
         a->l0.i_cost4x8[i8x8] += x264_mb_analyse_inter_p4x4_chroma( h, a, p_fref, i8x8, PIXEL_4x8 );
 }
 
