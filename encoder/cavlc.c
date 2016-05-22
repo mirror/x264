@@ -610,6 +610,8 @@ static int x264_partition_size_cavlc( x264_t *h, int i8, int i_pixel )
     int plane_count = CHROMA444 ? 3 : 1;
     int j;
 
+    h->out.bs.i_bits_encoded = 0;
+
     if( i_mb_type == P_8x8 )
     {
         x264_cavlc_8x8_mvd( h, i8 );
