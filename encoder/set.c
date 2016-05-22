@@ -522,19 +522,14 @@ void x264_pps_write( bs_t *s, x264_sps_t *sps, x264_pps_t *pps )
             bs_write1( s, 0 ); // Cr = Cb
             if( pps->b_transform_8x8_mode )
             {
+                scaling_list_write( s, pps, CQM_8IY+4 );
+                scaling_list_write( s, pps, CQM_8PY+4 );
                 if( sps->i_chroma_format_idc == CHROMA_444 )
                 {
-                    scaling_list_write( s, pps, CQM_8IY+4 );
                     scaling_list_write( s, pps, CQM_8IC+4 );
-                    bs_write1( s, 0 ); // Cr = Cb
-                    scaling_list_write( s, pps, CQM_8PY+4 );
                     scaling_list_write( s, pps, CQM_8PC+4 );
                     bs_write1( s, 0 ); // Cr = Cb
-                }
-                else
-                {
-                    scaling_list_write( s, pps, CQM_8IY+4 );
-                    scaling_list_write( s, pps, CQM_8PY+4 );
+                    bs_write1( s, 0 ); // Cr = Cb
                 }
             }
         }
