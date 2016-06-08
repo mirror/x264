@@ -845,17 +845,19 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - %s\n", range_names[0], stringify_names( buf, range_names ) );
     H2( "      --colorprim <string>    Specify color primaries [\"%s\"]\n"
         "                                  - undef, bt709, bt470m, bt470bg, smpte170m,\n"
-        "                                    smpte240m, film, bt2020\n",
+        "                                    smpte240m, film, bt2020, smpte428,\n"
+        "                                    smpte431, smpte432\n",
                                        strtable_lookup( x264_colorprim_names, defaults->vui.i_colorprim ) );
     H2( "      --transfer <string>     Specify transfer characteristics [\"%s\"]\n"
         "                                  - undef, bt709, bt470m, bt470bg, smpte170m,\n"
         "                                    smpte240m, linear, log100, log316,\n"
         "                                    iec61966-2-4, bt1361e, iec61966-2-1,\n"
-        "                                    bt2020-10, bt2020-12\n",
+        "                                    bt2020-10, bt2020-12, smpte2084, smpte428\n",
                                        strtable_lookup( x264_transfer_names, defaults->vui.i_transfer ) );
     H2( "      --colormatrix <string>  Specify color matrix setting [\"%s\"]\n"
         "                                  - undef, bt709, fcc, bt470bg, smpte170m,\n"
-        "                                    smpte240m, GBR, YCgCo, bt2020nc, bt2020c\n",
+        "                                    smpte240m, GBR, YCgCo, bt2020nc, bt2020c,\n"
+        "                                    smpte2085\n",
                                        strtable_lookup( x264_colmatrix_names, defaults->vui.i_colmatrix ) );
     H2( "      --chromaloc <integer>   Specify chroma sample location (0 to 5) [%d]\n",
                                        defaults->vui.i_chroma_loc );
