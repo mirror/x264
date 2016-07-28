@@ -221,7 +221,6 @@ static int x264_param_apply_preset( x264_param_t *param, const char *preset )
     }
     else if( !strcasecmp( preset, "veryfast" ) )
     {
-        param->analyse.i_me_method = X264_ME_HEX;
         param->analyse.i_subpel_refine = 2;
         param->i_frame_reference = 1;
         param->analyse.b_mixed_references = 0;
@@ -250,11 +249,10 @@ static int x264_param_apply_preset( x264_param_t *param, const char *preset )
     }
     else if( !strcasecmp( preset, "slow" ) )
     {
-        param->analyse.i_me_method = X264_ME_UMH;
         param->analyse.i_subpel_refine = 8;
         param->i_frame_reference = 5;
-        param->i_bframe_adaptive = X264_B_ADAPT_TRELLIS;
         param->analyse.i_direct_mv_pred = X264_DIRECT_PRED_AUTO;
+        param->analyse.i_trellis = 2;
         param->rc.i_lookahead = 50;
     }
     else if( !strcasecmp( preset, "slower" ) )
