@@ -34,7 +34,6 @@
 #define avs_close dlclose
 #define avs_address dlsym
 #else
-#include <windows.h>
 #define avs_open() LoadLibraryW( L"avisynth" )
 #define avs_close FreeLibrary
 #define avs_address GetProcAddress

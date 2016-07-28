@@ -33,10 +33,6 @@
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #define PROGRESS_LENGTH 36
 
 typedef struct
