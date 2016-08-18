@@ -2201,7 +2201,7 @@ static int check_quant( int cpu_ref, int cpu_new )
                 int dmf = h->dequant4_mf[CQM_4IC][qpdc%6][0] << qpdc/6; \
                 if( dmf > 32*64 ) \
                     continue; \
-                for( int i = 16; ; i <<= 1 ) \
+                for( int i = 16;; i <<= 1 ) \
                 { \
                     int res_c, res_asm; \
                     int max = X264_MIN( i, PIXEL_MAX*16 ); \

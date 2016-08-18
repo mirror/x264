@@ -3430,7 +3430,7 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
                 x264_mc_weight_w8_msa( p_dst, *p_dst_stride,
                                        p_dst, *p_dst_stride,
                                        pWeight, i_h4w );
-                for( i_cnt = i_h4w; i_cnt < i_height ; i_cnt++ )
+                for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
                 {
                     uint64_t temp0;
                     v16i8 zero = {0};
@@ -3666,7 +3666,7 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
                                    pWeight, i_h4w );
             p_src1 = src1_org + i_h4w * i_src_stride;
 
-            for( i_cnt = i_h4w; i_cnt < i_height ; i_cnt++ )
+            for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
             {
                 uint64_t u_temp0;
                 v16i8 zero = {0};
