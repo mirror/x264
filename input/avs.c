@@ -4,6 +4,7 @@
  * Copyright (C) 2009-2016 x264 project
  *
  * Authors: Steven Walters <kemuri9@gmail.com>
+ *          Anton Mitrofanov <BugMaster@narod.ru>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,20 +58,20 @@
 #include <libavutil/pixfmt.h>
 #endif
 
-/* AvxSynth doesn't have yv24, yv16, yv411, or y8, so disable them. */
-#if USE_AVXSYNTH
-#define avs_is_yv24( vi ) 0
-#define avs_is_yv16( vi ) 0
-#define avs_is_yv411( vi ) 0
-#define avs_is_y8( vi ) 0
-#endif
-
 /* maximum size of the sequence of filters to try on non script files */
 #define AVS_MAX_SEQUENCE 5
 
 #define LOAD_AVS_FUNC(name, continue_on_fail)\
 {\
     h->func.name = (void*)avs_address( h->library, #name );\
+    if( !continue_on_fail && !h->func.name )\
+        goto fail;\
+}
+
+#define LOAD_AVS_FUNC_ALIAS(name, alias, continue_on_fail)\
+{\
+    if( !h->func.name )\
+        h->func.name = (void*)avs_address( h->library, alias );\
     if( !continue_on_fail && !h->func.name )\
         goto fail;\
 }
@@ -95,6 +96,29 @@ typedef struct
         AVSC_DECLARE_FUNC( avs_release_value );
         AVSC_DECLARE_FUNC( avs_release_video_frame );
         AVSC_DECLARE_FUNC( avs_take_clip );
+#if !USE_AVXSYNTH
+        // AviSynth+ extension
+        AVSC_DECLARE_FUNC( avs_is_rgb48 );
+        AVSC_DECLARE_FUNC( avs_is_rgb64 );
+        AVSC_DECLARE_FUNC( avs_is_yuv444p16 );
+        AVSC_DECLARE_FUNC( avs_is_yuv422p16 );
+        AVSC_DECLARE_FUNC( avs_is_yuv420p16 );
+        AVSC_DECLARE_FUNC( avs_is_y16 );
+        AVSC_DECLARE_FUNC( avs_is_yuv444ps );
+        AVSC_DECLARE_FUNC( avs_is_yuv422ps );
+        AVSC_DECLARE_FUNC( avs_is_yuv420ps );
+        AVSC_DECLARE_FUNC( avs_is_y32 );
+        AVSC_DECLARE_FUNC( avs_is_444 );
+        AVSC_DECLARE_FUNC( avs_is_422 );
+        AVSC_DECLARE_FUNC( avs_is_420 );
+        AVSC_DECLARE_FUNC( avs_is_y );
+        AVSC_DECLARE_FUNC( avs_is_yuva );
+        AVSC_DECLARE_FUNC( avs_is_planar_rgb );
+        AVSC_DECLARE_FUNC( avs_is_planar_rgba );
+        AVSC_DECLARE_FUNC( avs_num_components );
+        AVSC_DECLARE_FUNC( avs_component_size );
+        AVSC_DECLARE_FUNC( avs_bits_per_component );
+#endif
     } func;
 } avs_hnd_t;
 
@@ -116,11 +140,65 @@ static int x264_avs_load_library( avs_hnd_t *h )
     LOAD_AVS_FUNC( avs_release_value, 0 );
     LOAD_AVS_FUNC( avs_release_video_frame, 0 );
     LOAD_AVS_FUNC( avs_take_clip, 0 );
+#if !USE_AVXSYNTH
+    // AviSynth+ extension
+    LOAD_AVS_FUNC( avs_is_rgb48, 1 );
+    LOAD_AVS_FUNC_ALIAS( avs_is_rgb48, "_avs_is_rgb48@4", 1 );
+    LOAD_AVS_FUNC( avs_is_rgb64, 1 );
+    LOAD_AVS_FUNC_ALIAS( avs_is_rgb64, "_avs_is_rgb64@4", 1 );
+    LOAD_AVS_FUNC( avs_is_yuv444p16, 1 );
+    LOAD_AVS_FUNC( avs_is_yuv422p16, 1 );
+    LOAD_AVS_FUNC( avs_is_yuv420p16, 1 );
+    LOAD_AVS_FUNC( avs_is_y16, 1 );
+    LOAD_AVS_FUNC( avs_is_yuv444ps, 1 );
+    LOAD_AVS_FUNC( avs_is_yuv422ps, 1 );
+    LOAD_AVS_FUNC( avs_is_yuv420ps, 1 );
+    LOAD_AVS_FUNC( avs_is_y32, 1 );
+    LOAD_AVS_FUNC( avs_is_444, 1 );
+    LOAD_AVS_FUNC( avs_is_422, 1 );
+    LOAD_AVS_FUNC( avs_is_420, 1 );
+    LOAD_AVS_FUNC( avs_is_y, 1 );
+    LOAD_AVS_FUNC( avs_is_yuva, 1 );
+    LOAD_AVS_FUNC( avs_is_planar_rgb, 1 );
+    LOAD_AVS_FUNC( avs_is_planar_rgba, 1 );
+    LOAD_AVS_FUNC( avs_num_components, 1 );
+    LOAD_AVS_FUNC( avs_component_size, 1 );
+    LOAD_AVS_FUNC( avs_bits_per_component, 1 );
+#endif
     return 0;
 fail:
     avs_close( h->library );
+    h->library = NULL;
     return -1;
 }
+
+/* AvxSynth doesn't have yv24, yv16, yv411, or y8, so disable them. */
+#if USE_AVXSYNTH
+#define avs_is_yv24( vi ) (0)
+#define avs_is_yv16( vi ) (0)
+#define avs_is_yv411( vi ) (0)
+#define avs_is_y8( vi ) (0)
+/* AvxSynth doesn't support AviSynth+ pixel types. */
+#define AVS_IS_AVISYNTHPLUS (0)
+#define AVS_IS_420( vi ) (0)
+#define AVS_IS_422( vi ) (0)
+#define AVS_IS_444( vi ) (0)
+#define AVS_IS_RGB48( vi ) (0)
+#define AVS_IS_RGB64( vi ) (0)
+#define AVS_IS_YUV420P16( vi ) (0)
+#define AVS_IS_YUV422P16( vi ) (0)
+#define AVS_IS_YUV444P16( vi ) (0)
+#else
+#define AVS_IS_AVISYNTHPLUS (h->func.avs_is_420 && h->func.avs_is_422 && h->func.avs_is_444)
+#define AVS_IS_420( vi ) (h->func.avs_is_420 ? h->func.avs_is_420( vi ) : avs_is_yv12( vi ))
+#define AVS_IS_422( vi ) (h->func.avs_is_422 ? h->func.avs_is_422( vi ) : avs_is_yv16( vi ))
+#define AVS_IS_444( vi ) (h->func.avs_is_444 ? h->func.avs_is_444( vi ) : avs_is_yv24( vi ))
+#define AVS_IS_RGB48( vi ) (h->func.avs_is_rgb48 && h->func.avs_is_rgb48( vi ))
+#define AVS_IS_RGB64( vi ) (h->func.avs_is_rgb64 && h->func.avs_is_rgb64( vi ))
+#define AVS_IS_YUV420P16( vi ) (h->func.avs_is_yuv420p16 && h->func.avs_is_yuv420p16( vi ))
+#define AVS_IS_YUV422P16( vi ) (h->func.avs_is_yuv422p16 && h->func.avs_is_yuv422p16( vi ))
+#define AVS_IS_YUV444P16( vi ) (h->func.avs_is_yuv444p16 && h->func.avs_is_yuv444p16( vi ))
+#endif
 
 /* generate a filter sequence to try based on the filename extension */
 static void avs_build_filter_sequence( char *filename_ext, const char *filter[AVS_MAX_SEQUENCE+1] )
@@ -178,7 +256,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     fclose( fh );
     FAIL_IF_ERROR( !b_regular, "AVS input is incompatible with non-regular file `%s'\n", psz_filename );
 
-    avs_hnd_t *h = malloc( sizeof(avs_hnd_t) );
+    avs_hnd_t *h = calloc( 1, sizeof(avs_hnd_t) );
     if( !h )
         return -1;
     FAIL_IF_ERROR( x264_avs_load_library( h ), "failed to load avisynth\n" );
@@ -268,13 +346,26 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     /* if swscale is not available, convert the CSP if necessary */
     FAIL_IF_ERROR( avs_version < 2.6f && (opt->output_csp == X264_CSP_I422 || opt->output_csp == X264_CSP_I444),
                    "avisynth >= 2.6 is required for i422/i444 output\n" );
-    if( (opt->output_csp == X264_CSP_I420 && !avs_is_yv12( vi )) || (opt->output_csp == X264_CSP_I422 && !avs_is_yv16( vi )) ||
-        (opt->output_csp == X264_CSP_I444 && !avs_is_yv24( vi )) || (opt->output_csp == X264_CSP_RGB && !avs_is_rgb( vi )) )
+    if( (opt->output_csp == X264_CSP_I420 && !AVS_IS_420( vi )) ||
+        (opt->output_csp == X264_CSP_I422 && !AVS_IS_422( vi )) ||
+        (opt->output_csp == X264_CSP_I444 && !AVS_IS_444( vi )) ||
+        (opt->output_csp == X264_CSP_RGB && !avs_is_rgb( vi )) )
     {
-
-        const char *csp = opt->output_csp == X264_CSP_I420 ? "YV12" :
-                          opt->output_csp == X264_CSP_I422 ? "YV16" :
-                          opt->output_csp == X264_CSP_I444 ? "YV24" : "RGB";
+        const char *csp;
+        if( AVS_IS_AVISYNTHPLUS )
+        {
+            csp = opt->output_csp == X264_CSP_I420 ? "YUV420" :
+                  opt->output_csp == X264_CSP_I422 ? "YUV422" :
+                  opt->output_csp == X264_CSP_I444 ? "YUV444" :
+                  "RGB";
+        }
+        else
+        {
+            csp = opt->output_csp == X264_CSP_I420 ? "YV12" :
+                  opt->output_csp == X264_CSP_I422 ? "YV16" :
+                  opt->output_csp == X264_CSP_I444 ? "YV24" :
+                  "RGB";
+        }
         x264_cli_log( "avs", X264_LOG_WARNING, "converting input clip to %s\n", csp );
         FAIL_IF_ERROR( opt->output_csp < X264_CSP_I444 && (vi->width&1),
                        "input clip width not divisible by 2 (%dx%d)\n", vi->width, vi->height );
@@ -282,7 +373,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
                        "input clip height not divisible by 4 (%dx%d)\n", vi->width, vi->height );
         FAIL_IF_ERROR( (opt->output_csp == X264_CSP_I420 || info->interlaced) && (vi->height&1),
                        "input clip height not divisible by 2 (%dx%d)\n", vi->width, vi->height );
-        char conv_func[14];
+        char conv_func[16];
         snprintf( conv_func, sizeof(conv_func), "ConvertTo%s", csp );
         char matrix[7] = "";
         int arg_count = 2;
@@ -330,14 +421,24 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     info->fps_den = vi->fps_denominator;
     h->num_frames = info->num_frames = vi->num_frames;
     info->thread_safe = 1;
-    if( avs_is_rgb32( vi ) )
+    if( AVS_IS_RGB64( vi ) )
+        info->csp = X264_CSP_BGRA | X264_CSP_VFLIP | X264_CSP_HIGH_DEPTH;
+    else if( avs_is_rgb32( vi ) )
         info->csp = X264_CSP_BGRA | X264_CSP_VFLIP;
+    else if( AVS_IS_RGB48( vi ) )
+        info->csp = X264_CSP_BGR | X264_CSP_VFLIP | X264_CSP_HIGH_DEPTH;
     else if( avs_is_rgb24( vi ) )
         info->csp = X264_CSP_BGR | X264_CSP_VFLIP;
+    else if( AVS_IS_YUV444P16( vi ) )
+        info->csp = X264_CSP_I444 | X264_CSP_HIGH_DEPTH;
     else if( avs_is_yv24( vi ) )
         info->csp = X264_CSP_I444;
+    else if( AVS_IS_YUV422P16( vi ) )
+        info->csp = X264_CSP_I422 | X264_CSP_HIGH_DEPTH;
     else if( avs_is_yv16( vi ) )
         info->csp = X264_CSP_I422;
+    else if( AVS_IS_YUV420P16( vi ) )
+        info->csp = X264_CSP_I420 | X264_CSP_HIGH_DEPTH;
     else if( avs_is_yv12( vi ) )
         info->csp = X264_CSP_I420;
 #if HAVE_SWSCALE
@@ -349,7 +450,11 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         info->csp = AV_PIX_FMT_GRAY8 | X264_CSP_OTHER;
 #endif
     else
-        info->csp = X264_CSP_NONE;
+    {
+        AVS_Value pixel_type = h->func.avs_invoke( h->env, "PixelType", res, NULL );
+        const char *pixel_type_name = avs_is_string( pixel_type ) ? avs_as_string( pixel_type ) : "unknown";
+        FAIL_IF_ERROR( 1, "not supported pixel type: %s\n", pixel_type_name );
+    }
     info->vfr = 0;
 
     *p_handle = h;
@@ -406,10 +511,12 @@ static void picture_clean( cli_pic_t *pic, hnd_t handle )
 static int close_file( hnd_t handle )
 {
     avs_hnd_t *h = handle;
-    h->func.avs_release_clip( h->clip );
-    if( h->func.avs_delete_script_environment )
+    if( h->func.avs_release_clip && h->clip )
+        h->func.avs_release_clip( h->clip );
+    if( h->func.avs_delete_script_environment && h->env )
         h->func.avs_delete_script_environment( h->env );
-    avs_close( h->library );
+    if( h->library )
+        avs_close( h->library );
     free( h );
     return 0;
 }
