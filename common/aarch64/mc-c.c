@@ -51,6 +51,8 @@ void x264_pixel_avg2_w20_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t
 
 void x264_plane_copy_core_neon( pixel *dst, intptr_t i_dst,
                                 pixel *src, intptr_t i_src, int w, int h );
+void x264_plane_copy_swap_core_neon( pixel *dst, intptr_t i_dst,
+                                     pixel *src, intptr_t i_src, int w, int h );
 void x264_plane_copy_deinterleave_neon(  pixel *dstu, intptr_t i_dstu,
                                          pixel *dstv, intptr_t i_dstv,
                                          pixel *src,  intptr_t i_src, int w, int h );
@@ -208,6 +210,7 @@ void x264_hpel_filter_neon( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc,
                             int height, int16_t *buf );
 
 PLANE_COPY(16, neon)
+PLANE_COPY_SWAP(16, neon)
 PLANE_INTERLEAVE(neon)
 #endif // !HIGH_BIT_DEPTH
 
@@ -232,6 +235,7 @@ void x264_mc_init_aarch64( int cpu, x264_mc_functions_t *pf )
     pf->copy[PIXEL_4x4]      = x264_mc_copy_w4_neon;
 
     pf->plane_copy                  = x264_plane_copy_neon;
+    pf->plane_copy_swap             = x264_plane_copy_swap_neon;
     pf->plane_copy_deinterleave     = x264_plane_copy_deinterleave_neon;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_neon;
     pf->plane_copy_interleave       = x264_plane_copy_interleave_neon;
