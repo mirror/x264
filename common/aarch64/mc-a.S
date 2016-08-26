@@ -1253,7 +1253,7 @@ load_deinterleave_chroma:
     ret
 endfunc
 
-function x264_plane_copy_neon, export=1
+function x264_plane_copy_core_neon, export=1
     add         x8,  x4,  #15
     and         x4,  x8,  #~15
     sub         x1,  x1,  x4
@@ -1352,7 +1352,7 @@ function x264_plane_copy_deinterleave_rgb_neon, export=1
     ret
 endfunc
 
-function x264_plane_copy_interleave_neon, export=1
+function x264_plane_copy_interleave_core_neon, export=1
     add         w9,  w6,  #15
     and         w9,  w9,  #0xfffffff0
     sub         x1,  x1,  x9,  lsl #1
