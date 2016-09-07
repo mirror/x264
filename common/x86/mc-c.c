@@ -532,6 +532,7 @@ do\
 
 PROPAGATE_LIST(ssse3)
 PROPAGATE_LIST(avx)
+PROPAGATE_LIST(avx2)
 
 void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 {
@@ -843,6 +844,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->plane_copy_swap = x264_plane_copy_swap_avx2;
     pf->get_ref = get_ref_avx2;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2;
+    pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx2;
     pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_avx2;
     pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_avx2;
 }
