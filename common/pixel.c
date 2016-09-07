@@ -556,6 +556,7 @@ INTRA_MBCMP(satd, 16x16,  v, h, dc,  ,, _c )
 #if HIGH_BIT_DEPTH
 #define x264_predict_8x8c_v_mmx2 x264_predict_8x8c_v_mmx
 #define x264_predict_8x16c_v_mmx2 x264_predict_8x16c_v_c
+#define x264_predict_16x16_dc_mmx2 x264_predict_16x16_dc_c
 #define x264_predict_8x8c_v_sse2 x264_predict_8x8c_v_sse
 #define x264_predict_8x16c_v_sse2 x264_predict_8x16c_v_sse
 #define x264_predict_16x16_v_sse2 x264_predict_16x16_v_sse
