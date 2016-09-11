@@ -1025,8 +1025,8 @@ static int check_dct( int cpu_ref, int cpu_new )
     x264_zigzag_function_t zigzag_ref[2];
     x264_zigzag_function_t zigzag_asm[2];
 
-    ALIGNED_16( dctcoef level1[64] );
-    ALIGNED_16( dctcoef level2[64] );
+    ALIGNED_ARRAY_16( dctcoef, level1,[64] );
+    ALIGNED_ARRAY_16( dctcoef, level2,[64] );
 
 #define TEST_ZIGZAG_SCAN( name, t1, t2, dct, size ) \
     if( zigzag_asm[interlace].name != zigzag_ref[interlace].name ) \
