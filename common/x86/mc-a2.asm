@@ -67,7 +67,6 @@ pf_256:    times 4 dd 256.0
 pf_inv256: times 4 dd 0.00390625
 
 pd_16: times 4 dd 16
-pd_0f: times 4 dd 0xffff
 
 pad10: times 8 dw    10*PIXEL_MAX
 pad20: times 8 dw    20*PIXEL_MAX
@@ -287,7 +286,7 @@ cglobal hpel_filter_c, 3,3,10
     psrad      m1, 10
     psrad      m2, 10
     pslld      m2, 16
-    pand       m1, [pd_0f]
+    pand       m1, [pd_ffff]
     por        m1, m2
     CLIPW      m1, [pb_0], [pw_pixel_max]
     mova  [r0+r2], m1
