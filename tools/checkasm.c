@@ -29,6 +29,10 @@
 #include "common/common.h"
 #include "common/cpu.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 // GCC doesn't align stack variables on ARM, so use .bss
 #if ARCH_ARM
 #undef ALIGNED_16
