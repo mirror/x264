@@ -4595,67 +4595,82 @@ cglobal intra_sad_x9_8x8, 5,7,8
 ;-----------------------------------------------------------------------------
 %macro SSIM_ITER 1
 %if HIGH_BIT_DEPTH
-    movdqu    m5, [r0+(%1&1)*r1]
-    movdqu    m6, [r2+(%1&1)*r3]
+    movu      m4, [r0+(%1&1)*r1]
+    movu      m5, [r2+(%1&1)*r3]
+%elif cpuflag(avx)
+    pmovzxbw  m4, [r0+(%1&1)*r1]
+    pmovzxbw  m5, [r2+(%1&1)*r3]
 %else
-    movq      m5, [r0+(%1&1)*r1]
-    movq      m6, [r2+(%1&1)*r3]
-    punpcklbw m5, m0
-    punpcklbw m6, m0
+    movq      m4, [r0+(%1&1)*r1]
+    movq      m5, [r2+(%1&1)*r3]
+    punpcklbw m4, m7
+    punpcklbw m5, m7
 %endif
 %if %1==1
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
 %endif
-%if %1==0
-    movdqa    m1, m5
-    movdqa    m2, m6
+%if %1 == 0 && cpuflag(avx)
+    SWAP       0, 4
+    SWAP       1, 5
+    pmaddwd   m4, m0, m0
+    pmaddwd   m5, m1, m1
+    pmaddwd   m6, m0, m1
 %else
+%if %1 == 0
+    mova      m0, m4
+    mova      m1, m5
+%else
+    paddw     m0, m4
     paddw     m1, m5
-    paddw     m2, m6
 %endif
-    pmaddwd   m7, m5, m6
+    pmaddwd   m6, m4, m5
+    pmaddwd   m4, m4
     pmaddwd   m5, m5
-    pmaddwd   m6, m6
-    ACCUM  paddd, 3, 5, %1
-    ACCUM  paddd, 4, 7, %1
-    paddd     m3, m6
+%endif
+    ACCUM  paddd, 2, 4, %1
+    ACCUM  paddd, 3, 6, %1
+    paddd     m2, m5
 %endmacro
 
 %macro SSIM 0
-cglobal pixel_ssim_4x4x2_core, 4,4,8
+%if HIGH_BIT_DEPTH
+cglobal pixel_ssim_4x4x2_core, 4,4,7
     FIX_STRIDES r1, r3
-    pxor      m0, m0
+%else
+cglobal pixel_ssim_4x4x2_core, 4,4,7+notcpuflag(avx)
+%if notcpuflag(avx)
+    pxor      m7, m7
+%endif
+%endif
     SSIM_ITER 0
     SSIM_ITER 1
     SSIM_ITER 2
     SSIM_ITER 3
-    ; PHADDW m1, m2
-    ; PHADDD m3, m4
-    movdqa    m7, [pw_1]
-    pshufd    m5, m3, q2301
-    pmaddwd   m1, m7
-    pmaddwd   m2, m7
-    pshufd    m6, m4, q2301
-    packssdw  m1, m2
-    paddd     m3, m5
-    pshufd    m1, m1, q3120
-    paddd     m4, m6
-    pmaddwd   m1, m7
-    punpckhdq m5, m3, m4
-    punpckldq m3, m4
-
 %if UNIX64
-    %define t0 r4
+    DECLARE_REG_TMP 4
 %else
-    %define t0 rax
-    mov t0, r4mp
+    DECLARE_REG_TMP 0
+    mov       t0, r4mp
 %endif
-
-    movq      [t0+ 0], m1
-    movq      [t0+ 8], m3
-    movhps    [t0+16], m1
-    movq      [t0+24], m5
+%if cpuflag(ssse3)
+    phaddw    m0, m1
+    pmaddwd   m0, [pw_1]
+    phaddd    m2, m3
+%else
+    mova      m4, [pw_1]
+    pmaddwd   m0, m4
+    pmaddwd   m1, m4
+    packssdw  m0, m1
+    shufps    m1, m2, m3, q2020
+    shufps    m2, m3, q3131
+    pmaddwd   m0, m4
+    paddd     m2, m1
+%endif
+    shufps    m1, m0, m2, q2020
+    shufps    m0, m2, q3131
+    mova    [t0], m1
+    mova [t0+16], m0
     RET
 
 ;-----------------------------------------------------------------------------
