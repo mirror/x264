@@ -137,7 +137,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
         sps->i_level_idc      = 11;
     }
     /* Intra profiles */
-    if( param->i_keyint_max == 1 && sps->i_profile_idc > PROFILE_HIGH )
+    if( param->i_keyint_max == 1 && sps->i_profile_idc >= PROFILE_HIGH )
         sps->b_constraint_set3 = 1;
 
     sps->vui.i_num_reorder_frames = param->i_bframe_pyramid ? 2 : param->i_bframe ? 1 : 0;
@@ -238,7 +238,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
 
     // NOTE: HRD related parts of the SPS are initialised in x264_ratecontrol_init_reconfigurable
 
-    sps->vui.b_bitstream_restriction = param->i_keyint_max > 1;
+    sps->vui.b_bitstream_restriction = !(sps->b_constraint_set3 && sps->i_profile_idc >= PROFILE_HIGH);
     if( sps->vui.b_bitstream_restriction )
     {
         sps->vui.b_motion_vectors_over_pic_boundaries = 1;
