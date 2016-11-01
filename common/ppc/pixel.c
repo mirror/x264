@@ -1812,9 +1812,15 @@ static int pixel_sa8d_16x16_altivec( uint8_t *pix1, intptr_t i_pix1,
     d3 = vec_sub(t1, t3);                           \
 }
 
+#ifdef WORDS_BIGENDIAN
+#define vec_perm_extend_s16(val, perm) (vec_s16_t)vec_perm(val, zero_u8v, perm)
+#else
+#define vec_perm_extend_s16(val, perm) (vec_s16_t)vec_perm(zero_u8v, val, perm)
+#endif
+
 #define VEC_LOAD_HIGH( p, num )                                    \
     vec_u8_t pix8_##num = vec_ld( stride*num, p );                 \
-    vec_s16_t pix16_s##num = (vec_s16_t)vec_perm(pix8_##num, zero_u8v, perm); \
+    vec_s16_t pix16_s##num = vec_perm_extend_s16( pix8_##num, perm ); \
     vec_s16_t pix16_d##num;
 
 static uint64_t pixel_hadamard_ac_altivec( uint8_t *pix, intptr_t stride, const vec_u8_t perm )
