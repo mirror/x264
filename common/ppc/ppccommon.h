@@ -121,89 +121,20 @@ typedef union {
 #define vec_u32_to_u16(v) vec_pack( v, zero_u32v )
 #define vec_s32_to_u16(v) vec_packsu( v, zero_s32v )
 
-
-/***********************************************************************
- * PREP_LOAD: declares two vectors required to perform unaligned loads
- * VEC_LOAD:  loads n bytes from u8 * p into vector v of type t where o is from original src offset
- * VEC_LOAD:_G: loads n bytes from u8 * p into vectory v of type t - use when offset is not known
- * VEC_LOAD_OFFSET: as above, but with offset vector known in advance
- **********************************************************************/
-#define PREP_LOAD     \
-    vec_u8_t _hv, _lv
-
-#define PREP_LOAD_SRC( src )              \
-    vec_u8_t _##src##_ = vec_lvsl(0, src)
-
-#define VEC_LOAD_G( p, v, n, t )                 \
-    _hv = vec_ld( 0, p );                        \
-    v   = (t) vec_lvsl( 0, p );                  \
-    _lv = vec_ld( n - 1, p );                    \
-    v   = (t) vec_perm( _hv, _lv, (vec_u8_t) v )
-
-#define VEC_LOAD( p, v, n, t, g )                   \
-    _hv = vec_ld( 0, p );                           \
-    _lv = vec_ld( n - 1, p );                       \
-    v = (t) vec_perm( _hv, _lv, (vec_u8_t) _##g##_ )
-
-#define VEC_LOAD_OFFSET( p, v, n, t, o )         \
-    _hv = vec_ld( 0, p);                         \
-    _lv = vec_ld( n - 1, p );                    \
-    v   = (t) vec_perm( _hv, _lv, (vec_u8_t) o )
-
-#define VEC_LOAD_PARTIAL( p, v, n, t, g)               \
-    _hv = vec_ld( 0, p);                               \
-    v   = (t) vec_perm( _hv, _hv, (vec_u8_t) _##g##_ )
-
-
 /***********************************************************************
  * PREP_STORE##n: declares required vectors to store n bytes to a
  *                potentially unaligned address
  * VEC_STORE##n:  stores n bytes from vector v to address p
  **********************************************************************/
-#define PREP_STORE16 \
-    vec_u8_t _tmp1v  \
+#define PREP_STORE8                                                    \
+    vec_u8_t _tmp3v;                                                   \
+    vec_u8_t mask = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,  \
+                      0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F } \
 
-#define PREP_STORE16_DST( dst )             \
-    vec_u8_t _##dst##l_ = vec_lvsl(0, dst); \
-    vec_u8_t _##dst##r_ = vec_lvsr(0, dst);
-
-#define VEC_STORE16( v, p, o )                           \
-    _hv    = vec_ld( 0, p );                             \
-    _lv    = vec_ld( 15, p );                            \
-    _tmp1v = vec_perm( _lv, _hv, _##o##l_ );             \
-    _lv    = vec_perm( (vec_u8_t) v, _tmp1v, _##o##r_ ); \
-    vec_st( _lv, 15, (uint8_t *) p );                    \
-    _hv    = vec_perm( _tmp1v, (vec_u8_t) v, _##o##r_ ); \
-    vec_st( _hv, 0, (uint8_t *) p )
-
-
-#define PREP_STORE8 \
-    vec_u8_t _tmp3v \
-
-#define VEC_STORE8( v, p )                \
-    _tmp3v = vec_lvsl(0, p);              \
-    v = vec_perm(v, v, _tmp3v);           \
-    vec_ste((vec_u32_t)v,0,(uint32_t*)p); \
-    vec_ste((vec_u32_t)v,4,(uint32_t*)p)
-
-
-#define PREP_STORE4                                        \
-    PREP_STORE16;                                          \
-    vec_u8_t _tmp2v, _tmp3v;                               \
-    const vec_u8_t sel =                                   \
-        (vec_u8_t) CV(-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,0,0,0)
-
-#define VEC_STORE4( v, p )                      \
-    _tmp3v = vec_lvsr( 0, p );                  \
-    v      = vec_perm( v, v, _tmp3v );          \
-    _lv    = vec_ld( 3, p );                    \
-    _tmp1v = vec_perm( sel, zero_u8v, _tmp3v ); \
-    _lv    = vec_sel( _lv, v, _tmp1v );         \
-    vec_st( _lv, 3, p );                        \
-    _hv    = vec_ld( 0, p );                    \
-    _tmp2v = vec_perm( zero_u8v, sel, _tmp3v ); \
-    _hv    = vec_sel( _hv, v, _tmp2v );         \
-    vec_st( _hv, 0, p )
+#define VEC_STORE8( v, p )           \
+    _tmp3v = vec_vsx_ld( 0, p );     \
+    v = vec_perm( v, _tmp3v, mask ); \
+    vec_vsx_st( v, 0, p )
 
 /***********************************************************************
  * VEC_TRANSPOSE_8
@@ -270,28 +201,16 @@ typedef union {
  **********************************************************************/
 #define PREP_DIFF           \
     LOAD_ZERO;              \
-    PREP_LOAD;              \
     vec_s16_t pix1v, pix2v;
 
-
-#define VEC_DIFF_H(p1,i1,p2,i2,n,d,g)               \
-    VEC_LOAD_PARTIAL( p1, pix1v, n, vec_s16_t, p1); \
+#define VEC_DIFF_H(p1,i1,p2,i2,n,d)                 \
+    pix1v = vec_vsx_ld( 0, (int16_t *)p1 );         \
     pix1v = vec_u8_to_s16( pix1v );                 \
-    VEC_LOAD( p2, pix2v, n, vec_s16_t, g);          \
+    pix2v = vec_vsx_ld( 0, (int16_t *)p2 );         \
     pix2v = vec_u8_to_s16( pix2v );                 \
     d     = vec_sub( pix1v, pix2v );                \
     p1   += i1;                                     \
     p2   += i2
-
-#define VEC_DIFF_H_OFFSET(p1,i1,p2,i2,n,d,g1,g2)    \
-    pix1v = (vec_s16_t)vec_perm( vec_ld( 0, p1 ), zero_u8v, _##g1##_ );\
-    pix1v = vec_u8_to_s16( pix1v );                 \
-    VEC_LOAD( p2, pix2v, n, vec_s16_t, g2);         \
-    pix2v = vec_u8_to_s16( pix2v );                 \
-    d     = vec_sub( pix1v, pix2v );                \
-    p1   += i1;                                     \
-    p2   += i2
-
 
 /***********************************************************************
  * VEC_DIFF_HL
@@ -308,7 +227,7 @@ typedef union {
     pix1v = (vec_s16_t)vec_ld(0, p1);        \
     temp0v = vec_u8_to_s16_h( pix1v );       \
     temp1v = vec_u8_to_s16_l( pix1v );       \
-    VEC_LOAD( p2, pix2v, 16, vec_s16_t, p2); \
+    pix2v = vec_vsx_ld( 0, (int16_t *)p2 );  \
     temp2v = vec_u8_to_s16_h( pix2v );       \
     temp3v = vec_u8_to_s16_l( pix2v );       \
     dh     = vec_sub( temp0v, temp2v );      \
@@ -332,13 +251,10 @@ typedef union {
 LOAD_ZERO;                     \
 vec_s16_t pix1v, pix2v;        \
 vec_u8_t pix1v8, pix2v8;       \
-vec_u8_t permPix1, permPix2;   \
-permPix1 = vec_lvsl(0, pix1);  \
-permPix2 = vec_lvsl(0, pix2);  \
 
 #define VEC_DIFF_H_8BYTE_ALIGNED(p1,i1,p2,i2,n,d)     \
-pix1v8 = vec_perm(vec_ld(0,p1), zero_u8v, permPix1);  \
-pix2v8 = vec_perm(vec_ld(0, p2), zero_u8v, permPix2); \
+pix1v8 = vec_vsx_ld( 0, p1 );                         \
+pix2v8 = vec_vsx_ld( 0, p2 );                         \
 pix1v = vec_u8_to_s16( pix1v8 );                      \
 pix2v = vec_u8_to_s16( pix2v8 );                      \
 d = vec_sub( pix1v, pix2v);                           \

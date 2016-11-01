@@ -64,17 +64,15 @@ static inline void x264_pixel_avg2_w8_altivec( uint8_t *dst,  intptr_t i_dst,
                                                uint8_t *src2, int i_height )
 {
     vec_u8_t src1v, src2v;
-    PREP_LOAD;
     PREP_STORE8;
-    PREP_LOAD_SRC( src1 );
-    PREP_LOAD_SRC( src2 );
 
     for( int y = 0; y < i_height; y++ )
     {
-        VEC_LOAD( src1, src1v, 8, vec_u8_t, src1 );
-        VEC_LOAD( src2, src2v, 8, vec_u8_t, src2 );
+        src1v = vec_vsx_ld( 0, src1 );
+        src2v = vec_vsx_ld( 0, src2 );
         src1v = vec_avg( src1v, src2v );
-        VEC_STORE8( src1v, dst );
+
+        VEC_STORE8(src1v, dst);
 
         dst  += i_dst;
         src1 += i_src1;
@@ -87,14 +85,11 @@ static inline void x264_pixel_avg2_w16_altivec( uint8_t *dst,  intptr_t i_dst,
                                                 uint8_t *src2, int i_height )
 {
     vec_u8_t src1v, src2v;
-    PREP_LOAD;
-    PREP_LOAD_SRC( src1 );
-    PREP_LOAD_SRC( src2 );
 
     for( int y = 0; y < i_height; y++ )
     {
-        VEC_LOAD( src1, src1v, 16, vec_u8_t, src1 );
-        VEC_LOAD( src2, src2v, 16, vec_u8_t, src2 );
+        src1v = vec_vsx_ld( 0, src1 );
+        src2v = vec_vsx_ld( 0, src2 );
         src1v = vec_avg( src1v, src2v );
         vec_st(src1v, 0, dst);
 
@@ -133,12 +128,10 @@ static void x264_mc_copy_w16_altivec( uint8_t *dst, intptr_t i_dst,
                                       uint8_t *src, intptr_t i_src, int i_height )
 {
     vec_u8_t cpyV;
-    PREP_LOAD;
-    PREP_LOAD_SRC( src );
 
     for( int y = 0; y < i_height; y++ )
     {
-        VEC_LOAD( src, cpyV, 16, vec_u8_t, src );
+        cpyV = vec_vsx_ld( 0, src );
         vec_st(cpyV, 0, dst);
 
         src += i_src;
@@ -307,8 +300,6 @@ static void mc_chroma_altivec_4xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     srcp = &src[i_src_stride];
 
     LOAD_ZERO;
-    PREP_LOAD;
-    PREP_LOAD_SRC( src );
     vec_u16_t   coeff0v, coeff1v, coeff2v, coeff3v;
     vec_u8_t    src2v_8, dstuv, dstvv;
     vec_u16_t   src0v_16, src1v_16, src2v_16, src3v_16, dstv16;
@@ -330,7 +321,7 @@ static void mc_chroma_altivec_4xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     k32v    = vec_sl( vec_splat_u16( 1 ), vec_splat_u16( 5 ) );
     shiftv  = vec_splat_u16( 6 );
 
-    VEC_LOAD( src, src2v_8, 9, vec_u8_t, src );
+    src2v_8 = vec_vsx_ld( 0, src );
     src2v_16 = vec_u8_to_u16( src2v_8 );
     src3v_16 = vec_u8_to_u16( VSLD( src2v_8, src2v_8, 2 ) );
 
@@ -338,7 +329,7 @@ static void mc_chroma_altivec_4xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     {
         src0v_16 = src2v_16;
         src1v_16 = src3v_16;
-        VEC_LOAD( srcp, src2v_8, 9, vec_u8_t, src );
+        src2v_8 = vec_vsx_ld( 0, srcp );
         src2v_16 = vec_u8_to_u16( src2v_8 );
         src3v_16 = vec_u8_to_u16( VSLD( src2v_8, src2v_8, 2 ) );
 
@@ -360,7 +351,7 @@ static void mc_chroma_altivec_4xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
 
         src0v_16 = src2v_16;
         src1v_16 = src3v_16;
-        VEC_LOAD( srcp, src2v_8, 9, vec_u8_t, src );
+        src2v_8 = vec_vsx_ld( 0, srcp );
         src2v_16 = vec_u8_to_u16( src2v_8 );
         src3v_16 = vec_u8_to_u16( VSLD( src2v_8, src2v_8, 2 ) );
 
@@ -400,8 +391,6 @@ static void mc_chroma_altivec_8xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     srcp = &src[i_src_stride];
 
     LOAD_ZERO;
-    PREP_LOAD;
-    PREP_LOAD_SRC( src );
     PREP_STORE8;
     vec_u16_t   coeff0v, coeff1v, coeff2v, coeff3v;
     vec_u8_t    src0v_8, src1v_8, src2v_8, src3v_8;
@@ -426,16 +415,16 @@ static void mc_chroma_altivec_8xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     static const vec_u8_t perm1v = CV(2,6,10,14,18,22,26,30,1,1,1,1,1,1,1,1);
 #endif
 
-    VEC_LOAD( src, src2v_8, 16, vec_u8_t, src );
-    VEC_LOAD( src+16, src3v_8, 2, vec_u8_t, src );
+    src2v_8 = vec_vsx_ld( 0, src );
+    src3v_8 = vec_vsx_ld( 16, src );
     src3v_8 = VSLD( src2v_8, src3v_8, 2 );
 
     for( int y = 0; y < i_height; y += 2 )
     {
         src0v_8 = src2v_8;
         src1v_8 = src3v_8;
-        VEC_LOAD( srcp, src2v_8, 16, vec_u8_t, src );
-        VEC_LOAD( srcp+16, src3v_8, 2, vec_u8_t, src );
+        src2v_8 = vec_vsx_ld( 0, srcp );
+        src3v_8 = vec_vsx_ld( 16, srcp );
 
         src3v_8 = VSLD( src2v_8, src3v_8, 2 );
 
@@ -472,8 +461,8 @@ static void mc_chroma_altivec_8xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
 
         src0v_8 = src2v_8;
         src1v_8 = src3v_8;
-        VEC_LOAD( srcp, src2v_8, 16, vec_u8_t, src );
-        VEC_LOAD( srcp+16, src3v_8, 2, vec_u8_t, src );
+        src2v_8 = vec_vsx_ld( 0, srcp );
+        src3v_8 = vec_vsx_ld( 16, srcp );
 
         src3v_8 = VSLD( src2v_8, src3v_8, 2 );
 
@@ -555,8 +544,8 @@ static void mc_chroma_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stri
 
 #define HPEL_FILTER_HORIZONTAL()                             \
 {                                                            \
-    VEC_LOAD_G( &src[x- 2+i_stride*y], src1v, 16, vec_u8_t); \
-    VEC_LOAD_G( &src[x+14+i_stride*y], src6v, 16, vec_u8_t); \
+    src1v = vec_vsx_ld( x- 2+i_stride*y, src );              \
+    src6v = vec_vsx_ld( x+14+i_stride*y, src );              \
                                                              \
     src2v = VSLD( src1v, src6v,  1 );                        \
     src3v = VSLD( src1v, src6v,  2 );                        \
@@ -592,17 +581,17 @@ static void mc_chroma_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stri
                                                              \
     destv = vec_packsu( dest1v, dest2v );                    \
                                                              \
-    VEC_STORE16( destv, &dsth[x+i_stride*y], dsth );         \
+    vec_vsx_st( destv, x+i_stride*y, dsth );                 \
 }
 
 #define HPEL_FILTER_VERTICAL()                                    \
 {                                                                 \
-    VEC_LOAD( &src[x+i_stride*(y-2)], src1v, 16, vec_u8_t, src ); \
-    VEC_LOAD( &src[x+i_stride*(y-1)], src2v, 16, vec_u8_t, src ); \
-    VEC_LOAD( &src[x+i_stride*(y-0)], src3v, 16, vec_u8_t, src ); \
-    VEC_LOAD( &src[x+i_stride*(y+1)], src4v, 16, vec_u8_t, src ); \
-    VEC_LOAD( &src[x+i_stride*(y+2)], src5v, 16, vec_u8_t, src ); \
-    VEC_LOAD( &src[x+i_stride*(y+3)], src6v, 16, vec_u8_t, src ); \
+    src1v = vec_vsx_ld( x+i_stride*(y-2), src );                  \
+    src2v = vec_vsx_ld( x+i_stride*(y-1), src );                  \
+    src3v = vec_vsx_ld( x+i_stride*(y-0), src );                  \
+    src4v = vec_vsx_ld( x+i_stride*(y+1), src );                  \
+    src5v = vec_vsx_ld( x+i_stride*(y+2), src );                  \
+    src6v = vec_vsx_ld( x+i_stride*(y+3), src );                  \
                                                                   \
     temp1v = vec_u8_to_s16_h( src1v );                            \
     temp2v = vec_u8_to_s16_h( src2v );                            \
@@ -632,7 +621,7 @@ static void mc_chroma_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stri
                                                                   \
     destv = vec_packsu( dest1v, dest2v );                         \
                                                                   \
-    VEC_STORE16( destv, &dstv[x+i_stride*y], dsth );              \
+    vec_vsx_st( destv, x+i_stride*y, dstv );                      \
 }
 
 #define HPEL_FILTER_CENTRAL()                           \
@@ -665,7 +654,7 @@ static void mc_chroma_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stri
                                                         \
     destv = vec_packsu( dest1v, dest2v );               \
                                                         \
-    VEC_STORE16( destv, &dstc[x-16+i_stride*y], dsth ); \
+    vec_vsx_st( destv, x-16+i_stride*y, dstc );         \
 }
 
 void x264_hpel_filter_altivec( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src,
@@ -677,10 +666,6 @@ void x264_hpel_filter_altivec( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint
     vec_s16_t temp1v, temp2v, temp3v, temp4v, temp5v, temp6v, temp7v, temp8v, temp9v;
     vec_s16_t tempav, tempbv, tempcv, tempdv, tempev;
 
-    PREP_LOAD;
-    PREP_LOAD_SRC( src);
-    PREP_STORE16;
-    PREP_STORE16_DST( dsth );
     LOAD_ZERO;
 
     vec_u16_t twov, fourv, fivev, sixv;
@@ -736,12 +721,12 @@ void x264_hpel_filter_altivec( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint
         }
 
         /* Partial vertical filter */
-        VEC_LOAD_PARTIAL( &src[x+i_stride*(y-2)], src1v, 16, vec_u8_t, src );
-        VEC_LOAD_PARTIAL( &src[x+i_stride*(y-1)], src2v, 16, vec_u8_t, src );
-        VEC_LOAD_PARTIAL( &src[x+i_stride*(y-0)], src3v, 16, vec_u8_t, src );
-        VEC_LOAD_PARTIAL( &src[x+i_stride*(y+1)], src4v, 16, vec_u8_t, src );
-        VEC_LOAD_PARTIAL( &src[x+i_stride*(y+2)], src5v, 16, vec_u8_t, src );
-        VEC_LOAD_PARTIAL( &src[x+i_stride*(y+3)], src6v, 16, vec_u8_t, src );
+        src1v = vec_vsx_ld( x+i_stride*(y-2), src );
+        src2v = vec_vsx_ld( x+i_stride*(y-1), src );
+        src3v = vec_vsx_ld( x+i_stride*(y-0), src );
+        src4v = vec_vsx_ld( x+i_stride*(y+1), src );
+        src5v = vec_vsx_ld( x+i_stride*(y+2), src );
+        src6v = vec_vsx_ld( x+i_stride*(y+3), src );
 
         temp1v = vec_u8_to_s16_h( src1v );
         temp2v = vec_u8_to_s16_h( src2v );
@@ -875,8 +860,6 @@ static void mc_weight_w2_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
                                   const x264_weight_t *weight, int i_height )
 {
     LOAD_ZERO;
-    PREP_LOAD;
-    PREP_LOAD_SRC( src );
     vec_u8_t srcv;
     vec_s16_t weightv;
     vec_s16_t scalev, offsetv, denomv, roundv;
@@ -900,7 +883,7 @@ static void mc_weight_w2_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            VEC_LOAD( src, srcv, 2, vec_u8_t, src );
+            srcv = vec_vsx_ld( 0, src );
             weightv = vec_u8_to_s16( srcv );
 
             weightv = vec_mladd( weightv, scalev, roundv );
@@ -915,7 +898,7 @@ static void mc_weight_w2_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
     {
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            VEC_LOAD( src, srcv, 2, vec_u8_t, src );
+            srcv = vec_vsx_ld( 0, src );
             weightv = vec_u8_to_s16( srcv );
 
             weightv = vec_mladd( weightv, scalev, offsetv );
@@ -929,8 +912,6 @@ static void mc_weight_w4_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
                                   const x264_weight_t *weight, int i_height )
 {
     LOAD_ZERO;
-    PREP_LOAD;
-    PREP_LOAD_SRC( src );
     vec_u8_t srcv;
     vec_s16_t weightv;
     vec_s16_t scalev, offsetv, denomv, roundv;
@@ -954,7 +935,7 @@ static void mc_weight_w4_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            VEC_LOAD( src, srcv, 4, vec_u8_t, src );
+            srcv = vec_vsx_ld( 0, src );
             weightv = vec_u8_to_s16( srcv );
 
             weightv = vec_mladd( weightv, scalev, roundv );
@@ -969,7 +950,7 @@ static void mc_weight_w4_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
     {
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            VEC_LOAD( src, srcv, 4, vec_u8_t, src );
+            srcv = vec_vsx_ld( 0, src );
             weightv = vec_u8_to_s16( srcv );
 
             weightv = vec_mladd( weightv, scalev, offsetv );
@@ -983,8 +964,6 @@ static void mc_weight_w8_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
                                   const x264_weight_t *weight, int i_height )
 {
     LOAD_ZERO;
-    PREP_LOAD;
-    PREP_LOAD_SRC( src );
     PREP_STORE8;
     vec_u8_t srcv;
     vec_s16_t weightv;
@@ -1009,7 +988,7 @@ static void mc_weight_w8_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            VEC_LOAD( src, srcv, 8, vec_u8_t, src );
+            srcv = vec_vsx_ld( 0, src );
             weightv = vec_u8_to_s16( srcv );
 
             weightv = vec_mladd( weightv, scalev, roundv );
@@ -1024,7 +1003,7 @@ static void mc_weight_w8_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
     {
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            VEC_LOAD( src, srcv, 8, vec_u8_t, src );
+            srcv = vec_vsx_ld( 0, src );
             weightv = vec_u8_to_s16( srcv );
 
             weightv = vec_mladd( weightv, scalev, offsetv );
@@ -1038,8 +1017,6 @@ static void mc_weight_w16_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, i
                                    const x264_weight_t *weight, int i_height )
 {
     LOAD_ZERO;
-    PREP_LOAD;
-    PREP_LOAD_SRC( src );
     vec_u8_t srcv;
     vec_s16_t weight_lv, weight_hv;
     vec_s16_t scalev, offsetv, denomv, roundv;
@@ -1063,7 +1040,7 @@ static void mc_weight_w16_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, i
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            VEC_LOAD( src, srcv, 16, vec_u8_t, src );
+            srcv = vec_vsx_ld( 0, src );
             weight_hv = vec_u8_to_s16_h( srcv );
             weight_lv = vec_u8_to_s16_l( srcv );
 
@@ -1082,7 +1059,7 @@ static void mc_weight_w16_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, i
     {
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            VEC_LOAD( src, srcv, 16, vec_u8_t, src );
+            srcv = vec_vsx_ld( 0, src );
             weight_hv = vec_u8_to_s16_h( srcv );
             weight_lv = vec_u8_to_s16_l( srcv );
 
@@ -1098,8 +1075,7 @@ static void mc_weight_w20_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, i
                                    const x264_weight_t *weight, int i_height )
 {
     LOAD_ZERO;
-    PREP_LOAD_SRC( src );
-    vec_u8_t src_1v, src_2v, src_3v;
+    vec_u8_t srcv, srcv2;
     vec_s16_t weight_lv, weight_hv, weight_3v;
     vec_s16_t scalev, offsetv, denomv, roundv;
     vec_s16_u loadv;
@@ -1114,60 +1090,68 @@ static void mc_weight_w20_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, i
 
     if( denom >= 1 )
     {
+        int16_t round = 1 << (denom - 1);
+        vec_s16_t tab[4] = {
+            { weight->i_scale, weight->i_scale, weight->i_scale, weight->i_scale, 1, 1, 1, 1 },
+            { weight->i_offset, weight->i_offset, weight->i_offset, weight->i_offset, 0, 0, 0, 0 },
+            { denom, denom, denom, denom, 0, 0, 0, 0 },
+            { round, round, round, round, 0, 0, 0, 0 },
+        };
+
         loadv.s[0] = denom;
         denomv = vec_splat( loadv.v, 0 );
 
-        loadv.s[0] = 1<<(denom - 1);
+        loadv.s[0] = round;
         roundv = vec_splat( loadv.v, 0 );
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            src_1v = vec_ld( 0,  src );
-            src_2v = vec_ld( 16, src );
-            src_3v = vec_ld( 19, src );
-            src_1v = vec_perm( src_1v, src_2v, _src_ );
-            src_3v = vec_perm( src_2v, src_3v, _src_ );
-            weight_hv = vec_u8_to_s16_h( src_1v );
-            weight_lv = vec_u8_to_s16_l( src_1v );
-            weight_3v = vec_u8_to_s16_h( src_3v );
+            srcv = vec_vsx_ld( 0, src );
+            srcv2 = vec_vsx_ld( 16, src );
+
+            weight_hv = vec_u8_to_s16_h( srcv );
+            weight_lv = vec_u8_to_s16_l( srcv );
+            weight_3v = vec_u8_to_s16_h( srcv2 );
 
             weight_hv = vec_mladd( weight_hv, scalev, roundv );
             weight_lv = vec_mladd( weight_lv, scalev, roundv );
-            weight_3v = vec_mladd( weight_3v, scalev, roundv );
+            weight_3v = vec_mladd( weight_3v, tab[0], tab[3] );
+
             weight_hv = vec_sra( weight_hv, (vec_u16_t)denomv );
             weight_lv = vec_sra( weight_lv, (vec_u16_t)denomv );
-            weight_3v = vec_sra( weight_3v, (vec_u16_t)denomv );
+            weight_3v = vec_sra( weight_3v, (vec_u16_t)tab[2] );
+
             weight_hv = vec_add( weight_hv, offsetv );
             weight_lv = vec_add( weight_lv, offsetv );
-            weight_3v = vec_add( weight_3v, offsetv );
+            weight_3v = vec_add( weight_3v, tab[1] );
 
-            src_1v = vec_packsu( weight_hv, weight_lv );
-            src_3v = vec_packsu( weight_3v, zero_s16v );
-            vec_st( src_1v, 0, dst );
-            vec_ste( (vec_u32_t)src_3v, 16, (uint32_t*)dst );
+            srcv = vec_packsu( weight_hv, weight_lv );
+            srcv2 = vec_packsu( weight_3v, vec_u8_to_s16_l( srcv2 ) );
+            vec_vsx_st( srcv, 0, dst );
+            vec_vsx_st( srcv2, 16, dst );
         }
     }
     else
     {
+        vec_s16_t offset_mask = { weight->i_offset, weight->i_offset, weight->i_offset,
+                                  weight->i_offset, 0, 0, 0, 0 };
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
-            src_1v = vec_ld( 0,  src );
-            src_2v = vec_ld( 16, src );
-            src_3v = vec_ld( 19, src );
-            src_1v = vec_perm( src_1v, src_2v, _src_ );
-            src_3v = vec_perm( src_2v, src_3v, _src_ );
-            weight_hv = vec_u8_to_s16_h( src_1v );
-            weight_lv = vec_u8_to_s16_l( src_1v );
-            weight_3v = vec_u8_to_s16_h( src_3v );
+            srcv = vec_vsx_ld( 0, src );
+            srcv2 = vec_vsx_ld( 16, src );
+
+            weight_hv = vec_u8_to_s16_h( srcv );
+            weight_lv = vec_u8_to_s16_l( srcv );
+            weight_3v = vec_u8_to_s16_h( srcv2 );
 
             weight_hv = vec_mladd( weight_hv, scalev, offsetv );
             weight_lv = vec_mladd( weight_lv, scalev, offsetv );
-            weight_3v = vec_mladd( weight_3v, scalev, offsetv );
+            weight_3v = vec_mladd( weight_3v, scalev, offset_mask );
 
-            src_1v = vec_packsu( weight_hv, weight_lv );
-            src_3v = vec_packsu( weight_3v, zero_s16v );
-            vec_st( src_1v, 0, dst );
-            vec_ste( (vec_u32_t)src_3v, 16, (uint32_t*)dst );
+            srcv = vec_packsu( weight_hv, weight_lv );
+            srcv2 = vec_packsu( weight_3v, vec_u8_to_s16_l( srcv2 ) );
+            vec_vsx_st( srcv, 0, dst );
+            vec_vsx_st( srcv2, 16, dst );
         }
     }
 }
