@@ -357,6 +357,7 @@ chroma_format="all"
 compiler="GNU"
 compiler_style="GNU"
 opencl="yes"
+vsx="auto"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
 LDFLAGS="$LDFLAGS"
@@ -375,7 +376,7 @@ NL="
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
              LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
-             MSA MMAP WINRT"
+             MSA MMAP WINRT VSX"
 
 # parse options
 
@@ -473,6 +474,9 @@ for opt do
             ;;
         --host=*)
             host="$optarg"
+            ;;
+        --disable-vsx)
+            vsx="no"
             ;;
         --disable-opencl)
             opencl="no"
@@ -737,6 +741,14 @@ case $host_cpu in
                 CFLAGS="$CFLAGS -maltivec -mabi=altivec"
                 define HAVE_ALTIVEC_H
             fi
+            if [ "$vsx" != "no" ] ; then
+                vsx="no"
+                if cc_check "" "-mvsx" ; then
+                    CFLAGS="$CFLAGS -mvsx"
+                    define HAVE_VSX
+                    vsx="yes"
+                fi
+            fi
         fi
         ;;
     sparc)
@@ -787,6 +799,8 @@ case $host_cpu in
         ARCH="$(echo $host_cpu | tr a-z A-Z)"
         ;;
 esac
+
+[ "$vsx" != "yes" ] && vsx="no"
 
 if [ $SYS = WINDOWS ]; then
     if ! rc_check "0 RCDATA {0}" ; then
