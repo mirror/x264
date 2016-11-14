@@ -229,6 +229,35 @@ void x264_sub16x16_dct8_altivec( int16_t dct[4][64], uint8_t *pix1, uint8_t *pix
  * IDCT transform:
  ****************************************************************************/
 
+#define ALTIVEC_STORE8_DC_SUM_CLIP(dest, dcv)                         \
+{                                                                     \
+    /* unaligned load */                                              \
+    vec_u8_t dstv   = vec_vsx_ld( 0, dest );                          \
+    vec_s16_t dcvsum = vec_adds( dcv, vec_u8_to_s16_h( dstv ) );      \
+    vec_u8_t dcvsum8 = vec_packsu( dcvsum, vec_u8_to_s16_l( dstv ) ); \
+    /* unaligned store */                                             \
+    vec_vsx_st( dcvsum8, 0, dest );                                   \
+}
+
+static void idct8_dc_altivec( uint8_t *dst, int16_t dc1, int16_t dc2 )
+{
+    dc1 = (dc1 + 32) >> 6;
+    dc2 = (dc2 + 32) >> 6;
+    vec_s16_t dcv = { dc1, dc1, dc1, dc1, dc2, dc2, dc2, dc2 };
+
+    LOAD_ZERO;
+    ALTIVEC_STORE8_DC_SUM_CLIP( &dst[0*FDEC_STRIDE], dcv );
+    ALTIVEC_STORE8_DC_SUM_CLIP( &dst[1*FDEC_STRIDE], dcv );
+    ALTIVEC_STORE8_DC_SUM_CLIP( &dst[2*FDEC_STRIDE], dcv );
+    ALTIVEC_STORE8_DC_SUM_CLIP( &dst[3*FDEC_STRIDE], dcv );
+}
+
+void x264_add8x8_idct_dc_altivec( uint8_t *p_dst, int16_t dct[4] )
+{
+    idct8_dc_altivec( &p_dst[0],               dct[0], dct[1] );
+    idct8_dc_altivec( &p_dst[4*FDEC_STRIDE+0], dct[2], dct[3] );
+}
+
 #define IDCT_1D_ALTIVEC(s0, s1, s2, s3,  d0, d1, d2, d3) \
 {                                                        \
     /*        a0  = SRC(0) + SRC(2); */                  \
