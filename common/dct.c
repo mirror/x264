@@ -726,6 +726,7 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
         dctf->add8x8_idct   = x264_add8x8_idct_altivec;
         dctf->add16x16_idct = x264_add16x16_idct_altivec;
 
+        dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_altivec;
         dctf->sub8x8_dct8   = x264_sub8x8_dct8_altivec;
         dctf->sub16x16_dct8 = x264_sub16x16_dct8_altivec;
 

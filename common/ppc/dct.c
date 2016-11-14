@@ -113,6 +113,60 @@ void x264_sub16x16_dct_altivec( int16_t dct[16][16], uint8_t *pix1, uint8_t *pix
  * 8x8 transform:
  ***************************************************************************/
 
+static void pix_diff( uint8_t *p1, uint8_t *p2, vec_s16_t *diff, int i )
+{
+    vec_s16_t pix1v, pix2v, tmp[4];
+    vec_u8_t pix1v8, pix2v8;
+    LOAD_ZERO;
+
+    for( int j = 0; j < 4; j++ )
+    {
+        pix1v8 = vec_vsx_ld( 0, p1 );
+        pix2v8 = vec_vsx_ld( 0, p2 );
+        pix1v = vec_u8_to_s16_h( pix1v8 );
+        pix2v = vec_u8_to_s16_h( pix2v8 );
+        tmp[j] = vec_sub( pix1v, pix2v );
+        p1 += FENC_STRIDE;
+        p2 += FDEC_STRIDE;
+    }
+    diff[i] = vec_add( tmp[0], tmp[1] );
+    diff[i] = vec_add( diff[i], tmp[2] );
+    diff[i] = vec_add( diff[i], tmp[3] );
+}
+
+void x264_sub8x8_dct_dc_altivec( int16_t dct[4], uint8_t *pix1, uint8_t *pix2 )
+{
+    vec_s16_t diff[2];
+    vec_s32_t sum[2];
+    vec_s32_t zero32 = vec_splat_s32(0);
+    vec_u8_t mask = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                      0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+
+    pix_diff( &pix1[0], &pix2[0], diff, 0 );
+    pix_diff( &pix1[4*FENC_STRIDE], &pix2[4*FDEC_STRIDE], diff, 1 );
+
+    sum[0] = vec_sum4s( diff[0], zero32 );
+    sum[1] = vec_sum4s( diff[1], zero32 );
+    diff[0] = vec_packs( sum[0], sum[1] );
+    sum[0] = vec_sum4s( diff[0], zero32 );
+    diff[0] = vec_packs( sum[0], zero32 );
+
+    diff[1] = vec_vsx_ld( 0, dct );
+    diff[0] = vec_perm( diff[0], diff[1], mask );
+
+    vec_vsx_st( diff[0], 0, dct );
+
+    /* 2x2 DC transform */
+    int d0 = dct[0] + dct[1];
+    int d1 = dct[2] + dct[3];
+    int d2 = dct[0] - dct[1];
+    int d3 = dct[2] - dct[3];
+    dct[0] = d0 + d1;
+    dct[1] = d0 - d1;
+    dct[2] = d2 + d3;
+    dct[3] = d2 - d3;
+}
+
 /* DCT8_1D unrolled by 8 in Altivec */
 #define DCT8_1D_ALTIVEC( dct0v, dct1v, dct2v, dct3v, dct4v, dct5v, dct6v, dct7v ) \
 { \
