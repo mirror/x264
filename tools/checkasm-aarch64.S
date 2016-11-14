@@ -56,7 +56,7 @@ error_message:
 // max number of args used by any x264 asm function.
 #define MAX_ARGS 15
 
-#define ARG_STACK ((8*(MAX_ARGS - 6) + 15) & ~15)
+#define ARG_STACK ((8*(MAX_ARGS - 8) + 15) & ~15)
 
 function x264_checkasm_call, export=1
     stp         x29, x30, [sp, #-16]!
@@ -87,7 +87,7 @@ function x264_checkasm_call, export=1
     sub         sp,  sp,  #ARG_STACK
 .equ pos, 0
 // first two stacked args are copied to x6, x7
-.rept MAX_ARGS-6
+.rept MAX_ARGS-8
     ldr         x9, [x29, #16 + 16 + pos]
     str         x9, [sp, #pos]
 .equ pos, pos + 8
