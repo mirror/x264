@@ -1254,8 +1254,9 @@ load_deinterleave_chroma:
 endfunc
 
 function x264_plane_copy_core_neon, export=1
-    add         x8,  x4,  #15
-    and         x4,  x8,  #~15
+    add         w8,  w4,  #15 // 32-bit write clears the upper 32-bit the register
+    and         w4,  w8,  #~15
+    // safe use of the full reg since negative width makes no sense
     sub         x1,  x1,  x4
     sub         x3,  x3,  x4
 1:
