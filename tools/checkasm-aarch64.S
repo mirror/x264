@@ -99,21 +99,18 @@ function x264_checkasm_call, export=1
 
     sub         sp,  sp,  #ARG_STACK
 .equ pos, 0
-// first two stacked args are copied to x6, x7
 .rept MAX_ARGS-8
-    ldr         x9, [x29, #16 + 16 + pos]
+    // Skip the first 8 args, that are loaded into registers
+    ldr         x9, [x29, #16 + 8*8 + pos]
     str         x9, [sp, #pos]
 .equ pos, pos + 8
 .endr
 
     mov         x12, x0
-    mov         x0,  x2
-    mov         x1,  x3
-    mov         x2,  x4
-    mov         x3,  x5
-    mov         x4,  x6
-    mov         x5,  x7
-    ldp         x6,  x7,  [x29, #16]
+    ldp         x0,  x1,  [x29, #16]
+    ldp         x2,  x3,  [x29, #32]
+    ldp         x4,  x5,  [x29, #48]
+    ldp         x6,  x7,  [x29, #64]
     blr         x12
     add         sp,  sp,  #ARG_STACK
     ldr         x2,  [sp]
