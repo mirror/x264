@@ -628,7 +628,91 @@ void x264_zigzag_scan_8x8_frame_altivec( int16_t level[64], int16_t dct[64] )
 
     tmpv[2] = vec_perm( tmpv[2], tmpv[0], mask1[13] );
     vec_st( tmpv[2], 7*16, level );
+}
 
+void x264_zigzag_interleave_8x8_cavlc_altivec( int16_t *dst, int16_t *src, uint8_t *nnz )
+{
+    vec_s16_t tmpv[8];
+    vec_s16_t merge[2];
+    vec_s16_t permv[2];
+    vec_s16_t orv[4];
+    vec_s16_t src0v = vec_ld( 0*16, src );
+    vec_s16_t src1v = vec_ld( 1*16, src );
+    vec_s16_t src2v = vec_ld( 2*16, src );
+    vec_s16_t src3v = vec_ld( 3*16, src );
+    vec_s16_t src4v = vec_ld( 4*16, src );
+    vec_s16_t src5v = vec_ld( 5*16, src );
+    vec_s16_t src6v = vec_ld( 6*16, src );
+    vec_s16_t src7v = vec_ld( 7*16, src );
+    vec_u8_t pack;
+    vec_u8_t nnzv = vec_vsx_ld( 0, nnz );
+    vec_u8_t shift = vec_splat_u8( 7 );
+    LOAD_ZERO;
+
+    const vec_u8_t mask[3] = {
+        { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17 },
+        { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F },
+        { 0x10, 0x11, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x12, 0x13, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F }
+    };
+
+    tmpv[0] = vec_mergeh( src0v, src1v );
+    tmpv[1] = vec_mergel( src0v, src1v );
+
+    tmpv[2] = vec_mergeh( src2v, src3v );
+    tmpv[3] = vec_mergel( src2v, src3v );
+
+    tmpv[4] = vec_mergeh( src4v, src5v );
+    tmpv[5] = vec_mergel( src4v, src5v );
+
+    tmpv[6] = vec_mergeh( src6v, src7v );
+    tmpv[7] = vec_mergel( src6v, src7v );
+
+    merge[0] = vec_mergeh( tmpv[0], tmpv[1] );
+    merge[1] = vec_mergeh( tmpv[2], tmpv[3] );
+    permv[0] = vec_perm( merge[0], merge[1], mask[0] );
+    permv[1] = vec_perm( merge[0], merge[1], mask[1] );
+    vec_st( permv[0], 0*16, dst );
+
+    merge[0] = vec_mergeh( tmpv[4], tmpv[5] );
+    merge[1] = vec_mergeh( tmpv[6], tmpv[7] );
+    permv[0] = vec_perm( merge[0], merge[1], mask[0] );
+    permv[2] = vec_perm( merge[0], merge[1], mask[1] );
+    vec_st( permv[0], 1*16, dst );
+    vec_st( permv[1], 2*16, dst );
+    vec_st( permv[2], 3*16, dst );
+
+    merge[0] = vec_mergel( tmpv[0], tmpv[1] );
+    merge[1] = vec_mergel( tmpv[2], tmpv[3] );
+    permv[0] = vec_perm( merge[0], merge[1], mask[0] );
+    permv[1] = vec_perm( merge[0], merge[1], mask[1] );
+    vec_st( permv[0], 4*16, dst );
+
+    merge[0] = vec_mergel( tmpv[4], tmpv[5] );
+    merge[1] = vec_mergel( tmpv[6], tmpv[7] );
+    permv[0] = vec_perm( merge[0], merge[1], mask[0] );
+    permv[2] = vec_perm( merge[0], merge[1], mask[1] );
+    vec_st( permv[0], 5*16, dst );
+    vec_st( permv[1], 6*16, dst );
+    vec_st( permv[2], 7*16, dst );
+
+    orv[0] = vec_or( src0v, src1v );
+    orv[1] = vec_or( src2v, src3v );
+    orv[2] = vec_or( src4v, src5v );
+    orv[3] = vec_or( src6v, src7v );
+
+    permv[0] = vec_or( orv[0], orv[1] );
+    permv[1] = vec_or( orv[2], orv[3] );
+    permv[0] = vec_or( permv[0], permv[1] );
+
+    permv[1] = vec_perm( permv[0], permv[0], mask[1] );
+    permv[0] = vec_or( permv[0], permv[1] );
+
+    pack = (vec_u8_t)vec_packs( permv[0], permv[0] );
+    pack = (vec_u8_t)vec_cmpeq( pack, zerov );
+    pack = vec_nor( pack, zerov );
+    pack = vec_sr( pack, shift );
+    nnzv = vec_perm( nnzv, pack, mask[2] );
+    vec_st( nnzv, 0, nnz );
 }
 #endif // !HIGH_BIT_DEPTH
 

@@ -1101,13 +1101,20 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
         pf_progressive->interleave_8x8_cavlc =  x264_zigzag_interleave_8x8_cavlc_neon;
     }
 #endif // ARCH_AARCH64
-#endif // !HIGH_BIT_DEPTH
-#if !HIGH_BIT_DEPTH
+
+#if HAVE_ALTIVEC
+    if( cpu&X264_CPU_ALTIVEC )
+    {
+        pf_interlaced->interleave_8x8_cavlc =
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_altivec;
+    }
+#endif // HAVE_ALTIVEC
+
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
         pf_progressive->scan_4x4  = x264_zigzag_scan_4x4_frame_msa;
     }
 #endif
-#endif
+#endif // !HIGH_BIT_DEPTH
 }
