@@ -1032,6 +1032,7 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     {
         pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_altivec;
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_altivec;
+        pf_progressive->scan_8x8  = x264_zigzag_scan_8x8_frame_altivec;
     }
 #endif
 #if HAVE_ARMV6 || ARCH_AARCH64
