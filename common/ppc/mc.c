@@ -153,6 +153,20 @@ static void x264_mc_copy_w16_aligned_altivec( uint8_t *dst, intptr_t i_dst,
     }
 }
 
+void x264_plane_copy_swap_core_altivec( uint8_t *dst, intptr_t i_dst,
+                                        uint8_t *src, intptr_t i_src, int w, int h )
+{
+    const vec_u8_t mask = { 0x01, 0x00, 0x03, 0x02, 0x05, 0x04, 0x07, 0x06, 0x09, 0x08, 0x0B, 0x0A, 0x0D, 0x0C, 0x0F, 0x0E };
+
+    for( int y = 0; y < h; y++, dst += i_dst, src += i_src )
+        for( int x = 0; x < 2 * w; x += 16 )
+        {
+            vec_u8_t srcv = vec_vsx_ld( x, src );
+            vec_u8_t dstv = vec_perm( srcv, srcv, mask );
+
+            vec_vsx_st( dstv, x, dst );
+        }
+}
 
 static void mc_luma_altivec( uint8_t *dst,    intptr_t i_dst_stride,
                              uint8_t *src[4], intptr_t i_src_stride,
@@ -1168,6 +1182,8 @@ static weight_fn_t x264_mc_weight_wtab_altivec[6] =
 
 #endif // !HIGH_BIT_DEPTH
 
+PLANE_COPY_SWAP(16, altivec)
+
 void x264_mc_altivec_init( x264_mc_functions_t *pf )
 {
 #if !HIGH_BIT_DEPTH
@@ -1182,5 +1198,7 @@ void x264_mc_altivec_init( x264_mc_functions_t *pf )
     pf->frame_init_lowres_core = frame_init_lowres_core_altivec;
 
     pf->weight = x264_mc_weight_wtab_altivec;
+
+    pf->plane_copy_swap = x264_plane_copy_swap_altivec;
 #endif // !HIGH_BIT_DEPTH
 }
