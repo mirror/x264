@@ -863,7 +863,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
         return 0;
     }
 
-    if(0) // accessible only by goto, not fallthrough
+    if( 0 ) // accessible only by goto, not fallthrough
     {
         // node_ctx 1..7 (ctx0 ruled out because we never try both level0 and level2+ on the same coef)
         TRELLIS_LOOP(1);

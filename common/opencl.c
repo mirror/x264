@@ -135,7 +135,7 @@ static cl_program x264_opencl_cache_load( x264_t *h, const char *dev_name, const
     rewind( fp );
     CHECKED_MALLOC( binary, size );
 
-    if ( fread( binary, 1, size, fp ) != size )
+    if( fread( binary, 1, size, fp ) != size )
         goto fail;
     const uint8_t *ptr = (const uint8_t*)binary;
 

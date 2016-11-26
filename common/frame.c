@@ -357,7 +357,7 @@ static int get_plane_ptr( x264_t *h, x264_picture_t *src, uint8_t **pix, int *st
     return 0;
 }
 
-#define get_plane_ptr(...) do{ if( get_plane_ptr(__VA_ARGS__) < 0 ) return -1; }while(0)
+#define get_plane_ptr(...) do { if( get_plane_ptr(__VA_ARGS__) < 0 ) return -1; } while( 0 )
 
 int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
 {

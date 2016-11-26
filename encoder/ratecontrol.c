@@ -1096,7 +1096,7 @@ int x264_ratecontrol_new( x264_t *h )
                                     &rce->weight[2][0], &rce->weight[2][1] );
                 if( count == 3 )
                     rce->i_weight_denom[1] = -1;
-                else if ( count != 8 )
+                else if( count != 8 )
                     rce->i_weight_denom[0] = rce->i_weight_denom[1] = -1;
             }
 
@@ -2869,7 +2869,7 @@ static int vbv_pass2( x264_t *h, double all_available_bits )
             t0 = 0;
             /* fix overflows */
             adj_min = 1;
-            while(adj_min && find_underflow( h, fills, &t0, &t1, 1 ))
+            while( adj_min && find_underflow( h, fills, &t0, &t1, 1 ) )
             {
                 adj_min = fix_underflow( h, t0, t1, adjustment, qscale_min, qscale_max );
                 t0 = t1;

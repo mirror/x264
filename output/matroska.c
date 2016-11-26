@@ -95,9 +95,12 @@ static int set_param( hnd_t handle, x264_param_t *p_param )
     if( p_param->vui.i_sar_width && p_param->vui.i_sar_height
         && p_param->vui.i_sar_width != p_param->vui.i_sar_height )
     {
-        if ( p_param->vui.i_sar_width > p_param->vui.i_sar_height ) {
+        if( p_param->vui.i_sar_width > p_param->vui.i_sar_height )
+        {
             dw = dw * p_param->vui.i_sar_width / p_param->vui.i_sar_height;
-        } else {
+        }
+        else
+        {
             dh = dh * p_param->vui.i_sar_height / p_param->vui.i_sar_width;
         }
     }

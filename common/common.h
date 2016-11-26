@@ -36,7 +36,7 @@
 #define X264_MAX3(a,b,c) X264_MAX((a),X264_MAX((b),(c)))
 #define X264_MIN4(a,b,c,d) X264_MIN((a),X264_MIN3((b),(c),(d)))
 #define X264_MAX4(a,b,c,d) X264_MAX((a),X264_MAX3((b),(c),(d)))
-#define XCHG(type,a,b) do{ type t = a; a = b; b = t; } while(0)
+#define XCHG(type,a,b) do { type t = a; a = b; b = t; } while( 0 )
 #define IS_DISPOSABLE(type) ( type == X264_TYPE_B )
 #define FIX8(f) ((int)(f*(1<<8)+.5))
 #define ALIGN(x,a) (((x)+((a)-1))&~((a)-1))
@@ -70,14 +70,14 @@ do {\
     var = (void*)prealloc_size;\
     preallocs[prealloc_idx++] = (uint8_t**)&var;\
     prealloc_size += ALIGN(size, NATIVE_ALIGN);\
-} while(0)
+} while( 0 )
 
 #define PREALLOC_END( ptr )\
 do {\
     CHECKED_MALLOC( ptr, prealloc_size );\
     while( prealloc_idx-- )\
         *preallocs[prealloc_idx] += (intptr_t)ptr;\
-} while(0)
+} while( 0 )
 
 #define ARRAY_SIZE(array)  (sizeof(array)/sizeof(array[0]))
 

@@ -469,8 +469,8 @@ static void help( x264_param_t *defaults, int longhelp )
 {
     char buf[50];
 #define H0 printf
-#define H1 if(longhelp>=1) printf
-#define H2 if(longhelp==2) printf
+#define H1 if( longhelp >= 1 ) printf
+#define H2 if( longhelp == 2 ) printf
     H0( "x264 core:%d%s\n"
         "Syntax: x264 [options] -o outfile infile\n"
         "\n"

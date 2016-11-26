@@ -248,14 +248,14 @@ static inline vec_u8_t h264_deblock_q1( register vec_u8_t p0, register vec_u8_t 
     finaltc0 = vec_and((vec_u8_t)tc0vec, mask);                 /* tc = tc0 */               \
                                                                                              \
     p1mask = diff_lt_altivec(p2, p0, betavec);                                               \
-    p1mask = vec_and(p1mask, mask);                             /* if( |p2 - p0| < beta) */  \
+    p1mask = vec_and(p1mask, mask);                             /* if( |p2 - p0| < beta ) */ \
     tc0masked = vec_and(p1mask, (vec_u8_t)tc0vec);                                           \
     finaltc0 = vec_sub(finaltc0, p1mask);                       /* tc++ */                   \
     newp1 = h264_deblock_q1(p0, p1, p2, q0, tc0masked);                                      \
     /*end if*/                                                                               \
                                                                                              \
     q1mask = diff_lt_altivec(q2, q0, betavec);                                               \
-    q1mask = vec_and(q1mask, mask);                             /* if ( |q2 - q0| < beta ) */\
+    q1mask = vec_and(q1mask, mask);                             /* if( |q2 - q0| < beta ) */ \
     tc0masked = vec_and(q1mask, (vec_u8_t)tc0vec);                                           \
     finaltc0 = vec_sub(finaltc0, q1mask);                       /* tc++ */                   \
     newq1 = h264_deblock_q1(p0, q1, q2, q0, tc0masked);                                      \

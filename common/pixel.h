@@ -30,9 +30,9 @@
 
 // SSD assumes all args aligned
 // other cmp functions assume first arg aligned
-typedef int  (*x264_pixel_cmp_t) ( pixel *, intptr_t, pixel *, intptr_t );
-typedef void (*x264_pixel_cmp_x3_t) ( pixel *, pixel *, pixel *, pixel *, intptr_t, int[3] );
-typedef void (*x264_pixel_cmp_x4_t) ( pixel *, pixel *, pixel *, pixel *, pixel *, intptr_t, int[4] );
+typedef int  (*x264_pixel_cmp_t)( pixel *, intptr_t, pixel *, intptr_t );
+typedef void (*x264_pixel_cmp_x3_t)( pixel *, pixel *, pixel *, pixel *, intptr_t, int[3] );
+typedef void (*x264_pixel_cmp_x4_t)( pixel *, pixel *, pixel *, pixel *, pixel *, intptr_t, int[4] );
 
 enum
 {

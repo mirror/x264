@@ -610,7 +610,7 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
 
 #define OPT(STR) else if( !strcmp( name, STR ) )
 #define OPT2(STR0, STR1) else if( !strcmp( name, STR0 ) || !strcmp( name, STR1 ) )
-    if(0);
+    if( 0 );
     OPT("asm")
     {
         p->cpu = isdigit(value[0]) ? atoi(value) :

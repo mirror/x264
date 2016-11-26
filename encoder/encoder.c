@@ -2033,7 +2033,7 @@ static inline void x264_reference_check_reorder( x264_t *h )
 }
 
 /* return -1 on failure, else return the index of the new reference frame */
-int x264_weighted_reference_duplicate( x264_t *h, int i_ref, const x264_weight_t *w )
+static int x264_weighted_reference_duplicate( x264_t *h, int i_ref, const x264_weight_t *w )
 {
     int i = h->i_ref[0];
     int j = 1;

@@ -514,7 +514,7 @@ do\
         :"m"(x)\
     );\
     s = temp;\
-} while(0)
+} while( 0 )
 
 #undef MC_CLIP_ADD2
 #define MC_CLIP_ADD2(s,x)\
@@ -527,7 +527,7 @@ do\
         :"+m"(M32(s))\
         :"m"(M32(x))\
     );\
-} while(0)
+} while( 0 )
 #endif
 
 PROPAGATE_LIST(ssse3)

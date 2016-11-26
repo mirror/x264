@@ -671,7 +671,7 @@ void x264_sei_frame_packing_write( x264_t *h, bs_t *s )
     bs_write1( &q, h->param.i_frame_packing == 5 && !(h->fenc->i_frame&1) ); // current_frame_is_frame0_flag
     bs_write1( &q, 0 );                           // frame0_self_contained_flag
     bs_write1( &q, 0 );                           // frame1_self_contained_flag
-    if ( quincunx_sampling_flag == 0 && h->param.i_frame_packing != 5 )
+    if( quincunx_sampling_flag == 0 && h->param.i_frame_packing != 5 )
     {
         bs_write( &q, 4, 0 );                     // frame0_grid_position_x
         bs_write( &q, 4, 0 );                     // frame0_grid_position_y

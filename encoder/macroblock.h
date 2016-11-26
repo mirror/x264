@@ -93,7 +93,7 @@ do\
 {\
     M16( &h->mb.cache.non_zero_count[x264_scan8[p*16+idx*4]+0] ) = (nz) * 0x0101;\
     M16( &h->mb.cache.non_zero_count[x264_scan8[p*16+idx*4]+8] ) = (nz) * 0x0101;\
-} while(0)
+} while( 0 )
 
 #define CLEAR_16x16_NNZ( p ) \
 do\
@@ -102,7 +102,7 @@ do\
     M32( &h->mb.cache.non_zero_count[x264_scan8[16*p] + 1*8] ) = 0;\
     M32( &h->mb.cache.non_zero_count[x264_scan8[16*p] + 2*8] ) = 0;\
     M32( &h->mb.cache.non_zero_count[x264_scan8[16*p] + 3*8] ) = 0;\
-} while(0)
+} while( 0 )
 
 /* A special for loop that iterates branchlessly over each set
  * bit in a 4-bit input. */

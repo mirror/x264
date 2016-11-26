@@ -68,7 +68,7 @@ extern const vlc_t x264_total_zeros_2x4_dc[7][8];
 
 typedef struct
 {
-    uint8_t *(*nal_escape) ( uint8_t *dst, uint8_t *src, uint8_t *end );
+    uint8_t *(*nal_escape)( uint8_t *dst, uint8_t *src, uint8_t *end );
     void (*cabac_block_residual_internal)( dctcoef *l, int b_interlaced,
                                            intptr_t ctx_block_cat, x264_cabac_t *cb );
     void (*cabac_block_residual_rd_internal)( dctcoef *l, int b_interlaced,

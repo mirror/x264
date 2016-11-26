@@ -1207,8 +1207,8 @@ static void pixel_sad_x3_8x8_altivec( uint8_t *fenc, uint8_t *pix0,
 * SSD routines
 **********************************************************************/
 
-static int pixel_ssd_16x16_altivec ( uint8_t *pix1, intptr_t i_stride_pix1,
-                                     uint8_t *pix2, intptr_t i_stride_pix2 )
+static int pixel_ssd_16x16_altivec( uint8_t *pix1, intptr_t i_stride_pix1,
+                                    uint8_t *pix2, intptr_t i_stride_pix2 )
 {
     ALIGNED_16( int sum );
 
@@ -1273,8 +1273,8 @@ static int pixel_ssd_16x16_altivec ( uint8_t *pix1, intptr_t i_stride_pix1,
     return sum;
 }
 
-static int pixel_ssd_8x8_altivec ( uint8_t *pix1, intptr_t i_stride_pix1,
-                                   uint8_t *pix2, intptr_t i_stride_pix2 )
+static int pixel_ssd_8x8_altivec( uint8_t *pix1, intptr_t i_stride_pix1,
+                                  uint8_t *pix2, intptr_t i_stride_pix2 )
 {
     ALIGNED_16( int sum );
 
