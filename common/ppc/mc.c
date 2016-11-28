@@ -185,6 +185,19 @@ void x264_plane_copy_interleave_core_altivec( uint8_t *dst, intptr_t i_dst,
         }
 }
 
+void x264_store_interleave_chroma_altivec( uint8_t *dst, intptr_t i_dst,
+                                           uint8_t *srcu, uint8_t *srcv, int height )
+{
+    for( int y = 0; y < height; y++, dst += i_dst, srcu += FDEC_STRIDE, srcv += FDEC_STRIDE )
+    {
+        vec_u8_t srcvv = vec_vsx_ld( 0, srcv );
+        vec_u8_t srcuv = vec_vsx_ld( 0, srcu );
+        vec_u8_t dstv = vec_mergeh( srcuv, srcvv );
+
+        vec_vsx_st(dstv, 0, dst);
+    }
+}
+
 static void mc_luma_altivec( uint8_t *dst,    intptr_t i_dst_stride,
                              uint8_t *src[4], intptr_t i_src_stride,
                              int mvx, int mvy,
@@ -1219,5 +1232,6 @@ void x264_mc_altivec_init( x264_mc_functions_t *pf )
 
     pf->plane_copy_swap = x264_plane_copy_swap_altivec;
     pf->plane_copy_interleave = x264_plane_copy_interleave_altivec;
+    pf->store_interleave_chroma = x264_store_interleave_chroma_altivec;
 #endif // !HIGH_BIT_DEPTH
 }
