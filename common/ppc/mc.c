@@ -168,6 +168,23 @@ void x264_plane_copy_swap_core_altivec( uint8_t *dst, intptr_t i_dst,
         }
 }
 
+void x264_plane_copy_interleave_core_altivec( uint8_t *dst, intptr_t i_dst,
+                                              uint8_t *srcu, intptr_t i_srcu,
+                                              uint8_t *srcv, intptr_t i_srcv, int w, int h )
+{
+    for( int y = 0; y < h; y++, dst += i_dst, srcu += i_srcu, srcv += i_srcv )
+        for( int x = 0; x < w; x += 16 )
+        {
+            vec_u8_t srcvv = vec_vsx_ld( x, srcv );
+            vec_u8_t srcuv = vec_vsx_ld( x, srcu );
+            vec_u8_t dstv1 = vec_mergeh( srcuv, srcvv );
+            vec_u8_t dstv2 = vec_mergel( srcuv, srcvv );
+
+            vec_vsx_st( dstv1, 2 * x, dst );
+            vec_vsx_st( dstv2, 2 * x + 16, dst );
+        }
+}
+
 static void mc_luma_altivec( uint8_t *dst,    intptr_t i_dst_stride,
                              uint8_t *src[4], intptr_t i_src_stride,
                              int mvx, int mvy,
@@ -1183,6 +1200,7 @@ static weight_fn_t x264_mc_weight_wtab_altivec[6] =
 #endif // !HIGH_BIT_DEPTH
 
 PLANE_COPY_SWAP(16, altivec)
+PLANE_INTERLEAVE(altivec)
 
 void x264_mc_altivec_init( x264_mc_functions_t *pf )
 {
@@ -1200,5 +1218,6 @@ void x264_mc_altivec_init( x264_mc_functions_t *pf )
     pf->weight = x264_mc_weight_wtab_altivec;
 
     pf->plane_copy_swap = x264_plane_copy_swap_altivec;
+    pf->plane_copy_interleave = x264_plane_copy_interleave_altivec;
 #endif // !HIGH_BIT_DEPTH
 }
