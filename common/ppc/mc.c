@@ -198,6 +198,29 @@ void x264_store_interleave_chroma_altivec( uint8_t *dst, intptr_t i_dst,
     }
 }
 
+void x264_plane_copy_deinterleave_altivec( uint8_t *dstu, intptr_t i_dstu,
+                                           uint8_t *dstv, intptr_t i_dstv,
+                                           uint8_t *src, intptr_t i_src, int w, int h )
+{
+    const vec_u8_t mask[2] = {
+        { 0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E },
+        { 0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F, 0x11, 0x13, 0x15, 0x17, 0x19, 0x1B, 0x1D, 0x1F }
+    };
+    for( int y = 0; y < h; y++, dstu += i_dstu, dstv += i_dstv, src += i_src )
+    {
+        for( int x = 0; x < w; x += 16 )
+        {
+            vec_u8_t srcv1 = vec_vsx_ld( 2 * x, src );
+            vec_u8_t srcv2 = vec_vsx_ld( 2 * x + 16, src );
+            vec_u8_t dstuv = vec_perm( srcv1, srcv2, mask[0] );
+            vec_u8_t dstvv = vec_perm( srcv1, srcv2, mask[1] );
+
+            vec_vsx_st( dstuv, x, dstu );
+            vec_vsx_st( dstvv, x, dstv );
+        }
+    }
+}
+
 #if HAVE_VSX
 void x264_plane_copy_deinterleave_rgb_altivec( uint8_t *dsta, intptr_t i_dsta,
                                                uint8_t *dstb, intptr_t i_dstb,
@@ -1385,6 +1408,7 @@ void x264_mc_init_altivec( x264_mc_functions_t *pf )
     pf->plane_copy_swap = x264_plane_copy_swap_altivec;
     pf->plane_copy_interleave = x264_plane_copy_interleave_altivec;
     pf->store_interleave_chroma = x264_store_interleave_chroma_altivec;
+    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_altivec;
 #if HAVE_VSX
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_altivec;
 #endif // HAVE_VSX
