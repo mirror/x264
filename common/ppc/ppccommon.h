@@ -45,11 +45,30 @@
 #define vec_s16_t vector signed short
 #define vec_u32_t vector unsigned int
 #define vec_s32_t vector signed int
+#if HAVE_VSX
+#define vec_u64_t vector unsigned long long
+#define vec_s64_t vector signed long long
+
+typedef union {
+  uint64_t s[2];
+  vec_u64_t v;
+} vec_u64_u;
+
+typedef union {
+  int64_t s[2];
+  vec_s64_t v;
+} vec_s64_u;
+#endif
 
 typedef union {
   uint32_t s[4];
   vec_u32_t v;
 } vec_u32_u;
+
+typedef union {
+  int32_t s[4];
+  vec_s32_t v;
+} vec_s32_u;
 
 typedef union {
   uint16_t s[8];
@@ -65,6 +84,11 @@ typedef union {
   uint8_t s[16];
   vec_u8_t v;
 } vec_u8_u;
+
+typedef union {
+  int8_t s[16];
+  vec_s8_t v;
+} vec_s8_u;
 
 /***********************************************************************
  * Null vector
