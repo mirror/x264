@@ -1210,10 +1210,9 @@ static weight_fn_t x264_mc_weight_wtab_altivec[6] =
     mc_weight_w20_altivec,
 };
 
-#endif // !HIGH_BIT_DEPTH
-
 PLANE_COPY_SWAP(16, altivec)
 PLANE_INTERLEAVE(altivec)
+#endif // !HIGH_BIT_DEPTH
 
 void x264_mc_altivec_init( x264_mc_functions_t *pf )
 {
