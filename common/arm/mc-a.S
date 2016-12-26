@@ -1818,13 +1818,14 @@ function x264_mbtree_propagate_cost_neon
 endfunc
 
 function x264_mbtree_propagate_list_internal_neon
-    vld2.16         {d4[], d5[]}, [sp]      @ bipred_weight, mb_y
+    vld1.16         {d4[]}, [sp]            @ bipred_weight
     movrel          r12, pw_0to15
     vmov.u16        q10, #0xc000
     vld1.16         {q0},  [r12, :128]      @h->mb.i_mb_x,h->mb.i_mb_y
+    ldrh            r12,  [sp, #4]
     vmov.u32        q11, #4
     vmov.u8         q3,  #32
-    vdup.u16        q8,  d5[0]              @ mb_y
+    vdup.u16        q8,  r12                @ mb_y
     vzip.u16        q0,  q8
     ldr             r12, [sp, #8]
 8:
