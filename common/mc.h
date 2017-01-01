@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc.h: motion compensation
  *****************************************************************************
- * Copyright (C) 2004-2016 x264 project
+ * Copyright (C) 2004-2017 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *
