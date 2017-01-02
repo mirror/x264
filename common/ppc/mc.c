@@ -1278,9 +1278,98 @@ PLANE_COPY_SWAP(16, altivec)
 PLANE_INTERLEAVE(altivec)
 #endif // !HIGH_BIT_DEPTH
 
+#if HIGH_BIT_DEPTH
+
+#define LOAD_SRC( l )                   \
+{                                       \
+    srcv[l] = vec_vsx_ld( s, src );     \
+    s += 16;                            \
+    srcv[l + 1] = vec_vsx_ld( s, src ); \
+    s += 16;                            \
+}
+
+#define STORE_8( mask, shift, dst, a, b )                 \
+{                                                         \
+    dstv = (vec_u16_t)vec_perm( srcv[a], srcv[b], mask ); \
+    dstv = vec_sr( dstv, shift );                         \
+    dstv = vec_and( dstv, and_mask );                     \
+                                                          \
+    vec_st( dstv, offset, dst );                          \
+}
+
+// v210 input is only compatible with bit-depth of 10 bits
+void x264_plane_copy_deinterleave_v210_altivec( uint16_t *dsty, intptr_t i_dsty,
+                                                uint16_t *dstc, intptr_t i_dstc,
+                                                uint32_t *src, intptr_t i_src, int w, int h )
+{
+#ifdef WORDS_BIGENDIAN
+    const vec_u8_t masky[3] = {
+        { 0x02, 0x01, 0x05, 0x04, 0x07, 0x06, 0x0A, 0x09, 0x0D, 0x0C, 0x0F, 0x0E, 0x12, 0x11, 0x15, 0x14 },
+        { 0x07, 0x06, 0x0A, 0x09, 0x0D, 0x0C, 0x0F, 0x0E, 0x12, 0x11, 0x15, 0x14, 0x17, 0x16, 0x1A, 0x19 },
+        { 0x0D, 0x0C, 0x0F, 0x0E, 0x12, 0x11, 0x15, 0x14, 0x17, 0x16, 0x1A, 0x19, 0x1D, 0x1C, 0x1F, 0x1E }
+    };
+    const vec_u8_t maskc[3] = {
+        { 0x01, 0x00, 0x03, 0x02, 0x06, 0x05, 0x09, 0x08, 0x0B, 0x0A, 0x0E, 0x0D, 0x11, 0x10, 0x13, 0x12 },
+        { 0x06, 0x05, 0x09, 0x08, 0x0B, 0x0A, 0x0E, 0x0D, 0x11, 0x10, 0x13, 0x12, 0x16, 0x15, 0x19, 0x18 },
+        { 0x0B, 0x0A, 0x0E, 0x0D, 0x11, 0x10, 0x13, 0x12, 0x16, 0x15, 0x19, 0x18, 0x1B, 0x1A, 0x1E, 0x1D }
+    };
+#else
+    const vec_u8_t masky[3] = {
+        { 0x01, 0x02, 0x04, 0x05, 0x06, 0x07, 0x09, 0x0A, 0x0C, 0x0D, 0x0E, 0x0F, 0x11, 0x12, 0x14, 0x15 },
+        { 0x06, 0x07, 0x09, 0x0A, 0x0C, 0x0D, 0x0E, 0x0F, 0x11, 0x12, 0x14, 0x15, 0x16, 0x17, 0x19, 0x1A },
+        { 0x0C, 0x0D, 0x0E, 0x0F, 0x11, 0x12, 0x14, 0x15, 0x16, 0x17, 0x19, 0x1A, 0x1C, 0x1D, 0x1E, 0x1F }
+    };
+    const vec_u8_t maskc[3] = {
+        { 0x00, 0x01, 0x02, 0x03, 0x05, 0x06, 0x08, 0x09, 0x0A, 0x0B, 0x0D, 0x0E, 0x10, 0x11, 0x12, 0x13 },
+        { 0x05, 0x06, 0x08, 0x09, 0x0A, 0x0B, 0x0D, 0x0E, 0x10, 0x11, 0x12, 0x13, 0x15, 0x16, 0x18, 0x19 },
+        { 0x0A, 0x0B, 0x0D, 0x0E, 0x10, 0x11, 0x12, 0x13, 0x15, 0x16, 0x18, 0x19, 0x1A, 0x1B, 0x1D, 0x1E }
+    };
+#endif
+    const vec_u16_t shift[3] = {
+        { 0, 4, 2, 0, 4, 2, 0, 4 },
+        { 2, 0, 4, 2, 0, 4, 2, 0 },
+        { 4, 2, 0, 4, 2, 0, 4, 2 }
+    };
+
+    vec_u16_t dstv;
+    vec_u16_t and_mask = vec_sub( vec_sl( vec_splat_u16( 1 ), vec_splat_u16( 10 ) ), vec_splat_u16( 1 ) );
+    vec_u32_t srcv[4];
+
+    for( int i = 0; i < h; i++ )
+    {
+        int offset = 0;
+        int s = 0;
+
+        for( int j = 0; j < w; j += 24 )
+        {
+            LOAD_SRC( 0 );
+            STORE_8( maskc[0], shift[0], dstc, 0, 1 );
+            STORE_8( masky[0], shift[1], dsty, 0, 1 );
+            offset += 16;
+
+            LOAD_SRC( 2 );
+            STORE_8( maskc[1], shift[1], dstc, 1, 2 );
+            STORE_8( masky[1], shift[2], dsty, 1, 2 );
+            offset += 16;
+
+            STORE_8( maskc[2], shift[2], dstc, 2, 3 );
+            STORE_8( masky[2], shift[0], dsty, 2, 3 );
+            offset += 16;
+        }
+
+        dsty += i_dsty;
+        dstc += i_dstc;
+        src  += i_src;
+    }
+}
+
+#endif // HIGH_BIT_DEPTH
+
 void x264_mc_init_altivec( x264_mc_functions_t *pf )
 {
-#if !HIGH_BIT_DEPTH
+#if HIGH_BIT_DEPTH
+    pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_altivec;
+#else // !HIGH_BIT_DEPTH
     pf->mc_luma   = mc_luma_altivec;
     pf->get_ref   = get_ref_altivec;
     pf->mc_chroma = mc_chroma_altivec;
