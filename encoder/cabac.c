@@ -644,53 +644,6 @@ static int ALWAYS_INLINE cabac_cbf_ctxidxinc( x264_t *h, int i_cat, int i_idx, i
     }
 }
 
-#if !RDO_SKIP_BS
-extern const uint8_t x264_significant_coeff_flag_offset_8x8[2][64];
-extern const uint8_t x264_last_coeff_flag_offset_8x8[63];
-extern const uint8_t x264_coeff_flag_offset_chroma_422_dc[7];
-extern const uint16_t x264_significant_coeff_flag_offset[2][16];
-extern const uint16_t x264_last_coeff_flag_offset[2][16];
-extern const uint16_t x264_coeff_abs_level_m1_offset[16];
-extern const uint8_t x264_count_cat_m1[14];
-#else
-/* Padded to [64] for easier addressing */
-const uint8_t x264_significant_coeff_flag_offset_8x8[2][64] =
-{{
-    0, 1, 2, 3, 4, 5, 5, 4, 4, 3, 3, 4, 4, 4, 5, 5,
-    4, 4, 4, 4, 3, 3, 6, 7, 7, 7, 8, 9,10, 9, 8, 7,
-    7, 6,11,12,13,11, 6, 7, 8, 9,14,10, 9, 8, 6,11,
-   12,13,11, 6, 9,14,10, 9,11,12,13,11,14,10,12
-},{
-    0, 1, 1, 2, 2, 3, 3, 4, 5, 6, 7, 7, 7, 8, 4, 5,
-    6, 9,10,10, 8,11,12,11, 9, 9,10,10, 8,11,12,11,
-    9, 9,10,10, 8,11,12,11, 9, 9,10,10, 8,13,13, 9,
-    9,10,10, 8,13,13, 9, 9,10,10,14,14,14,14,14
-}};
-const uint8_t x264_last_coeff_flag_offset_8x8[63] =
-{
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8
-};
-const uint8_t x264_coeff_flag_offset_chroma_422_dc[7] = { 0, 0, 1, 1, 2, 2, 2 }; /* MIN( i/2, 2 ) */
-const uint16_t x264_significant_coeff_flag_offset[2][16] =
-{
-    { 105+0, 105+15, 105+29, 105+44, 105+47, 402, 484+0, 484+15, 484+29, 660, 528+0, 528+15, 528+29, 718, 0, 0 },
-    { 277+0, 277+15, 277+29, 277+44, 277+47, 436, 776+0, 776+15, 776+29, 675, 820+0, 820+15, 820+29, 733, 0, 0 }
-};
-const uint16_t x264_last_coeff_flag_offset[2][16] =
-{
-    { 166+0, 166+15, 166+29, 166+44, 166+47, 417, 572+0, 572+15, 572+29, 690, 616+0, 616+15, 616+29, 748, 0, 0 },
-    { 338+0, 338+15, 338+29, 338+44, 338+47, 451, 864+0, 864+15, 864+29, 699, 908+0, 908+15, 908+29, 757, 0, 0 }
-};
-const uint16_t x264_coeff_abs_level_m1_offset[16] =
-{
-    227+0, 227+10, 227+20, 227+30, 227+39, 426, 952+0, 952+10, 952+20, 708, 982+0, 982+10, 982+20, 766
-};
-const uint8_t x264_count_cat_m1[14] = {15, 14, 15, 3, 14, 63, 15, 14, 15, 63, 15, 14, 15, 63};
-#endif
-
 // node ctx: 0..3: abslevel1 (with abslevelgt1 == 0).
 //           4..7: abslevelgt1 + 3 (and abslevel1 doesn't matter).
 /* map node ctx => cabac ctx for level=1 */

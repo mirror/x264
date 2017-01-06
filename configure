@@ -30,7 +30,7 @@ Configuration options:
   --disable-thread         disable multithreaded encoding
   --disable-win32thread    disable win32threads (windows only)
   --disable-interlaced     disable interlaced encoding support
-  --bit-depth=BIT_DEPTH    set output bit depth (8-10) [8]
+  --bit-depth=BIT_DEPTH    set output bit depth (8, 10, all) [all]
   --chroma-format=FORMAT   output chroma format (420, 422, 444, all) [all]
 
 Advanced options:
@@ -276,6 +276,7 @@ configure_system_override() {
         fi
         arg="$(grep '#define X264_BIT_DEPTH ' $x264_config_path | sed -e 's/#define X264_BIT_DEPTH *//; s/ *$//')"
         if [ -n "$arg" ]; then
+            [ "$arg" = 0 ] && arg="all"
             if [ "$arg" != "$bit_depth" ]; then
                 echo "Override output bit depth with system libx264 configuration"
                 bit_depth="$arg"
@@ -353,7 +354,7 @@ debug="no"
 gprof="no"
 strip="no"
 pic="no"
-bit_depth="8"
+bit_depth="all"
 chroma_format="all"
 compiler="GNU"
 compiler_style="GNU"
@@ -377,7 +378,7 @@ NL="
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
              LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
-             MSA MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R"
+             MSA MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R BITDEPTH8 BITDEPTH10"
 
 # parse options
 
@@ -491,11 +492,10 @@ for opt do
             ;;
         --bit-depth=*)
             bit_depth="$optarg"
-            if [ "$bit_depth" -lt "8" -o "$bit_depth" -gt "10" ]; then
-                echo "Supplied bit depth must be in range [8,10]."
+            if [ "$bit_depth" != "8" -a "$bit_depth" != "10" -a "$bit_depth" != "all" ]; then
+                echo "Supplied bit depth must be 8, 10 or all."
                 exit 1
             fi
-            bit_depth=`expr $bit_depth + 0`
             ;;
         --chroma-format=*)
             chroma_format="$optarg"
@@ -1276,19 +1276,19 @@ if [ $compiler = ICC -o $compiler = ICL ] ; then
     fi
 fi
 
-if [ "$bit_depth" -gt "8" ]; then
-    define HIGH_BIT_DEPTH
-    ASFLAGS="$ASFLAGS -DHIGH_BIT_DEPTH=1"
+if [ "$bit_depth" = "all" ]; then
+    define HAVE_BITDEPTH8
+    define HAVE_BITDEPTH10
+elif [ "$bit_depth" -eq "8" ]; then
+    define HAVE_BITDEPTH8
+elif [ "$bit_depth" -eq "10" ]; then
+    define HAVE_BITDEPTH10
     opencl="no"
-else
-    ASFLAGS="$ASFLAGS -DHIGH_BIT_DEPTH=0"
 fi
 
 if [ "$chroma_format" != "all" ]; then
     define CHROMA_FORMAT CHROMA_$chroma_format
 fi
-
-ASFLAGS="$ASFLAGS -DBIT_DEPTH=$bit_depth"
 
 [ $gpl = yes ] && define HAVE_GPL && x264_gpl=1 || x264_gpl=0
 
@@ -1300,10 +1300,10 @@ if [ "$opencl" = "yes" ]; then
     # cygwin can use opencl if it can use LoadLibrary
     if [ $SYS = WINDOWS ] || ([ $SYS = CYGWIN ] && cc_check windows.h "" "LoadLibraryW(0);") ; then
         opencl="yes"
-        define HAVE_OPENCL
+        define HAVE_OPENCL "(BIT_DEPTH==8)"
     elif [ "$SYS" = "LINUX" -o "$SYS" = "MACOSX" ] ; then
         opencl="yes"
-        define HAVE_OPENCL
+        define HAVE_OPENCL "(BIT_DEPTH==8)"
         libdl="-ldl"
     fi
     LDFLAGS="$LDFLAGS $libdl"
@@ -1311,17 +1311,17 @@ fi
 
 #define undefined vars as 0
 for var in $CONFIG_HAVE; do
-    grep -q "HAVE_$var 1" config.h || define HAVE_$var 0
+    grep -q "HAVE_$var " config.h || define HAVE_$var 0
 done
 
 # generate exported config file
 
-config_chroma_format="X264_CSP_I$chroma_format"
-[ "$config_chroma_format" == "X264_CSP_Iall" ] && config_chroma_format="0"
+[ "$bit_depth" = "all" ] && config_bit_depth="0" || config_bit_depth="$bit_depth"
+[ "$chroma_format" = "all" ] && config_chroma_format="0" || config_chroma_format="X264_CSP_I$chroma_format"
 cat > x264_config.h << EOF
-#define X264_BIT_DEPTH     $bit_depth
 #define X264_GPL           $x264_gpl
 #define X264_INTERLACED    $x264_interlaced
+#define X264_BIT_DEPTH     $config_bit_depth
 #define X264_CHROMA_FORMAT $config_chroma_format
 EOF
 
@@ -1436,8 +1436,9 @@ HAVE_OPENCL=$opencl
 EOF
 
 if [ $compiler_style = MS ]; then
-    echo '%.o: %.c' >> config.mak
-    echo '	$(CC) $(CFLAGS) -c -Fo$@ $<' >> config.mak
+    echo 'CC_O=-Fo$@' >> config.mak
+else
+    echo 'CC_O=-o $@' >> config.mak
 fi
 
 if [ "$cli" = "yes" ]; then

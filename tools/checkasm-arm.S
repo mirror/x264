@@ -128,11 +128,7 @@ function checkasm_call_\variant
     mov         r12, #0
     str         r12, [r2]
     movrel      r0, error_message
-#ifdef PREFIX
-    blx         _puts
-#else
-    blx         puts
-#endif
+    blx         EXT(puts)
 0:
     pop         {r0, r1}
 .ifc \variant, neon

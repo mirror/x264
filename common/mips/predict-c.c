@@ -25,6 +25,7 @@
 
 #include "common/common.h"
 #include "macros.h"
+#include "predict.h"
 
 #if !HIGH_BIT_DEPTH
 static void intra_predict_vert_4x4_msa( uint8_t *p_src, uint8_t *p_dst,

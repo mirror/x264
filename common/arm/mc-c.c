@@ -27,46 +27,87 @@
 #include "common/common.h"
 #include "mc.h"
 
+#define x264_prefetch_ref_arm x264_template(prefetch_ref_arm)
 void x264_prefetch_ref_arm( uint8_t *, intptr_t, int );
+#define x264_prefetch_fenc_arm x264_template(prefetch_fenc_arm)
 void x264_prefetch_fenc_arm( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 
+#define x264_memcpy_aligned_neon x264_template(memcpy_aligned_neon)
 void *x264_memcpy_aligned_neon( void *dst, const void *src, size_t n );
+#define x264_memzero_aligned_neon x264_template(memzero_aligned_neon)
 void x264_memzero_aligned_neon( void *dst, size_t n );
 
+#define x264_pixel_avg_16x16_neon x264_template(pixel_avg_16x16_neon)
 void x264_pixel_avg_16x16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_16x8_neon x264_template(pixel_avg_16x8_neon)
 void x264_pixel_avg_16x8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_8x16_neon x264_template(pixel_avg_8x16_neon)
 void x264_pixel_avg_8x16_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_8x8_neon x264_template(pixel_avg_8x8_neon)
 void x264_pixel_avg_8x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_8x4_neon x264_template(pixel_avg_8x4_neon)
 void x264_pixel_avg_8x4_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_4x16_neon x264_template(pixel_avg_4x16_neon)
 void x264_pixel_avg_4x16_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_4x8_neon x264_template(pixel_avg_4x8_neon)
 void x264_pixel_avg_4x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_4x4_neon x264_template(pixel_avg_4x4_neon)
 void x264_pixel_avg_4x4_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_4x2_neon x264_template(pixel_avg_4x2_neon)
 void x264_pixel_avg_4x2_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 
+#define x264_pixel_avg2_w4_neon x264_template(pixel_avg2_w4_neon)
 void x264_pixel_avg2_w4_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
+#define x264_pixel_avg2_w8_neon x264_template(pixel_avg2_w8_neon)
 void x264_pixel_avg2_w8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
+#define x264_pixel_avg2_w16_neon x264_template(pixel_avg2_w16_neon)
 void x264_pixel_avg2_w16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
+#define x264_pixel_avg2_w20_neon x264_template(pixel_avg2_w20_neon)
 void x264_pixel_avg2_w20_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
 
+#define x264_plane_copy_core_neon x264_template(plane_copy_core_neon)
 void x264_plane_copy_core_neon( pixel *dst, intptr_t i_dst,
                                 pixel *src, intptr_t i_src, int w, int h );
+#define x264_plane_copy_deinterleave_neon x264_template(plane_copy_deinterleave_neon)
 void x264_plane_copy_deinterleave_neon(  pixel *dstu, intptr_t i_dstu,
                                          pixel *dstv, intptr_t i_dstv,
                                          pixel *src,  intptr_t i_src, int w, int h );
+#define x264_plane_copy_deinterleave_rgb_neon x264_template(plane_copy_deinterleave_rgb_neon)
 void x264_plane_copy_deinterleave_rgb_neon( pixel *dsta, intptr_t i_dsta,
                                             pixel *dstb, intptr_t i_dstb,
                                             pixel *dstc, intptr_t i_dstc,
                                             pixel *src,  intptr_t i_src, int pw, int w, int h );
+#define x264_plane_copy_interleave_core_neon x264_template(plane_copy_interleave_core_neon)
 void x264_plane_copy_interleave_core_neon( pixel *dst,  intptr_t i_dst,
                                            pixel *srcu, intptr_t i_srcu,
                                            pixel *srcv, intptr_t i_srcv, int w, int h );
+#define x264_plane_copy_swap_core_neon x264_template(plane_copy_swap_core_neon)
 void x264_plane_copy_swap_core_neon( pixel *dst, intptr_t i_dst,
                                      pixel *src, intptr_t i_src, int w, int h );
 
+#define x264_store_interleave_chroma_neon x264_template(store_interleave_chroma_neon)
 void x264_store_interleave_chroma_neon( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
+#define x264_load_deinterleave_chroma_fdec_neon x264_template(load_deinterleave_chroma_fdec_neon)
 void x264_load_deinterleave_chroma_fdec_neon( pixel *dst, pixel *src, intptr_t i_src, int height );
+#define x264_load_deinterleave_chroma_fenc_neon x264_template(load_deinterleave_chroma_fenc_neon)
 void x264_load_deinterleave_chroma_fenc_neon( pixel *dst, pixel *src, intptr_t i_src, int height );
 
+#define x264_mc_weight_w16_neon x264_template(mc_weight_w16_neon)
+#define x264_mc_weight_w16_nodenom_neon x264_template(mc_weight_w16_nodenom_neon)
+#define x264_mc_weight_w16_offsetadd_neon x264_template(mc_weight_w16_offsetadd_neon)
+#define x264_mc_weight_w16_offsetsub_neon x264_template(mc_weight_w16_offsetsub_neon)
+#define x264_mc_weight_w20_neon x264_template(mc_weight_w20_neon)
+#define x264_mc_weight_w20_nodenom_neon x264_template(mc_weight_w20_nodenom_neon)
+#define x264_mc_weight_w20_offsetadd_neon x264_template(mc_weight_w20_offsetadd_neon)
+#define x264_mc_weight_w20_offsetsub_neon x264_template(mc_weight_w20_offsetsub_neon)
+#define x264_mc_weight_w4_neon x264_template(mc_weight_w4_neon)
+#define x264_mc_weight_w4_nodenom_neon x264_template(mc_weight_w4_nodenom_neon)
+#define x264_mc_weight_w4_offsetadd_neon x264_template(mc_weight_w4_offsetadd_neon)
+#define x264_mc_weight_w4_offsetsub_neon x264_template(mc_weight_w4_offsetsub_neon)
+#define x264_mc_weight_w8_neon x264_template(mc_weight_w8_neon)
+#define x264_mc_weight_w8_nodenom_neon x264_template(mc_weight_w8_nodenom_neon)
+#define x264_mc_weight_w8_offsetadd_neon x264_template(mc_weight_w8_offsetadd_neon)
+#define x264_mc_weight_w8_offsetsub_neon x264_template(mc_weight_w8_offsetsub_neon)
 #if !HIGH_BIT_DEPTH
 #define MC_WEIGHT(func)\
 void x264_mc_weight_w20##func##_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
@@ -90,26 +131,42 @@ MC_WEIGHT(_offsetadd)
 MC_WEIGHT(_offsetsub)
 #endif
 
+#define x264_mc_copy_w4_neon x264_template(mc_copy_w4_neon)
 void x264_mc_copy_w4_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_mc_copy_w8_neon x264_template(mc_copy_w8_neon)
 void x264_mc_copy_w8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_mc_copy_w16_neon x264_template(mc_copy_w16_neon)
 void x264_mc_copy_w16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_mc_copy_w16_aligned_neon x264_template(mc_copy_w16_aligned_neon)
 void x264_mc_copy_w16_aligned_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
 
+#define x264_mc_chroma_neon x264_template(mc_chroma_neon)
 void x264_mc_chroma_neon( uint8_t *, uint8_t *, intptr_t, uint8_t *, intptr_t, int, int, int, int );
+#define x264_frame_init_lowres_core_neon x264_template(frame_init_lowres_core_neon)
 void x264_frame_init_lowres_core_neon( uint8_t *, uint8_t *, uint8_t *, uint8_t *, uint8_t *, intptr_t, intptr_t, int, int );
 
+#define x264_hpel_filter_v_neon x264_template(hpel_filter_v_neon)
 void x264_hpel_filter_v_neon( uint8_t *, uint8_t *, int16_t *, intptr_t, int );
+#define x264_hpel_filter_c_neon x264_template(hpel_filter_c_neon)
 void x264_hpel_filter_c_neon( uint8_t *, int16_t *, int );
+#define x264_hpel_filter_h_neon x264_template(hpel_filter_h_neon)
 void x264_hpel_filter_h_neon( uint8_t *, uint8_t *, int );
 
+#define x264_integral_init4h_neon x264_template(integral_init4h_neon)
 void x264_integral_init4h_neon( uint16_t *, uint8_t *, intptr_t );
+#define x264_integral_init4v_neon x264_template(integral_init4v_neon)
 void x264_integral_init4v_neon( uint16_t *, uint16_t *, intptr_t );
+#define x264_integral_init8h_neon x264_template(integral_init8h_neon)
 void x264_integral_init8h_neon( uint16_t *, uint8_t *, intptr_t );
+#define x264_integral_init8v_neon x264_template(integral_init8v_neon)
 void x264_integral_init8v_neon( uint16_t *, intptr_t );
 
+#define x264_mbtree_propagate_cost_neon x264_template(mbtree_propagate_cost_neon)
 void x264_mbtree_propagate_cost_neon( int16_t *, uint16_t *, uint16_t *, uint16_t *, uint16_t *, float *, int );
 
+#define x264_mbtree_fix8_pack_neon x264_template(mbtree_fix8_pack_neon)
 void x264_mbtree_fix8_pack_neon( uint16_t *dst, float *src, int count );
+#define x264_mbtree_fix8_unpack_neon x264_template(mbtree_fix8_unpack_neon)
 void x264_mbtree_fix8_unpack_neon( float *dst, uint16_t *src, int count );
 
 #if !HIGH_BIT_DEPTH
@@ -236,9 +293,8 @@ static void hpel_filter_neon( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8
 PLANE_COPY(16, neon)
 PLANE_COPY_SWAP(16, neon)
 PLANE_INTERLEAVE(neon)
-#endif // !HIGH_BIT_DEPTH
-
 PROPAGATE_LIST(neon)
+#endif // !HIGH_BIT_DEPTH
 
 void x264_mc_init_arm( int cpu, x264_mc_functions_t *pf )
 {

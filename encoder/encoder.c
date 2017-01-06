@@ -40,6 +40,10 @@
 
 #define bs_write_ue bs_write_ue_big
 
+// forward declaration needed for template usage
+void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
+void x264_macroblock_cache_load_progressive( x264_t *h, int i_mb_x, int i_mb_y );
+
 static int encoder_frame_end( x264_t *h, x264_t *thread_current,
                               x264_nal_t **pp_nal, int *pi_nal,
                               x264_picture_t *pic_out );
@@ -422,7 +426,7 @@ static int validate_parameters( x264_t *h, int b_open )
 {
     if( !h->param.pf_log )
     {
-        x264_log( NULL, X264_LOG_ERROR, "pf_log not set! did you forget to call x264_param_default?\n" );
+        x264_log_internal( X264_LOG_ERROR, "pf_log not set! did you forget to call x264_param_default?\n" );
         return -1;
     }
 

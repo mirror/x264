@@ -29,11 +29,10 @@
 
 #include "common/macroblock.h"
 
-extern const int x264_lambda2_tab[QP_MAX_MAX+1];
-extern const uint16_t x264_lambda_tab[QP_MAX_MAX+1];
-
+#define x264_rdo_init x264_template(rdo_init)
 void x264_rdo_init( void );
 
+#define x264_macroblock_probe_skip x264_template(macroblock_probe_skip)
 int x264_macroblock_probe_skip( x264_t *h, int b_bidir );
 
 #define x264_macroblock_probe_pskip( h )\
@@ -41,32 +40,51 @@ int x264_macroblock_probe_skip( x264_t *h, int b_bidir );
 #define x264_macroblock_probe_bskip( h )\
     x264_macroblock_probe_skip( h, 1 )
 
+#define x264_predict_lossless_4x4 x264_template(predict_lossless_4x4)
 void x264_predict_lossless_4x4( x264_t *h, pixel *p_dst, int p, int idx, int i_mode );
+#define x264_predict_lossless_8x8 x264_template(predict_lossless_8x8)
 void x264_predict_lossless_8x8( x264_t *h, pixel *p_dst, int p, int idx, int i_mode, pixel edge[36] );
+#define x264_predict_lossless_16x16 x264_template(predict_lossless_16x16)
 void x264_predict_lossless_16x16( x264_t *h, int p, int i_mode );
+#define x264_predict_lossless_chroma x264_template(predict_lossless_chroma)
 void x264_predict_lossless_chroma( x264_t *h, int i_mode );
 
+#define x264_macroblock_encode x264_template(macroblock_encode)
 void x264_macroblock_encode      ( x264_t *h );
+#define x264_macroblock_write_cabac x264_template(macroblock_write_cabac)
 void x264_macroblock_write_cabac ( x264_t *h, x264_cabac_t *cb );
+#define x264_macroblock_write_cavlc x264_template(macroblock_write_cavlc)
 void x264_macroblock_write_cavlc ( x264_t *h );
 
+#define x264_macroblock_encode_p8x8 x264_template(macroblock_encode_p8x8)
 void x264_macroblock_encode_p8x8( x264_t *h, int i8 );
+#define x264_macroblock_encode_p4x4 x264_template(macroblock_encode_p4x4)
 void x264_macroblock_encode_p4x4( x264_t *h, int i4 );
+#define x264_mb_encode_chroma x264_template(mb_encode_chroma)
 void x264_mb_encode_chroma( x264_t *h, int b_inter, int i_qp );
 
+#define x264_cabac_mb_skip x264_template(cabac_mb_skip)
 void x264_cabac_mb_skip( x264_t *h, int b_skip );
+#define x264_cabac_block_residual_c x264_template(cabac_block_residual_c)
 void x264_cabac_block_residual_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
+#define x264_cabac_block_residual_8x8_rd_c x264_template(cabac_block_residual_8x8_rd_c)
 void x264_cabac_block_residual_8x8_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
+#define x264_cabac_block_residual_rd_c x264_template(cabac_block_residual_rd_c)
 void x264_cabac_block_residual_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
 
+#define x264_quant_luma_dc_trellis x264_template(quant_luma_dc_trellis)
 int x264_quant_luma_dc_trellis( x264_t *h, dctcoef *dct, int i_quant_cat, int i_qp,
                                 int ctx_block_cat, int b_intra, int idx );
+#define x264_quant_chroma_dc_trellis x264_template(quant_chroma_dc_trellis)
 int x264_quant_chroma_dc_trellis( x264_t *h, dctcoef *dct, int i_qp, int b_intra, int idx );
+#define x264_quant_4x4_trellis x264_template(quant_4x4_trellis)
 int x264_quant_4x4_trellis( x264_t *h, dctcoef *dct, int i_quant_cat,
                              int i_qp, int ctx_block_cat, int b_intra, int b_chroma, int idx );
+#define x264_quant_8x8_trellis x264_template(quant_8x8_trellis)
 int x264_quant_8x8_trellis( x264_t *h, dctcoef *dct, int i_quant_cat,
                              int i_qp, int ctx_block_cat, int b_intra, int b_chroma, int idx );
 
+#define x264_noise_reduction_update x264_template(noise_reduction_update)
 void x264_noise_reduction_update( x264_t *h );
 
 static ALWAYS_INLINE int x264_quant_4x4( x264_t *h, dctcoef dct[16], int i_qp, int ctx_block_cat, int b_intra, int p, int idx )

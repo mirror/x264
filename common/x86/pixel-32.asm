@@ -33,6 +33,8 @@ cextern pw_pmpmpmpm
 SECTION .text
 INIT_MMX mmx2
 
+%if HIGH_BIT_DEPTH == 0
+
 %macro LOAD_DIFF_4x8P 1 ; dx
     LOAD_DIFF  m0, m7, none, [r0+%1],      [r2+%1]
     LOAD_DIFF  m1, m6, none, [r0+%1+r1],   [r2+%1+r3]
@@ -418,3 +420,4 @@ cglobal pixel_ssim_4x4x2_core, 0,5
     emms
     RET
 
+%endif ; !HIGH_BIT_DEPTH

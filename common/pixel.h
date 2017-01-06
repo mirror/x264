@@ -143,13 +143,18 @@ typedef struct
     int (*intra_sad_x9_8x8)  ( pixel *fenc, pixel *fdec, pixel edge[36], uint16_t *bitcosts, uint16_t *satds );
 } x264_pixel_function_t;
 
+#define x264_pixel_init x264_template(pixel_init)
 void x264_pixel_init( int cpu, x264_pixel_function_t *pixf );
+#define x264_pixel_ssd_nv12 x264_template(pixel_ssd_nv12)
 void x264_pixel_ssd_nv12   ( x264_pixel_function_t *pf, pixel *pix1, intptr_t i_pix1, pixel *pix2, intptr_t i_pix2,
                              int i_width, int i_height, uint64_t *ssd_u, uint64_t *ssd_v );
+#define x264_pixel_ssd_wxh x264_template(pixel_ssd_wxh)
 uint64_t x264_pixel_ssd_wxh( x264_pixel_function_t *pf, pixel *pix1, intptr_t i_pix1, pixel *pix2, intptr_t i_pix2,
                              int i_width, int i_height );
+#define x264_pixel_ssim_wxh x264_template(pixel_ssim_wxh)
 float x264_pixel_ssim_wxh  ( x264_pixel_function_t *pf, pixel *pix1, intptr_t i_pix1, pixel *pix2, intptr_t i_pix2,
                              int i_width, int i_height, void *buf, int *cnt );
+#define x264_field_vsad x264_template(field_vsad)
 int x264_field_vsad( x264_t *h, int mb_x, int mb_y );
 
 #endif

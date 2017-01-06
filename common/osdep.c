@@ -25,7 +25,7 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#include "common.h"
+#include "osdep.h"
 
 #ifdef _WIN32
 #include <windows.h>

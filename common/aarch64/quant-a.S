@@ -305,7 +305,7 @@ endfunc
 .macro decimate_score_1x size
 function decimate_score\size\()_neon, export=1
     ld1        {v0.8h,v1.8h}, [x0]
-    movrel      x5,  X(decimate_table4)
+    movrel      x5,  X264(decimate_table4)
     movi        v3.16b, #0x01
     sqxtn       v0.8b,  v0.8h
     sqxtn2      v0.16b, v1.8h
@@ -391,7 +391,7 @@ function decimate_score64_neon, export=1
     mvn         x1,  x1
     mov         w0,  #0
     cbz         x1,  0f
-    movrel      x5,  X(decimate_table8)
+    movrel      x5,  X264(decimate_table8)
 1:
     clz         x3,  x1
     lsl         x1,  x1,  x3

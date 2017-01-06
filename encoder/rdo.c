@@ -32,7 +32,9 @@
 
 /* Transition and size tables for abs<9 MVD and residual coding */
 /* Consist of i_prefix-2 1s, one zero, and a bypass sign bit */
+#define x264_cabac_transition_unary x264_template(cabac_transition_unary)
 uint8_t x264_cabac_transition_unary[15][128];
+#define x264_cabac_size_unary x264_template(cabac_size_unary)
 uint16_t x264_cabac_size_unary[15][128];
 /* Transition and size tables for abs>9 MVD */
 /* Consist of 5 1s and a bypass sign bit */
@@ -46,6 +48,7 @@ static uint16_t cabac_size_5ones[128];
 #define bs_write_ue(s,v)   ((s)->i_bits_encoded += bs_size_ue(v))
 #define bs_write_se(s,v)   ((s)->i_bits_encoded += bs_size_se(v))
 #define bs_write_te(s,v,l) ((s)->i_bits_encoded += bs_size_te(v,l))
+#undef  x264_macroblock_write_cavlc
 #define x264_macroblock_write_cavlc  static macroblock_size_cavlc
 #include "cavlc.c"
 
@@ -55,11 +58,13 @@ static uint16_t cabac_size_5ones[128];
 #undef  x264_cabac_encode_decision_noup
 #undef  x264_cabac_encode_bypass
 #undef  x264_cabac_encode_terminal
+#undef  x264_cabac_encode_ue_bypass
 #define x264_cabac_encode_decision(c,x,v) x264_cabac_size_decision(c,x,v)
 #define x264_cabac_encode_decision_noup(c,x,v) x264_cabac_size_decision_noup(c,x,v)
 #define x264_cabac_encode_terminal(c)     ((c)->f8_bits_encoded += 7)
 #define x264_cabac_encode_bypass(c,v)     ((c)->f8_bits_encoded += 256)
 #define x264_cabac_encode_ue_bypass(c,e,v) ((c)->f8_bits_encoded += (bs_size_ue_big(v+(1<<e)-1)-e)<<8)
+#undef  x264_macroblock_write_cabac
 #define x264_macroblock_write_cabac  static macroblock_size_cabac
 #include "cabac.c"
 

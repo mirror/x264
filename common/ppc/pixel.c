@@ -26,6 +26,7 @@
 
 #include "common/common.h"
 #include "ppccommon.h"
+#include "pixel.h"
 
 #if !HIGH_BIT_DEPTH
 /***********************************************************************

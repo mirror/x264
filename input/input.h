@@ -102,7 +102,8 @@ typedef struct
 extern const cli_input_t raw_input;
 extern const cli_input_t y4m_input;
 extern const cli_input_t avs_input;
-extern const cli_input_t thread_input;
+extern const cli_input_t thread_8_input;
+extern const cli_input_t thread_10_input;
 extern const cli_input_t lavf_input;
 extern const cli_input_t ffms_input;
 extern const cli_input_t timecode_input;

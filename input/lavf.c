@@ -25,12 +25,14 @@
  *****************************************************************************/
 
 #include "input.h"
-#define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "lavf", __VA_ARGS__ )
+
 #undef DECLARE_ALIGNED
 #include <libavformat/avformat.h>
 #include <libavutil/mem.h>
 #include <libavutil/pixdesc.h>
 #include <libavutil/dict.h>
+
+#define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "lavf", __VA_ARGS__ )
 
 typedef struct
 {

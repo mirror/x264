@@ -31,7 +31,7 @@
 /* Based on the agreed standing that x264 does not need to utilize >64 logical cpus,
  * this API does not detect nor utilize more than 64 cpus for systems that have them. */
 
-#include "common.h"
+#include "base.h"
 
 #if HAVE_WINRT
 /* _beginthreadex() is technically the correct option, but it's only available for Desktop applications.

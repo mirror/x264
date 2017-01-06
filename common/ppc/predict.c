@@ -24,9 +24,9 @@
  *****************************************************************************/
 
 #include "common/common.h"
+#include "ppccommon.h"
 #include "predict.h"
 #include "pixel.h"
-#include "ppccommon.h"
 
 #if !HIGH_BIT_DEPTH
 static void predict_8x8c_p_altivec( uint8_t *src )

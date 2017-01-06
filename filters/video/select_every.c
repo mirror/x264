@@ -24,6 +24,7 @@
  *****************************************************************************/
 
 #include "video.h"
+
 #define NAME "select_every"
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, NAME, __VA_ARGS__ )
 
@@ -95,7 +96,9 @@ static int init( hnd_t *handle, cli_vid_filter_t *filter, video_info_t *info, x2
          if( max_rewind == h->step_size )
              break;
     }
-    if( x264_init_vid_filter( "cache", handle, filter, info, param, (void*)max_rewind ) )
+    char name[20];
+    sprintf( name, "cache_%d", param->i_bitdepth );
+    if( x264_init_vid_filter( name, handle, filter, info, param, (void*)max_rewind ) )
         return -1;
 
     /* done initing, overwrite properties */

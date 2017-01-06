@@ -25,6 +25,7 @@
  *****************************************************************************/
 
 #include "video.h"
+
 #define NAME "crop"
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, NAME, __VA_ARGS__ )
 

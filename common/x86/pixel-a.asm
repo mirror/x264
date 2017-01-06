@@ -4280,7 +4280,7 @@ cglobal pixel_hadamard_ac_%1x%2, 2,4,11
 
 ; instantiate satds
 
-%if ARCH_X86_64 == 0
+%if ARCH_X86_64 == 0 && HIGH_BIT_DEPTH == 0
 cextern pixel_sa8d_8x8_internal_mmx2
 INIT_MMX mmx2
 SA8D

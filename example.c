@@ -68,6 +68,7 @@ int main( int argc, char **argv )
         goto fail;
 
     /* Configure non-default params */
+    param.i_bitdepth = 8;
     param.i_csp = X264_CSP_I420;
     param.i_width  = width;
     param.i_height = height;

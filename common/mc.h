@@ -34,6 +34,7 @@ do\
     MC_CLIP_ADD((s)[1], (x)[1]);\
 } while( 0 )
 
+#define x264_mbtree_propagate_list_internal_neon x264_template(mbtree_propagate_list_internal_neon)
 #define PROPAGATE_LIST(cpu)\
 void x264_mbtree_propagate_list_internal_##cpu( int16_t (*mvs)[2], int16_t *propagate_amount,\
                                                 uint16_t *lowres_costs, int16_t *output,\
@@ -100,6 +101,7 @@ static void mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, int16_t
     }\
 }
 
+#define x264_plane_copy_c x264_template(plane_copy_c)
 void x264_plane_copy_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 
 #define PLANE_COPY(align, cpu)\
@@ -128,6 +130,7 @@ static void plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i
     }\
 }
 
+#define x264_plane_copy_swap_c x264_template(plane_copy_swap_c)
 void x264_plane_copy_swap_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 
 #define PLANE_COPY_SWAP(align, cpu)\
@@ -160,6 +163,7 @@ static void plane_copy_swap_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intpt
         x264_plane_copy_swap_c( dst, i_dst, src, i_src, w, h );\
 }
 
+#define x264_plane_copy_deinterleave_c x264_template(plane_copy_deinterleave_c)
 void x264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,
                                      pixel *src, intptr_t i_src, int w, int h );
 
@@ -193,6 +197,7 @@ static void plane_copy_deinterleave_yuyv_##cpu( pixel *dsta, intptr_t i_dsta, pi
         x264_plane_copy_deinterleave_c( dsta, i_dsta, dstb, i_dstb, src, i_src, w, h );\
 }
 
+#define x264_plane_copy_interleave_c x264_template(plane_copy_interleave_c)
 void x264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
                                    pixel *srcu, intptr_t i_srcu,
                                    pixel *srcv, intptr_t i_srcv, int w, int h );
@@ -239,9 +244,8 @@ typedef struct x264_weight_t
     weight_fn_t *weightfn;
 } ALIGNED_16( x264_weight_t );
 
+#define x264_weight_none x264_template(weight_none)
 extern const x264_weight_t x264_weight_none[3];
-extern const uint8_t x264_hpel_ref0[16];
-extern const uint8_t x264_hpel_ref1[16];
 
 #define SET_WEIGHT( w, b, s, d, o )\
 {\
@@ -335,6 +339,7 @@ typedef struct
     void (*mbtree_fix8_unpack)( float *dst, uint16_t *src, int count );
 } x264_mc_functions_t;
 
+#define x264_mc_init x264_template(mc_init)
 void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent );
 
 #endif

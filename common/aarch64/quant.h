@@ -27,33 +27,55 @@
 #ifndef X264_AARCH64_QUANT_H
 #define X264_AARCH64_QUANT_H
 
+#define x264_quant_2x2_dc_aarch64 x264_template(quant_2x2_dc_aarch64)
 int x264_quant_2x2_dc_aarch64( int16_t dct[4], int mf, int bias );
 
+#define x264_quant_2x2_dc_neon x264_template(quant_2x2_dc_neon)
 int x264_quant_2x2_dc_neon( int16_t dct[4], int mf, int bias );
+#define x264_quant_4x4_dc_neon x264_template(quant_4x4_dc_neon)
 int x264_quant_4x4_dc_neon( int16_t dct[16], int mf, int bias );
+#define x264_quant_4x4_neon x264_template(quant_4x4_neon)
 int x264_quant_4x4_neon( int16_t dct[16], uint16_t mf[16], uint16_t bias[16] );
+#define x264_quant_4x4x4_neon x264_template(quant_4x4x4_neon)
 int x264_quant_4x4x4_neon( int16_t dct[4][16], uint16_t mf[16], uint16_t bias[16] );
+#define x264_quant_8x8_neon x264_template(quant_8x8_neon)
 int x264_quant_8x8_neon( int16_t dct[64], uint16_t mf[64], uint16_t bias[64] );
 
+#define x264_dequant_4x4_dc_neon x264_template(dequant_4x4_dc_neon)
 void x264_dequant_4x4_dc_neon( int16_t dct[16], int dequant_mf[6][16], int i_qp );
+#define x264_dequant_4x4_neon x264_template(dequant_4x4_neon)
 void x264_dequant_4x4_neon( int16_t dct[16], int dequant_mf[6][16], int i_qp );
+#define x264_dequant_8x8_neon x264_template(dequant_8x8_neon)
 void x264_dequant_8x8_neon( int16_t dct[64], int dequant_mf[6][64], int i_qp );
 
+#define x264_decimate_score15_neon x264_template(decimate_score15_neon)
 int x264_decimate_score15_neon( int16_t * );
+#define x264_decimate_score16_neon x264_template(decimate_score16_neon)
 int x264_decimate_score16_neon( int16_t * );
+#define x264_decimate_score64_neon x264_template(decimate_score64_neon)
 int x264_decimate_score64_neon( int16_t * );
 
+#define x264_coeff_last4_aarch64 x264_template(coeff_last4_aarch64)
 int x264_coeff_last4_aarch64( int16_t * );
+#define x264_coeff_last8_aarch64 x264_template(coeff_last8_aarch64)
 int x264_coeff_last8_aarch64( int16_t * );
+#define x264_coeff_last15_neon x264_template(coeff_last15_neon)
 int x264_coeff_last15_neon( int16_t * );
+#define x264_coeff_last16_neon x264_template(coeff_last16_neon)
 int x264_coeff_last16_neon( int16_t * );
+#define x264_coeff_last64_neon x264_template(coeff_last64_neon)
 int x264_coeff_last64_neon( int16_t * );
 
+#define x264_coeff_level_run4_aarch64 x264_template(coeff_level_run4_aarch64)
 int x264_coeff_level_run4_aarch64( int16_t *, x264_run_level_t * );
+#define x264_coeff_level_run8_neon x264_template(coeff_level_run8_neon)
 int x264_coeff_level_run8_neon( int16_t *, x264_run_level_t * );
+#define x264_coeff_level_run15_neon x264_template(coeff_level_run15_neon)
 int x264_coeff_level_run15_neon( int16_t *, x264_run_level_t * );
+#define x264_coeff_level_run16_neon x264_template(coeff_level_run16_neon)
 int x264_coeff_level_run16_neon( int16_t *, x264_run_level_t * );
 
+#define x264_denoise_dct_neon x264_template(denoise_dct_neon)
 void x264_denoise_dct_neon( dctcoef *, uint32_t *, udctcoef *, int );
 
 #endif

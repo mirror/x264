@@ -299,38 +299,54 @@ static const uint8_t ctx_cat_plane[6][3] =
 };
 
 /* Per-frame allocation: is allocated per-thread only in frame-threads mode. */
+#define x264_macroblock_cache_allocate x264_template(macroblock_cache_allocate)
 int  x264_macroblock_cache_allocate( x264_t *h );
+#define x264_macroblock_cache_free x264_template(macroblock_cache_free)
 void x264_macroblock_cache_free( x264_t *h );
 
 /* Per-thread allocation: is allocated per-thread even in sliced-threads mode. */
+#define x264_macroblock_thread_allocate x264_template(macroblock_thread_allocate)
 int  x264_macroblock_thread_allocate( x264_t *h, int b_lookahead );
+#define x264_macroblock_thread_free x264_template(macroblock_thread_free)
 void x264_macroblock_thread_free( x264_t *h, int b_lookahead );
 
+#define x264_macroblock_slice_init x264_template(macroblock_slice_init)
 void x264_macroblock_slice_init( x264_t *h );
+#define x264_macroblock_thread_init x264_template(macroblock_thread_init)
 void x264_macroblock_thread_init( x264_t *h );
+#define x264_macroblock_cache_load_interlaced x264_template(macroblock_cache_load_interlaced)
 void x264_macroblock_cache_load_progressive( x264_t *h, int mb_x, int mb_y );
+#define x264_macroblock_cache_load_progressive x264_template(macroblock_cache_load_progressive)
 void x264_macroblock_cache_load_interlaced( x264_t *h, int mb_x, int mb_y );
+#define x264_macroblock_deblock_strength x264_template(macroblock_deblock_strength)
 void x264_macroblock_deblock_strength( x264_t *h );
+#define x264_macroblock_cache_save x264_template(macroblock_cache_save)
 void x264_macroblock_cache_save( x264_t *h );
 
+#define x264_macroblock_bipred_init x264_template(macroblock_bipred_init)
 void x264_macroblock_bipred_init( x264_t *h );
 
+#define x264_prefetch_fenc x264_template(prefetch_fenc)
 void x264_prefetch_fenc( x264_t *h, x264_frame_t *fenc, int i_mb_x, int i_mb_y );
 
+#define x264_copy_column8 x264_template(copy_column8)
 void x264_copy_column8( pixel *dst, pixel *src );
 
 /* x264_mb_predict_mv_16x16:
  *      set mvp with predicted mv for D_16x16 block
  *      h->mb. need only valid values from other blocks */
+#define x264_mb_predict_mv_16x16 x264_template(mb_predict_mv_16x16)
 void x264_mb_predict_mv_16x16( x264_t *h, int i_list, int i_ref, int16_t mvp[2] );
 /* x264_mb_predict_mv_pskip:
  *      set mvp with predicted mv for P_SKIP
  *      h->mb. need only valid values from other blocks */
+#define x264_mb_predict_mv_pskip x264_template(mb_predict_mv_pskip)
 void x264_mb_predict_mv_pskip( x264_t *h, int16_t mv[2] );
 /* x264_mb_predict_mv:
  *      set mvp with predicted mv for all blocks except SKIP and DIRECT
  *      h->mb. need valid ref/partition/sub of current block to be valid
  *      and valid mv/ref from other blocks. */
+#define x264_mb_predict_mv x264_template(mb_predict_mv)
 void x264_mb_predict_mv( x264_t *h, int i_list, int idx, int i_width, int16_t mvp[2] );
 /* x264_mb_predict_mv_direct16x16:
  *      set h->mb.cache.mv and h->mb.cache.ref for B_SKIP or B_DIRECT
@@ -338,14 +354,18 @@ void x264_mb_predict_mv( x264_t *h, int i_list, int idx, int i_width, int16_t mv
  *      return 1 on success, 0 on failure.
  *      if b_changed != NULL, set it to whether refs or mvs differ from
  *      before this functioncall. */
+#define x264_mb_predict_mv_direct16x16 x264_template(mb_predict_mv_direct16x16)
 int x264_mb_predict_mv_direct16x16( x264_t *h, int *b_changed );
 /* x264_mb_predict_mv_ref16x16:
  *      set mvc with D_16x16 prediction.
  *      uses all neighbors, even those that didn't end up using this ref.
  *      h->mb. need only valid values from other blocks */
+#define x264_mb_predict_mv_ref16x16 x264_template(mb_predict_mv_ref16x16)
 void x264_mb_predict_mv_ref16x16( x264_t *h, int i_list, int i_ref, int16_t mvc[8][2], int *i_mvc );
 
+#define x264_mb_mc x264_template(mb_mc)
 void x264_mb_mc( x264_t *h );
+#define x264_mb_mc_8x8 x264_template(mb_mc_8x8)
 void x264_mb_mc_8x8( x264_t *h, int i8 );
 
 static ALWAYS_INLINE uint32_t pack16to32( uint32_t a, uint32_t b )

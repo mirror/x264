@@ -25,6 +25,9 @@
  *****************************************************************************/
 
 #include "input.h"
+#include "common/common.h"
+
+#define thread_input x264_glue3(thread, BIT_DEPTH, input)
 
 typedef struct
 {

@@ -24,6 +24,7 @@
  *****************************************************************************/
 
 #include "video.h"
+
 #define NAME "resize"
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, NAME, __VA_ARGS__ )
 

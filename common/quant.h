@@ -69,6 +69,7 @@ typedef struct
     int (*trellis_cabac_chroma_422_dc)( TRELLIS_PARAMS );
 } x264_quant_function_t;
 
+#define x264_quant_init x264_template(quant_init)
 void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf );
 
 #endif

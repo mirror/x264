@@ -25,6 +25,7 @@
 
 #include "common/common.h"
 #include "ppccommon.h"
+#include "deblock.h"
 
 #if !HIGH_BIT_DEPTH
 #define transpose4x16(r0, r1, r2, r3)        \

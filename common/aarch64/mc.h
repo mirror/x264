@@ -26,6 +26,7 @@
 #ifndef X264_AARCH64_MC_H
 #define X264_AARCH64_MC_H
 
+#define x264_mc_init_aarch64 x264_template(mc_init_aarch64)
 void x264_mc_init_aarch64( int cpu, x264_mc_functions_t *pf );
 
 #endif

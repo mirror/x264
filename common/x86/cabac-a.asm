@@ -87,18 +87,18 @@ coeff_abs_level_transition: db 1, 2, 3, 3, 4, 5, 6, 7
 
 SECTION .text
 
-cextern cabac_range_lps
-cextern cabac_transition
-cextern cabac_renorm_shift
-cextern cabac_entropy
+cextern_common cabac_range_lps
+cextern_common cabac_transition
+cextern_common cabac_renorm_shift
+cextern_common cabac_entropy
 cextern cabac_size_unary
 cextern cabac_transition_unary
-cextern significant_coeff_flag_offset
-cextern significant_coeff_flag_offset_8x8
-cextern last_coeff_flag_offset
-cextern last_coeff_flag_offset_8x8
-cextern coeff_abs_level_m1_offset
-cextern count_cat_m1
+cextern_common significant_coeff_flag_offset
+cextern_common significant_coeff_flag_offset_8x8
+cextern_common last_coeff_flag_offset
+cextern_common last_coeff_flag_offset_8x8
+cextern_common coeff_abs_level_m1_offset
+cextern_common count_cat_m1
 cextern cabac_encode_ue_bypass
 
 %if ARCH_X86_64

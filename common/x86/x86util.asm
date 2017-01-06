@@ -24,6 +24,23 @@
 ;* For more information, contact us at licensing@x264.com.
 ;*****************************************************************************
 
+; like cextern, but with a plain x264 prefix instead of a bitdepth-specific one
+%macro cextern_common 1
+    %xdefine %1 mangle(x264 %+ _ %+ %1)
+    CAT_XDEFINE cglobaled_, %1, 1
+    extern %1
+%endmacro
+
+%ifndef BIT_DEPTH
+    %assign BIT_DEPTH 0
+%endif
+
+%if BIT_DEPTH > 8
+    %assign HIGH_BIT_DEPTH 1
+%else
+    %assign HIGH_BIT_DEPTH 0
+%endif
+
 %assign FENC_STRIDE 16
 %assign FDEC_STRIDE 32
 
@@ -53,7 +70,6 @@
 %endrep
 %endif
 %endmacro
-
 
 %macro SBUTTERFLY 4
 %ifidn %1, dqqq

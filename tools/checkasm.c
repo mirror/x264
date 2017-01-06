@@ -27,7 +27,6 @@
 
 #include <ctype.h>
 #include "common/common.h"
-#include "common/cpu.h"
 #include "encoder/macroblock.h"
 
 #ifdef _WIN32

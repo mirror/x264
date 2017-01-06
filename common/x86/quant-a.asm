@@ -1421,8 +1421,8 @@ cglobal denoise_dct, 4,4,4
 %endif
 %endmacro
 
-cextern decimate_table4
-cextern decimate_table8
+cextern_common decimate_table4
+cextern_common decimate_table8
 
 %macro DECIMATE4x4 1
 

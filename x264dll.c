@@ -23,7 +23,7 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#include "common/common.h"
+#include "common/base.h"
 #include <windows.h>
 
 /* Callback for our DLL so we can initialize pthread */

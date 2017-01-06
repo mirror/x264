@@ -29,10 +29,14 @@
 typedef struct x264_threadpool_t x264_threadpool_t;
 
 #if HAVE_THREAD
+#define x264_threadpool_init x264_template(threadpool_init)
 int   x264_threadpool_init( x264_threadpool_t **p_pool, int threads,
                             void (*init_func)(void *), void *init_arg );
+#define x264_threadpool_run x264_template(threadpool_run)
 void  x264_threadpool_run( x264_threadpool_t *pool, void *(*func)(void *), void *arg );
+#define x264_threadpool_wait x264_template(threadpool_wait)
 void *x264_threadpool_wait( x264_threadpool_t *pool, void *arg );
+#define x264_threadpool_delete x264_template(threadpool_delete)
 void  x264_threadpool_delete( x264_threadpool_t *pool );
 #else
 #define x264_threadpool_init(p,t,f,a) -1

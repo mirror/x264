@@ -26,12 +26,14 @@
 #include "common/common.h"
 #include "macroblock.h"
 #include "me.h"
+#include "slicetype-cl.h"
 
 #if HAVE_OPENCL
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
+#define x264_weights_analyse x264_template(weights_analyse)
 void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int b_lookahead );
 
 /* We define CL_QUEUE_THREAD_HANDLE_AMD here because it is not defined

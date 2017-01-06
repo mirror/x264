@@ -103,6 +103,9 @@ int x264_is_pipe( const char *path );
 #define x264_is_pipe(x) 0
 #endif
 
+#define x264_glue3_expand(x,y,z) x##_##y##_##z
+#define x264_glue3(x,y,z) x264_glue3_expand(x,y,z)
+
 #ifdef _MSC_VER
 #define DECLARE_ALIGNED( var, n ) __declspec(align(n)) var
 #else

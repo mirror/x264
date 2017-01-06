@@ -39,25 +39,15 @@ static uint8_t *nal_escape_c( uint8_t *dst, uint8_t *src, uint8_t *end )
     return dst;
 }
 
-uint8_t *x264_nal_escape_mmx2( uint8_t *dst, uint8_t *src, uint8_t *end );
-uint8_t *x264_nal_escape_sse2( uint8_t *dst, uint8_t *src, uint8_t *end );
-uint8_t *x264_nal_escape_avx2( uint8_t *dst, uint8_t *src, uint8_t *end );
-void x264_cabac_block_residual_rd_internal_sse2       ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_rd_internal_lzcnt      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_rd_internal_ssse3      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_rd_internal_ssse3_lzcnt( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_rd_internal_avx512     ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_8x8_rd_internal_sse2       ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_8x8_rd_internal_lzcnt      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_8x8_rd_internal_ssse3      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_8x8_rd_internal_ssse3_lzcnt( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_8x8_rd_internal_avx512     ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_internal_sse2  ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_internal_lzcnt ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_internal_avx2  ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_internal_avx512( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-
-uint8_t *x264_nal_escape_neon( uint8_t *dst, uint8_t *src, uint8_t *end );
+#if HAVE_MMX
+#include "x86/bitstream.h"
+#endif
+#if HAVE_ARMV6
+#include "arm/bitstream.h"
+#endif
+#if ARCH_AARCH64
+#include "aarch64/bitstream.h"
+#endif
 
 /****************************************************************************
  * x264_nal_encode:

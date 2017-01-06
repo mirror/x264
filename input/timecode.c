@@ -24,6 +24,7 @@
  *****************************************************************************/
 
 #include "input.h"
+
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "timecode", __VA_ARGS__ )
 
 typedef struct

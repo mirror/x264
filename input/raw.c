@@ -26,6 +26,7 @@
  *****************************************************************************/
 
 #include "input.h"
+
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "raw", __VA_ARGS__ )
 
 typedef struct

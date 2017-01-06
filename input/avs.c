@@ -25,6 +25,7 @@
  *****************************************************************************/
 
 #include "input.h"
+
 #if USE_AVXSYNTH
 #include <dlfcn.h>
 #if SYS_MACOSX
@@ -39,7 +40,6 @@
 #define avs_close FreeLibrary
 #define avs_address GetProcAddress
 #endif
-#define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "avs", __VA_ARGS__ )
 
 #define AVSC_NO_DECLSPEC
 #undef EXTERN_C
@@ -49,6 +49,8 @@
 #include "extras/avisynth_c.h"
 #endif
 #define AVSC_DECLARE_FUNC(name) name##_func name
+
+#define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "avs", __VA_ARGS__ )
 
 /* AVS uses a versioned interface to control backwards compatibility */
 /* YV12 support is required, which was added in 2.5 */

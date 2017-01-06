@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 152
+#define X264_BUILD 153
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -292,6 +292,7 @@ typedef struct x264_param_t
     int         i_width;
     int         i_height;
     int         i_csp;         /* CSP of encoded bitstream */
+    int         i_bitdepth;
     int         i_level_idc;
     int         i_frame_total; /* number of frames to encode if known, else 0 */
 
@@ -670,15 +671,6 @@ int     x264_param_apply_profile( x264_param_t *, const char *profile );
  * Picture structures and functions
  ****************************************************************************/
 
-/* x264_bit_depth:
- *      Specifies the number of bits per pixel that x264 uses. This is also the
- *      bit depth that x264 encodes in. If this value is > 8, x264 will read
- *      two bytes of input data for each pixel sample, and expect the upper
- *      (16-x264_bit_depth) bits to be zero.
- *      Note: The flag X264_CSP_HIGH_DEPTH must be used to specify the
- *      colorspace depth as well. */
-X264_API extern const int x264_bit_depth;
-
 /* x264_chroma_format:
  *      Specifies the chroma formats that x264 supports encoding. When this
  *      value is non-zero, then it represents a X264_CSP_* that is the only
@@ -913,10 +905,10 @@ void    x264_encoder_close( x264_t * );
  *      return the number of currently delayed (buffered) frames
  *      this should be used at the end of the stream, to know when you have all the encoded frames. */
 int     x264_encoder_delayed_frames( x264_t * );
-/* x264_encoder_maximum_delayed_frames( x264_t *h ):
+/* x264_encoder_maximum_delayed_frames( x264_t * ):
  *      return the maximum number of delayed (buffered) frames that can occur with the current
  *      parameters. */
-int     x264_encoder_maximum_delayed_frames( x264_t *h );
+int     x264_encoder_maximum_delayed_frames( x264_t * );
 /* x264_encoder_intra_refresh:
  *      If an intra refresh is not in progress, begin one with the next P-frame.
  *      If an intra refresh is in progress, begin one as soon as the current one finishes.

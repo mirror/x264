@@ -30,8 +30,8 @@
 // w12 holds x264_cabac_t.i_range
 
 function cabac_encode_decision_asm, export=1
-    movrel      x8,  X(cabac_range_lps)
-    movrel      x9,  X(cabac_transition)
+    movrel      x8,  X264(cabac_range_lps)
+    movrel      x9,  X264(cabac_transition)
     add         w10, w1, #CABAC_STATE
     ldrb        w3,  [x0,  x10]         // i_state
     ldr         w12, [x0,  #CABAC_I_RANGE]

@@ -1022,6 +1022,7 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
 
 /* Don't unroll the BIME_CACHE loop. I couldn't find any way to force this
  * other than making its iteration count not a compile-time constant. */
+#define x264_iter_kludge x264_template(iter_kludge)
 int x264_iter_kludge = 0;
 
 static void ALWAYS_INLINE me_refine_bidir( x264_t *h, x264_me_t *m0, x264_me_t *m1, int i_weight, int i8, int i_lambda2, int rd )
