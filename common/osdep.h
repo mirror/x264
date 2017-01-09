@@ -92,6 +92,9 @@ int x264_stat( const char *path, x264_struct_stat *buf );
 #define x264_stat        stat
 #endif
 
+/* mdate: return the current date in microsecond */
+int64_t x264_mdate( void );
+
 #if defined(_WIN32) && !HAVE_WINRT
 int x264_vfprintf( FILE *stream, const char *format, va_list arg );
 int x264_is_pipe( const char *path );
