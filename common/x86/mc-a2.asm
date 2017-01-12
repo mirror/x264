@@ -1257,36 +1257,27 @@ cglobal load_deinterleave_chroma_fdec, 4,4
     movu        m0, [%8]
     movu        m1, [%8+%1*mmsize/4]
 %if cpuflag(ssse3)
-    pshufb      m0, m3        ; b0 b1 b2 b3 g0 g1 g2 g3 r0 r1 r2 r3
-    pshufb      m1, m3        ; b4 b5 b6 b7 g4 g5 g6 g7 r4 r5 r6 r7
+    pshufb      m0, m3        ; a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3 __ __ __ __
+    pshufb      m1, m3        ; a4 a5 a6 a7 b4 b5 b6 b7 c4 c5 c6 c7 __ __ __ __
+    SBUTTERFLY  dq, 0, 1, 2
 %elif %1 == 3
-    psrldq      m2, m0, 6
-    punpcklqdq  m0, m1        ; b0 g0 r0 b1 g1 r1 __ __ b4 g4 r4 b5 g5 r5
-    psrldq      m1, 6
-    punpcklqdq  m2, m1        ; b2 g2 r2 b3 g3 r3 __ __ b6 g6 r6 b7 g7 r7
-    psrlq       m3, m0, 24
-    psrlq       m4, m2, 24
-    punpckhbw   m1, m0, m3    ; b4 b5 g4 g5 r4 r5
-    punpcklbw   m0, m3        ; b0 b1 g0 g1 r0 r1
-    punpckhbw   m3, m2, m4    ; b6 b7 g6 g7 r6 r7
-    punpcklbw   m2, m4        ; b2 b3 g2 g3 r2 r3
-    punpcklwd   m0, m2        ; b0 b1 b2 b3 g0 g1 g2 g3 r0 r1 r2 r3
-    punpcklwd   m1, m3        ; b4 b5 b6 b7 g4 g5 g6 g7 r4 r5 r6 r7
-%else
-    pshufd      m3, m0, q2301
-    pshufd      m4, m1, q2301
-    punpckhbw   m2, m0, m3    ; b2 b3 g2 g3 r2 r3
-    punpcklbw   m0, m3        ; b0 b1 g0 g1 r0 r1
-    punpckhbw   m3, m1, m4    ; b6 b7 g6 g7 r6 r7
-    punpcklbw   m1, m4        ; b4 b5 g4 g5 r4 r5
-    punpcklwd   m0, m2        ; b0 b1 b2 b3 g0 g1 g2 g3 r0 r1 r2 r3
-    punpcklwd   m1, m3        ; b4 b5 b6 b7 g4 g5 g6 g7 r4 r5 r6 r7
+    SBUTTERFLY  bw, 0, 1, 2
+    pshufd      m2, m0, q0321 ; c0 c4 a1 a5 b1 b5 c1 c5 __ __ __ __ a0 a4 b0 b4
+    punpcklbw   m3, m2, m1    ; c0 c2 c4 c6 a1 a3 a5 a7 b1 b3 b5 b7 c1 c3 c5 c7
+    punpckhbw   m2, m0        ; __ __ __ __ __ __ __ __ a0 a2 a4 a6 b0 b2 b4 b6
+    pshufd      m0, m3, q2103 ; c1 c3 c5 c7 __ __ __ __ a1 a3 a5 a7 b1 b3 b5 b7
+    punpckhbw   m2, m0        ; a0 a1 a2 a3 a4 a5 a6 a7 b0 b1 b2 b3 b4 b5 b6 b7
+    punpcklbw   m3, m0        ; c0 c1 c2 c3 c4 c5 c6 c7
+    SWAP         0, 2
+    SWAP         1, 3
+%else ; %1 == 4
+    SBUTTERFLY  bw, 0, 1, 2
+    SBUTTERFLY  bw, 0, 1, 2
+    SBUTTERFLY  bw, 0, 1, 2
 %endif
-    punpckldq   m2, m0, m1    ; b0 b1 b2 b3 b4 b5 b6 b7 g0 g1 g2 g3 g4 g5 g6 g7
-    punpckhdq   m0, m1        ; r0 r1 r2 r3 r4 r5 r6 r7
-    movh   [r0+%9], m2
-    movhps [r2+%9], m2
-    movh   [r4+%9], m0
+    movq   [r0+%9], m0
+    movhps [r2+%9], m0
+    movq   [r4+%9], m1
     add         %8, %1*mmsize/2
     add         %9, mmsize/2
     jl %%loopx
@@ -1337,13 +1328,6 @@ cglobal plane_copy_deinterleave_rgb, 1,7
 .ret:
     REP_RET
 %endmacro
-
-%if HIGH_BIT_DEPTH == 0
-INIT_XMM sse2
-PLANE_DEINTERLEAVE_RGB
-INIT_XMM ssse3
-PLANE_DEINTERLEAVE_RGB
-%endif ; !HIGH_BIT_DEPTH
 
 %macro PLANE_DEINTERLEAVE_V210 0
 ;-----------------------------------------------------------------------------
@@ -1427,8 +1411,10 @@ PLANE_DEINTERLEAVE
 INIT_XMM sse2
 PLANE_INTERLEAVE
 PLANE_DEINTERLEAVE
+PLANE_DEINTERLEAVE_RGB
 INIT_XMM ssse3
 PLANE_DEINTERLEAVE
+PLANE_DEINTERLEAVE_RGB
 %endif
 
 ; These functions are not general-use; not only do the SSE ones require aligned input,
