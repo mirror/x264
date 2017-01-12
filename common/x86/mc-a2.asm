@@ -52,8 +52,8 @@ deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
 deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
 %else
 copy_swap_shuf: times 2 db 1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14
-deinterleave_rgb_shuf: db 0,3,6,9,1,4,7,10,2,5,8,11,-1,-1,-1,-1
-                       db 0,4,8,12,1,5,9,13,2,6,10,14,-1,-1,-1,-1
+deinterleave_rgb_shuf: db  0, 3, 6, 9, 0, 3, 6, 9, 1, 4, 7,10, 2, 5, 8,11
+                       db  0, 4, 8,12, 0, 4, 8,12, 1, 5, 9,13, 2, 6,10,14
 
 deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
@@ -96,6 +96,7 @@ cextern pw_0to15
 cextern pd_8
 cextern pd_0123
 cextern pd_ffff
+cextern deinterleave_shufd
 
 %macro LOAD_ADD 4
     movh       %4, %3
@@ -1247,19 +1248,41 @@ cglobal load_deinterleave_chroma_fdec, 4,4
 %endmacro ; PLANE_DEINTERLEAVE
 
 %macro PLANE_DEINTERLEAVE_RGB_CORE 9 ; pw, i_dsta, i_dstb, i_dstc, i_src, w, h, tmp1, tmp2
-%if cpuflag(ssse3)
+%if mmsize == 32
+    vbroadcasti128 m3, [deinterleave_rgb_shuf+(%1-3)*16]
+%elif cpuflag(ssse3)
     mova        m3, [deinterleave_rgb_shuf+(%1-3)*16]
 %endif
 %%loopy:
     mov         %8, r6
     mov         %9, %6
 %%loopx:
+%if mmsize == 32 && %1 == 3
+    movu       xm0,     [%8+0*12]
+    vinserti128 m0, m0, [%8+1*12], 1
+    movu       xm1,     [%8+2*12]
+    vinserti128 m1, m1, [%8+3*12], 1
+%else
     movu        m0, [%8]
     movu        m1, [%8+%1*mmsize/4]
+%endif
 %if cpuflag(ssse3)
-    pshufb      m0, m3        ; a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3 __ __ __ __
-    pshufb      m1, m3        ; a4 a5 a6 a7 b4 b5 b6 b7 c4 c5 c6 c7 __ __ __ __
+    pshufb      m0, m3        ; a0 a1 a2 a3 a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3
+    pshufb      m1, m3        ; a4 a5 a6 a7 a4 a5 a6 a7 b4 b5 b6 b7 c4 c5 c6 c7
+%if mmsize == 32
+    vpblendd    m2, m0, m1, 0x22
+    punpckhdq   m0, m1
+    vpermd      m2, m4, m2
+    vpermd      m0, m4, m0
+    mova   [r0+%9], xm2
+    mova   [r2+%9], xm0
+    vextracti128 [r4+%9], m0, 1
+%else
     SBUTTERFLY  dq, 0, 1, 2
+    movq   [r0+%9], m0
+    movq   [r2+%9], m1
+    movhps [r4+%9], m1
+%endif
 %elif %1 == 3
     SBUTTERFLY  bw, 0, 1, 2
     pshufd      m2, m0, q0321 ; c0 c4 a1 a5 b1 b5 c1 c5 __ __ __ __ a0 a4 b0 b4
@@ -1268,16 +1291,17 @@ cglobal load_deinterleave_chroma_fdec, 4,4
     pshufd      m0, m3, q2103 ; c1 c3 c5 c7 __ __ __ __ a1 a3 a5 a7 b1 b3 b5 b7
     punpckhbw   m2, m0        ; a0 a1 a2 a3 a4 a5 a6 a7 b0 b1 b2 b3 b4 b5 b6 b7
     punpcklbw   m3, m0        ; c0 c1 c2 c3 c4 c5 c6 c7
-    SWAP         0, 2
-    SWAP         1, 3
+    movq   [r0+%9], m2
+    movhps [r2+%9], m2
+    movq   [r4+%9], m3
 %else ; %1 == 4
     SBUTTERFLY  bw, 0, 1, 2
     SBUTTERFLY  bw, 0, 1, 2
     SBUTTERFLY  bw, 0, 1, 2
-%endif
     movq   [r0+%9], m0
     movhps [r2+%9], m0
     movq   [r4+%9], m1
+%endif
     add         %8, %1*mmsize/2
     add         %9, mmsize/2
     jl %%loopx
@@ -1318,6 +1342,9 @@ cglobal plane_copy_deinterleave_rgb, 1,7
     neg         r1
     mov        r9m, r1
     mov         r1, r10m
+%endif
+%if mmsize == 32
+    mova        m4, [deinterleave_shufd]
 %endif
     cmp  dword r8m, 4
     je .pw4
@@ -1414,6 +1441,8 @@ PLANE_DEINTERLEAVE
 PLANE_DEINTERLEAVE_RGB
 INIT_XMM ssse3
 PLANE_DEINTERLEAVE
+PLANE_DEINTERLEAVE_RGB
+INIT_YMM avx2
 PLANE_DEINTERLEAVE_RGB
 %endif
 
