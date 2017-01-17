@@ -25,7 +25,7 @@
 
 #include "asm.S"
 
-function x264_nal_escape_neon, export=1
+function nal_escape_neon, export=1
     movi        v0.16b,  #0xff
     movi        v4.16b,  #4
     mov         w3,  #3
