@@ -1431,7 +1431,7 @@ endfunc
     add         v0.8h,  v0.8h,  v5.8h
 .endm
 
-function integral_init4h_neon, export=1
+function x264_integral_init4h_neon, export=1
     sub         x3,  x0,  x2, lsl #1
     ld1        {v6.8b,v7.8b}, [x1], #16
 1:
@@ -1466,7 +1466,7 @@ endfunc
     add         v0.8h,  v0.8h,  \s\().8h
 .endm
 
-function integral_init8h_neon, export=1
+function x264_integral_init8h_neon, export=1
     sub         x3,  x0,  x2, lsl #1
     ld1        {v16.8b,v17.8b}, [x1], #16
 1:
@@ -1483,7 +1483,7 @@ function integral_init8h_neon, export=1
     ret
 endfunc
 
-function integral_init4v_neon, export=1
+function x264_integral_init4v_neon, export=1
     mov         x3,  x0
     add         x4,  x0,  x2,  lsl #3
     add         x8,  x0,  x2,  lsl #4
@@ -1518,7 +1518,7 @@ function integral_init4v_neon, export=1
     ret
 endfunc
 
-function integral_init8v_neon, export=1
+function x264_integral_init8v_neon, export=1
     add         x2,  x0,  x1,  lsl #4
     sub         x1,  x1,  #8
     ands        x3,  x1,  #16 - 1

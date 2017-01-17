@@ -1652,7 +1652,7 @@ endfunc
     vadd.u16        q0,  q0,  q2
 .endm
 
-function integral_init4h_neon
+function x264_integral_init4h_neon
     sub             r3,  r0,  r2, lsl #1
     vld1.8          {d6, d7}, [r1, :128]!
 1:
@@ -1687,7 +1687,7 @@ endfunc
     vadd.u16        q0,  q0,   \s
 .endm
 
-function integral_init8h_neon
+function x264_integral_init8h_neon
     sub             r3,  r0,  r2, lsl #1
     vld1.8          {d16, d17}, [r1, :128]!
 1:
@@ -1704,7 +1704,7 @@ function integral_init8h_neon
     bx              lr
 endfunc
 
-function integral_init4v_neon
+function x264_integral_init4v_neon
     push            {r4-r5}
     mov             r3,   r0
     add             r4,   r0,   r2,  lsl #3
@@ -1743,7 +1743,7 @@ function integral_init4v_neon
     bx              lr
 endfunc
 
-function integral_init8v_neon
+function x264_integral_init8v_neon
     add             r2,  r0,  r1,  lsl #4
     sub             r1,  r1,  #8
     ands            r3,  r1,  #16 - 1

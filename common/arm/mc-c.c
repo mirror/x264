@@ -102,10 +102,10 @@ void x264_hpel_filter_v_neon( uint8_t *, uint8_t *, int16_t *, intptr_t, int );
 void x264_hpel_filter_c_neon( uint8_t *, int16_t *, int );
 void x264_hpel_filter_h_neon( uint8_t *, uint8_t *, int );
 
-void integral_init4h_neon( uint16_t *, uint8_t *, intptr_t );
-void integral_init4v_neon( uint16_t *, uint16_t *, intptr_t );
-void integral_init8h_neon( uint16_t *, uint8_t *, intptr_t );
-void integral_init8v_neon( uint16_t *, intptr_t );
+void x264_integral_init4h_neon( uint16_t *, uint8_t *, intptr_t );
+void x264_integral_init4v_neon( uint16_t *, uint16_t *, intptr_t );
+void x264_integral_init8h_neon( uint16_t *, uint8_t *, intptr_t );
+void x264_integral_init8v_neon( uint16_t *, intptr_t );
 
 void x264_mbtree_propagate_cost_neon( int16_t *, uint16_t *, uint16_t *, uint16_t *, uint16_t *, float *, int );
 
@@ -291,10 +291,10 @@ void x264_mc_init_arm( int cpu, x264_mc_functions_t *pf )
     pf->hpel_filter = hpel_filter_neon;
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_neon;
 
-    pf->integral_init4h = integral_init4h_neon;
-    pf->integral_init8h = integral_init8h_neon;
-    pf->integral_init4v = integral_init4v_neon;
-    pf->integral_init8v = integral_init8v_neon;
+    pf->integral_init4h = x264_integral_init4h_neon;
+    pf->integral_init8h = x264_integral_init8h_neon;
+    pf->integral_init4v = x264_integral_init4v_neon;
+    pf->integral_init8v = x264_integral_init8v_neon;
 
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
     pf->mbtree_propagate_list = x264_mbtree_propagate_list_neon;
