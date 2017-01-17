@@ -37,24 +37,23 @@ filt_mul20: times 32 db 20
 filt_mul15: times 16 db 1, -5
 filt_mul51: times 16 db -5, 1
 hpel_shuf: times 2 db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
-deinterleave_shuf: times 2 db 0,2,4,6,8,10,12,14,1,3,5,7,9,11,13,15
 
 %if HIGH_BIT_DEPTH
-copy_swap_shuf: times 2 db 2,3,0,1,6,7,4,5,10,11,8,9,14,15,12,13
 v210_mask: times 4 dq 0xc00ffc003ff003ff
 v210_luma_shuf: times 2 db 1,2,4,5,6,7,9,10,12,13,14,15,12,13,14,15
 v210_chroma_shuf: times 2 db 0,1,2,3,5,6,8,9,10,11,13,14,10,11,13,14
 ; vpermd indices {0,1,2,4,5,7,_,_} merged in the 3 lsb of each dword to save a register
 v210_mult: dw 0x2000,0x7fff,0x0801,0x2000,0x7ffa,0x0800,0x7ffc,0x0800
            dw 0x1ffd,0x7fff,0x07ff,0x2000,0x7fff,0x0800,0x7fff,0x0800
-
+copy_swap_shuf:       SHUFFLE_MASK_W 1,0,3,2,5,4,7,6
+deinterleave_shuf:    SHUFFLE_MASK_W 0,2,4,6,1,3,5,7
 deinterleave_shuf32a: SHUFFLE_MASK_W 0,2,4,6,8,10,12,14
 deinterleave_shuf32b: SHUFFLE_MASK_W 1,3,5,7,9,11,13,15
 %else
-copy_swap_shuf: times 2 db 1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14
 deinterleave_rgb_shuf: db  0, 3, 6, 9, 0, 3, 6, 9, 1, 4, 7,10, 2, 5, 8,11
                        db  0, 4, 8,12, 0, 4, 8,12, 1, 5, 9,13, 2, 6,10,14
-
+copy_swap_shuf:        db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
+deinterleave_shuf:     db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
 deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
 %endif ; !HIGH_BIT_DEPTH
@@ -940,7 +939,11 @@ HPEL
 %macro PLANE_COPY_CORE 1 ; swap
 %if %1
 cglobal plane_copy_swap_core, 6,7
+%if mmsize == 32
+    vbroadcasti128 m4, [copy_swap_shuf]
+%else
     mova   m4, [copy_swap_shuf]
+%endif
 %else
 cglobal plane_copy_core, 6,7
 %endif
@@ -1042,24 +1045,23 @@ PLANE_COPY_CORE 1
 %endmacro
 
 %macro DEINTERLEAVE 6 ; dstu, dstv, src, dstv==dstu+8, shuffle constant, is aligned
-%if HIGH_BIT_DEPTH
-%assign n 0
-%rep 16/mmsize
-    mova     m0, [%3+(n+0)*mmsize]
-    mova     m1, [%3+(n+1)*mmsize]
+    mova     m0, [%3]
+%if mmsize == 32
+    pshufb   m0, %5
+    vpermq   m0, m0, q3120
+    mov%6  [%1], xm0
+    vextracti128 [%2], m0, 1
+%elif HIGH_BIT_DEPTH
+    mova     m1, [%3+mmsize]
     psrld    m2, m0, 16
     psrld    m3, m1, 16
     pand     m0, %5
     pand     m1, %5
     packssdw m0, m1
     packssdw m2, m3
-    mov%6    [%1+(n/2)*mmsize], m0
-    mov%6    [%2+(n/2)*mmsize], m2
-    %assign n (n+2)
-%endrep
+    mov%6  [%1], m0
+    mov%6  [%2], m2
 %else ; !HIGH_BIT_DEPTH
-%if mmsize==16
-    mova   m0, [%3]
 %if cpuflag(ssse3)
     pshufb m0, %5
 %else
@@ -1074,20 +1076,6 @@ PLANE_COPY_CORE 1
     movq   [%1], m0
     movhps [%2], m0
 %endif
-%else
-    mova   m0, [%3]
-    mova   m1, [%3+8]
-    mova   m2, m0
-    mova   m3, m1
-    pand   m0, %5
-    pand   m1, %5
-    psrlw  m2, 8
-    psrlw  m3, 8
-    packuswb m0, m1
-    packuswb m2, m3
-    mova   [%1], m0
-    mova   [%2], m2
-%endif ; mmsize == 16
 %endif ; HIGH_BIT_DEPTH
 %endmacro
 
@@ -1176,7 +1164,9 @@ cglobal store_interleave_chroma, 5,5
 %endmacro ; PLANE_INTERLEAVE
 
 %macro DEINTERLEAVE_START 0
-%if HIGH_BIT_DEPTH
+%if mmsize == 32
+    vbroadcasti128 m4, [deinterleave_shuf]
+%elif HIGH_BIT_DEPTH
     mova   m4, [pd_ffff]
 %elif cpuflag(ssse3)
     mova   m4, [deinterleave_shuf]
@@ -1191,31 +1181,44 @@ cglobal store_interleave_chroma, 5,5
 ;                               pixel *dstv, intptr_t i_dstv,
 ;                               pixel *src,  intptr_t i_src, int w, int h )
 ;-----------------------------------------------------------------------------
+%if ARCH_X86_64
+cglobal plane_copy_deinterleave, 6,9
+%define %%w r7
+%define %%h r8d
+    mov    r8d, r7m
+%else
 cglobal plane_copy_deinterleave, 6,7
+%define %%w r6m
+%define %%h dword r7m
+%endif
+%if HIGH_BIT_DEPTH
+%assign %%n 16
+%else
+%assign %%n mmsize/2
+%endif
     DEINTERLEAVE_START
     mov    r6d, r6m
     FIX_STRIDES r1, r3, r5, r6d
-%if HIGH_BIT_DEPTH
-    mov    r6m, r6d
-%endif
     add    r0,  r6
     add    r2,  r6
     lea    r4, [r4+r6*2]
-.loopy:
-    mov    r6d, r6m
     neg    r6
-.loopx:
-    DEINTERLEAVE r0+r6+0*SIZEOF_PIXEL, r2+r6+0*SIZEOF_PIXEL, r4+r6*2+ 0*SIZEOF_PIXEL, 0, m4, u
-    DEINTERLEAVE r0+r6+8*SIZEOF_PIXEL, r2+r6+8*SIZEOF_PIXEL, r4+r6*2+16*SIZEOF_PIXEL, 0, m4, u
-    add    r6, 16*SIZEOF_PIXEL
-    jl .loopx
+    mov   %%w, r6
+.loop:
+    DEINTERLEAVE r0+r6,     r2+r6,     r4+r6*2,       0, m4, u
+    DEINTERLEAVE r0+r6+%%n, r2+r6+%%n, r4+r6*2+%%n*2, 0, m4, u
+    add    r6, %%n*2
+    jl .loop
     add    r0, r1
     add    r2, r3
     add    r4, r5
-    dec dword r7m
-    jg .loopy
+    mov    r6, %%w
+    dec   %%h
+    jg .loop
     RET
+%endmacro ; PLANE_DEINTERLEAVE
 
+%macro LOAD_DEINTERLEAVE_CHROMA 0
 ;-----------------------------------------------------------------------------
 ; void load_deinterleave_chroma_fenc( pixel *dst, pixel *src, intptr_t i_src, int height )
 ;-----------------------------------------------------------------------------
@@ -1245,7 +1248,7 @@ cglobal load_deinterleave_chroma_fdec, 4,4
     sub   r3d, 2
     jg .loop
     RET
-%endmacro ; PLANE_DEINTERLEAVE
+%endmacro ; LOAD_DEINTERLEAVE_CHROMA
 
 %macro PLANE_DEINTERLEAVE_RGB_CORE 9 ; pw, i_dsta, i_dstb, i_dstc, i_src, w, h, tmp1, tmp2
 %if mmsize == 32
@@ -1414,33 +1417,31 @@ ALIGN 16
     RET
 %endmacro ; PLANE_DEINTERLEAVE_V210
 
-%if HIGH_BIT_DEPTH
 INIT_MMX mmx2
 PLANE_INTERLEAVE
-INIT_MMX mmx
-PLANE_DEINTERLEAVE
 INIT_XMM sse2
 PLANE_INTERLEAVE
 PLANE_DEINTERLEAVE
+LOAD_DEINTERLEAVE_CHROMA
+INIT_YMM avx2
+PLANE_DEINTERLEAVE
+
+%if HIGH_BIT_DEPTH
 INIT_XMM ssse3
 PLANE_DEINTERLEAVE_V210
 INIT_XMM avx
 PLANE_INTERLEAVE
 PLANE_DEINTERLEAVE
+LOAD_DEINTERLEAVE_CHROMA
 PLANE_DEINTERLEAVE_V210
 INIT_YMM avx2
 PLANE_DEINTERLEAVE_V210
 %else
-INIT_MMX mmx2
-PLANE_INTERLEAVE
-INIT_MMX mmx
-PLANE_DEINTERLEAVE
 INIT_XMM sse2
-PLANE_INTERLEAVE
-PLANE_DEINTERLEAVE
 PLANE_DEINTERLEAVE_RGB
 INIT_XMM ssse3
 PLANE_DEINTERLEAVE
+LOAD_DEINTERLEAVE_CHROMA
 PLANE_DEINTERLEAVE_RGB
 INIT_YMM avx2
 PLANE_DEINTERLEAVE_RGB
@@ -1947,7 +1948,7 @@ cglobal frame_init_lowres_core, 6,7,(12-4*(BIT_DEPTH/9)) ; 8 for HIGH_BIT_DEPTH,
     jg .hloop
 %else ; !HIGH_BIT_DEPTH
 %if cpuflag(avx2)
-    mova      m7, [deinterleave_shuf]
+    vbroadcasti128 m7, [deinterleave_shuf]
 %elif cpuflag(xop)
     mova      m6, [deinterleave_shuf32a]
     mova      m7, [deinterleave_shuf32b]

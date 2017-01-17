@@ -1509,7 +1509,7 @@ static int check_mc( int cpu_ref, int cpu_new )
             int h = plane_specs[i].h;
             intptr_t dst_stride = w;
             intptr_t src_stride = (2*w + 127) & ~63;
-            intptr_t offv = (dst_stride*h + 31) & ~15;
+            intptr_t offv = (dst_stride*h + 63) & ~31;
             memset( pbuf3, 0, 0x1000 );
             memset( pbuf4, 0, 0x1000 );
             call_c( mc_c.plane_copy_deinterleave, pbuf3, dst_stride, pbuf3+offv, dst_stride, pbuf1, src_stride, w, h );
