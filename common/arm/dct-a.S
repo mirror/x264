@@ -62,7 +62,7 @@ endconst
 .endm
 
 
-function x264_dct4x4dc_neon
+function dct4x4dc_neon
     vld1.64         {d0-d3}, [r0,:128]
     SUMSUB_ABCD     d4, d5, d6, d7, d0, d1, d2, d3
     SUMSUB_ABCD     d0, d2, d3, d1, d4, d6, d5, d7
@@ -81,7 +81,7 @@ function x264_dct4x4dc_neon
     bx              lr
 endfunc
 
-function x264_idct4x4dc_neon
+function idct4x4dc_neon
     vld1.64         {d0-d3}, [r0,:128]
     SUMSUB_ABCD     d4, d5, d6, d7, d0, d1, d2, d3
     SUMSUB_ABCD     d0, d2, d3, d1, d4, d6, d5, d7
@@ -105,7 +105,7 @@ endfunc
     vsub.s16        \d3, \d7, \d5
 .endm
 
-function x264_sub4x4_dct_neon
+function sub4x4_dct_neon
     mov             r3, #FENC_STRIDE
     mov             ip, #FDEC_STRIDE
     vld1.32         {d0[]}, [r1,:32], r3
@@ -128,7 +128,7 @@ function x264_sub4x4_dct_neon
     bx              lr
 endfunc
 
-function x264_sub8x4_dct_neon, export=0
+function sub8x4_dct_neon, export=0
     vld1.64         {d0}, [r1,:64], r3
     vld1.64         {d1}, [r2,:64], ip
     vsubl.u8        q8,  d0,  d1
@@ -164,34 +164,34 @@ function x264_sub8x4_dct_neon, export=0
     bx              lr
 endfunc
 
-function x264_sub8x8_dct_neon
+function sub8x8_dct_neon
     push            {lr}
     mov             r3, #FENC_STRIDE
     mov             ip, #FDEC_STRIDE
-    bl              x264_sub8x4_dct_neon
+    bl              sub8x4_dct_neon
     pop             {lr}
-    b               x264_sub8x4_dct_neon
+    b               sub8x4_dct_neon
 endfunc
 
-function x264_sub16x16_dct_neon
+function sub16x16_dct_neon
     push            {lr}
     mov             r3, #FENC_STRIDE
     mov             ip, #FDEC_STRIDE
-    bl              x264_sub8x4_dct_neon
-    bl              x264_sub8x4_dct_neon
+    bl              sub8x4_dct_neon
+    bl              sub8x4_dct_neon
     sub             r1, r1, #8*FENC_STRIDE-8
     sub             r2, r2, #8*FDEC_STRIDE-8
-    bl              x264_sub8x4_dct_neon
-    bl              x264_sub8x4_dct_neon
+    bl              sub8x4_dct_neon
+    bl              sub8x4_dct_neon
     sub             r1, r1, #8
     sub             r2, r2, #8
-    bl              x264_sub8x4_dct_neon
-    bl              x264_sub8x4_dct_neon
+    bl              sub8x4_dct_neon
+    bl              sub8x4_dct_neon
     sub             r1, r1, #8*FENC_STRIDE-8
     sub             r2, r2, #8*FDEC_STRIDE-8
-    bl              x264_sub8x4_dct_neon
+    bl              sub8x4_dct_neon
     pop             {lr}
-    b               x264_sub8x4_dct_neon
+    b               sub8x4_dct_neon
 endfunc
 
 
@@ -226,7 +226,7 @@ endfunc
     SUMSUB_SHR2  2, q11, q13, q3,  q13,  q0, q1
 .endm
 
-function x264_sub8x8_dct8_neon
+function sub8x8_dct8_neon
     mov             r3, #FENC_STRIDE
     mov             ip, #FDEC_STRIDE
     vld1.64         {d16}, [r1,:64], r3
@@ -278,19 +278,19 @@ function x264_sub8x8_dct8_neon
     bx              lr
 endfunc
 
-function x264_sub16x16_dct8_neon
+function sub16x16_dct8_neon
     push            {lr}
-    bl              X(x264_sub8x8_dct8_neon)
+    bl              X(sub8x8_dct8_neon)
     sub             r1,  r1,  #FENC_STRIDE*8 - 8
     sub             r2,  r2,  #FDEC_STRIDE*8 - 8
-    bl              X(x264_sub8x8_dct8_neon)
+    bl              X(sub8x8_dct8_neon)
     sub             r1,  r1,  #8
     sub             r2,  r2,  #8
-    bl              X(x264_sub8x8_dct8_neon)
+    bl              X(sub8x8_dct8_neon)
     pop             {lr}
     sub             r1,  r1,  #FENC_STRIDE*8 - 8
     sub             r2,  r2,  #FDEC_STRIDE*8 - 8
-    b               X(x264_sub8x8_dct8_neon)
+    b               X(sub8x8_dct8_neon)
 endfunc
 
 
@@ -303,7 +303,7 @@ endfunc
     vadd.s16        \d6, \d6, \d1
 .endm
 
-function x264_add4x4_idct_neon
+function add4x4_idct_neon
     mov             r2, #FDEC_STRIDE
     vld1.64         {d0-d3}, [r1,:128]
 
@@ -335,7 +335,7 @@ function x264_add4x4_idct_neon
     bx              lr
 endfunc
 
-function x264_add8x4_idct_neon, export=0
+function add8x4_idct_neon, export=0
     vld1.64         {d0-d3}, [r1,:128]!
     IDCT_1D         d16, d18, d20, d22, d0, d1, d2, d3
     vld1.64         {d4-d7}, [r1,:128]!
@@ -375,29 +375,29 @@ function x264_add8x4_idct_neon, export=0
     bx              lr
 endfunc
 
-function x264_add8x8_idct_neon
+function add8x8_idct_neon
     mov             r2, #FDEC_STRIDE
     mov             ip, lr
-    bl              x264_add8x4_idct_neon
+    bl              add8x4_idct_neon
     mov             lr, ip
-    b               x264_add8x4_idct_neon
+    b               add8x4_idct_neon
 endfunc
 
-function x264_add16x16_idct_neon
+function add16x16_idct_neon
     mov             r2, #FDEC_STRIDE
     mov             ip, lr
-    bl              x264_add8x4_idct_neon
-    bl              x264_add8x4_idct_neon
+    bl              add8x4_idct_neon
+    bl              add8x4_idct_neon
     sub             r0, r0, #8*FDEC_STRIDE-8
-    bl              x264_add8x4_idct_neon
-    bl              x264_add8x4_idct_neon
+    bl              add8x4_idct_neon
+    bl              add8x4_idct_neon
     sub             r0, r0, #8
-    bl              x264_add8x4_idct_neon
-    bl              x264_add8x4_idct_neon
+    bl              add8x4_idct_neon
+    bl              add8x4_idct_neon
     sub             r0, r0, #8*FDEC_STRIDE-8
-    bl              x264_add8x4_idct_neon
+    bl              add8x4_idct_neon
     mov             lr, ip
-    b               x264_add8x4_idct_neon
+    b               add8x4_idct_neon
 endfunc
 
 
@@ -435,7 +435,7 @@ endfunc
     SUMSUB_AB       q11, q12, q2,  q12
 .endm
 
-function x264_add8x8_idct8_neon
+function add8x8_idct8_neon
     mov             r2,  #FDEC_STRIDE
     vld1.64         {d16-d19}, [r1,:128]!
     vld1.64         {d20-d23}, [r1,:128]!
@@ -497,20 +497,20 @@ function x264_add8x8_idct8_neon
     bx              lr
 endfunc
 
-function x264_add16x16_idct8_neon
+function add16x16_idct8_neon
     mov             ip,  lr
-    bl              X(x264_add8x8_idct8_neon)
+    bl              X(add8x8_idct8_neon)
     sub             r0,  r0,  #8*FDEC_STRIDE-8
-    bl              X(x264_add8x8_idct8_neon)
+    bl              X(add8x8_idct8_neon)
     sub             r0,  r0,  #8
-    bl              X(x264_add8x8_idct8_neon)
+    bl              X(add8x8_idct8_neon)
     sub             r0,  r0,  #8*FDEC_STRIDE-8
     mov             lr,  ip
-    b               X(x264_add8x8_idct8_neon)
+    b               X(add8x8_idct8_neon)
 endfunc
 
 
-function x264_add8x8_idct_dc_neon
+function add8x8_idct_dc_neon
     mov             r2,  #FDEC_STRIDE
     vld1.64         {d16}, [r1,:64]
     vrshr.s16       d16, d16, #6
@@ -593,7 +593,7 @@ endfunc
     vst1.64         {d22-d23}, [r2,:128], r3
 .endm
 
-function x264_add16x16_idct_dc_neon
+function add16x16_idct_dc_neon
     mov             r2,  r0
     mov             r3,  #FDEC_STRIDE
     vmov.i16        q15, #0
@@ -609,7 +609,7 @@ function x264_add16x16_idct_dc_neon
     bx              lr
 endfunc
 
-function x264_sub8x8_dct_dc_neon
+function sub8x8_dct_dc_neon
     mov             r3,  #FENC_STRIDE
     mov             ip,  #FDEC_STRIDE
     vld1.64         {d16}, [r1,:64], r3
@@ -657,7 +657,7 @@ function x264_sub8x8_dct_dc_neon
     bx              lr
 endfunc
 
-function x264_sub8x16_dct_dc_neon
+function sub8x16_dct_dc_neon
     mov             r3,  #FENC_STRIDE
     mov             ip,  #FDEC_STRIDE
     vld1.64         {d16}, [r1,:64], r3
@@ -751,7 +751,7 @@ function x264_sub8x16_dct_dc_neon
 endfunc
 
 
-function x264_zigzag_scan_4x4_frame_neon
+function zigzag_scan_4x4_frame_neon
     movrel      r2, scan4x4_frame
     vld1.64     {d0-d3},   [r1,:128]
     vld1.64     {d16-d19}, [r2,:128]

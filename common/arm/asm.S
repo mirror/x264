@@ -34,9 +34,9 @@
 #endif
 
 #ifdef PREFIX
-#   define EXTERN_ASM _
+#   define EXTERN_ASM _x264_
 #else
-#   define EXTERN_ASM
+#   define EXTERN_ASM x264_
 #endif
 
 #ifdef __ELF__
@@ -75,7 +75,11 @@ ELF     .eabi_attribute 25, \val
 
 .macro function name, export=1
     .macro endfunc
+.if \export
+ELF     .size   EXTERN_ASM\name, . - EXTERN_ASM\name
+.else
 ELF     .size   \name, . - \name
+.endif
 FUNC    .endfunc
         .purgem endfunc
     .endm

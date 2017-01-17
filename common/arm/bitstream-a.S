@@ -25,7 +25,7 @@
 
 #include "asm.S"
 
-function x264_nal_escape_neon
+function nal_escape_neon
     push        {r4-r5,lr}
     vmov.u8     q0,  #0xff
     vmov.u8     q8,  #4

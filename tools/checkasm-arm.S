@@ -52,7 +52,7 @@ endconst
 
 .macro clobbercheck variant
 .equ pushed, 4*10
-function x264_checkasm_call_\variant
+function checkasm_call_\variant
     push        {r4-r11, lr}
 .ifc \variant, neon
     vpush       {q4-q7}
@@ -128,7 +128,11 @@ function x264_checkasm_call_\variant
     mov         r12, #0
     str         r12, [r2]
     movrel      r0, error_message
-    blx         X(puts)
+#ifdef PREFIX
+    blx         _puts
+#else
+    blx         puts
+#endif
 0:
     pop         {r0, r1}
 .ifc \variant, neon

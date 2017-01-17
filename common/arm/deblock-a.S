@@ -117,7 +117,7 @@
     vqmovun.s16     d1,  q12
 .endm
 
-function x264_deblock_v_luma_neon
+function deblock_v_luma_neon
     h264_loop_filter_start
 
     vld1.64         {d0, d1},  [r0,:128], r1
@@ -143,7 +143,7 @@ function x264_deblock_v_luma_neon
     bx              lr
 endfunc
 
-function x264_deblock_h_luma_neon
+function deblock_h_luma_neon
     h264_loop_filter_start
 
     sub             r0,  r0,  #4
@@ -324,7 +324,7 @@ endfunc
 
 .endm
 
-function x264_deblock_v_luma_intra_neon
+function deblock_v_luma_intra_neon
     push            {lr}
     vld1.64         {d0, d1},  [r0,:128], r1
     vld1.64         {d2, d3},  [r0,:128], r1
@@ -352,7 +352,7 @@ function x264_deblock_v_luma_intra_neon
     pop             {pc}
 endfunc
 
-function x264_deblock_h_luma_intra_neon
+function deblock_h_luma_intra_neon
     push            {lr}
     sub             r0,  r0,  #4
     vld1.64         {d22}, [r0], r1
@@ -447,7 +447,7 @@ endfunc
     vqmovun.s16     d1,  q12
 .endm
 
-function x264_deblock_v_chroma_neon
+function deblock_v_chroma_neon
     h264_loop_filter_start
 
     sub             r0,  r0,  r1, lsl #1
@@ -465,7 +465,7 @@ function x264_deblock_v_chroma_neon
     bx              lr
 endfunc
 
-function x264_deblock_h_chroma_neon
+function deblock_h_chroma_neon
     h264_loop_filter_start
 
     sub             r0,  r0,  #4
@@ -499,7 +499,7 @@ deblock_h_chroma:
     bx              lr
 endfunc
 
-function x264_deblock_h_chroma_422_neon
+function deblock_h_chroma_422_neon
     h264_loop_filter_start
     push            {lr}
     sub             r0,  r0,  #4
@@ -547,7 +547,7 @@ endfunc
     vqmovun.s16     d0,  q11
 .endm
 
-function x264_deblock_h_chroma_mbaff_neon
+function deblock_h_chroma_mbaff_neon
     h264_loop_filter_start
 
     sub             r0,  r0,  #4
@@ -610,7 +610,7 @@ endfunc
     vbit            q0,  q2,  q13
 .endm
 
-function x264_deblock_v_chroma_intra_neon
+function deblock_v_chroma_intra_neon
     sub             r0,  r0,  r1, lsl #1
     vld2.8          {d18,d19}, [r0,:128], r1
     vld2.8          {d16,d17}, [r0,:128], r1
@@ -626,7 +626,7 @@ function x264_deblock_v_chroma_intra_neon
     bx              lr
 endfunc
 
-function x264_deblock_h_chroma_intra_neon
+function deblock_h_chroma_intra_neon
     sub             r0,  r0,  #4
     vld1.8          {d18}, [r0], r1
     vld1.8          {d16}, [r0], r1
@@ -657,15 +657,15 @@ function x264_deblock_h_chroma_intra_neon
     bx              lr
 endfunc
 
-function x264_deblock_h_chroma_422_intra_neon
+function deblock_h_chroma_422_intra_neon
     push            {lr}
-    bl              X(x264_deblock_h_chroma_intra_neon)
+    bl              X(deblock_h_chroma_intra_neon)
     add             r0, r0,  #2
     pop             {lr}
-    b               X(x264_deblock_h_chroma_intra_neon)
+    b               X(deblock_h_chroma_intra_neon)
 endfunc
 
-function x264_deblock_h_chroma_intra_mbaff_neon
+function deblock_h_chroma_intra_mbaff_neon
     sub             r0,  r0,  #4
     vld1.8          {d18}, [r0], r1
     vld1.8          {d16}, [r0], r1
@@ -688,7 +688,7 @@ function x264_deblock_h_chroma_intra_mbaff_neon
     bx              lr
 endfunc
 
-function x264_deblock_strength_neon
+function deblock_strength_neon
     ldr             ip,  [sp]
     vmov.i8         q8,  #0
     lsl             ip,  ip,  #8
