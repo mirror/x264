@@ -138,6 +138,7 @@ void x264_store_interleave_chroma_avx ( pixel *dst, intptr_t i_dst, pixel *srcu,
 void x264_load_deinterleave_chroma_fenc_sse2( pixel *dst, pixel *src, intptr_t i_src, int height );
 void x264_load_deinterleave_chroma_fenc_ssse3( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
 void x264_load_deinterleave_chroma_fenc_avx( uint16_t *dst, uint16_t *src, intptr_t i_src, int height );
+void x264_load_deinterleave_chroma_fenc_avx2( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
 void x264_load_deinterleave_chroma_fdec_sse2( pixel *dst, pixel *src, intptr_t i_src, int height );
 void x264_load_deinterleave_chroma_fdec_ssse3( uint8_t *dst, uint8_t *src, intptr_t i_src, int height );
 void x264_load_deinterleave_chroma_fdec_avx( uint16_t *dst, uint16_t *src, intptr_t i_src, int height );
@@ -823,6 +824,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->integral_init8h = x264_integral_init8h_avx2;
         pf->integral_init4h = x264_integral_init4h_avx2;
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx2;
+        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx2;
         pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_avx2;
     }
 #endif // HIGH_BIT_DEPTH

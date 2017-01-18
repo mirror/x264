@@ -2147,7 +2147,7 @@ static void x264_mb_analyse_inter_b16x16( x264_t *h, x264_mb_analysis_t *a )
             }
             else
             {
-                ALIGNED_ARRAY_16( pixel, pixuv, [2],[16*FENC_STRIDE] );
+                ALIGNED_ARRAY_N( pixel, pixuv, [2],[16*FENC_STRIDE] );
                 int chromapix = h->luma2chroma_pixel[PIXEL_16x16];
                 int v_shift = CHROMA_V_SHIFT;
 

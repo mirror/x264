@@ -1250,6 +1250,26 @@ cglobal load_deinterleave_chroma_fdec, 4,4
     RET
 %endmacro ; LOAD_DEINTERLEAVE_CHROMA
 
+%macro LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2 0
+cglobal load_deinterleave_chroma_fenc, 4,5
+    vbroadcasti128 m0, [deinterleave_shuf]
+    lea            r4, [r2*3]
+.loop:
+    mova          xm1, [r1]
+    vinserti128    m1, m1, [r1+r2], 1
+    mova          xm2, [r1+r2*2]
+    vinserti128    m2, m2, [r1+r4], 1
+    pshufb         m1, m0
+    pshufb         m2, m0
+    mova [r0+0*FENC_STRIDE], m1
+    mova [r0+2*FENC_STRIDE], m2
+    lea            r1, [r1+r2*4]
+    add            r0, 4*FENC_STRIDE
+    sub           r3d, 4
+    jg .loop
+    RET
+%endmacro ; LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
+
 %macro PLANE_DEINTERLEAVE_RGB_CORE 9 ; pw, i_dsta, i_dstb, i_dstc, i_src, w, h, tmp1, tmp2
 %if mmsize == 32
     vbroadcasti128 m3, [deinterleave_rgb_shuf+(%1-3)*16]
@@ -1444,6 +1464,7 @@ PLANE_DEINTERLEAVE
 LOAD_DEINTERLEAVE_CHROMA
 PLANE_DEINTERLEAVE_RGB
 INIT_YMM avx2
+LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
 PLANE_DEINTERLEAVE_RGB
 %endif
 
