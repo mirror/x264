@@ -1049,8 +1049,12 @@ PLANE_COPY_CORE 1
 %if mmsize == 32
     pshufb   m0, %5
     vpermq   m0, m0, q3120
+%if %4
+    mova   [%1], m0
+%else
     mov%6  [%1], xm0
     vextracti128 [%2], m0, 1
+%endif
 %elif HIGH_BIT_DEPTH
     mova     m1, [%3+mmsize]
     psrld    m2, m0, 16
@@ -1455,6 +1459,7 @@ PLANE_DEINTERLEAVE
 LOAD_DEINTERLEAVE_CHROMA
 PLANE_DEINTERLEAVE_V210
 INIT_YMM avx2
+LOAD_DEINTERLEAVE_CHROMA
 PLANE_DEINTERLEAVE_V210
 %else
 INIT_XMM sse2
