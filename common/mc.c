@@ -353,6 +353,15 @@ static void x264_plane_copy_deinterleave_rgb_c( pixel *dsta, intptr_t i_dsta,
     }
 }
 
+#if WORDS_BIGENDIAN
+static ALWAYS_INLINE uint32_t v210_endian_fix32( uint32_t x )
+{
+    return (x<<24) + ((x<<8)&0xff0000) + ((x>>8)&0xff00) + (x>>24);
+}
+#else
+#define v210_endian_fix32(x) (x)
+#endif
+
 void x264_plane_copy_deinterleave_v210_c( pixel *dsty, intptr_t i_dsty,
                                           pixel *dstc, intptr_t i_dstc,
                                           uint32_t *src, intptr_t i_src, int w, int h )
@@ -365,14 +374,14 @@ void x264_plane_copy_deinterleave_v210_c( pixel *dsty, intptr_t i_dsty,
 
         for( int n = 0; n < w; n += 3 )
         {
-            *(dstc0++) = *src0 & 0x03FF;
-            *(dsty0++) = ( *src0 >> 10 ) & 0x03FF;
-            *(dstc0++) = ( *src0 >> 20 ) & 0x03FF;
-            src0++;
-            *(dsty0++) = *src0 & 0x03FF;
-            *(dstc0++) = ( *src0 >> 10 ) & 0x03FF;
-            *(dsty0++) = ( *src0 >> 20 ) & 0x03FF;
-            src0++;
+            uint32_t s = v210_endian_fix32( *src0++ );
+            *dstc0++ = s & 0x03FF;
+            *dsty0++ = (s >> 10) & 0x03FF;
+            *dstc0++ = (s >> 20) & 0x03FF;
+            s = v210_endian_fix32( *src0++ );
+            *dsty0++ = s & 0x03FF;
+            *dstc0++ = (s >> 10) & 0x03FF;
+            *dsty0++ = (s >> 20) & 0x03FF;
         }
 
         dsty += i_dsty;
