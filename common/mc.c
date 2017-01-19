@@ -676,7 +676,7 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
 #endif
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )
-        x264_mc_altivec_init( pf );
+        x264_mc_init_altivec( pf );
 #endif
 #if HAVE_ARMV6
     x264_mc_init_arm( cpu, pf );

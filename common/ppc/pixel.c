@@ -1774,7 +1774,7 @@ INTRA_MBCMP(satd, 16, v, h, dc, )
 /****************************************************************************
  * x264_pixel_init:
  ****************************************************************************/
-void x264_pixel_altivec_init( x264_pixel_function_t *pixf )
+void x264_pixel_init_altivec( x264_pixel_function_t *pixf )
 {
 #if !HIGH_BIT_DEPTH
     pixf->sad[PIXEL_16x16]  = pixel_sad_16x16_altivec;

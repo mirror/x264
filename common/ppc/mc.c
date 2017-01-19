@@ -326,7 +326,7 @@ static void mc_chroma_2xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stride,
 #define VSLD(a,b,n) vec_sld(b,a,16-n)
 #endif
 
-static void mc_chroma_altivec_4xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stride,
+static void mc_chroma_4xh_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stride,
                                    uint8_t *src, intptr_t i_src_stride,
                                    int mvx, int mvy, int i_height )
 {
@@ -417,7 +417,7 @@ static void mc_chroma_altivec_4xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     }
 }
 
-static void mc_chroma_altivec_8xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stride,
+static void mc_chroma_8xh_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stride,
                                    uint8_t *src, intptr_t i_src_stride,
                                    int mvx, int mvy, int i_height )
 {
@@ -548,10 +548,10 @@ static void mc_chroma_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stri
                                int mvx, int mvy, int i_width, int i_height )
 {
     if( i_width == 8 )
-        mc_chroma_altivec_8xh( dstu, dstv, i_dst_stride, src, i_src_stride,
+        mc_chroma_8xh_altivec( dstu, dstv, i_dst_stride, src, i_src_stride,
                                mvx, mvy, i_height );
     else if( i_width == 4 )
-        mc_chroma_altivec_4xh( dstu, dstv, i_dst_stride, src, i_src_stride,
+        mc_chroma_4xh_altivec( dstu, dstv, i_dst_stride, src, i_src_stride,
                                mvx, mvy, i_height );
     else
         mc_chroma_2xh( dstu, dstv, i_dst_stride, src, i_src_stride,
@@ -1214,7 +1214,7 @@ PLANE_COPY_SWAP(16, altivec)
 PLANE_INTERLEAVE(altivec)
 #endif // !HIGH_BIT_DEPTH
 
-void x264_mc_altivec_init( x264_mc_functions_t *pf )
+void x264_mc_init_altivec( x264_mc_functions_t *pf )
 {
 #if !HIGH_BIT_DEPTH
     pf->mc_luma   = mc_luma_altivec;

@@ -26,6 +26,6 @@
 #ifndef X264_PPC_MC_H
 #define X264_PPC_MC_H
 
-void x264_mc_altivec_init( x264_mc_functions_t *pf );
+void x264_mc_init_altivec( x264_mc_functions_t *pf );
 
 #endif
