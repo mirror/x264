@@ -267,15 +267,16 @@ p2 += i2;
     vec_perm(vec_ld(off, src), vec_ld(off + 15, src), vec_lvsl(off, src))
 
 #undef vec_vsx_st
-#define vec_vsx_st(v, off, dst)                           \
-    do {                                                  \
-        vec_u8_t _v = (vec_u8_t)(v);                      \
-        vec_u8_t _a = vec_ld(off, dst);                   \
-        vec_u8_t _b = vec_ld(off + 15, dst);              \
-        vec_u8_t _e = vec_perm(_b, _a, vec_lvsl(0, dst)); \
-        vec_u8_t _m = vec_lvsr(0, dst);                   \
-                                                          \
-        vec_st(vec_perm(_v, _e, _m), off + 15, dst);      \
-        vec_st(vec_perm(_e, _v, _m), off, dst);           \
+#define vec_vsx_st(v, off, dst)                            \
+    do {                                                   \
+        uint8_t *_dst = (uint8_t*)(dst);                   \
+        vec_u8_t _v = (vec_u8_t)(v);                       \
+        vec_u8_t _a = vec_ld(off, _dst);                   \
+        vec_u8_t _b = vec_ld(off + 15, _dst);              \
+        vec_u8_t _e = vec_perm(_b, _a, vec_lvsl(0, _dst)); \
+        vec_u8_t _m = vec_lvsr(0, _dst);                   \
+                                                           \
+        vec_st(vec_perm(_v, _e, _m), off + 15, _dst);      \
+        vec_st(vec_perm(_e, _v, _m), off, _dst);           \
     } while( 0 )
 #endif
