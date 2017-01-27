@@ -179,7 +179,7 @@ void x264_mc_chroma_##cpu( pixel *dstu, pixel *dstv, intptr_t i_dst, pixel *src,
 MC_CHROMA(mmx2)
 MC_CHROMA(sse2)
 MC_CHROMA(ssse3)
-MC_CHROMA(ssse3_cache64)
+MC_CHROMA(cache64_ssse3)
 MC_CHROMA(avx)
 MC_CHROMA(avx2)
 
@@ -779,7 +779,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( cpu&X264_CPU_CACHELINE_64 )
     {
         if( !(cpu&X264_CPU_STACK_MOD4) )
-            pf->mc_chroma = x264_mc_chroma_ssse3_cache64;
+            pf->mc_chroma = x264_mc_chroma_cache64_ssse3;
         pf->mc_luma = mc_luma_cache64_ssse3;
         pf->get_ref = get_ref_cache64_ssse3;
         if( cpu&X264_CPU_SLOW_ATOM )
