@@ -26,7 +26,7 @@
 
 #include "common.h"
 
-static uint8_t *x264_nal_escape_c( uint8_t *dst, uint8_t *src, uint8_t *end )
+static uint8_t *nal_escape_c( uint8_t *dst, uint8_t *src, uint8_t *end )
 {
     if( src < end ) *dst++ = *src++;
     if( src < end ) *dst++ = *src++;
@@ -117,7 +117,7 @@ void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
 {
     memset( pf, 0, sizeof(*pf) );
 
-    pf->nal_escape = x264_nal_escape_c;
+    pf->nal_escape = nal_escape_c;
 #if HAVE_MMX
 #if ARCH_X86_64 && !defined( __MACH__ )
     pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_sse2;

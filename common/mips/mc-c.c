@@ -51,129 +51,6 @@ static const uint8_t pu_chroma_mask_arr[16 * 5] =
     0, 1, 1, 2, 16, 17, 17, 18, 16, 17, 17, 18, 18, 19, 19, 20
 };
 
-void x264_mc_copy_w16_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                           uint8_t *p_src, intptr_t i_src_stride,
-                           int32_t i_height );
-void x264_mc_copy_w8_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                          uint8_t *p_src, intptr_t i_src_stride,
-                          int32_t i_height );
-void x264_mc_copy_w4_msa( uint8_t *p_dst, intptr_t i_dst_stride, uint8_t *p_src,
-                          intptr_t i_src_stride, int32_t i_height );
-void x264_memzero_aligned_msa( void *p_dst, size_t n );
-
-void x264_pixel_avg_16x16_msa( uint8_t *p_pix1, intptr_t i_pix1_stride,
-                               uint8_t *p_pix2, intptr_t i_pix2_stride,
-                               uint8_t *p_pix3, intptr_t i_pix3_stride,
-                               int32_t i_weight );
-void x264_pixel_avg_16x8_msa( uint8_t *p_pix1, intptr_t i_pix1_stride,
-                              uint8_t *p_pix2, intptr_t i_pix2_stride,
-                              uint8_t *p_pix3, intptr_t i_pix3_stride,
-                              int32_t i_weight );
-void x264_pixel_avg_8x16_msa( uint8_t *p_pix1, intptr_t i_pix1_stride,
-                              uint8_t *p_pix2, intptr_t i_pix2_stride,
-                              uint8_t *p_pix3, intptr_t i_pix3_stride,
-                              int32_t i_weight );
-void x264_pixel_avg_8x8_msa( uint8_t *p_pix1, intptr_t i_pix1_stride,
-                             uint8_t *p_pix2, intptr_t i_pix2_stride,
-                             uint8_t *p_pix3, intptr_t i_pix3_stride,
-                             int32_t i_weight );
-void x264_pixel_avg_8x4_msa( uint8_t *p_pix1, intptr_t i_pix1_stride,
-                             uint8_t *p_pix2, intptr_t i_pix2_stride,
-                             uint8_t *p_pix3, intptr_t i_pix3_stride,
-                             int32_t i_weight );
-void x264_pixel_avg_4x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                              uint8_t *p_pix2, intptr_t pix2_stride,
-                              uint8_t *p_pix3, intptr_t pix3_stride,
-                              int32_t i_weight );
-void x264_pixel_avg_4x8_msa( uint8_t *p_pix1, intptr_t i_pix1_stride,
-                             uint8_t *p_pix2, intptr_t i_pix2_stride,
-                             uint8_t *p_pix3, intptr_t i_pix3_stride,
-                             int32_t i_weight );
-void x264_pixel_avg_4x4_msa( uint8_t *p_pix1, intptr_t i_pix1_stride,
-                             uint8_t *p_pix2, intptr_t i_pix2_stride,
-                             uint8_t *p_pix3, intptr_t i_pix3_stride,
-                             int32_t i_weight );
-void x264_pixel_avg_4x2_msa( uint8_t *p_pix1, intptr_t i_pix1_stride,
-                             uint8_t *p_pix2, intptr_t i_pix2_stride,
-                             uint8_t *p_pix3, intptr_t i_pix3_stride,
-                             int32_t i_weight );
-
-void x264_mc_weight_w20_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                             uint8_t *p_src, intptr_t i_src_stride,
-                             const x264_weight_t *pWeight, int32_t i_height );
-void x264_mc_weight_w4_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                            uint8_t *p_src, intptr_t i_src_stride,
-                            const x264_weight_t *pWeight, int32_t i_height );
-void x264_mc_weight_w8_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                            uint8_t *p_src, intptr_t i_src_stride,
-                            const x264_weight_t *pWeight, int32_t i_height );
-void x264_mc_weight_w16_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                             uint8_t *p_src, intptr_t i_src_stride,
-                             const x264_weight_t *pWeight, int32_t i_height );
-
-weight_fn_t x264_mc_weight_wtab_msa[6] =
-{
-    x264_mc_weight_w4_msa,
-    x264_mc_weight_w4_msa,
-    x264_mc_weight_w8_msa,
-    x264_mc_weight_w16_msa,
-    x264_mc_weight_w16_msa,
-    x264_mc_weight_w20_msa,
-};
-
-void x264_mc_luma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                       uint8_t *p_src[4], intptr_t i_src_stride,
-                       int32_t m_vx, int32_t m_vy,
-                       int32_t i_width, int32_t i_height,
-                       const x264_weight_t *pWeight );
-uint8_t *x264_get_ref_msa( uint8_t *p_dst,   intptr_t *p_dst_stride,
-                           uint8_t *p_src[4], intptr_t i_src_stride,
-                           int32_t m_vx, int32_t m_vy,
-                           int32_t i_width, int32_t i_height,
-                           const x264_weight_t *pWeight );
-void x264_mc_chroma_msa( uint8_t *p_dst_u, uint8_t *p_dst_v,
-                         intptr_t i_dst_stride,
-                         uint8_t *p_src, intptr_t i_src_stride,
-                         int32_t m_vx, int32_t m_vy,
-                         int32_t i_width, int32_t i_height );
-void x264_hpel_filter_msa( uint8_t *p_dsth, uint8_t *p_dst_v,
-                           uint8_t *p_dstc, uint8_t *p_src,
-                           intptr_t i_stride, int32_t i_width,
-                           int32_t i_height, int16_t *p_buf );
-
-void x264_plane_copy_interleave_msa( uint8_t *p_dst,  intptr_t i_dst_stride,
-                                     uint8_t *p_src0, intptr_t i_src_stride0,
-                                     uint8_t *p_src1, intptr_t i_src_stride1,
-                                     int32_t i_width, int32_t i_height );
-void x264_plane_copy_deinterleave_msa( uint8_t *p_dst0, intptr_t i_dst_stride0,
-                                       uint8_t *p_dst1, intptr_t i_dst_stride1,
-                                       uint8_t *p_src,  intptr_t i_src_stride,
-                                       int32_t i_width, int32_t i_height );
-void x264_plane_copy_deinterleave_rgb_msa( uint8_t *p_dst0,
-                                           intptr_t i_dst_stride0,
-                                           uint8_t *p_dst1,
-                                           intptr_t i_dst_stride1,
-                                           uint8_t *p_dst2,
-                                           intptr_t i_dst_stride2,
-                                           uint8_t *p_src,
-                                           intptr_t i_src_stride,
-                                           int32_t i_src_width, int32_t i_width,
-                                           int32_t i_height );
-void x264_store_interleave_chroma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                                       uint8_t *p_src0, uint8_t *p_src1,
-                                       int32_t i_height );
-void x264_load_deinterleave_chroma_fenc_msa( uint8_t *p_dst, uint8_t *p_src,
-                                             intptr_t i_src_stride,
-                                             int32_t i_height );
-void x264_load_deinterleave_chroma_fdec_msa( uint8_t *p_dst, uint8_t *p_src,
-                                             intptr_t i_src_stride,
-                                             int32_t i_height );
-void x264_frame_init_lowres_core_msa( uint8_t *p_src, uint8_t *p_dst0,
-                                      uint8_t *p_dst1, uint8_t *p_dst2,
-                                      uint8_t *p_dst3, intptr_t i_src_stride,
-                                      intptr_t i_dst_stride, int32_t i_width,
-                                      int32_t i_height );
-
 static void avc_luma_hz_16w_msa( uint8_t *p_src, int32_t i_src_stride,
                                  uint8_t *p_dst, int32_t i_dst_stride,
                                  int32_t i_height )
@@ -1861,10 +1738,10 @@ static void memset_zero_16width_msa( uint8_t *p_src, int32_t i_stride,
     }
 }
 
-static void plane_copy_interleave_msa( uint8_t *p_src0, int32_t i_src0_stride,
-                                       uint8_t *p_src1, int32_t i_src1_stride,
-                                       uint8_t *p_dst, int32_t i_dst_stride,
-                                       int32_t i_width, int32_t i_height )
+static void core_plane_copy_interleave_msa( uint8_t *p_src0, int32_t i_src0_stride,
+                                            uint8_t *p_src1, int32_t i_src1_stride,
+                                            uint8_t *p_dst, int32_t i_dst_stride,
+                                            int32_t i_width, int32_t i_height )
 {
     int32_t i_loop_width, i_loop_height, i_w_mul8, i_h4w;
     v16u8 src0, src1, src2, src3, src4, src5, src6, src7;
@@ -1966,10 +1843,10 @@ static void plane_copy_interleave_msa( uint8_t *p_src0, int32_t i_src0_stride,
     }
 }
 
-static void plane_copy_deinterleave_msa( uint8_t *p_src, int32_t i_src_stride,
-                                         uint8_t *p_dst0, int32_t dst0_stride,
-                                         uint8_t *p_dst1, int32_t dst1_stride,
-                                         int32_t i_width, int32_t i_height )
+static void core_plane_copy_deinterleave_msa( uint8_t *p_src, int32_t i_src_stride,
+                                              uint8_t *p_dst0, int32_t dst0_stride,
+                                              uint8_t *p_dst1, int32_t dst1_stride,
+                                              int32_t i_width, int32_t i_height )
 {
     int32_t i_loop_width, i_loop_height, i_w_mul4, i_w_mul8, i_h4w;
     uint32_t u_res_w0, u_res_w1;
@@ -2098,16 +1975,16 @@ static void plane_copy_deinterleave_msa( uint8_t *p_src, int32_t i_src_stride,
 }
 
 
-static void plane_copy_deinterleave_rgb_msa( uint8_t *p_src,
-                                             int32_t i_src_stride,
-                                             uint8_t *p_dst0,
-                                             int32_t i_dst0_stride,
-                                             uint8_t *p_dst1,
-                                             int32_t i_dst1_stride,
-                                             uint8_t *p_dst2,
-                                             int32_t i_dst2_stride,
-                                             int32_t i_width,
-                                             int32_t i_height )
+static void core_plane_copy_deinterleave_rgb_msa( uint8_t *p_src,
+                                                  int32_t i_src_stride,
+                                                  uint8_t *p_dst0,
+                                                  int32_t i_dst0_stride,
+                                                  uint8_t *p_dst1,
+                                                  int32_t i_dst1_stride,
+                                                  uint8_t *p_dst2,
+                                                  int32_t i_dst2_stride,
+                                                  int32_t i_width,
+                                                  int32_t i_height )
 {
     uint8_t *p_src_orig = p_src;
     uint8_t *p_dst0_orig = p_dst0;
@@ -2234,16 +2111,16 @@ static void plane_copy_deinterleave_rgb_msa( uint8_t *p_src,
     }
 }
 
-static void plane_copy_deinterleave_rgba_msa( uint8_t *p_src,
-                                              int32_t i_src_stride,
-                                              uint8_t *p_dst0,
-                                              int32_t i_dst0_stride,
-                                              uint8_t *p_dst1,
-                                              int32_t i_dst1_stride,
-                                              uint8_t *p_dst2,
-                                              int32_t i_dst2_stride,
-                                              int32_t i_width,
-                                              int32_t i_height )
+static void core_plane_copy_deinterleave_rgba_msa( uint8_t *p_src,
+                                                   int32_t i_src_stride,
+                                                   uint8_t *p_dst0,
+                                                   int32_t i_dst0_stride,
+                                                   uint8_t *p_dst1,
+                                                   int32_t i_dst1_stride,
+                                                   uint8_t *p_dst2,
+                                                   int32_t i_dst2_stride,
+                                                   int32_t i_width,
+                                                   int32_t i_height )
 {
     uint8_t *p_src_orig = p_src;
     uint8_t *p_dst0_orig = p_dst0;
@@ -2441,10 +2318,10 @@ static void plane_copy_deinterleave_rgba_msa( uint8_t *p_src,
     }
 }
 
-static void store_interleave_chroma_msa( uint8_t *p_src0, int32_t i_src0_stride,
-                                         uint8_t *p_src1, int32_t i_src1_stride,
-                                         uint8_t *p_dst, int32_t i_dst_stride,
-                                         int32_t i_height )
+static void core_store_interleave_chroma_msa( uint8_t *p_src0, int32_t i_src0_stride,
+                                              uint8_t *p_src1, int32_t i_src1_stride,
+                                              uint8_t *p_dst, int32_t i_dst_stride,
+                                              int32_t i_height )
 {
     int32_t i_loop_height, i_h4w;
     v16u8 in0, in1, in2, in3, in4, in5, in6, in7;
@@ -2476,12 +2353,12 @@ static void store_interleave_chroma_msa( uint8_t *p_src0, int32_t i_src0_stride,
     }
 }
 
-static void frame_init_lowres_core_msa( uint8_t *p_src, int32_t i_src_stride,
-                                        uint8_t *p_dst0, int32_t dst0_stride,
-                                        uint8_t *p_dst1, int32_t dst1_stride,
-                                        uint8_t *p_dst2, int32_t dst2_stride,
-                                        uint8_t *p_dst3, int32_t dst3_stride,
-                                        int32_t i_width, int32_t i_height )
+static void core_frame_init_lowres_core_msa( uint8_t *p_src, int32_t i_src_stride,
+                                             uint8_t *p_dst0, int32_t dst0_stride,
+                                             uint8_t *p_dst1, int32_t dst1_stride,
+                                             uint8_t *p_dst2, int32_t dst2_stride,
+                                             uint8_t *p_dst3, int32_t dst3_stride,
+                                             int32_t i_width, int32_t i_height )
 {
     int32_t i_loop_width, i_loop_height, i_w16_mul;
     v16u8 src0, src1, src2, src3, src4, src5, src6, src7, src8;
@@ -2583,29 +2460,29 @@ static void frame_init_lowres_core_msa( uint8_t *p_src, int32_t i_src_stride,
     }
 }
 
-void x264_mc_copy_w16_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                           uint8_t *p_src, intptr_t i_src_stride,
-                           int32_t i_height )
+static void mc_copy_w16_msa( uint8_t *p_dst, intptr_t i_dst_stride,
+                             uint8_t *p_src, intptr_t i_src_stride,
+                             int32_t i_height )
 {
     copy_width16_msa( p_src, i_src_stride, p_dst, i_dst_stride, i_height );
 }
 
-void x264_mc_copy_w8_msa( uint8_t *p_dst, intptr_t i_dst_stride, uint8_t *p_src,
-                          intptr_t i_src_stride, int32_t i_height )
+static void mc_copy_w8_msa( uint8_t *p_dst, intptr_t i_dst_stride, uint8_t *p_src,
+                            intptr_t i_src_stride, int32_t i_height )
 {
     copy_width8_msa( p_src, i_src_stride, p_dst, i_dst_stride, i_height );
 }
 
-void x264_mc_copy_w4_msa( uint8_t *p_dst, intptr_t i_dst_stride, uint8_t *p_src,
-                          intptr_t i_src_stride, int32_t i_height )
+static void mc_copy_w4_msa( uint8_t *p_dst, intptr_t i_dst_stride, uint8_t *p_src,
+                            intptr_t i_src_stride, int32_t i_height )
 {
     copy_width4_msa( p_src, i_src_stride, p_dst, i_dst_stride, i_height );
 }
 
-void x264_pixel_avg_16x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                               uint8_t *p_pix2, intptr_t pix2_stride,
-                               uint8_t *p_pix3, intptr_t pix3_stride,
-                               int32_t i_weight )
+static void pixel_avg_16x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                                 uint8_t *p_pix2, intptr_t pix2_stride,
+                                 uint8_t *p_pix3, intptr_t pix3_stride,
+                                 int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2630,10 +2507,10 @@ void x264_pixel_avg_16x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
     }
 }
 
-void x264_pixel_avg_16x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                              uint8_t *p_pix2, intptr_t pix2_stride,
-                              uint8_t *p_pix3, intptr_t pix3_stride,
-                              int32_t i_weight )
+static void pixel_avg_16x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                                uint8_t *p_pix2, intptr_t pix2_stride,
+                                uint8_t *p_pix3, intptr_t pix3_stride,
+                                int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2658,10 +2535,10 @@ void x264_pixel_avg_16x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
     }
 }
 
-void x264_pixel_avg_8x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                              uint8_t *p_pix2, intptr_t pix2_stride,
-                              uint8_t *p_pix3, intptr_t pix3_stride,
-                              int32_t i_weight )
+static void pixel_avg_8x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                                uint8_t *p_pix2, intptr_t pix2_stride,
+                                uint8_t *p_pix3, intptr_t pix3_stride,
+                                int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2684,10 +2561,10 @@ void x264_pixel_avg_8x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
     }
 }
 
-void x264_pixel_avg_8x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                             uint8_t *p_pix2, intptr_t pix2_stride,
-                             uint8_t *p_pix3, intptr_t pix3_stride,
-                             int32_t i_weight )
+static void pixel_avg_8x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                               uint8_t *p_pix2, intptr_t pix2_stride,
+                               uint8_t *p_pix3, intptr_t pix3_stride,
+                               int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2710,10 +2587,10 @@ void x264_pixel_avg_8x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
     }
 }
 
-void x264_pixel_avg_8x4_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                             uint8_t *p_pix2, intptr_t pix2_stride,
-                             uint8_t *p_pix3, intptr_t pix3_stride,
-                             int32_t i_weight )
+static void pixel_avg_8x4_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                               uint8_t *p_pix2, intptr_t pix2_stride,
+                               uint8_t *p_pix3, intptr_t pix3_stride,
+                               int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2736,10 +2613,10 @@ void x264_pixel_avg_8x4_msa( uint8_t *p_pix1, intptr_t pix1_stride,
     }
 }
 
-void x264_pixel_avg_4x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                              uint8_t *p_pix2, intptr_t pix2_stride,
-                              uint8_t *p_pix3, intptr_t pix3_stride,
-                              int32_t i_weight )
+static void pixel_avg_4x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                                uint8_t *p_pix2, intptr_t pix2_stride,
+                                uint8_t *p_pix3, intptr_t pix3_stride,
+                                int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2762,10 +2639,10 @@ void x264_pixel_avg_4x16_msa( uint8_t *p_pix1, intptr_t pix1_stride,
     }
 }
 
-void x264_pixel_avg_4x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                             uint8_t *p_pix2, intptr_t pix2_stride,
-                             uint8_t *p_pix3, intptr_t pix3_stride,
-                             int32_t i_weight )
+static void pixel_avg_4x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                               uint8_t *p_pix2, intptr_t pix2_stride,
+                               uint8_t *p_pix3, intptr_t pix3_stride,
+                               int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2788,10 +2665,10 @@ void x264_pixel_avg_4x8_msa( uint8_t *p_pix1, intptr_t pix1_stride,
     }
 }
 
-void x264_pixel_avg_4x4_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                             uint8_t *p_pix2, intptr_t pix2_stride,
-                             uint8_t *p_pix3, intptr_t pix3_stride,
-                             int32_t i_weight )
+static void pixel_avg_4x4_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                               uint8_t *p_pix2, intptr_t pix2_stride,
+                               uint8_t *p_pix3, intptr_t pix3_stride,
+                               int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2814,10 +2691,10 @@ void x264_pixel_avg_4x4_msa( uint8_t *p_pix1, intptr_t pix1_stride,
     }
 }
 
-void x264_pixel_avg_4x2_msa( uint8_t *p_pix1, intptr_t pix1_stride,
-                             uint8_t *p_pix2, intptr_t pix2_stride,
-                             uint8_t *p_pix3, intptr_t pix3_stride,
-                             int32_t i_weight )
+static void pixel_avg_4x2_msa( uint8_t *p_pix1, intptr_t pix1_stride,
+                               uint8_t *p_pix2, intptr_t pix2_stride,
+                               uint8_t *p_pix3, intptr_t pix3_stride,
+                               int32_t i_weight )
 {
     if( 32 == i_weight )
     {
@@ -2841,7 +2718,7 @@ void x264_pixel_avg_4x2_msa( uint8_t *p_pix1, intptr_t pix1_stride,
 }
 
 
-void x264_memzero_aligned_msa( void *p_dst, size_t n )
+static void memzero_aligned_msa( void *p_dst, size_t n )
 {
     uint32_t u_tot32_mul_lines = n >> 5;
     uint32_t u_remaining = n - ( u_tot32_mul_lines << 5 );
@@ -2854,9 +2731,9 @@ void x264_memzero_aligned_msa( void *p_dst, size_t n )
     }
 }
 
-void x264_mc_weight_w4_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                            uint8_t *p_src, intptr_t i_src_stride,
-                            const x264_weight_t *pWeight, int32_t i_height )
+static void mc_weight_w4_msa( uint8_t *p_dst, intptr_t i_dst_stride,
+                              uint8_t *p_src, intptr_t i_src_stride,
+                              const x264_weight_t *pWeight, int32_t i_height )
 {
     int32_t i_log2_denom = pWeight->i_denom;
     int32_t i_offset = pWeight->i_offset;
@@ -2866,9 +2743,9 @@ void x264_mc_weight_w4_msa( uint8_t *p_dst, intptr_t i_dst_stride,
                                 i_height, i_log2_denom, i_weight, i_offset );
 }
 
-void x264_mc_weight_w8_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                            uint8_t *p_src, intptr_t i_src_stride,
-                            const x264_weight_t *pWeight, int32_t i_height )
+static void mc_weight_w8_msa( uint8_t *p_dst, intptr_t i_dst_stride,
+                              uint8_t *p_src, intptr_t i_src_stride,
+                              const x264_weight_t *pWeight, int32_t i_height )
 {
     int32_t i_log2_denom = pWeight->i_denom;
     int32_t i_offset = pWeight->i_offset;
@@ -2878,9 +2755,9 @@ void x264_mc_weight_w8_msa( uint8_t *p_dst, intptr_t i_dst_stride,
                                 i_height, i_log2_denom, i_weight, i_offset );
 }
 
-void x264_mc_weight_w16_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                             uint8_t *p_src, intptr_t i_src_stride,
-                             const x264_weight_t *pWeight, int32_t i_height )
+static void mc_weight_w16_msa( uint8_t *p_dst, intptr_t i_dst_stride,
+                               uint8_t *p_src, intptr_t i_src_stride,
+                               const x264_weight_t *pWeight, int32_t i_height )
 {
     int32_t i_log2_denom = pWeight->i_denom;
     int32_t i_offset = pWeight->i_offset;
@@ -2890,21 +2767,21 @@ void x264_mc_weight_w16_msa( uint8_t *p_dst, intptr_t i_dst_stride,
                                  i_height, i_log2_denom, i_weight, i_offset );
 }
 
-void x264_mc_weight_w20_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                             uint8_t *p_src, intptr_t i_src_stride,
-                             const x264_weight_t *pWeight, int32_t i_height )
+static void mc_weight_w20_msa( uint8_t *p_dst, intptr_t i_dst_stride,
+                               uint8_t *p_src, intptr_t i_src_stride,
+                               const x264_weight_t *pWeight, int32_t i_height )
 {
-    x264_mc_weight_w16_msa( p_dst, i_dst_stride, p_src, i_src_stride,
-                            pWeight, i_height );
-    x264_mc_weight_w4_msa( p_dst + 16, i_dst_stride, p_src + 16, i_src_stride,
-                           pWeight, i_height );
+    mc_weight_w16_msa( p_dst, i_dst_stride, p_src, i_src_stride,
+                       pWeight, i_height );
+    mc_weight_w4_msa( p_dst + 16, i_dst_stride, p_src + 16, i_src_stride,
+                      pWeight, i_height );
 }
 
-void x264_mc_luma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                       uint8_t *p_src[4], intptr_t i_src_stride,
-                       int32_t m_vx, int32_t m_vy,
-                       int32_t i_width, int32_t i_height,
-                       const x264_weight_t *pWeight )
+static void mc_luma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
+                         uint8_t *p_src[4], intptr_t i_src_stride,
+                         int32_t m_vx, int32_t m_vy,
+                         int32_t i_width, int32_t i_height,
+                         const x264_weight_t *pWeight )
 {
     int32_t  i_qpel_idx;
     int32_t  i_offset;
@@ -2940,19 +2817,19 @@ void x264_mc_luma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
         {
             if( 16 == i_width )
             {
-                x264_mc_weight_w16_msa( p_dst, i_dst_stride,
-                                        p_dst, i_dst_stride,
-                                        pWeight, i_height );
+                mc_weight_w16_msa( p_dst, i_dst_stride,
+                                   p_dst, i_dst_stride,
+                                   pWeight, i_height );
             }
             else if( 8 == i_width )
             {
-                x264_mc_weight_w8_msa( p_dst, i_dst_stride, p_dst, i_dst_stride,
-                                       pWeight, i_height );
+                mc_weight_w8_msa( p_dst, i_dst_stride, p_dst, i_dst_stride,
+                                  pWeight, i_height );
             }
             else if( 4 == i_width )
             {
-                x264_mc_weight_w4_msa( p_dst, i_dst_stride, p_dst, i_dst_stride,
-                                       pWeight, i_height );
+                mc_weight_w4_msa( p_dst, i_dst_stride, p_dst, i_dst_stride,
+                                  pWeight, i_height );
             }
         }
     }
@@ -2960,18 +2837,18 @@ void x264_mc_luma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
     {
         if( 16 == i_width )
         {
-            x264_mc_weight_w16_msa( p_dst, i_dst_stride, p_src1, i_src_stride,
-                                    pWeight, i_height );
+            mc_weight_w16_msa( p_dst, i_dst_stride, p_src1, i_src_stride,
+                               pWeight, i_height );
         }
         else if( 8 == i_width )
         {
-            x264_mc_weight_w8_msa( p_dst, i_dst_stride, p_src1, i_src_stride,
-                                   pWeight, i_height );
+            mc_weight_w8_msa( p_dst, i_dst_stride, p_src1, i_src_stride,
+                              pWeight, i_height );
         }
         else if( 4 == i_width )
         {
-            x264_mc_weight_w4_msa( p_dst, i_dst_stride, p_src1, i_src_stride,
-                                   pWeight, i_height );
+            mc_weight_w4_msa( p_dst, i_dst_stride, p_src1, i_src_stride,
+                              pWeight, i_height );
         }
     }
     else
@@ -2994,11 +2871,11 @@ void x264_mc_luma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
     }
 }
 
-void x264_mc_chroma_msa( uint8_t *p_dst_u, uint8_t *p_dst_v,
-                         intptr_t i_dst_stride,
-                         uint8_t *p_src, intptr_t i_src_stride,
-                         int32_t m_vx, int32_t m_vy,
-                         int32_t i_width, int32_t i_height )
+static void mc_chroma_msa( uint8_t *p_dst_u, uint8_t *p_dst_v,
+                           intptr_t i_dst_stride,
+                           uint8_t *p_src, intptr_t i_src_stride,
+                           int32_t m_vx, int32_t m_vy,
+                           int32_t i_width, int32_t i_height )
 {
     int32_t i_d8x = m_vx & 0x07;
     int32_t i_d8y = m_vy & 0x07;
@@ -3035,10 +2912,10 @@ void x264_mc_chroma_msa( uint8_t *p_dst_u, uint8_t *p_dst_v,
     }
 }
 
-void x264_hpel_filter_msa( uint8_t *p_dsth, uint8_t *p_dst_v,
-                           uint8_t *p_dstc, uint8_t *p_src,
-                           intptr_t i_stride, int32_t i_width,
-                           int32_t i_height, int16_t *p_buf )
+static void hpel_filter_msa( uint8_t *p_dsth, uint8_t *p_dst_v,
+                             uint8_t *p_dstc, uint8_t *p_src,
+                             intptr_t i_stride, int32_t i_width,
+                             int32_t i_height, int16_t *p_buf )
 {
     for( int32_t i = 0; i < ( i_width / 16 ); i++ )
     {
@@ -3055,96 +2932,96 @@ void x264_hpel_filter_msa( uint8_t *p_dsth, uint8_t *p_dst_v,
     }
 }
 
-void x264_plane_copy_interleave_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                                     uint8_t *p_src0, intptr_t i_src_stride0,
-                                     uint8_t *p_src1, intptr_t i_src_stride1,
-                                     int32_t i_width, int32_t i_height )
-{
-    plane_copy_interleave_msa( p_src0, i_src_stride0, p_src1, i_src_stride1,
-                               p_dst, i_dst_stride, i_width, i_height );
-}
-
-void x264_plane_copy_deinterleave_msa( uint8_t *p_dst0, intptr_t i_dst_stride0,
-                                       uint8_t *p_dst1, intptr_t i_dst_stride1,
-                                       uint8_t *p_src, intptr_t i_src_stride,
+static void plane_copy_interleave_msa( uint8_t *p_dst, intptr_t i_dst_stride,
+                                       uint8_t *p_src0, intptr_t i_src_stride0,
+                                       uint8_t *p_src1, intptr_t i_src_stride1,
                                        int32_t i_width, int32_t i_height )
 {
-    plane_copy_deinterleave_msa( p_src, i_src_stride, p_dst0, i_dst_stride0,
-                                 p_dst1, i_dst_stride1, i_width, i_height );
+    core_plane_copy_interleave_msa( p_src0, i_src_stride0, p_src1, i_src_stride1,
+                                    p_dst, i_dst_stride, i_width, i_height );
 }
 
-void x264_plane_copy_deinterleave_rgb_msa( uint8_t *p_dst0,
-                                           intptr_t i_dst_stride0,
-                                           uint8_t *p_dst1,
-                                           intptr_t i_dst_stride1,
-                                           uint8_t *p_dst2,
-                                           intptr_t i_dst_stride2,
-                                           uint8_t *p_src,
-                                           intptr_t i_src_stride,
-                                           int32_t i_src_width,
-                                           int32_t i_width,
-                                           int32_t i_height )
+static void plane_copy_deinterleave_msa( uint8_t *p_dst0, intptr_t i_dst_stride0,
+                                         uint8_t *p_dst1, intptr_t i_dst_stride1,
+                                         uint8_t *p_src, intptr_t i_src_stride,
+                                         int32_t i_width, int32_t i_height )
+{
+    core_plane_copy_deinterleave_msa( p_src, i_src_stride, p_dst0, i_dst_stride0,
+                                      p_dst1, i_dst_stride1, i_width, i_height );
+}
+
+static void plane_copy_deinterleave_rgb_msa( uint8_t *p_dst0,
+                                             intptr_t i_dst_stride0,
+                                             uint8_t *p_dst1,
+                                             intptr_t i_dst_stride1,
+                                             uint8_t *p_dst2,
+                                             intptr_t i_dst_stride2,
+                                             uint8_t *p_src,
+                                             intptr_t i_src_stride,
+                                             int32_t i_src_width,
+                                             int32_t i_width,
+                                             int32_t i_height )
 {
     if( 3 == i_src_width )
     {
-        plane_copy_deinterleave_rgb_msa( p_src, i_src_stride,
-                                         p_dst0, i_dst_stride0,
-                                         p_dst1, i_dst_stride1,
-                                         p_dst2, i_dst_stride2,
-                                         i_width, i_height );
+        core_plane_copy_deinterleave_rgb_msa( p_src, i_src_stride,
+                                              p_dst0, i_dst_stride0,
+                                              p_dst1, i_dst_stride1,
+                                              p_dst2, i_dst_stride2,
+                                              i_width, i_height );
     }
     else if( 4 == i_src_width )
     {
-        plane_copy_deinterleave_rgba_msa( p_src, i_src_stride,
-                                          p_dst0, i_dst_stride0,
-                                          p_dst1, i_dst_stride1,
-                                          p_dst2, i_dst_stride2,
-                                          i_width, i_height );
+        core_plane_copy_deinterleave_rgba_msa( p_src, i_src_stride,
+                                               p_dst0, i_dst_stride0,
+                                               p_dst1, i_dst_stride1,
+                                               p_dst2, i_dst_stride2,
+                                               i_width, i_height );
     }
 }
 
-void x264_store_interleave_chroma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
-                                       uint8_t *p_src0, uint8_t *p_src1,
-                                       int32_t i_height )
+static void store_interleave_chroma_msa( uint8_t *p_dst, intptr_t i_dst_stride,
+                                         uint8_t *p_src0, uint8_t *p_src1,
+                                         int32_t i_height )
 {
-    store_interleave_chroma_msa( p_src0, FDEC_STRIDE, p_src1, FDEC_STRIDE,
-                                 p_dst, i_dst_stride, i_height );
+    core_store_interleave_chroma_msa( p_src0, FDEC_STRIDE, p_src1, FDEC_STRIDE,
+                                      p_dst, i_dst_stride, i_height );
 }
 
-void x264_load_deinterleave_chroma_fenc_msa( uint8_t *p_dst, uint8_t *p_src,
-                                             intptr_t i_src_stride,
-                                             int32_t i_height )
+static void load_deinterleave_chroma_fenc_msa( uint8_t *p_dst, uint8_t *p_src,
+                                               intptr_t i_src_stride,
+                                               int32_t i_height )
 {
-    plane_copy_deinterleave_msa( p_src, i_src_stride, p_dst, FENC_STRIDE,
-                                 ( p_dst + ( FENC_STRIDE / 2 ) ), FENC_STRIDE,
-                                 8, i_height );
+    core_plane_copy_deinterleave_msa( p_src, i_src_stride, p_dst, FENC_STRIDE,
+                                     ( p_dst + ( FENC_STRIDE / 2 ) ), FENC_STRIDE,
+                                     8, i_height );
 }
 
-void x264_load_deinterleave_chroma_fdec_msa( uint8_t *p_dst, uint8_t *p_src,
-                                             intptr_t i_src_stride,
-                                             int32_t i_height )
+static void load_deinterleave_chroma_fdec_msa( uint8_t *p_dst, uint8_t *p_src,
+                                               intptr_t i_src_stride,
+                                               int32_t i_height )
 {
-    plane_copy_deinterleave_msa( p_src, i_src_stride, p_dst, FDEC_STRIDE,
-                                 ( p_dst + ( FDEC_STRIDE / 2 ) ), FDEC_STRIDE,
-                                 8, i_height );
+    core_plane_copy_deinterleave_msa( p_src, i_src_stride, p_dst, FDEC_STRIDE,
+                                      ( p_dst + ( FDEC_STRIDE / 2 ) ), FDEC_STRIDE,
+                                      8, i_height );
 }
 
-void x264_frame_init_lowres_core_msa( uint8_t *p_src, uint8_t *p_dst0,
-                                      uint8_t *p_dst1, uint8_t *p_dst2,
-                                      uint8_t *p_dst3, intptr_t i_src_stride,
-                                      intptr_t i_dst_stride, int32_t i_width,
-                                      int32_t i_height )
+static void frame_init_lowres_core_msa( uint8_t *p_src, uint8_t *p_dst0,
+                                        uint8_t *p_dst1, uint8_t *p_dst2,
+                                        uint8_t *p_dst3, intptr_t i_src_stride,
+                                        intptr_t i_dst_stride, int32_t i_width,
+                                        int32_t i_height )
 {
-    frame_init_lowres_core_msa( p_src, i_src_stride, p_dst0, i_dst_stride,
-                                p_dst1, i_dst_stride, p_dst2, i_dst_stride,
-                                p_dst3, i_dst_stride, i_width, i_height );
+    core_frame_init_lowres_core_msa( p_src, i_src_stride, p_dst0, i_dst_stride,
+                                     p_dst1, i_dst_stride, p_dst2, i_dst_stride,
+                                     p_dst3, i_dst_stride, i_width, i_height );
 }
 
-uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
-                           uint8_t *p_src[4], intptr_t i_src_stride,
-                           int32_t m_vx, int32_t m_vy,
-                           int32_t i_width, int32_t i_height,
-                           const x264_weight_t *pWeight )
+static uint8_t *get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
+                             uint8_t *p_src[4], intptr_t i_src_stride,
+                             int32_t m_vx, int32_t m_vy,
+                             int32_t i_width, int32_t i_height,
+                             const x264_weight_t *pWeight )
 {
     int32_t i_qpel_idx, i_cnt, i_h4w;
     int32_t i_offset;
@@ -3289,9 +3166,9 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
 
             if( 16 == i_width || 12 == i_width )
             {
-                x264_mc_weight_w16_msa( p_dst, *p_dst_stride,
-                                        p_dst, *p_dst_stride,
-                                        pWeight, i_h4w );
+                mc_weight_w16_msa( p_dst, *p_dst_stride,
+                                   p_dst, *p_dst_stride,
+                                   pWeight, i_h4w );
                 for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
                 {
                     v16i8 zero = {0};
@@ -3349,9 +3226,9 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
             }
             else if( 20 == i_width )
             {
-                x264_mc_weight_w20_msa( p_dst, *p_dst_stride,
-                                        p_dst, *p_dst_stride,
-                                        pWeight, i_h4w );
+                mc_weight_w20_msa( p_dst, *p_dst_stride,
+                                   p_dst, *p_dst_stride,
+                                   pWeight, i_h4w );
                 for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
                 {
                     uint32_t temp0;
@@ -3427,9 +3304,9 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
             }
             else if( 8 == i_width )
             {
-                x264_mc_weight_w8_msa( p_dst, *p_dst_stride,
-                                       p_dst, *p_dst_stride,
-                                       pWeight, i_h4w );
+                mc_weight_w8_msa( p_dst, *p_dst_stride,
+                                  p_dst, *p_dst_stride,
+                                  pWeight, i_h4w );
                 for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
                 {
                     uint64_t temp0;
@@ -3473,9 +3350,9 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
             }
             else if( 4 == i_width )
             {
-                x264_mc_weight_w4_msa( p_dst, *p_dst_stride,
-                                       p_dst, *p_dst_stride,
-                                       pWeight, i_h4w );
+                mc_weight_w4_msa( p_dst, *p_dst_stride,
+                                  p_dst, *p_dst_stride,
+                                  pWeight, i_h4w );
                 for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
                 {
                     uint32_t temp0;
@@ -3537,8 +3414,8 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
 
         if( 16 == i_width || 12 == i_width )
         {
-            x264_mc_weight_w16_msa( p_dst, *p_dst_stride, p_src1, i_src_stride,
-                                    pWeight, i_h4w );
+            mc_weight_w16_msa( p_dst, *p_dst_stride, p_src1, i_src_stride,
+                               pWeight, i_h4w );
             p_src1 = src1_org + i_h4w * i_src_stride;
 
             for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
@@ -3591,8 +3468,8 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
         }
         else if( 20 == i_width )
         {
-            x264_mc_weight_w20_msa( p_dst, *p_dst_stride, p_src1, i_src_stride,
-                                    pWeight, i_h4w );
+            mc_weight_w20_msa( p_dst, *p_dst_stride, p_src1, i_src_stride,
+                               pWeight, i_h4w );
             p_src1 = src1_org + i_h4w * i_src_stride;
 
             for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
@@ -3662,8 +3539,8 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
         }
         else if( 8 == i_width )
         {
-            x264_mc_weight_w8_msa( p_dst, *p_dst_stride, p_src1, i_src_stride,
-                                   pWeight, i_h4w );
+            mc_weight_w8_msa( p_dst, *p_dst_stride, p_src1, i_src_stride,
+                              pWeight, i_h4w );
             p_src1 = src1_org + i_h4w * i_src_stride;
 
             for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
@@ -3707,8 +3584,8 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
         }
         else if( 4 == i_width )
         {
-            x264_mc_weight_w4_msa( p_dst, *p_dst_stride, p_src1, i_src_stride,
-                                   pWeight, i_h4w );
+            mc_weight_w4_msa( p_dst, *p_dst_stride, p_src1, i_src_stride,
+                              pWeight, i_h4w );
             p_src1 = src1_org + i_h4w * i_src_stride;
 
             for( i_cnt = i_h4w; i_cnt < i_height; i_cnt++ )
@@ -3761,6 +3638,16 @@ uint8_t *x264_get_ref_msa( uint8_t *p_dst, intptr_t *p_dst_stride,
         return p_src1;
     }
 }
+
+static weight_fn_t mc_weight_wtab_msa[6] =
+{
+    mc_weight_w4_msa,
+    mc_weight_w4_msa,
+    mc_weight_w8_msa,
+    mc_weight_w16_msa,
+    mc_weight_w16_msa,
+    mc_weight_w20_msa,
+};
 #endif // !HIGH_BIT_DEPTH
 
 void x264_mc_init_mips( int32_t cpu, x264_mc_functions_t *pf  )
@@ -3768,42 +3655,42 @@ void x264_mc_init_mips( int32_t cpu, x264_mc_functions_t *pf  )
 #if !HIGH_BIT_DEPTH
     if( cpu & X264_CPU_MSA )
     {
-        pf->mc_luma = x264_mc_luma_msa;
-        pf->mc_chroma = x264_mc_chroma_msa;
-        pf->get_ref = x264_get_ref_msa;
+        pf->mc_luma = mc_luma_msa;
+        pf->mc_chroma = mc_chroma_msa;
+        pf->get_ref = get_ref_msa;
 
-        pf->avg[PIXEL_16x16]= x264_pixel_avg_16x16_msa;
-        pf->avg[PIXEL_16x8] = x264_pixel_avg_16x8_msa;
-        pf->avg[PIXEL_8x16] = x264_pixel_avg_8x16_msa;
-        pf->avg[PIXEL_8x8] = x264_pixel_avg_8x8_msa;
-        pf->avg[PIXEL_8x4] = x264_pixel_avg_8x4_msa;
-        pf->avg[PIXEL_4x16] = x264_pixel_avg_4x16_msa;
-        pf->avg[PIXEL_4x8] = x264_pixel_avg_4x8_msa;
-        pf->avg[PIXEL_4x4] = x264_pixel_avg_4x4_msa;
-        pf->avg[PIXEL_4x2] = x264_pixel_avg_4x2_msa;
+        pf->avg[PIXEL_16x16]= pixel_avg_16x16_msa;
+        pf->avg[PIXEL_16x8] = pixel_avg_16x8_msa;
+        pf->avg[PIXEL_8x16] = pixel_avg_8x16_msa;
+        pf->avg[PIXEL_8x8] = pixel_avg_8x8_msa;
+        pf->avg[PIXEL_8x4] = pixel_avg_8x4_msa;
+        pf->avg[PIXEL_4x16] = pixel_avg_4x16_msa;
+        pf->avg[PIXEL_4x8] = pixel_avg_4x8_msa;
+        pf->avg[PIXEL_4x4] = pixel_avg_4x4_msa;
+        pf->avg[PIXEL_4x2] = pixel_avg_4x2_msa;
 
-        pf->weight = x264_mc_weight_wtab_msa;
-        pf->offsetadd = x264_mc_weight_wtab_msa;
-        pf->offsetsub = x264_mc_weight_wtab_msa;
+        pf->weight = mc_weight_wtab_msa;
+        pf->offsetadd = mc_weight_wtab_msa;
+        pf->offsetsub = mc_weight_wtab_msa;
 
-        pf->copy_16x16_unaligned = x264_mc_copy_w16_msa;
-        pf->copy[PIXEL_16x16] = x264_mc_copy_w16_msa;
-        pf->copy[PIXEL_8x8] = x264_mc_copy_w8_msa;
-        pf->copy[PIXEL_4x4] = x264_mc_copy_w4_msa;
+        pf->copy_16x16_unaligned = mc_copy_w16_msa;
+        pf->copy[PIXEL_16x16] = mc_copy_w16_msa;
+        pf->copy[PIXEL_8x8] = mc_copy_w8_msa;
+        pf->copy[PIXEL_4x4] = mc_copy_w4_msa;
 
-        pf->store_interleave_chroma = x264_store_interleave_chroma_msa;
-        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_msa;
-        pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_msa;
+        pf->store_interleave_chroma = store_interleave_chroma_msa;
+        pf->load_deinterleave_chroma_fenc = load_deinterleave_chroma_fenc_msa;
+        pf->load_deinterleave_chroma_fdec = load_deinterleave_chroma_fdec_msa;
 
-        pf->plane_copy_interleave = x264_plane_copy_interleave_msa;
-        pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_msa;
-        pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_msa;
+        pf->plane_copy_interleave = plane_copy_interleave_msa;
+        pf->plane_copy_deinterleave = plane_copy_deinterleave_msa;
+        pf->plane_copy_deinterleave_rgb = plane_copy_deinterleave_rgb_msa;
 
-        pf->hpel_filter = x264_hpel_filter_msa;
+        pf->hpel_filter = hpel_filter_msa;
 
         pf->memcpy_aligned = memcpy;
-        pf->memzero_aligned = x264_memzero_aligned_msa;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_msa;
+        pf->memzero_aligned = memzero_aligned_msa;
+        pf->frame_init_lowres_core = frame_init_lowres_core_msa;
     }
 #endif // !HIGH_BIT_DEPTH
 }

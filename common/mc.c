@@ -107,7 +107,7 @@ PIXEL_AVG_C( pixel_avg_2x8,   2, 8 )
 PIXEL_AVG_C( pixel_avg_2x4,   2, 4 )
 PIXEL_AVG_C( pixel_avg_2x2,   2, 2 )
 
-static void x264_weight_cache( x264_t *h, x264_weight_t *w )
+static void weight_cache( x264_t *h, x264_weight_t *w )
 {
     w->weightfn = h->mc.weight;
 }
@@ -134,7 +134,7 @@ static void mc_weight( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i
 }
 
 #define MC_WEIGHT_C( name, width ) \
-    static void name( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i_src_stride, const x264_weight_t *weight, int height ) \
+static void name( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i_src_stride, const x264_weight_t *weight, int height ) \
 { \
     mc_weight( dst, i_dst_stride, src, i_src_stride, weight, width, height );\
 }
@@ -146,7 +146,7 @@ MC_WEIGHT_C( mc_weight_w8,   8 )
 MC_WEIGHT_C( mc_weight_w4,   4 )
 MC_WEIGHT_C( mc_weight_w2,   2 )
 
-static weight_fn_t x264_mc_weight_wtab[6] =
+static weight_fn_t mc_weight_wtab[6] =
 {
     mc_weight_w2,
     mc_weight_w4,
@@ -336,10 +336,10 @@ void x264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, 
         }
 }
 
-static void x264_plane_copy_deinterleave_rgb_c( pixel *dsta, intptr_t i_dsta,
-                                                pixel *dstb, intptr_t i_dstb,
-                                                pixel *dstc, intptr_t i_dstc,
-                                                pixel *src,  intptr_t i_src, int pw, int w, int h )
+static void plane_copy_deinterleave_rgb_c( pixel *dsta, intptr_t i_dsta,
+                                           pixel *dstb, intptr_t i_dstb,
+                                           pixel *dstc, intptr_t i_dstc,
+                                           pixel *src,  intptr_t i_src, int pw, int w, int h )
 {
     for( int y=0; y<h; y++, dsta+=i_dsta, dstb+=i_dstb, dstc+=i_dstc, src+=i_src )
     {
@@ -361,9 +361,9 @@ static ALWAYS_INLINE uint32_t v210_endian_fix32( uint32_t x )
 #define v210_endian_fix32(x) (x)
 #endif
 
-static void x264_plane_copy_deinterleave_v210_c( pixel *dsty, intptr_t i_dsty,
-                                                 pixel *dstc, intptr_t i_dstc,
-                                                 uint32_t *src, intptr_t i_src, int w, int h )
+static void plane_copy_deinterleave_v210_c( pixel *dsty, intptr_t i_dsty,
+                                            pixel *dstc, intptr_t i_dstc,
+                                            uint32_t *src, intptr_t i_src, int w, int h )
 {
     for( int l = 0; l < h; l++ )
     {
@@ -630,10 +630,10 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->avg[PIXEL_2x4]  = pixel_avg_2x4;
     pf->avg[PIXEL_2x2]  = pixel_avg_2x2;
 
-    pf->weight    = x264_mc_weight_wtab;
-    pf->offsetadd = x264_mc_weight_wtab;
-    pf->offsetsub = x264_mc_weight_wtab;
-    pf->weight_cache = x264_weight_cache;
+    pf->weight    = mc_weight_wtab;
+    pf->offsetadd = mc_weight_wtab;
+    pf->offsetsub = mc_weight_wtab;
+    pf->weight_cache = weight_cache;
 
     pf->copy_16x16_unaligned = mc_copy_w16;
     pf->copy[PIXEL_16x16] = mc_copy_w16;
@@ -647,10 +647,11 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->plane_copy = x264_plane_copy_c;
     pf->plane_copy_swap = x264_plane_copy_swap_c;
     pf->plane_copy_interleave = x264_plane_copy_interleave_c;
+
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_c;
     pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_c;
-    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_c;
-    pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_c;
+    pf->plane_copy_deinterleave_rgb = plane_copy_deinterleave_rgb_c;
+    pf->plane_copy_deinterleave_v210 = plane_copy_deinterleave_v210_c;
 
     pf->hpel_filter = hpel_filter;
 

@@ -424,7 +424,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
             /* Uneven-cross Multi-Hexagon-grid Search
              * as in JM, except with different early termination */
 
-            static const uint8_t x264_pixel_size_shift[7] = { 0, 1, 1, 2, 3, 3, 4 };
+            static const uint8_t pixel_size_shift[7] = { 0, 1, 1, 2, 3, 3, 4 };
 
             int ucost1, ucost2;
             int cross_start = 1;
@@ -446,7 +446,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
             omx = bmx; omy = bmy;
 
             /* early termination */
-#define SAD_THRESH(v) ( bcost < ( v >> x264_pixel_size_shift[i_pixel] ) )
+#define SAD_THRESH(v) ( bcost < ( v >> pixel_size_shift[i_pixel] ) )
             if( bcost == ucost2 && SAD_THRESH(2000) )
             {
                 COST_MV_X4( 0,-2, -1,-1, 1,-1, -2,0 );
@@ -1024,7 +1024,7 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
  * other than making its iteration count not a compile-time constant. */
 int x264_iter_kludge = 0;
 
-static void ALWAYS_INLINE x264_me_refine_bidir( x264_t *h, x264_me_t *m0, x264_me_t *m1, int i_weight, int i8, int i_lambda2, int rd )
+static void ALWAYS_INLINE me_refine_bidir( x264_t *h, x264_me_t *m0, x264_me_t *m1, int i_weight, int i8, int i_lambda2, int rd )
 {
     int x = i8&1;
     int y = i8>>1;
@@ -1179,7 +1179,7 @@ static void ALWAYS_INLINE x264_me_refine_bidir( x264_t *h, x264_me_t *m0, x264_m
 
 void x264_me_refine_bidir_satd( x264_t *h, x264_me_t *m0, x264_me_t *m1, int i_weight )
 {
-    x264_me_refine_bidir( h, m0, m1, i_weight, 0, 0, 0 );
+    me_refine_bidir( h, m0, m1, i_weight, 0, 0, 0 );
 }
 
 void x264_me_refine_bidir_rd( x264_t *h, x264_me_t *m0, x264_me_t *m1, int i_weight, int i8, int i_lambda2 )
@@ -1187,7 +1187,7 @@ void x264_me_refine_bidir_rd( x264_t *h, x264_me_t *m0, x264_me_t *m1, int i_wei
     /* Motion compensation is done as part of bidir_rd; don't repeat
      * it in encoding. */
     h->mb.b_skip_mc = 1;
-    x264_me_refine_bidir( h, m0, m1, i_weight, i8, i_lambda2, 1 );
+    me_refine_bidir( h, m0, m1, i_weight, i8, i_lambda2, 1 );
     h->mb.b_skip_mc = 0;
 }
 

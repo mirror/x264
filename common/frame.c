@@ -42,7 +42,7 @@ static int align_plane_size( int x, int disalign )
     return x;
 }
 
-static int x264_frame_internal_csp( int external_csp )
+static int frame_internal_csp( int external_csp )
 {
     switch( external_csp & X264_CSP_MASK )
     {
@@ -69,10 +69,10 @@ static int x264_frame_internal_csp( int external_csp )
     }
 }
 
-static x264_frame_t *x264_frame_new( x264_t *h, int b_fdec )
+static x264_frame_t *frame_new( x264_t *h, int b_fdec )
 {
     x264_frame_t *frame;
-    int i_csp = x264_frame_internal_csp( h->param.i_csp );
+    int i_csp = frame_internal_csp( h->param.i_csp );
     int i_mb_count = h->mb.i_mb_count;
     int i_stride, i_width, i_lines, luma_plane_count;
     int i_padv = PADV << PARAM_INTERLACED;
@@ -366,7 +366,7 @@ static int get_plane_ptr( x264_t *h, x264_picture_t *src, uint8_t **pix, int *st
 int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
 {
     int i_csp = src->img.i_csp & X264_CSP_MASK;
-    if( dst->i_csp != x264_frame_internal_csp( i_csp ) )
+    if( dst->i_csp != frame_internal_csp( i_csp ) )
     {
         x264_log( h, X264_LOG_ERROR, "Invalid input colorspace\n" );
         return -1;
@@ -784,7 +784,7 @@ x264_frame_t *x264_frame_pop_unused( x264_t *h, int b_fdec )
     if( h->frames.unused[b_fdec][0] )
         frame = x264_frame_pop( h->frames.unused[b_fdec] );
     else
-        frame = x264_frame_new( h, b_fdec );
+        frame = frame_new( h, b_fdec );
     if( !frame )
         return NULL;
     frame->b_last_minigop_bframe = 0;

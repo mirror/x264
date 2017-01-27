@@ -1364,7 +1364,7 @@ void x264_cabac_encode_init( x264_cabac_t *cb, uint8_t *p_data, uint8_t *p_end )
     cb->p_end   = p_end;
 }
 
-static inline void x264_cabac_putbyte( x264_cabac_t *cb )
+static inline void cabac_putbyte( x264_cabac_t *cb )
 {
     if( cb->i_queue >= 0 )
     {
@@ -1396,13 +1396,13 @@ static inline void x264_cabac_putbyte( x264_cabac_t *cb )
     }
 }
 
-static inline void x264_cabac_encode_renorm( x264_cabac_t *cb )
+static inline void cabac_encode_renorm( x264_cabac_t *cb )
 {
     int shift = x264_cabac_renorm_shift[cb->i_range>>3];
     cb->i_range <<= shift;
     cb->i_low   <<= shift;
     cb->i_queue  += shift;
-    x264_cabac_putbyte( cb );
+    cabac_putbyte( cb );
 }
 
 /* Making custom versions of this function, even in asm, for the cases where
@@ -1419,7 +1419,7 @@ void x264_cabac_encode_decision_c( x264_cabac_t *cb, int i_ctx, int b )
         cb->i_range = i_range_lps;
     }
     cb->state[i_ctx] = x264_cabac_transition[i_state][b];
-    x264_cabac_encode_renorm( cb );
+    cabac_encode_renorm( cb );
 }
 
 /* Note: b is negated for this function */
@@ -1428,7 +1428,7 @@ void x264_cabac_encode_bypass_c( x264_cabac_t *cb, int b )
     cb->i_low <<= 1;
     cb->i_low += b & cb->i_range;
     cb->i_queue += 1;
-    x264_cabac_putbyte( cb );
+    cabac_putbyte( cb );
 }
 
 static const int bypass_lut[16] =
@@ -1449,7 +1449,7 @@ void x264_cabac_encode_ue_bypass( x264_cabac_t *cb, int exp_bits, int val )
         cb->i_low <<= i;
         cb->i_low += ((x>>k)&0xff) * cb->i_range;
         cb->i_queue += i;
-        x264_cabac_putbyte( cb );
+        cabac_putbyte( cb );
         i = 8;
     } while( k > 0 );
 }
@@ -1457,7 +1457,7 @@ void x264_cabac_encode_ue_bypass( x264_cabac_t *cb, int exp_bits, int val )
 void x264_cabac_encode_terminal_c( x264_cabac_t *cb )
 {
     cb->i_range -= 2;
-    x264_cabac_encode_renorm( cb );
+    cabac_encode_renorm( cb );
 }
 
 void x264_cabac_encode_flush( x264_t *h, x264_cabac_t *cb )
@@ -1466,12 +1466,12 @@ void x264_cabac_encode_flush( x264_t *h, x264_cabac_t *cb )
     cb->i_low |= 1;
     cb->i_low <<= 9;
     cb->i_queue += 9;
-    x264_cabac_putbyte( cb );
-    x264_cabac_putbyte( cb );
+    cabac_putbyte( cb );
+    cabac_putbyte( cb );
     cb->i_low <<= -cb->i_queue;
     cb->i_low |= (0x35a4e4f5 >> (h->i_frame & 31) & 1) << 10;
     cb->i_queue = 0;
-    x264_cabac_putbyte( cb );
+    cabac_putbyte( cb );
 
     while( cb->i_bytes_outstanding > 0 )
     {

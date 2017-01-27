@@ -337,7 +337,7 @@ static ALWAYS_INLINE void deblock_edge_intra( x264_t *h, pixel *pix, intptr_t i_
     pf_intra( pix, i_stride, alpha, beta );
 }
 
-static ALWAYS_INLINE void x264_macroblock_cache_load_neighbours_deblock( x264_t *h, int mb_x, int mb_y )
+static ALWAYS_INLINE void macroblock_cache_load_neighbours_deblock( x264_t *h, int mb_x, int mb_y )
 {
     int deblock_on_slice_edges = h->sh.i_disable_deblocking_filter_idc != 2;
 
@@ -390,7 +390,7 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
     for( int mb_x = 0; mb_x < h->mb.i_mb_width; mb_x += (~b_interlaced | mb_y)&1, mb_y ^= b_interlaced )
     {
         x264_prefetch_fenc( h, h->fdec, mb_x, mb_y );
-        x264_macroblock_cache_load_neighbours_deblock( h, mb_x, mb_y );
+        macroblock_cache_load_neighbours_deblock( h, mb_x, mb_y );
 
         int mb_xy = h->mb.i_mb_xy;
         int transform_8x8 = h->mb.mb_transform_size[mb_xy];

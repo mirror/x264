@@ -67,7 +67,7 @@ void x264_opencl_flush( x264_t *h )
     h->opencl.pl_occupancy = 0;
 }
 
-static void *x264_opencl_alloc_locked( x264_t *h, int bytes )
+static void *opencl_alloc_locked( x264_t *h, int bytes )
 {
     if( h->opencl.pl_occupancy + bytes >= PAGE_LOCKED_BUF_SIZE )
         x264_opencl_flush( h );
@@ -161,7 +161,7 @@ int x264_opencl_lowres_init( x264_t *h, x264_frame_t *fenc, int lambda )
 
     /* Copy image to the GPU, downscale to unpadded 8x8, then continue for all scales */
 
-    char *locked = x264_opencl_alloc_locked( h, luma_length );
+    char *locked = opencl_alloc_locked( h, luma_length );
     memcpy( locked, fenc->plane[0], luma_length );
     OCLCHECK( clEnqueueWriteBuffer, h->opencl.queue,  h->opencl.luma_16x16_image[h->opencl.last_buf], CL_FALSE, 0, luma_length, locked, 0, NULL, NULL );
 
@@ -169,7 +169,7 @@ int x264_opencl_lowres_init( x264_t *h, x264_frame_t *fenc, int lambda )
     if( h->param.rc.i_aq_mode && fenc->i_inv_qscale_factor )
     {
         int size = h->mb.i_mb_count * sizeof(int16_t);
-        locked = x264_opencl_alloc_locked( h, size );
+        locked = opencl_alloc_locked( h, size );
         memcpy( locked, fenc->i_inv_qscale_factor, size );
         OCLCHECK( clEnqueueWriteBuffer, h->opencl.queue, fenc->opencl.inv_qscale_factor, CL_FALSE, 0, size, locked, 0, NULL, NULL );
     }
@@ -250,7 +250,7 @@ int x264_opencl_lowres_init( x264_t *h, x264_frame_t *fenc, int lambda )
         x264_opencl_flush( h );
 
     int size = h->mb.i_mb_count * sizeof(int16_t);
-    locked = x264_opencl_alloc_locked( h, size );
+    locked = opencl_alloc_locked( h, size );
     OCLCHECK( clEnqueueReadBuffer, h->opencl.queue, fenc->opencl.intra_cost, CL_FALSE, 0, size, locked, 0, NULL, NULL );
     h->opencl.copies[h->opencl.num_copies].dest = fenc->lowres_costs[0][0];
     h->opencl.copies[h->opencl.num_copies].src = locked;
@@ -258,7 +258,7 @@ int x264_opencl_lowres_init( x264_t *h, x264_frame_t *fenc, int lambda )
     h->opencl.num_copies++;
 
     size = h->mb.i_mb_height * sizeof(int);
-    locked = x264_opencl_alloc_locked( h, size );
+    locked = opencl_alloc_locked( h, size );
     OCLCHECK( clEnqueueReadBuffer, h->opencl.queue, h->opencl.row_satds[h->opencl.last_buf], CL_FALSE, 0, size, locked, 0, NULL, NULL );
     h->opencl.copies[h->opencl.num_copies].dest = fenc->i_row_satds[0][0];
     h->opencl.copies[h->opencl.num_copies].src = locked;
@@ -266,7 +266,7 @@ int x264_opencl_lowres_init( x264_t *h, x264_frame_t *fenc, int lambda )
     h->opencl.num_copies++;
 
     size = sizeof(int) * 4;
-    locked = x264_opencl_alloc_locked( h, size );
+    locked = opencl_alloc_locked( h, size );
     OCLCHECK( clEnqueueReadBuffer, h->opencl.queue, h->opencl.frame_stats[h->opencl.last_buf], CL_FALSE, 0, size, locked, 0, NULL, NULL );
     h->opencl.copies[h->opencl.num_copies].dest = &fenc->i_cost_est[0][0];
     h->opencl.copies[h->opencl.num_copies].src = locked;
@@ -286,7 +286,7 @@ int x264_opencl_lowres_init( x264_t *h, x264_frame_t *fenc, int lambda )
  * applications will have self-tuning code to try many possible variables and
  * measure the runtime.  Here we simply make an educated guess based on what we
  * know GPUs typically prefer.  */
-static void x264_optimal_launch_dims( x264_t *h, size_t *gdims, size_t *ldims, const cl_kernel kernel, const cl_device_id device )
+static void optimal_launch_dims( x264_t *h, size_t *gdims, size_t *ldims, const cl_kernel kernel, const cl_device_id device )
 {
     x264_opencl_function_t *ocl = h->opencl.ocl;
     size_t max_work_group = 256;    /* reasonable defaults for OpenCL 1.0 devices, below APIs may fail */
@@ -425,7 +425,7 @@ int x264_opencl_motionsearch( x264_t *h, x264_frame_t **frames, int b, int ref, 
         if( gdims[0] < 2 || gdims[1] < 2 )
             continue;
         gdims[0] <<= 2;
-        x264_optimal_launch_dims( h, gdims, ldims, h->opencl.hme_kernel, h->opencl.device );
+        optimal_launch_dims( h, gdims, ldims, h->opencl.hme_kernel, h->opencl.device );
 
         mb_per_group = (ldims[0] >> 2) * ldims[1];
         cost_local_size = 4 * mb_per_group * sizeof(int16_t);
@@ -513,7 +513,7 @@ int x264_opencl_motionsearch( x264_t *h, x264_frame_t **frames, int b, int ref, 
     if( h->opencl.num_copies >= MAX_FINISH_COPIES - 1 )
         x264_opencl_flush( h );
 
-    char *locked = x264_opencl_alloc_locked( h, mvlen );
+    char *locked = opencl_alloc_locked( h, mvlen );
     h->opencl.copies[h->opencl.num_copies].src = locked;
     h->opencl.copies[h->opencl.num_copies].bytes = mvlen;
 
@@ -560,7 +560,7 @@ int x264_opencl_finalize_cost( x264_t *h, int lambda, x264_frame_t **frames, int
         /* For B frames, use 4 threads per MB for BIDIR checks */
         ldims = ldim_bidir;
         gdims[0] <<= 2;
-        x264_optimal_launch_dims( h, gdims, ldims, h->opencl.mode_select_kernel, h->opencl.device );
+        optimal_launch_dims( h, gdims, ldims, h->opencl.mode_select_kernel, h->opencl.device );
         int mb_per_group = (ldims[0] >> 2) * ldims[1];
         cost_local_size = 4 * mb_per_group * sizeof(int16_t);
         satd_local_size = 16 * mb_per_group * sizeof(uint32_t);
@@ -609,7 +609,7 @@ int x264_opencl_finalize_cost( x264_t *h, int lambda, x264_frame_t **frames, int
         x264_opencl_flush( h );
 
     int size =  h->mb.i_mb_count * sizeof(int16_t);
-    char *locked = x264_opencl_alloc_locked( h, size );
+    char *locked = opencl_alloc_locked( h, size );
     h->opencl.copies[h->opencl.num_copies].src = locked;
     h->opencl.copies[h->opencl.num_copies].dest = fenc->lowres_costs[b - p0][p1 - b];
     h->opencl.copies[h->opencl.num_copies].bytes = size;
@@ -617,7 +617,7 @@ int x264_opencl_finalize_cost( x264_t *h, int lambda, x264_frame_t **frames, int
     h->opencl.num_copies++;
 
     size =  h->mb.i_mb_height * sizeof(int);
-    locked = x264_opencl_alloc_locked( h, size );
+    locked = opencl_alloc_locked( h, size );
     h->opencl.copies[h->opencl.num_copies].src = locked;
     h->opencl.copies[h->opencl.num_copies].dest = fenc->i_row_satds[b - p0][p1 - b];
     h->opencl.copies[h->opencl.num_copies].bytes = size;
@@ -625,7 +625,7 @@ int x264_opencl_finalize_cost( x264_t *h, int lambda, x264_frame_t **frames, int
     h->opencl.num_copies++;
 
     size =  4 * sizeof(int);
-    locked = x264_opencl_alloc_locked( h, size );
+    locked = opencl_alloc_locked( h, size );
     OCLCHECK( clEnqueueReadBuffer, h->opencl.queue, h->opencl.frame_stats[h->opencl.last_buf], CL_FALSE, 0, size, locked, 0, NULL, NULL );
     h->opencl.last_buf = !h->opencl.last_buf;
 

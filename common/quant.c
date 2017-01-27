@@ -298,7 +298,7 @@ static int optimize_chroma_2x4_dc( dctcoef dct[8], int dequant_mf )
     return optimize_chroma_dc_internal( dct, dequant_mf, 1 );
 }
 
-static void x264_denoise_dct( dctcoef *dct, uint32_t *sum, udctcoef *offset, int size )
+static void denoise_dct( dctcoef *dct, uint32_t *sum, udctcoef *offset, int size )
 {
     for( int i = 0; i < size; i++ )
     {
@@ -332,7 +332,7 @@ const uint8_t x264_decimate_table8[64] =
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static int ALWAYS_INLINE x264_decimate_score_internal( dctcoef *dct, int i_max )
+static int ALWAYS_INLINE decimate_score_internal( dctcoef *dct, int i_max )
 {
     const uint8_t *ds_table = (i_max == 64) ? x264_decimate_table8 : x264_decimate_table4;
     int i_score = 0;
@@ -359,21 +359,21 @@ static int ALWAYS_INLINE x264_decimate_score_internal( dctcoef *dct, int i_max )
     return i_score;
 }
 
-static int x264_decimate_score15( dctcoef *dct )
+static int decimate_score15( dctcoef *dct )
 {
-    return x264_decimate_score_internal( dct+1, 15 );
+    return decimate_score_internal( dct+1, 15 );
 }
-static int x264_decimate_score16( dctcoef *dct )
+static int decimate_score16( dctcoef *dct )
 {
-    return x264_decimate_score_internal( dct, 16 );
+    return decimate_score_internal( dct, 16 );
 }
-static int x264_decimate_score64( dctcoef *dct )
+static int decimate_score64( dctcoef *dct )
 {
-    return x264_decimate_score_internal( dct, 64 );
+    return decimate_score_internal( dct, 64 );
 }
 
 #define last(num)\
-static int x264_coeff_last##num( dctcoef *l )\
+static int coeff_last##num( dctcoef *l )\
 {\
     int i_last = num-1;\
     while( i_last >= 0 && l[i_last] == 0 )\
@@ -388,9 +388,9 @@ last(16)
 last(64)
 
 #define level_run(num)\
-static int x264_coeff_level_run##num( dctcoef *dct, x264_run_level_t *runlevel )\
+static int coeff_level_run##num( dctcoef *dct, x264_run_level_t *runlevel )\
 {\
-    int i_last = runlevel->last = x264_coeff_last##num(dct);\
+    int i_last = runlevel->last = coeff_last##num(dct);\
     int i_total = 0;\
     int mask = 0;\
     do\
@@ -438,20 +438,20 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
     pf->optimize_chroma_2x2_dc = optimize_chroma_2x2_dc;
     pf->optimize_chroma_2x4_dc = optimize_chroma_2x4_dc;
 
-    pf->denoise_dct = x264_denoise_dct;
-    pf->decimate_score15 = x264_decimate_score15;
-    pf->decimate_score16 = x264_decimate_score16;
-    pf->decimate_score64 = x264_decimate_score64;
+    pf->denoise_dct = denoise_dct;
+    pf->decimate_score15 = decimate_score15;
+    pf->decimate_score16 = decimate_score16;
+    pf->decimate_score64 = decimate_score64;
 
-    pf->coeff_last4 = x264_coeff_last4;
-    pf->coeff_last8 = x264_coeff_last8;
-    pf->coeff_last[  DCT_LUMA_AC] = x264_coeff_last15;
-    pf->coeff_last[ DCT_LUMA_4x4] = x264_coeff_last16;
-    pf->coeff_last[ DCT_LUMA_8x8] = x264_coeff_last64;
-    pf->coeff_level_run4 = x264_coeff_level_run4;
-    pf->coeff_level_run8 = x264_coeff_level_run8;
-    pf->coeff_level_run[  DCT_LUMA_AC] = x264_coeff_level_run15;
-    pf->coeff_level_run[ DCT_LUMA_4x4] = x264_coeff_level_run16;
+    pf->coeff_last4 = coeff_last4;
+    pf->coeff_last8 = coeff_last8;
+    pf->coeff_last[  DCT_LUMA_AC] = coeff_last15;
+    pf->coeff_last[ DCT_LUMA_4x4] = coeff_last16;
+    pf->coeff_last[ DCT_LUMA_8x8] = coeff_last64;
+    pf->coeff_level_run4 = coeff_level_run4;
+    pf->coeff_level_run8 = coeff_level_run8;
+    pf->coeff_level_run[  DCT_LUMA_AC] = coeff_level_run15;
+    pf->coeff_level_run[ DCT_LUMA_4x4] = coeff_level_run16;
 
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX

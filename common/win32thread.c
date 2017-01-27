@@ -51,7 +51,7 @@
 static x264_pthread_mutex_t static_mutex;
 
 /* _beginthreadex requires that the start routine is __stdcall */
-static unsigned __stdcall x264_win32thread_worker( void *arg )
+static unsigned __stdcall win32thread_worker( void *arg )
 {
     x264_pthread_t *h = arg;
     *h->p_ret = h->func( h->arg );
@@ -65,7 +65,7 @@ int x264_pthread_create( x264_pthread_t *thread, const x264_pthread_attr_t *attr
     thread->arg    = arg;
     thread->p_ret  = &thread->ret;
     thread->ret    = NULL;
-    thread->handle = (void*)_beginthreadex( NULL, 0, x264_win32thread_worker, thread, 0, NULL );
+    thread->handle = (void*)_beginthreadex( NULL, 0, win32thread_worker, thread, 0, NULL );
     return !thread->handle;
 }
 

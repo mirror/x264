@@ -86,7 +86,7 @@ uint64_t x264_cli_pic_size( int csp, int width, int height )
     return size;
 }
 
-static int x264_cli_pic_init_internal( cli_pic_t *pic, int csp, int width, int height, int align, int alloc )
+static int cli_pic_init_internal( cli_pic_t *pic, int csp, int width, int height, int align, int alloc )
 {
     memset( pic, 0, sizeof(cli_pic_t) );
     int csp_mask = csp & X264_CSP_MASK;
@@ -118,17 +118,17 @@ static int x264_cli_pic_init_internal( cli_pic_t *pic, int csp, int width, int h
 
 int x264_cli_pic_alloc( cli_pic_t *pic, int csp, int width, int height )
 {
-    return x264_cli_pic_init_internal( pic, csp, width, height, 1, 1 );
+    return cli_pic_init_internal( pic, csp, width, height, 1, 1 );
 }
 
 int x264_cli_pic_alloc_aligned( cli_pic_t *pic, int csp, int width, int height )
 {
-    return x264_cli_pic_init_internal( pic, csp, width, height, NATIVE_ALIGN, 1 );
+    return cli_pic_init_internal( pic, csp, width, height, NATIVE_ALIGN, 1 );
 }
 
 int x264_cli_pic_init_noalloc( cli_pic_t *pic, int csp, int width, int height )
 {
-    return x264_cli_pic_init_internal( pic, csp, width, height, 1, 0 );
+    return cli_pic_init_internal( pic, csp, width, height, 1, 0 );
 }
 
 void x264_cli_pic_clean( cli_pic_t *pic )

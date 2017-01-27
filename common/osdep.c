@@ -60,9 +60,9 @@ int64_t x264_mdate( void )
 
 #if HAVE_WIN32THREAD || PTW32_STATIC_LIB
 /* state of the threading library being initialized */
-static volatile LONG x264_threading_is_init = 0;
+static volatile LONG threading_is_init = 0;
 
-static void x264_threading_destroy( void )
+static void threading_destroy( void )
 {
 #if PTW32_STATIC_LIB
     pthread_win32_thread_detach_np();
@@ -75,7 +75,7 @@ static void x264_threading_destroy( void )
 int x264_threading_init( void )
 {
     /* if already init, then do nothing */
-    if( InterlockedCompareExchange( &x264_threading_is_init, 1, 0 ) )
+    if( InterlockedCompareExchange( &threading_is_init, 1, 0 ) )
         return 0;
 #if PTW32_STATIC_LIB
     /* if static pthread-win32 is already initialized, then do nothing */
@@ -88,7 +88,7 @@ int x264_threading_init( void )
         return -1;
 #endif
     /* register cleanup to run at process termination */
-    atexit( x264_threading_destroy );
+    atexit( threading_destroy );
 
     return 0;
 }

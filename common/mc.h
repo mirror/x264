@@ -39,9 +39,9 @@ void x264_mbtree_propagate_list_internal_##cpu( int16_t (*mvs)[2], int16_t *prop
                                                 uint16_t *lowres_costs, int16_t *output,\
                                                 int bipred_weight, int mb_y, int len );\
 \
-static void x264_mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],\
-                                              int16_t *propagate_amount, uint16_t *lowres_costs,\
-                                              int bipred_weight, int mb_y, int len, int list )\
+static void mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],\
+                                         int16_t *propagate_amount, uint16_t *lowres_costs,\
+                                         int bipred_weight, int mb_y, int len, int list )\
 {\
     int16_t *current = h->scratch_buffer2;\
 \
@@ -103,7 +103,7 @@ static void x264_mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, in
 void x264_plane_copy_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 
 #define PLANE_COPY(align, cpu)\
-static void x264_plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
+static void plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
 {\
     int c_w = (align) / sizeof(pixel) - 1;\
     if( w < 256 ) /* tiny resolutions don't want non-temporal hints. dunno the exact threshold. */\
@@ -131,7 +131,7 @@ static void x264_plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intpt
 void x264_plane_copy_swap_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 
 #define PLANE_COPY_SWAP(align, cpu)\
-static void x264_plane_copy_swap_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
+static void plane_copy_swap_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
 {\
     int c_w = (align>>1) / sizeof(pixel) - 1;\
     if( !(w&c_w) )\
@@ -166,8 +166,8 @@ void x264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, 
 /* We can utilize existing plane_copy_deinterleave() functions for YUYV/UYUV
  * input with the additional constraint that we cannot overread src. */
 #define PLANE_COPY_YUYV(align, cpu)\
-static void x264_plane_copy_deinterleave_yuyv_##cpu( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,\
-                                                     pixel *src, intptr_t i_src, int w, int h )\
+static void plane_copy_deinterleave_yuyv_##cpu( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,\
+                                                pixel *src, intptr_t i_src, int w, int h )\
 {\
     int c_w = (align>>1) / sizeof(pixel) - 1;\
     if( !(w&c_w) )\
@@ -198,9 +198,9 @@ void x264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
                                    pixel *srcv, intptr_t i_srcv, int w, int h );
 
 #define PLANE_INTERLEAVE(cpu) \
-static void x264_plane_copy_interleave_##cpu( pixel *dst,  intptr_t i_dst,\
-                                              pixel *srcu, intptr_t i_srcu,\
-                                              pixel *srcv, intptr_t i_srcv, int w, int h )\
+static void plane_copy_interleave_##cpu( pixel *dst,  intptr_t i_dst,\
+                                         pixel *srcu, intptr_t i_srcu,\
+                                         pixel *srcv, intptr_t i_srcv, int w, int h )\
 {\
     int c_w = 16 / sizeof(pixel) - 1;\
     if( !(w&c_w) )\

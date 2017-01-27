@@ -362,7 +362,7 @@ static int handle_opts( const char * const *optlist, char **opts, video_info_t *
     return 0;
 }
 
-static int x264_init_sws_context( resizer_hnd_t *h )
+static int init_sws_context( resizer_hnd_t *h )
 {
     if( h->ctx )
         sws_freeContext( h->ctx );
@@ -405,7 +405,7 @@ static int check_resizer( resizer_hnd_t *h, cli_pic_t *in )
             return -1;
         h->buffer_allocated = 1;
     }
-    FAIL_IF_ERROR( x264_init_sws_context( h ), "swscale init failed\n" );
+    FAIL_IF_ERROR( init_sws_context( h ), "swscale init failed\n" );
     return 0;
 }
 

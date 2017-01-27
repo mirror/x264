@@ -216,7 +216,7 @@ PIXEL_AVG_WALL(cache64_ssse3)
 PIXEL_AVG_WALL(avx2)
 
 #define PIXEL_AVG_WTAB(instr, name1, name2, name3, name4, name5)\
-static void (* const x264_pixel_avg_wtab_##instr[6])( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t ) =\
+static void (* const pixel_avg_wtab_##instr[6])( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t ) =\
 {\
     NULL,\
     x264_pixel_avg2_w4_##name1,\
@@ -259,7 +259,7 @@ PIXEL_AVG_WTAB(avx2, mmx2, mmx2, sse2, sse2, avx2)
 #endif // HIGH_BIT_DEPTH
 
 #define MC_COPY_WTAB(instr, name1, name2, name3)\
-static void (* const x264_mc_copy_wtab_##instr[5])( pixel *, intptr_t, pixel *, intptr_t, int ) =\
+static void (* const mc_copy_wtab_##instr[5])( pixel *, intptr_t, pixel *, intptr_t, int ) =\
 {\
     NULL,\
     x264_mc_copy_w4_##name1,\
@@ -277,7 +277,7 @@ MC_COPY_WTAB(sse,mmx,mmx,sse)
 #endif
 
 #define MC_WEIGHT_WTAB(function, instr, name1, name2, w12version)\
-    static void (* x264_mc_##function##_wtab_##instr[6])( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int ) =\
+static void (* mc_##function##_wtab_##instr[6])( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int ) =\
 {\
     x264_mc_##function##_w4_##name1,\
     x264_mc_##function##_w4_##name1,\
@@ -295,7 +295,7 @@ MC_WEIGHT_WTAB(weight,sse2,mmx2,sse2,12)
 MC_WEIGHT_WTAB(offsetadd,sse2,mmx2,sse2,16)
 MC_WEIGHT_WTAB(offsetsub,sse2,mmx2,sse2,16)
 
-static void x264_weight_cache_mmx2( x264_t *h, x264_weight_t *w )
+static void weight_cache_mmx2( x264_t *h, x264_weight_t *w )
 {
     if( w->i_scale == 1<<w->i_denom )
     {
@@ -327,7 +327,7 @@ MC_WEIGHT_WTAB(offsetsub,sse2,mmx2,mmx2,16)
 MC_WEIGHT_WTAB(weight,ssse3,ssse3,ssse3,16)
 MC_WEIGHT_WTAB(weight,avx2,ssse3,avx2,16)
 
-static void x264_weight_cache_mmx2( x264_t *h, x264_weight_t *w )
+static void weight_cache_mmx2( x264_t *h, x264_weight_t *w )
 {
     int i;
     int16_t den1;
@@ -350,7 +350,7 @@ static void x264_weight_cache_mmx2( x264_t *h, x264_weight_t *w )
     }
 }
 
-static void x264_weight_cache_ssse3( x264_t *h, x264_weight_t *w )
+static void weight_cache_ssse3( x264_t *h, x264_weight_t *w )
 {
     int i, den1;
     if( w->i_scale == 1<<w->i_denom )
@@ -385,7 +385,7 @@ static void mc_luma_##name( pixel *dst,    intptr_t i_dst_stride,\
     if( qpel_idx & 5 ) /* qpel interpolation needed */\
     {\
         pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);\
-        x264_pixel_avg_wtab_##instr1[i_width>>2](\
+        pixel_avg_wtab_##instr1[i_width>>2](\
                 dst, i_dst_stride, src1, i_src_stride,\
                 src2, i_height );\
         if( weight->weightfn )\
@@ -394,7 +394,7 @@ static void mc_luma_##name( pixel *dst,    intptr_t i_dst_stride,\
     else if( weight->weightfn )\
         weight->weightfn[i_width>>2]( dst, i_dst_stride, src1, i_src_stride, weight, i_height );\
     else\
-        x264_mc_copy_wtab_##instr2[i_width>>2](dst, i_dst_stride, src1, i_src_stride, i_height );\
+        mc_copy_wtab_##instr2[i_width>>2](dst, i_dst_stride, src1, i_src_stride, i_height );\
 }
 
 MC_LUMA(mmx2,mmx2,mmx)
@@ -423,7 +423,7 @@ static pixel *get_ref_##name( pixel *dst,   intptr_t *i_dst_stride,\
     if( qpel_idx & 5 ) /* qpel interpolation needed */\
     {\
         pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);\
-        x264_pixel_avg_wtab_##name[i_width>>2](\
+        pixel_avg_wtab_##name[i_width>>2](\
                 dst, *i_dst_stride, src1, i_src_stride,\
                 src2, i_height );\
         if( weight->weightfn )\
@@ -559,9 +559,9 @@ void x264_mbtree_propagate_list_internal_avx512( size_t len, uint16_t *ref_costs
                                                  uint16_t *lowres_costs, int bipred_weight, int mb_y,
                                                  int width, int height, int stride, int list_mask );
 
-static void x264_mbtree_propagate_list_avx512( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
-                                               int16_t *propagate_amount, uint16_t *lowres_costs,
-                                               int bipred_weight, int mb_y, int len, int list )
+static void mbtree_propagate_list_avx512( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
+                                          int16_t *propagate_amount, uint16_t *lowres_costs,
+                                          int bipred_weight, int mb_y, int len, int list )
 {
     x264_mbtree_propagate_list_internal_avx512( len, ref_costs, mvs, propagate_amount, lowres_costs, bipred_weight << 9,
                                                 mb_y << 16, h->mb.i_mb_width, h->mb.i_mb_height, h->mb.i_mb_stride,
@@ -588,7 +588,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->prefetch_fenc_422 = x264_prefetch_fenc_422_mmx2;
     pf->prefetch_ref  = x264_prefetch_ref_mmx2;
 
-    pf->plane_copy_interleave = x264_plane_copy_interleave_mmx2;
+    pf->plane_copy_interleave = plane_copy_interleave_mmx2;
     pf->store_interleave_chroma = x264_store_interleave_chroma_mmx2;
 
     pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_mmx2;
@@ -605,10 +605,10 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->get_ref = get_ref_mmx2;
     pf->mc_chroma = x264_mc_chroma_mmx2;
     pf->hpel_filter = x264_hpel_filter_mmx2;
-    pf->weight = x264_mc_weight_wtab_mmx2;
-    pf->weight_cache = x264_weight_cache_mmx2;
-    pf->offsetadd = x264_mc_offsetadd_wtab_mmx2;
-    pf->offsetsub = x264_mc_offsetsub_wtab_mmx2;
+    pf->weight = mc_weight_wtab_mmx2;
+    pf->weight_cache = weight_cache_mmx2;
+    pf->offsetadd = mc_offsetadd_wtab_mmx2;
+    pf->offsetsub = mc_offsetsub_wtab_mmx2;
 
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_mmx2;
 
@@ -616,7 +616,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     {
         pf->memcpy_aligned  = x264_memcpy_aligned_sse;
         pf->memzero_aligned = x264_memzero_aligned_sse;
-        pf->plane_copy = x264_plane_copy_sse;
+        pf->plane_copy = plane_copy_sse;
     }
 
 #if HIGH_BIT_DEPTH
@@ -633,9 +633,9 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_sse2;
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_sse2;
 
-    pf->plane_copy_interleave   = x264_plane_copy_interleave_sse2;
+    pf->plane_copy_interleave   = plane_copy_interleave_sse2;
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_sse2;
-    pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_yuyv_sse2;
+    pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_sse2;
 
     if( cpu&X264_CPU_SSE2_IS_FAST )
     {
@@ -648,8 +648,8 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->integral_init8v = x264_integral_init8v_sse2;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
     pf->store_interleave_chroma = x264_store_interleave_chroma_sse2;
-    pf->offsetadd = x264_mc_offsetadd_wtab_sse2;
-    pf->offsetsub = x264_mc_offsetsub_wtab_sse2;
+    pf->offsetadd = mc_offsetadd_wtab_sse2;
+    pf->offsetsub = mc_offsetsub_wtab_sse2;
 
     if( cpu&X264_CPU_SSE2_IS_SLOW )
         return;
@@ -665,7 +665,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_sse2;
 
     pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
-    pf->weight = x264_mc_weight_wtab_sse2;
+    pf->weight = mc_weight_wtab_sse2;
 
     if( !(cpu&X264_CPU_STACK_MOD4) )
         pf->mc_chroma = x264_mc_chroma_sse2;
@@ -674,9 +674,9 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         return;
 
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
-    pf->plane_copy_swap = x264_plane_copy_swap_ssse3;
+    pf->plane_copy_swap = plane_copy_swap_ssse3;
     pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_ssse3;
-    pf->mbtree_propagate_list = x264_mbtree_propagate_list_ssse3;
+    pf->mbtree_propagate_list = mbtree_propagate_list_ssse3;
     pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_ssse3;
     pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_ssse3;
 
@@ -689,9 +689,9 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx;
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx;
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_avx;
-    pf->plane_copy_interleave        = x264_plane_copy_interleave_avx;
+    pf->plane_copy_interleave        = plane_copy_interleave_avx;
     pf->plane_copy_deinterleave      = x264_plane_copy_deinterleave_avx;
-    pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_yuyv_avx;
+    pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_avx;
     pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_avx;
     pf->store_interleave_chroma      = x264_store_interleave_chroma_avx;
     pf->copy[PIXEL_16x16]            = x264_mc_copy_w16_aligned_avx;
@@ -738,18 +738,18 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->hpel_filter = x264_hpel_filter_sse2_amd;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_sse2;
-    pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_yuyv_sse2;
+    pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_sse2;
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_sse2;
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_sse2;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_sse2;
 
     if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
     {
-        pf->weight = x264_mc_weight_wtab_sse2;
+        pf->weight = mc_weight_wtab_sse2;
         if( !(cpu&X264_CPU_SLOW_ATOM) )
         {
-            pf->offsetadd = x264_mc_offsetadd_wtab_sse2;
-            pf->offsetsub = x264_mc_offsetsub_wtab_sse2;
+            pf->offsetadd = mc_offsetadd_wtab_sse2;
+            pf->offsetsub = mc_offsetsub_wtab_sse2;
         }
 
         pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
@@ -766,7 +766,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         if( cpu&X264_CPU_SSE2_IS_FAST )
         {
             pf->store_interleave_chroma = x264_store_interleave_chroma_sse2; // FIXME sse2fast? sse2medium?
-            pf->plane_copy_interleave   = x264_plane_copy_interleave_sse2;
+            pf->plane_copy_interleave   = plane_copy_interleave_sse2;
             pf->mc_luma = mc_luma_sse2;
             pf->get_ref = get_ref_sse2;
             if( cpu&X264_CPU_CACHELINE_64 )
@@ -789,9 +789,9 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_ssse3;
     pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_ssse3;
     pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_ssse3;
-    pf->plane_copy_swap = x264_plane_copy_swap_ssse3;
+    pf->plane_copy_swap  = plane_copy_swap_ssse3;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_ssse3;
-    pf->mbtree_propagate_list = x264_mbtree_propagate_list_ssse3;
+    pf->mbtree_propagate_list = mbtree_propagate_list_ssse3;
     pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_ssse3;
     pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_ssse3;
 
@@ -800,7 +800,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_ssse3;
         pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_ssse3;
         pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_ssse3;
-        pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_yuyv_ssse3;
+        pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_ssse3;
     }
 
     if( !(cpu&X264_CPU_SLOW_PALIGNR) )
@@ -827,8 +827,8 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         }
     }
 
-    pf->weight_cache = x264_weight_cache_ssse3;
-    pf->weight = x264_mc_weight_wtab_ssse3;
+    pf->weight_cache = weight_cache_ssse3;
+    pf->weight = mc_weight_wtab_ssse3;
 
     if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
         pf->integral_init4v = x264_integral_init4v_ssse3;
@@ -856,7 +856,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     {
         pf->hpel_filter = x264_hpel_filter_avx2;
         pf->mc_chroma = x264_mc_chroma_avx2;
-        pf->weight = x264_mc_weight_wtab_avx2;
+        pf->weight = mc_weight_wtab_avx2;
         pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_avx2;
         pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_avx2;
         pf->integral_init8v = x264_integral_init8v_avx2;
@@ -881,22 +881,22 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         return;
     pf->memcpy_aligned  = x264_memcpy_aligned_avx;
     pf->memzero_aligned = x264_memzero_aligned_avx;
-    pf->plane_copy = x264_plane_copy_avx;
+    pf->plane_copy = plane_copy_avx;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx;
-    pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx;
+    pf->mbtree_propagate_list = mbtree_propagate_list_avx;
 
     if( cpu&X264_CPU_FMA4 )
         pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_fma4;
 
     if( !(cpu&X264_CPU_AVX2) )
         return;
-    pf->plane_copy_swap = x264_plane_copy_swap_avx2;
+    pf->plane_copy_swap = plane_copy_swap_avx2;
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_avx2;
-    pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_yuyv_avx2;
+    pf->plane_copy_deinterleave_yuyv = plane_copy_deinterleave_yuyv_avx2;
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx2;
     pf->get_ref = get_ref_avx2;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2;
-    pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx2;
+    pf->mbtree_propagate_list = mbtree_propagate_list_avx2;
     pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_avx2;
     pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_avx2;
 
@@ -906,6 +906,6 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->memzero_aligned = x264_memzero_aligned_avx512;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx512;
 #if ARCH_X86_64
-    pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx512;
+    pf->mbtree_propagate_list = mbtree_propagate_list_avx512;
 #endif
 }
