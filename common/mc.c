@@ -362,9 +362,9 @@ static ALWAYS_INLINE uint32_t v210_endian_fix32( uint32_t x )
 #define v210_endian_fix32(x) (x)
 #endif
 
-void x264_plane_copy_deinterleave_v210_c( pixel *dsty, intptr_t i_dsty,
-                                          pixel *dstc, intptr_t i_dstc,
-                                          uint32_t *src, intptr_t i_src, int w, int h )
+static void x264_plane_copy_deinterleave_v210_c( pixel *dsty, intptr_t i_dsty,
+                                                 pixel *dstc, intptr_t i_dstc,
+                                                 uint32_t *src, intptr_t i_src, int w, int h )
 {
     for( int l = 0; l < h; l++ )
     {
