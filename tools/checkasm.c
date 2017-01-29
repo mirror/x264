@@ -827,10 +827,10 @@ static int check_dct( int cpu_ref, int cpu_new )
     x264_dct_function_t dct_asm;
     x264_quant_function_t qf;
     int ret = 0, ok, used_asm, interlace = 0;
-    ALIGNED_ARRAY_N( dctcoef, dct1, [16],[16] );
-    ALIGNED_ARRAY_N( dctcoef, dct2, [16],[16] );
-    ALIGNED_ARRAY_N( dctcoef, dct4, [16],[16] );
-    ALIGNED_ARRAY_N( dctcoef, dct8, [4],[64] );
+    ALIGNED_ARRAY_32( dctcoef, dct1, [16],[16] );
+    ALIGNED_ARRAY_32( dctcoef, dct2, [16],[16] );
+    ALIGNED_ARRAY_32( dctcoef, dct4, [16],[16] );
+    ALIGNED_ARRAY_32( dctcoef, dct8, [4],[64] );
     ALIGNED_16( dctcoef dctdc[2][8] );
     x264_t h_buf;
     x264_t *h = &h_buf;
@@ -1925,7 +1925,7 @@ static int check_deblock( int cpu_ref, int cpu_new )
             ALIGNED_ARRAY_16( uint8_t, nnz, [X264_SCAN8_SIZE] );
             ALIGNED_4( int8_t ref[2][X264_SCAN8_LUMA_SIZE] );
             ALIGNED_ARRAY_16( int16_t, mv, [2],[X264_SCAN8_LUMA_SIZE][2] );
-            ALIGNED_ARRAY_N( uint8_t, bs, [2],[2][8][4] );
+            ALIGNED_ARRAY_32( uint8_t, bs, [2],[2][8][4] );
             memset( bs, 99, sizeof(uint8_t)*2*4*8*2 );
             for( int j = 0; j < X264_SCAN8_SIZE; j++ )
                 nnz[j] = ((rand()&7) == 7) * rand() & 0xf;
@@ -1969,11 +1969,11 @@ static int check_quant( int cpu_ref, int cpu_new )
     x264_quant_function_t qf_c;
     x264_quant_function_t qf_ref;
     x264_quant_function_t qf_a;
-    ALIGNED_ARRAY_N( dctcoef, dct1,[64] );
-    ALIGNED_ARRAY_N( dctcoef, dct2,[64] );
-    ALIGNED_ARRAY_N( dctcoef, dct3,[8],[16] );
-    ALIGNED_ARRAY_N( dctcoef, dct4,[8],[16] );
-    ALIGNED_ARRAY_N( uint8_t, cqm_buf,[64] );
+    ALIGNED_ARRAY_32( dctcoef, dct1,[64] );
+    ALIGNED_ARRAY_32( dctcoef, dct2,[64] );
+    ALIGNED_ARRAY_32( dctcoef, dct3,[8],[16] );
+    ALIGNED_ARRAY_32( dctcoef, dct4,[8],[16] );
+    ALIGNED_ARRAY_32( uint8_t, cqm_buf,[64] );
     int ret = 0, ok, used_asm;
     int oks[3] = {1,1,1}, used_asms[3] = {0,0,0};
     x264_t h_buf;
@@ -2587,7 +2587,7 @@ static int check_cabac( int cpu_ref, int cpu_new )
             {\
                 for( int j = 0; j < 256; j++ )\
                 {\
-                    ALIGNED_ARRAY_N( dctcoef, dct, [2],[64] );\
+                    ALIGNED_ARRAY_32( dctcoef, dct, [2],[64] );\
                     uint8_t bitstream[2][1<<16];\
                     static const uint8_t ctx_ac[14] = {0,1,0,0,1,0,0,1,0,0,0,1,0,0};\
                     int ac = ctx_ac[ctx_block_cat];\

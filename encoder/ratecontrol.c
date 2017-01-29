@@ -243,7 +243,7 @@ static ALWAYS_INLINE uint32_t ac_energy_plane( x264_t *h, int mb_x, int mb_y, x2
     stride <<= b_field;
     if( b_chroma )
     {
-        ALIGNED_ARRAY_N( pixel, pix,[FENC_STRIDE*16] );
+        ALIGNED_ARRAY_32( pixel, pix,[FENC_STRIDE*16] );
         int chromapix = h->luma2chroma_pixel[PIXEL_16x16];
         int shift = 7 - CHROMA_V_SHIFT;
 

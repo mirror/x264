@@ -635,11 +635,11 @@ struct x264_t
     /* Current MB DCT coeffs */
     struct
     {
-        ALIGNED_N( dctcoef luma16x16_dc[3][16] );
+        ALIGNED_32( dctcoef luma16x16_dc[3][16] );
         ALIGNED_16( dctcoef chroma_dc[2][8] );
         // FIXME share memory?
-        ALIGNED_N( dctcoef luma8x8[12][64] );
-        ALIGNED_N( dctcoef luma4x4[16*3][16] );
+        ALIGNED_32( dctcoef luma8x8[12][64] );
+        ALIGNED_32( dctcoef luma4x4[16*3][16] );
     } dct;
 
     /* MB table and cache for current frame/mb */
@@ -778,8 +778,8 @@ struct x264_t
             /* space for p_fenc and p_fdec */
 #define FENC_STRIDE 16
 #define FDEC_STRIDE 32
-            ALIGNED_N( pixel fenc_buf[48*FENC_STRIDE] );
-            ALIGNED_N( pixel fdec_buf[52*FDEC_STRIDE] );
+            ALIGNED_32( pixel fenc_buf[48*FENC_STRIDE] );
+            ALIGNED_32( pixel fdec_buf[52*FDEC_STRIDE] );
 
             /* i4x4 and i8x8 backup data, for skipping the encode stage when possible */
             ALIGNED_16( pixel i4x4_fdec_buf[16*16] );
@@ -796,8 +796,8 @@ struct x264_t
             ALIGNED_16( dctcoef fenc_dct4[16][16] );
 
             /* Psy RD SATD/SA8D scores cache */
-            ALIGNED_N( uint64_t fenc_hadamard_cache[9] );
-            ALIGNED_N( uint32_t fenc_satd_cache[32] );
+            ALIGNED_32( uint64_t fenc_hadamard_cache[9] );
+            ALIGNED_32( uint32_t fenc_satd_cache[32] );
 
             /* pointer over mb of the frame to be compressed */
             pixel *p_fenc[3]; /* y,u,v */
@@ -930,8 +930,8 @@ struct x264_t
     uint32_t (*nr_residual_sum)[64];
     uint32_t *nr_count;
 
-    ALIGNED_N( udctcoef nr_offset_denoise[4][64] );
-    ALIGNED_N( uint32_t nr_residual_sum_buf[2][4][64] );
+    ALIGNED_32( udctcoef nr_offset_denoise[4][64] );
+    ALIGNED_32( uint32_t nr_residual_sum_buf[2][4][64] );
     uint32_t nr_count_buf[2][4];
 
     uint8_t luma2chroma_pixel[7]; /* Subsampled pixel size */
