@@ -1044,8 +1044,8 @@ PLANE_COPY_CORE 1
 %endif ; HIGH_BIT_DEPTH
 %endmacro
 
-%macro DEINTERLEAVE 6 ; dstu, dstv, src, dstv==dstu+8, shuffle constant, is aligned
-    mova     m0, [%3]
+%macro DEINTERLEAVE 6 ; dsta, dstb, src, dsta==dstb+8, shuffle constant, is aligned
+    mov%6    m0, [%3]
 %if mmsize == 32
     pshufb   m0, %5
     vpermq   m0, m0, q3120
@@ -1056,7 +1056,7 @@ PLANE_COPY_CORE 1
     vextracti128 [%2], m0, 1
 %endif
 %elif HIGH_BIT_DEPTH
-    mova     m1, [%3+mmsize]
+    mov%6    m1, [%3+mmsize]
     psrld    m2, m0, 16
     psrld    m3, m1, 16
     pand     m0, %5
@@ -1181,8 +1181,8 @@ cglobal store_interleave_chroma, 5,5
 
 %macro PLANE_DEINTERLEAVE 0
 ;-----------------------------------------------------------------------------
-; void plane_copy_deinterleave( pixel *dstu, intptr_t i_dstu,
-;                               pixel *dstv, intptr_t i_dstv,
+; void plane_copy_deinterleave( pixel *dsta, intptr_t i_dsta,
+;                               pixel *dstb, intptr_t i_dstb,
 ;                               pixel *src,  intptr_t i_src, int w, int h )
 ;-----------------------------------------------------------------------------
 %if ARCH_X86_64

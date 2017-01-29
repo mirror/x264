@@ -54,6 +54,8 @@ static int x264_frame_internal_csp( int external_csp )
         case X264_CSP_NV16:
         case X264_CSP_I422:
         case X264_CSP_YV16:
+        case X264_CSP_YUYV:
+        case X264_CSP_UYVY:
         case X264_CSP_V210:
             return X264_CSP_NV16;
         case X264_CSP_I444:
@@ -408,7 +410,13 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
 
     uint8_t *pix[3];
     int stride[3];
-    if( i_csp == X264_CSP_V210 )
+    if( i_csp == X264_CSP_YUYV || i_csp == X264_CSP_UYVY )
+    {
+        int p = i_csp == X264_CSP_UYVY;
+        h->mc.plane_copy_deinterleave_yuyv( dst->plane[p], dst->i_stride[p], dst->plane[p^1], dst->i_stride[p^1],
+                                            (pixel*)src->img.plane[0], src->img.i_stride[0], h->param.i_width, h->param.i_height );
+    }
+    else if( i_csp == X264_CSP_V210 )
     {
          stride[0] = src->img.i_stride[0];
          pix[0] = src->img.plane[0];

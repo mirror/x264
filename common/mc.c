@@ -325,15 +325,14 @@ void x264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
         }
 }
 
-static void x264_plane_copy_deinterleave_c( pixel *dstu, intptr_t i_dstu,
-                                            pixel *dstv, intptr_t i_dstv,
-                                            pixel *src,  intptr_t i_src, int w, int h )
+void x264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,
+                                     pixel *src,  intptr_t i_src, int w, int h )
 {
-    for( int y=0; y<h; y++, dstu+=i_dstu, dstv+=i_dstv, src+=i_src )
+    for( int y=0; y<h; y++, dsta+=i_dsta, dstb+=i_dstb, src+=i_src )
         for( int x=0; x<w; x++ )
         {
-            dstu[x] = src[2*x];
-            dstv[x] = src[2*x+1];
+            dsta[x] = src[2*x];
+            dstb[x] = src[2*x+1];
         }
 }
 
@@ -649,6 +648,7 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->plane_copy_swap = x264_plane_copy_swap_c;
     pf->plane_copy_interleave = x264_plane_copy_interleave_c;
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_c;
+    pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_c;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_c;
     pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_c;
 

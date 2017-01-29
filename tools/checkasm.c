@@ -1526,6 +1526,33 @@ static int check_mc( int cpu_ref, int cpu_new )
         }
     }
 
+    if( mc_a.plane_copy_deinterleave_yuyv != mc_ref.plane_copy_deinterleave_yuyv )
+    {
+        set_func_name( "plane_copy_deinterleave_yuyv" );
+        used_asm = 1;
+        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        {
+            int w = (plane_specs[i].w + 1) >> 1;
+            int h = plane_specs[i].h;
+            intptr_t dst_stride = ALIGN( w, 32/sizeof(pixel) );
+            intptr_t src_stride = (plane_specs[i].src_stride + 1) >> 1;
+            intptr_t offv = dst_stride*h;
+            pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
+            memset( pbuf3, 0, 0x1000 );
+            memset( pbuf4, 0, 0x1000 );
+            /* Skip benchmarking since it's the same as plane_copy_deinterleave(), just verify correctness. */
+            call_c1( mc_c.plane_copy_deinterleave_yuyv, pbuf3, dst_stride, pbuf3+offv, dst_stride, src1, src_stride, w, h );
+            call_a1( mc_a.plane_copy_deinterleave_yuyv, pbuf4, dst_stride, pbuf4+offv, dst_stride, src1, src_stride, w, h );
+            for( int y = 0; y < h; y++ )
+                if( memcmp( pbuf3+y*dst_stride,      pbuf4+y*dst_stride,      w*sizeof(pixel) ) ||
+                    memcmp( pbuf3+y*dst_stride+offv, pbuf4+y*dst_stride+offv, w*sizeof(pixel) ) )
+                {
+                    fprintf( stderr, "plane_copy_deinterleave_yuyv FAILED: w=%d h=%d stride=%d\n", w, h, (int)src_stride );
+                    break;
+                }
+        }
+    }
+
     if( mc_a.plane_copy_deinterleave_rgb != mc_ref.plane_copy_deinterleave_rgb )
     {
         set_func_name( "plane_copy_deinterleave_rgb" );
