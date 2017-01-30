@@ -305,7 +305,8 @@ configure_system_override() {
     return $res
 }
 
-rm -f x264_config.h config.h config.mak config.log x264.pc x264.def conftest*
+rm -f x264_config.h config.h config.mak config.log x264.pc x264.def
+rm -rf conftest*
 
 # Construct a path to the specified directory relative to the working directory
 relative_path() {
@@ -540,7 +541,7 @@ host="${host#*-}"
 host_vendor="${host%%-*}"
 host_os="${host#*-}"
 
-trap 'rm -f conftest*' EXIT
+trap 'rm -rf conftest*' EXIT
 
 # test for use of compilers that require specific handling
 cc_base=`basename "$CC"`
