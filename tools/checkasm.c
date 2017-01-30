@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include "common/common.h"
 #include "common/cpu.h"
+#include "encoder/macroblock.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -2560,9 +2561,6 @@ DECL_CABAC(asm)
 #endif
 
 extern const uint8_t x264_count_cat_m1[14];
-void x264_cabac_block_residual_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
-void x264_cabac_block_residual_8x8_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
-void x264_cabac_block_residual_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
 
 static int check_cabac( int cpu_ref, int cpu_new )
 {

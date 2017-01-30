@@ -55,6 +55,9 @@ void x264_macroblock_encode_p4x4( x264_t *h, int i4 );
 void x264_mb_encode_chroma( x264_t *h, int b_inter, int i_qp );
 
 void x264_cabac_mb_skip( x264_t *h, int b_skip );
+void x264_cabac_block_residual_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
+void x264_cabac_block_residual_8x8_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
+void x264_cabac_block_residual_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
 
 int x264_quant_luma_dc_trellis( x264_t *h, dctcoef *dct, int i_quant_cat, int i_qp,
                                 int ctx_block_cat, int b_intra, int idx );
