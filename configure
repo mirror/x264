@@ -548,10 +548,10 @@ else
 fi
 
 if [ "x$host" = x ]; then
-    host=`${SRCPATH}/config.guess`
+    host="$(${SRCPATH}/config.guess)"
 fi
 # normalize a triplet into a quadruplet
-host=`${SRCPATH}/config.sub $host`
+host="$(${SRCPATH}/config.sub $host)"
 
 # split $host
 host_cpu="${host%%-*}"
@@ -562,7 +562,7 @@ host_os="${host#*-}"
 trap 'rm -rf conftest*' EXIT
 
 # test for use of compilers that require specific handling
-cc_base=`basename "$CC"`
+cc_base="$(basename "$CC")"
 QPRE="-"
 if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
     if [[ "$cc_base" = icl || "$cc_base" = icl[\ .]* ]]; then
@@ -917,7 +917,7 @@ fi
 
 if [ $asm = auto -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
     if ! as_check "vmovdqa32 [eax]{k1}{z}, zmm0" ; then
-        VER=`($AS --version || echo no assembler) 2>/dev/null | head -n 1`
+        VER="$(($AS --version || echo no assembler) 2>/dev/null | head -n 1)"
         echo "Found $VER"
         echo "Minimum version is nasm-2.13"
         echo "If you really want to compile without asm, configure with --disable-asm."
@@ -1529,9 +1529,7 @@ Cflags: -I$includedir
 EOF
 
 filters="crop select_every"
-gpl_filters=""
 [ $swscale = yes ] && filters="resize $filters"
-[ $gpl = yes ] && filters="$filters $gpl_filters"
 
 cat > conftest.log <<EOF
 platform:      $ARCH
