@@ -53,11 +53,6 @@ OBJEXAMPLE =
 
 CONFIG := $(shell cat config.h)
 
-# GPL-only files
-ifneq ($(findstring HAVE_GPL 1, $(CONFIG)),)
-SRCCLI +=
-endif
-
 # Optional module sources
 ifneq ($(findstring HAVE_AVS 1, $(CONFIG)),)
 SRCCLI += input/avs.c
@@ -358,8 +353,7 @@ fprofiled:
 	@echo 'where infiles are anything that x264 understands,'
 	@echo 'i.e. YUV with resolution in the filename, y4m, or avisynth.'
 else
-fprofiled:
-	$(MAKE) clean
+fprofiled: clean
 	$(MAKE) x264$(EXE) CFLAGS="$(CFLAGS) $(PROF_GEN_CC)" LDFLAGS="$(LDFLAGS) $(PROF_GEN_LD)"
 	$(foreach V, $(VIDS), $(foreach I, 0 1 2 3 4 5 6 7, ./x264$(EXE) $(OPT$I) --threads 1 $(V) -o $(DEVNULL) ;))
 ifeq ($(COMPILER),CL)
@@ -388,18 +382,17 @@ install-cli: cli
 	$(INSTALL) x264$(EXE) $(DESTDIR)$(bindir)
 
 install-lib-dev:
-	$(INSTALL) -d $(DESTDIR)$(includedir)
-	$(INSTALL) -d $(DESTDIR)$(libdir)
-	$(INSTALL) -d $(DESTDIR)$(libdir)/pkgconfig
-	$(INSTALL) -m 644 $(SRCPATH)/x264.h $(DESTDIR)$(includedir)
-	$(INSTALL) -m 644 x264_config.h $(DESTDIR)$(includedir)
+	$(INSTALL) -d $(DESTDIR)$(includedir) $(DESTDIR)$(libdir)/pkgconfig
+	$(INSTALL) -m 644 $(SRCPATH)/x264.h x264_config.h $(DESTDIR)$(includedir)
 	$(INSTALL) -m 644 x264.pc $(DESTDIR)$(libdir)/pkgconfig
 
 install-lib-static: lib-static install-lib-dev
+	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(INSTALL) -m 644 $(LIBX264) $(DESTDIR)$(libdir)
 	$(if $(RANLIB), $(RANLIB) $(DESTDIR)$(libdir)/$(LIBX264))
 
 install-lib-shared: lib-shared install-lib-dev
+	$(INSTALL) -d $(DESTDIR)$(libdir)
 ifneq ($(IMPLIBNAME),)
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL) -m 755 $(SONAME) $(DESTDIR)$(bindir)
@@ -418,7 +411,5 @@ else ifneq ($(SONAME),)
 	rm -f $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/libx264.$(SOSUFFIX)
 endif
 
-etags: TAGS
-
-TAGS:
+etags TAGS:
 	etags $(SRCS) $(SRCS_X) $(SRCS_8)
