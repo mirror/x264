@@ -1981,7 +1981,7 @@ static int check_deblock( int cpu_ref, int cpu_new )
                 {
                     ref[j][k] = ((rand()&3) != 3) ? 0 : (rand() & 31) - 2;
                     for( int l = 0; l < 2; l++ )
-                        mv[j][k][l] = ((rand()&7) != 7) ? (rand()&7) - 3 : (rand()&1023) - 512;
+                        mv[j][k][l] = ((rand()&7) != 7) ? (rand()&7) - 3 : (rand()&16383) - 8192;
                 }
             call_c( db_c.deblock_strength, nnz, ref, mv, bs[0], 2<<(i&1), ((i>>1)&1) );
             call_a( db_a.deblock_strength, nnz, ref, mv, bs[1], 2<<(i&1), ((i>>1)&1) );

@@ -1469,7 +1469,7 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
             if( h->i_frame == 0 )
             {
                 //384 * ( Max( PicSizeInMbs, fR * MaxMBPS ) + MaxMBPS * ( tr( 0 ) - tr,n( 0 ) ) ) / MinCR
-                double fr = 1. / 172;
+                double fr = 1. / (h->param.i_level_idc >= 60 ? 300 : 172);
                 int pic_size_in_mbs = h->mb.i_mb_width * h->mb.i_mb_height;
                 rc->frame_size_maximum = 384 * BIT_DEPTH * X264_MAX( pic_size_in_mbs, fr*l->mbps ) / mincr;
             }

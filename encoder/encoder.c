@@ -1171,7 +1171,7 @@ static int x264_validate_parameters( x264_t *h, int b_open )
         if( h->param.analyse.i_mv_range <= 0 )
             h->param.analyse.i_mv_range = l->mv_range >> PARAM_INTERLACED;
         else
-            h->param.analyse.i_mv_range = x264_clip3(h->param.analyse.i_mv_range, 32, 512 >> PARAM_INTERLACED);
+            h->param.analyse.i_mv_range = x264_clip3(h->param.analyse.i_mv_range, 32, 8192 >> PARAM_INTERLACED);
     }
 
     h->param.analyse.i_weighted_pred = x264_clip3( h->param.analyse.i_weighted_pred, X264_WEIGHTP_NONE, X264_WEIGHTP_SMART );

@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 151
+#define X264_BUILD 152
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -564,19 +564,19 @@ void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
 
 typedef struct x264_level_t
 {
-    int level_idc;
-    int mbps;        /* max macroblock processing rate (macroblocks/sec) */
-    int frame_size;  /* max frame size (macroblocks) */
-    int dpb;         /* max decoded picture buffer (mbs) */
-    int bitrate;     /* max bitrate (kbit/sec) */
-    int cpb;         /* max vbv buffer (kbit) */
-    int mv_range;    /* max vertical mv component range (pixels) */
-    int mvs_per_2mb; /* max mvs per 2 consecutive mbs. */
-    int slice_rate;  /* ?? */
-    int mincr;       /* min compression ratio */
-    int bipred8x8;   /* limit bipred to >=8x8 */
-    int direct8x8;   /* limit b_direct to >=8x8 */
-    int frame_only;  /* forbid interlacing */
+    uint8_t  level_idc;
+    uint32_t mbps;        /* max macroblock processing rate (macroblocks/sec) */
+    uint32_t frame_size;  /* max frame size (macroblocks) */
+    uint32_t dpb;         /* max decoded picture buffer (mbs) */
+    uint32_t bitrate;     /* max bitrate (kbit/sec) */
+    uint32_t cpb;         /* max vbv buffer (kbit) */
+    uint16_t mv_range;    /* max vertical mv component range (pixels) */
+    uint8_t  mvs_per_2mb; /* max mvs per 2 consecutive mbs. */
+    uint8_t  slice_rate;  /* ?? */
+    uint8_t  mincr;       /* min compression ratio */
+    uint8_t  bipred8x8;   /* limit bipred to >=8x8 */
+    uint8_t  direct8x8;   /* limit b_direct to >=8x8 */
+    uint8_t  frame_only;  /* forbid interlacing */
 } x264_level_t;
 
 /* all of the levels defined in the standard, terminated by .level_idc=0 */
