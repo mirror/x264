@@ -264,29 +264,31 @@ static uint16_t x264_cost_i4x4_mode[(QP_MAX+2)*32];
 
 static int init_costs( x264_t *h, float *logs, int qp )
 {
-    int lambda = x264_lambda_tab[qp];
     if( h->cost_mv[qp] )
         return 0;
+
+    int mv_range = h->param.analyse.i_mv_range;
+    int lambda = x264_lambda_tab[qp];
     /* factor of 4 from qpel, 2 from sign, and 2 because mv can be opposite from mvp */
-    CHECKED_MALLOC( h->cost_mv[qp], (4*4*2048 + 1) * sizeof(uint16_t) );
-    h->cost_mv[qp] += 2*4*2048;
-    for( int i = 0; i <= 2*4*2048; i++ )
+    CHECKED_MALLOC( h->cost_mv[qp], (4*4*mv_range + 1) * sizeof(uint16_t) );
+    h->cost_mv[qp] += 2*4*mv_range;
+    for( int i = 0; i <= 2*4*mv_range; i++ )
     {
         h->cost_mv[qp][-i] =
-        h->cost_mv[qp][i]  = X264_MIN( lambda * logs[i] + .5f, (1<<16)-1 );
+        h->cost_mv[qp][i]  = X264_MIN( (int)(lambda * logs[i] + .5f), UINT16_MAX );
     }
     x264_pthread_mutex_lock( &cost_ref_mutex );
     for( int i = 0; i < 3; i++ )
         for( int j = 0; j < 33; j++ )
-            x264_cost_ref[qp][i][j] = X264_MIN( i ? lambda * bs_size_te( i, j ) : 0, (1<<16)-1 );
+            x264_cost_ref[qp][i][j] = i ? X264_MIN( lambda * bs_size_te( i, j ), UINT16_MAX ) : 0;
     x264_pthread_mutex_unlock( &cost_ref_mutex );
     if( h->param.analyse.i_me_method >= X264_ME_ESA && !h->cost_mv_fpel[qp][0] )
     {
         for( int j = 0; j < 4; j++ )
         {
-            CHECKED_MALLOC( h->cost_mv_fpel[qp][j], (4*2048 + 1) * sizeof(uint16_t) );
-            h->cost_mv_fpel[qp][j] += 2*2048;
-            for( int i = -2*2048; i < 2*2048; i++ )
+            CHECKED_MALLOC( h->cost_mv_fpel[qp][j], (4*mv_range + 1) * sizeof(uint16_t) );
+            h->cost_mv_fpel[qp][j] += 2*mv_range;
+            for( int i = -2*mv_range; i < 2*mv_range; i++ )
                 h->cost_mv_fpel[qp][j][i] = h->cost_mv[qp][i*4+j];
         }
     }
@@ -300,12 +302,13 @@ fail:
 
 int x264_analyse_init_costs( x264_t *h )
 {
-    float *logs = x264_malloc( (2*4*2048+1) * sizeof(float) );
+    int mv_range = h->param.analyse.i_mv_range;
+    float *logs = x264_malloc( (2*4*mv_range+1) * sizeof(float) );
     if( !logs )
         return -1;
 
     logs[0] = 0.718f;
-    for( int i = 1; i <= 2*4*2048; i++ )
+    for( int i = 1; i <= 2*4*mv_range; i++ )
         logs[i] = log2f( i+1 ) * 2.0f + 1.718f;
 
     for( int qp = X264_MIN( h->param.rc.i_qp_min, QP_MAX_SPEC ); qp <= h->param.rc.i_qp_max; qp++ )
@@ -324,13 +327,14 @@ fail:
 
 void x264_analyse_free_costs( x264_t *h )
 {
+    int mv_range = h->param.analyse.i_mv_range;
     for( int i = 0; i < QP_MAX+1; i++ )
     {
         if( h->cost_mv[i] )
-            x264_free( h->cost_mv[i] - 2*4*2048 );
+            x264_free( h->cost_mv[i] - 2*4*mv_range );
         if( h->cost_mv_fpel[i][0] )
             for( int j = 0; j < 4; j++ )
-                x264_free( h->cost_mv_fpel[i][j] - 2*2048 );
+                x264_free( h->cost_mv_fpel[i][j] - 2*mv_range );
     }
 }
 

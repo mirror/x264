@@ -1593,14 +1593,6 @@ x264_t *x264_encoder_open( x264_param_t *param )
     if( x264_analyse_init_costs( h ) )
         goto fail;
 
-    static const uint16_t cost_mv_correct[7] = { 24, 47, 95, 189, 379, 757, 1515 };
-    /* Checks for known miscompilation issues. */
-    if( h->cost_mv[X264_LOOKAHEAD_QP][2013] != cost_mv_correct[BIT_DEPTH-8] )
-    {
-        x264_log( h, X264_LOG_ERROR, "MV cost test failed: x264 has been miscompiled!\n" );
-        goto fail;
-    }
-
     /* Must be volatile or else GCC will optimize it out. */
     volatile int temp = 392;
     if( x264_clz( temp ) != 23 )
