@@ -465,11 +465,10 @@ static void x264_mb_analyse_init( x264_t *h, x264_mb_analysis_t *a, int qp )
         int i_fpel_border = 6; // umh: 1 for diamond, 2 for octagon, 2 for hpel
 
         /* Calculate max allowed MV range */
-#define CLIP_FMV(mv) x264_clip3( mv, -i_fmv_range, i_fmv_range-1 )
         h->mb.mv_min[0] = 4*( -16*h->mb.i_mb_x - 24 );
         h->mb.mv_max[0] = 4*( 16*( h->mb.i_mb_width - h->mb.i_mb_x - 1 ) + 24 );
-        h->mb.mv_min_spel[0] = CLIP_FMV( h->mb.mv_min[0] );
-        h->mb.mv_max_spel[0] = CLIP_FMV( h->mb.mv_max[0] );
+        h->mb.mv_min_spel[0] = X264_MAX( h->mb.mv_min[0], -i_fmv_range );
+        h->mb.mv_max_spel[0] = X264_MIN( h->mb.mv_max[0], i_fmv_range-1 );
         if( h->param.b_intra_refresh && h->sh.i_type == SLICE_TYPE_P )
         {
             int max_x = (h->fref[0][0]->i_pir_end_col * 16 - 3)*4; /* 3 pixels of hpel border */
@@ -513,9 +512,8 @@ static void x264_mb_analyse_init( x264_t *h, x264_mb_analysis_t *a, int qp )
                     mb_y = (h->mb.i_mb_y >> j) + (i == 1);
                     h->mb.mv_miny_row[i] = 4*( -16*mb_y - 24 );
                     h->mb.mv_maxy_row[i] = 4*( 16*( (h->mb.i_mb_height>>j) - mb_y - 1 ) + 24 );
-                    h->mb.mv_miny_spel_row[i] = x264_clip3( h->mb.mv_miny_row[i], -i_fmv_range, i_fmv_range );
-                    h->mb.mv_maxy_spel_row[i] = CLIP_FMV( h->mb.mv_maxy_row[i] );
-                    h->mb.mv_maxy_spel_row[i] = X264_MIN( h->mb.mv_maxy_spel_row[i], thread_mvy_range*4 );
+                    h->mb.mv_miny_spel_row[i] = X264_MAX( h->mb.mv_miny_row[i], -i_fmv_range );
+                    h->mb.mv_maxy_spel_row[i] = X264_MIN3( h->mb.mv_maxy_row[i], i_fmv_range-1, 4*thread_mvy_range );
                     h->mb.mv_miny_fpel_row[i] = (h->mb.mv_miny_spel_row[i]>>2) + i_fpel_border;
                     h->mb.mv_maxy_fpel_row[i] = (h->mb.mv_maxy_spel_row[i]>>2) - i_fpel_border;
                 }
@@ -524,9 +522,8 @@ static void x264_mb_analyse_init( x264_t *h, x264_mb_analysis_t *a, int qp )
             {
                 h->mb.mv_min[1] = 4*( -16*mb_y - 24 );
                 h->mb.mv_max[1] = 4*( 16*( h->mb.i_mb_height - mb_y - 1 ) + 24 );
-                h->mb.mv_min_spel[1] = x264_clip3( h->mb.mv_min[1], -i_fmv_range, i_fmv_range );
-                h->mb.mv_max_spel[1] = CLIP_FMV( h->mb.mv_max[1] );
-                h->mb.mv_max_spel[1] = X264_MIN( h->mb.mv_max_spel[1], thread_mvy_range*4 );
+                h->mb.mv_min_spel[1] = X264_MAX( h->mb.mv_min[1], -i_fmv_range );
+                h->mb.mv_max_spel[1] = X264_MIN3( h->mb.mv_max[1], i_fmv_range-1, 4*thread_mvy_range );
                 h->mb.mv_limit_fpel[0][1] = (h->mb.mv_min_spel[1]>>2) + i_fpel_border;
                 h->mb.mv_limit_fpel[1][1] = (h->mb.mv_max_spel[1]>>2) - i_fpel_border;
             }
@@ -541,7 +538,6 @@ static void x264_mb_analyse_init( x264_t *h, x264_mb_analysis_t *a, int qp )
             h->mb.mv_limit_fpel[0][1] = h->mb.mv_miny_fpel_row[i];
             h->mb.mv_limit_fpel[1][1] = h->mb.mv_maxy_fpel_row[i];
         }
-#undef CLIP_FMV
 
         a->l0.me16x16.cost =
         a->l0.i_rd16x16    =
