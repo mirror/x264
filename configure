@@ -778,7 +778,7 @@ case $host_cpu in
         stack_alignment=16
         if [ "$SYS" = MACOSX ] ; then
             AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -- ${CC}}"
-            ASFLAGS="$ASFLAGS -DPREFIX"
+            ASFLAGS="$ASFLAGS -DPREFIX -DPIC"
         else
             AS="${AS-${CC}}"
         fi
