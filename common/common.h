@@ -740,8 +740,7 @@ struct x264_t
         int16_t (*mvr[2][X264_REF_MAX*2])[2];/* 16x16 mv for each possible ref */
         int8_t  *skipbp;                    /* block pattern for SKIP or DIRECT (sub)mbs. B-frames + cabac only */
         int8_t  *mb_transform_size;         /* transform_size_8x8_flag of each mb */
-        uint16_t *slice_table;              /* sh->first_mb of the slice that the indexed mb is part of
-                                             * NOTE: this will fail on resolutions above 2^16 MBs... */
+        uint32_t *slice_table;              /* sh->first_mb of the slice that the indexed mb is part of */
         uint8_t *field;
 
          /* buffer for weighted versions of the reference frames */

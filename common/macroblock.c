@@ -260,7 +260,7 @@ int x264_macroblock_cache_allocate( x264_t *h )
     PREALLOC( h->mb.qp, i_mb_count * sizeof(int8_t) );
     PREALLOC( h->mb.cbp, i_mb_count * sizeof(int16_t) );
     PREALLOC( h->mb.mb_transform_size, i_mb_count * sizeof(int8_t) );
-    PREALLOC( h->mb.slice_table, i_mb_count * sizeof(uint16_t) );
+    PREALLOC( h->mb.slice_table, i_mb_count * sizeof(uint32_t) );
 
     /* 0 -> 3 top(4), 4 -> 6 : left(3) */
     PREALLOC( h->mb.intra4x4_pred_mode, i_mb_count * 8 * sizeof(int8_t) );
@@ -326,7 +326,7 @@ int x264_macroblock_cache_allocate( x264_t *h )
 
     PREALLOC_END( h->mb.base );
 
-    memset( h->mb.slice_table, -1, i_mb_count * sizeof(uint16_t) );
+    memset( h->mb.slice_table, -1, i_mb_count * sizeof(uint32_t) );
 
     for( int i = 0; i < 2; i++ )
     {
