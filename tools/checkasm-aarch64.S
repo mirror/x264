@@ -149,7 +149,7 @@ function x264_checkasm_call, export=1
     mov         w9,  #0
     str         w9,  [x2]
     movrel      x0, error_message
-    bl          puts
+    bl          X(puts)
 0:
     ldp         x0,  x1,  [sp], #16
     ldp         d14, d15, [sp], #16
