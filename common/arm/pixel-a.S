@@ -26,9 +26,7 @@
 
 #include "asm.S"
 
-.section .rodata
-.align 4
-
+const mask_array, align=4
 .rept 16
         .byte 0xff
 .endr
@@ -36,11 +34,14 @@ mask_ff:
 .rept 16
         .byte 0
 .endr
+endconst
 
-mask_ac4:
+const mask_ac4, align=4
 .short 0, -1, -1, -1,  0, -1, -1, -1
-mask_ac8:
+endconst
+const mask_ac8, align=4
 .short 0, -1, -1, -1, -1, -1, -1, -1
+endconst
 
 .text
 
