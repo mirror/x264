@@ -777,11 +777,9 @@ case $host_cpu in
     aarch64)
         ARCH="AARCH64"
         stack_alignment=16
+        AS="${AS-${CC}}"
         if [ "$SYS" = MACOSX ] ; then
-            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -- ${CC}}"
             ASFLAGS="$ASFLAGS -DPREFIX -DPIC"
-        else
-            AS="${AS-${CC}}"
         fi
         ;;
     s390|s390x)
