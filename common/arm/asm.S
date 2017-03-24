@@ -28,6 +28,7 @@
 
 .syntax unified
 
+#ifndef __APPLE__
 #if   HAVE_NEON
         .arch           armv7-a
 #elif HAVE_ARMV6T2
@@ -37,6 +38,7 @@
 #endif
 
 .fpu neon
+#endif
 
 #ifdef PREFIX
 #   define EXTERN_ASM _
@@ -48,6 +50,12 @@
 #   define ELF
 #else
 #   define ELF @
+#endif
+
+#ifdef __MACH__
+#   define MACH
+#else
+#   define MACH @
 #endif
 
 #if HAVE_AS_FUNC
@@ -99,7 +107,8 @@ ELF     .size   \name, . - \name
 .if HAVE_SECTION_DATA_REL_RO && \relocate
         .section        .data.rel.ro
 .else
-        .section        .rodata
+ELF     .section        .rodata
+MACH    .const_data
 .endif
         .align          \align
 \name:
