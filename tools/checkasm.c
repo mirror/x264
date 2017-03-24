@@ -100,7 +100,7 @@ static inline uint32_t read_time(void)
                   : "=a"(a) :: "edx", "memory" );
 #elif ARCH_PPC
     asm volatile( "mftb %0" : "=r"(a) :: "memory" );
-#elif ARCH_ARM     // ARMv7 only
+#elif HAVE_ARM_INLINE_ASM    // ARMv7 only
     asm volatile( "mrc p15, 0, %0, c9, c13, 0" : "=r"(a) :: "memory" );
 #elif ARCH_AARCH64
     uint64_t b = 0;
