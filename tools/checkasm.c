@@ -1370,6 +1370,8 @@ static int check_mc( int cpu_ref, int cpu_new )
     }
     report( "mc offsetsub :" );
 
+    memset( pbuf3, 0, 64*16 );
+    memset( pbuf4, 0, 64*16 );
     ok = 1; used_asm = 0;
     for( int height = 8; height <= 16; height += 8 )
     {
@@ -1377,8 +1379,6 @@ static int check_mc( int cpu_ref, int cpu_new )
         {
             set_func_name( "store_interleave_chroma" );
             used_asm = 1;
-            memset( pbuf3, 0, 64*height );
-            memset( pbuf4, 0, 64*height );
             call_c( mc_c.store_interleave_chroma, pbuf3, (intptr_t)64, pbuf1, pbuf1+16, height );
             call_a( mc_a.store_interleave_chroma, pbuf4, (intptr_t)64, pbuf1, pbuf1+16, height );
             if( memcmp( pbuf3, pbuf4, 64*height ) )
