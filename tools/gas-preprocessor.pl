@@ -951,6 +951,20 @@ sub handle_serialized_line {
         $line =~ s/stm(?:db|fd)\s+sp!\s*,\s*\{([^,-]+)\}/str $1, [sp, #-4]!/g;
         $line =~ s/ldm(?:ia|fd)?\s+sp!\s*,\s*\{([^,-]+)\}/ldr $1, [sp], #4/g;
 
+        # Convert muls into mul+cmp
+        $line =~ s/muls\s+(\w+),\s*(\w+)\,\s*(\w+)/mul $1, $2, $3\n\tcmp $1, #0/g;
+
+        # Convert "and r0, sp, #xx" into "mov r0, sp", "and r0, r0, #xx"
+        $line =~ s/and\s+(\w+),\s*(sp|r13)\,\s*#(\w+)/mov $1, $2\n\tand $1, $1, #$3/g;
+
+        # Convert "ldr r0, [r0, r1, lsl #6]" where the shift is >3 (which
+        # can't be handled in thumb) into "add r0, r0, r1, lsl #6",
+        # "ldr r0, [r0]", for the special case where the same address is
+        # used as base and target for the ldr.
+        if ($line =~ /(ldr[bh]?)\s+(\w+),\s*\[\2,\s*(\w+),\s*lsl\s*#(\w+)\]/ and $4 > 3) {
+            $line =~ s/(ldr[bh]?)\s+(\w+),\s*\[\2,\s*(\w+),\s*lsl\s*#(\w+)\]/add $2, $2, $3, lsl #$4\n\t$1 $2, [$2]/;
+        }
+
         $line =~ s/\.arm/.thumb/x;
     }
 
