@@ -54,8 +54,10 @@
 
 #ifdef __MACH__
 #   define MACH
+#   define NONMACH @
 #else
 #   define MACH @
+#   define NONMACH
 #endif
 
 #if HAVE_AS_FUNC
@@ -108,7 +110,7 @@ ELF     .size   \name, . - \name
 .if HAVE_SECTION_DATA_REL_RO && \relocate
         .section        .data.rel.ro
 .else
-ELF     .section        .rodata
+NONMACH .section        .rodata
 MACH    .const_data
 .endif
         .align          \align
