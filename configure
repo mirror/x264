@@ -633,7 +633,7 @@ case $host_os in
         else
             SYS="WINDOWS"
             DEVNULL="NUL"
-            LDFLAGSCLI="$LDFLAGSCLI -lshell32"
+            cc_check '' -lshell32 && LDFLAGSCLI="$LDFLAGSCLI -lshell32"
             [ $compiler = GNU ] && RC="${RC-${cross_prefix}windres}" || RC="${RC-rc.exe}"
         fi
         ;;
