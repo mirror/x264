@@ -988,6 +988,7 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
 #endif // ARCH_X86_64
     if( cpu&X264_CPU_AVX512 )
     {
+        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_avx512;
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
         pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
     }
@@ -1033,6 +1034,7 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     }
     if( cpu&X264_CPU_AVX512 )
     {
+        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_avx512;
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
         pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
     }

@@ -1906,6 +1906,13 @@ cglobal zigzag_scan_4x4_frame, 2,2
     mova      [r0], m0
     RET
 
+cglobal zigzag_scan_4x4_field, 2,2
+    mova        m0, [r1]
+    pshufd    xmm1, [r1+8], q3102
+    mova      [r0], m0
+    movu    [r0+8], xmm1
+    RET
+
 cglobal zigzag_scan_8x8_frame, 2,2
     psrld       m0, [scan_frame_avx512], 4
     mova        m1, [r1+0*64]
@@ -1942,6 +1949,13 @@ cglobal zigzag_scan_4x4_frame, 2,2
     mova        m0, [scan_frame_avx512]
     vpermw      m0, m0, [r1]
     mova      [r0], m0
+    RET
+
+cglobal zigzag_scan_4x4_field, 2,2
+    mova        m0, [r1]
+    pshuflw   xmm1, [r1+4], q3102
+    mova      [r0], m0
+    movq    [r0+4], xmm1
     RET
 
 INIT_ZMM avx512
