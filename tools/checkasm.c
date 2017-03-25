@@ -842,7 +842,7 @@ static int check_dct( int cpu_ref, int cpu_new )
     ALIGNED_ARRAY_64( dctcoef, dct1, [16],[16] );
     ALIGNED_ARRAY_32( dctcoef, dct2, [16],[16] );
     ALIGNED_ARRAY_64( dctcoef, dct4, [16],[16] );
-    ALIGNED_ARRAY_32( dctcoef, dct8, [4],[64] );
+    ALIGNED_ARRAY_64( dctcoef, dct8, [4],[64] );
     ALIGNED_16( dctcoef dctdc[2][8] );
     x264_t h_buf;
     x264_t *h = &h_buf;

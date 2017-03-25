@@ -31,10 +31,18 @@
 %include "x86util.asm"
 
 SECTION_RODATA 64
+; Permutation indices for AVX-512 zigzags are bit-packed to save cache
 %if HIGH_BIT_DEPTH
-scan_frame_avx512: dd 0, 4, 1, 2, 5, 8,12, 9, 6, 3, 7,10,13,14,11,15
+scan_frame_avx512: dd 0x00bf0200, 0x00fd7484, 0x0033a611, 0x0069d822 ; bits 0-3:   4x4_frame
+                   dd 0x00a3ca95, 0x00dd8d08, 0x00e75b8c, 0x00a92919 ; bits 4-8:   8x8_frame1
+                   dd 0x0072f6a6, 0x003c8433, 0x007e5247, 0x00b6a0ba ; bits 9-13:  8x8_frame2
+                   dd 0x00ecf12d, 0x00f3239e, 0x00b9540b, 0x00ff868f ; bits 14-18: 8x8_frame3
+                                                                     ; bits 19-23: 8x8_frame4
 %else
-scan_frame_avx512: dw 0, 4, 1, 2, 5, 8,12, 9, 6, 3, 7,10,13,14,11,15
+scan_frame_avx512: dw 0x7000, 0x5484, 0x3811, 0x1c22, 0x3c95, 0x5908, 0x758c, 0x9119 ; bits 0-3:   4x4_frame
+                   dw 0xaca6, 0xc833, 0xe447, 0xe8ba, 0xcd2d, 0xb19e, 0x960b, 0x7a8f ; bits 4-9:   8x8_frame1
+                   dw 0x5e10, 0x7da0, 0x9930, 0xb4c0, 0xd050, 0xec60, 0xf0d0, 0xd540 ; bits 10-15: 8x8_frame2
+                   dw 0xb9b0, 0x9e20, 0xbe90, 0xdb00, 0xf780, 0xfb10, 0xdea0, 0xfe30
 %endif
 
 pw_ppmmmmpp:    dw 1,1,-1,-1,-1,-1,1,1
@@ -1897,11 +1905,54 @@ cglobal zigzag_scan_4x4_frame, 2,2
     vpermd      m0, m0, [r1]
     mova      [r0], m0
     RET
+
+cglobal zigzag_scan_8x8_frame, 2,2
+    psrld       m0, [scan_frame_avx512], 4
+    mova        m1, [r1+0*64]
+    mova        m2, [r1+1*64]
+    mova        m3, [r1+2*64]
+    mova        m4, [r1+3*64]
+    mov        r1d, 0x01fe7f80
+    kmovd       k1, r1d
+    kshiftrd    k2, k1, 16
+    vpermd      m5, m0, m3  ; __ __ __ __ __ __ __ __ __ __ __ __ __ __ 32 40
+    psrld       m6, m0, 5
+    vpermi2d    m0, m1, m2  ;  0  8  1  2  9 16 24 17 10  3  4 11 18 25 __ __
+    vmovdqa64   m0 {k1}, m5
+    mova [r0+0*64], m0
+    mova        m5, m1
+    vpermt2d    m1, m6, m2  ; __ 26 19 12  5  6 13 20 27 __ __ __ __ __ __ __
+    psrld       m0, m6, 5
+    vpermi2d    m6, m3, m4  ; 33 __ __ __ __ __ __ __ __ 34 41 48 56 49 42 35
+    vmovdqa32   m6 {k2}, m1
+    mova [r0+1*64], m6
+    vpermt2d    m5, m0, m2  ; 28 21 14  7 15 22 29 __ __ __ __ __ __ __ __ 30
+    psrld       m1, m0, 5
+    vpermi2d    m0, m3, m4  ; __ __ __ __ __ __ __ 36 43 50 57 58 51 44 37 __
+    vmovdqa32   m5 {k1}, m0
+    mova [r0+2*64], m5
+    vpermt2d    m3, m1, m4  ; __ __ 38 45 52 59 60 53 46 39 47 54 61 62 55 63
+    vpermd      m2, m1, m2  ; 23 31 __ __ __ __ __ __ __ __ __ __ __ __ __ __
+    vmovdqa64   m2 {k2}, m3
+    mova [r0+3*64], m2
+    RET
 %else ; !HIGH_BIT_DEPTH
 INIT_YMM avx512
 cglobal zigzag_scan_4x4_frame, 2,2
     mova        m0, [scan_frame_avx512]
     vpermw      m0, m0, [r1]
     mova      [r0], m0
+    RET
+
+INIT_ZMM avx512
+cglobal zigzag_scan_8x8_frame, 2,2
+    psrlw       m0, [scan_frame_avx512], 4
+    mova        m1, [r1]
+    mova        m2, [r1+64]
+    psrlw       m3, m0, 6
+    vpermi2w    m0, m1, m2
+    vpermt2w    m1, m3, m2
+    mova      [r0], m0
+    mova   [r0+64], m1
     RET
 %endif ; !HIGH_BIT_DEPTH

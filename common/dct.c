@@ -989,6 +989,7 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     if( cpu&X264_CPU_AVX512 )
     {
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
     }
 #endif // HAVE_MMX
 #else
@@ -1033,6 +1034,7 @@ void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zig
     if( cpu&X264_CPU_AVX512 )
     {
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
     }
 #endif // HAVE_MMX
 #if HAVE_ALTIVEC

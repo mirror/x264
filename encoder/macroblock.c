@@ -780,7 +780,7 @@ static ALWAYS_INLINE void x264_macroblock_encode_internal( x264_t *h, int plane_
         }
         else if( h->mb.b_transform_8x8 )
         {
-            ALIGNED_ARRAY_32( dctcoef, dct8x8,[4],[64] );
+            ALIGNED_ARRAY_64( dctcoef, dct8x8,[4],[64] );
             b_decimate &= !h->mb.b_trellis || !h->param.b_cabac; // 8x8 trellis is inherently optimal decimation for CABAC
 
             for( int p = 0; p < plane_count; p++, i_qp = h->mb.i_chroma_qp )
@@ -1219,7 +1219,7 @@ static ALWAYS_INLINE void x264_macroblock_encode_p8x8_internal( x264_t *h, int i
                 int quant_cat = p ? CQM_8PC : CQM_8PY;
                 pixel *p_fenc = h->mb.pic.p_fenc[p] + 8*x + 8*y*FENC_STRIDE;
                 pixel *p_fdec = h->mb.pic.p_fdec[p] + 8*x + 8*y*FDEC_STRIDE;
-                ALIGNED_ARRAY_32( dctcoef, dct8x8,[64] );
+                ALIGNED_ARRAY_64( dctcoef, dct8x8,[64] );
 
                 h->dctf.sub8x8_dct8( dct8x8, p_fenc, p_fdec );
                 int nnz8x8 = x264_quant_8x8( h, dct8x8, i_qp, ctx_cat_plane[DCT_LUMA_8x8][p], 0, p, i8 );
