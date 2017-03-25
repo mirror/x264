@@ -444,11 +444,6 @@ static int x264_validate_parameters( x264_t *h, int b_open )
             fail = 1;
         }
 #endif
-        if( !fail && !(cpuflags & X264_CPU_CMOV) )
-        {
-            x264_log( h, X264_LOG_ERROR, "your cpu does not support CMOV, but x264 was compiled with asm\n");
-            fail = 1;
-        }
         if( fail )
         {
             x264_log( h, X264_LOG_ERROR, "to run x264, recompile without asm (configure --disable-asm)\n");

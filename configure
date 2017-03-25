@@ -863,7 +863,10 @@ if [ $shared = yes -a \( $ARCH = "X86_64" -o $ARCH = "PPC" -o $ARCH = "ALPHA" -o
 fi
 
 if [ $compiler = GNU -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
-    if cc_check '' -mpreferred-stack-boundary=5 ; then
+    if cc_check '' -mpreferred-stack-boundary=6 ; then
+        CFLAGS="$CFLAGS -mpreferred-stack-boundary=6"
+        stack_alignment=64
+    elif cc_check '' -mpreferred-stack-boundary=5 ; then
         CFLAGS="$CFLAGS -mpreferred-stack-boundary=5"
         stack_alignment=32
     elif [ $stack_alignment -lt 16 ] && cc_check '' -mpreferred-stack-boundary=4 ; then

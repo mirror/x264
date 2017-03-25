@@ -57,8 +57,7 @@ int quiet = 0;
     if( !ok ) ret = -1; \
 }
 
-#define BENCH_RUNS 100  // tradeoff between accuracy and speed
-#define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
+#define BENCH_RUNS 2000 // tradeoff between accuracy and speed
 #define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
 #define MAX_CPUS 30     // number of different combinations of cpu flags
 
@@ -178,6 +177,7 @@ static void print_bench(void)
                 continue;
             printf( "%s_%s%s: %"PRId64"\n", benchs[i].name,
 #if HAVE_MMX
+                    b->cpu&X264_CPU_AVX512 ? "avx512" :
                     b->cpu&X264_CPU_AVX2 ? "avx2" :
                     b->cpu&X264_CPU_BMI2 ? "bmi2" :
                     b->cpu&X264_CPU_BMI1 ? "bmi1" :
@@ -2602,6 +2602,11 @@ static int check_cabac( int cpu_ref, int cpu_new )
     x264_quant_init( &h, cpu_new, &h.quantf );
     h.quantf.coeff_last[DCT_CHROMA_DC] = h.quantf.coeff_last4;
 
+/* Reset cabac state to avoid buffer overruns in do_bench() with large BENCH_RUNS values. */
+#define GET_CB( i ) (\
+    x264_cabac_encode_init( &cb[i], bitstream[i], bitstream[i]+0xfff0 ),\
+    cb[i].f8_bits_encoded = 0, &cb[i] )
+
 #define CABAC_RESIDUAL(name, start, end, rd)\
 {\
     if( bs_a.name##_internal && (bs_a.name##_internal != bs_ref.name##_internal || (cpu_new&X264_CPU_SSE2_IS_SLOW)) )\
@@ -2637,13 +2642,9 @@ static int check_cabac( int cpu_ref, int cpu_new )
                     x264_cabac_t cb[2];\
                     x264_cabac_context_init( &h, &cb[0], SLICE_TYPE_P, 26, 0 );\
                     x264_cabac_context_init( &h, &cb[1], SLICE_TYPE_P, 26, 0 );\
-                    x264_cabac_encode_init( &cb[0], bitstream[0], bitstream[0]+0xfff0 );\
-                    x264_cabac_encode_init( &cb[1], bitstream[1], bitstream[1]+0xfff0 );\
-                    cb[0].f8_bits_encoded = 0;\
-                    cb[1].f8_bits_encoded = 0;\
                     if( !rd ) memcpy( bitstream[1], bitstream[0], 0x400 );\
-                    call_c1( x264_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
-                    call_a1( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
+                    call_c1( x264_##name##_c, &h, GET_CB( 0 ), ctx_block_cat, dct[0]+ac );\
+                    call_a1( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, GET_CB( 1 ) );\
                     ok = cb[0].f8_bits_encoded == cb[1].f8_bits_encoded && !memcmp(cb[0].state, cb[1].state, 1024);\
                     if( !rd ) ok |= !memcmp( bitstream[1], bitstream[0], 0x400 ) && !memcmp( &cb[1], &cb[0], offsetof(x264_cabac_t, p_start) );\
                     if( !ok )\
@@ -2656,8 +2657,8 @@ static int check_cabac( int cpu_ref, int cpu_new )
                     }\
                     if( (j&15) == 0 )\
                     {\
-                        call_c2( x264_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
-                        call_a2( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
+                        call_c2( x264_##name##_c, &h, GET_CB( 0 ), ctx_block_cat, dct[0]+ac );\
+                        call_a2( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, GET_CB( 1 ) );\
                     }\
                 }\
             }\
@@ -2794,8 +2795,6 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_CACHELINE_32, "MMX Cache32" );
         cpu1 &= ~X264_CPU_CACHELINE_32;
 #endif
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_CTZ, "MMX SlowCTZ" );
-        cpu1 &= ~X264_CPU_SLOW_CTZ;
     }
     if( cpu_detect & X264_CPU_SSE )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SSE, "SSE" );
@@ -2807,8 +2806,6 @@ static int check_all_flags( void )
         cpu1 &= ~X264_CPU_CACHELINE_64;
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_SHUFFLE, "SSE2 SlowShuffle" );
         cpu1 &= ~X264_CPU_SLOW_SHUFFLE;
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_CTZ, "SSE2 SlowCTZ" );
-        cpu1 &= ~X264_CPU_SLOW_CTZ;
     }
     if( cpu_detect & X264_CPU_LZCNT )
     {
@@ -2827,8 +2824,6 @@ static int check_all_flags( void )
         cpu1 &= ~X264_CPU_CACHELINE_64;
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_SHUFFLE, "SSSE3 SlowShuffle" );
         cpu1 &= ~X264_CPU_SLOW_SHUFFLE;
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_CTZ, "SSSE3 SlowCTZ" );
-        cpu1 &= ~X264_CPU_SLOW_CTZ;
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_SLOW_ATOM, "SSSE3 SlowAtom" );
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_CACHELINE_64, "SSSE3 Cache64 SlowAtom" );
         cpu1 &= ~X264_CPU_CACHELINE_64;
@@ -2860,6 +2855,8 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_BMI2, "BMI2" );
     if( cpu_detect & X264_CPU_AVX2 )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_AVX2, "AVX2" );
+    if( cpu_detect & X264_CPU_AVX512 )
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_AVX512, "AVX512" );
 #elif ARCH_PPC
     if( cpu_detect & X264_CPU_ALTIVEC )
     {
@@ -2889,8 +2886,6 @@ static int check_all_flags( void )
 
 int main(int argc, char *argv[])
 {
-    int ret = 0;
-
 #ifdef _WIN32
     /* Disable the Windows Error Reporting dialog */
     SetErrorMode( SEM_NOGPFAULTERRORBOX );
@@ -2916,8 +2911,8 @@ int main(int argc, char *argv[])
     fprintf( stderr, "x264: using random seed %u\n", seed );
     srand( seed );
 
-    buf1 = x264_malloc( 0x1e00 + 0x2000*sizeof(pixel) + 32*BENCH_ALIGNS );
-    pbuf1 = x264_malloc( 0x1e00*sizeof(pixel) + 32*BENCH_ALIGNS );
+    buf1 = x264_malloc( 0x1e00 + 0x2000*sizeof(pixel) );
+    pbuf1 = x264_malloc( 0x1e00*sizeof(pixel) );
     if( !buf1 || !pbuf1 )
     {
         fprintf( stderr, "malloc failed, unable to initiate tests!\n" );
@@ -2938,21 +2933,7 @@ int main(int argc, char *argv[])
     }
     memset( buf1+0x1e00, 0, 0x2000*sizeof(pixel) );
 
-    /* 32-byte alignment is guaranteed whenever it's useful, but some functions also vary in speed depending on %64 */
-    if( do_bench )
-        for( int i = 0; i < BENCH_ALIGNS && !ret; i++ )
-        {
-            INIT_POINTER_OFFSETS;
-            ret |= x264_stack_pagealign( check_all_flags, i*32 );
-            buf1 += 32;
-            pbuf1 += 32;
-            quiet = 1;
-            fprintf( stderr, "%d/%d\r", i+1, BENCH_ALIGNS );
-        }
-    else
-        ret = x264_stack_pagealign( check_all_flags, 0 );
-
-    if( ret )
+    if( x264_stack_pagealign( check_all_flags, 0 ) )
     {
         fprintf( stderr, "x264: at least one test has failed. Go and fix that Right Now!\n" );
         return -1;
