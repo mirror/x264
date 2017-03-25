@@ -30,7 +30,13 @@
 %include "x86inc.asm"
 %include "x86util.asm"
 
-SECTION_RODATA 32
+SECTION_RODATA 64
+%if HIGH_BIT_DEPTH
+scan_frame_avx512: dd 0, 4, 1, 2, 5, 8,12, 9, 6, 3, 7,10,13,14,11,15
+%else
+scan_frame_avx512: dw 0, 4, 1, 2, 5, 8,12, 9, 6, 3, 7,10,13,14,11,15
+%endif
+
 pw_ppmmmmpp:    dw 1,1,-1,-1,-1,-1,1,1
 pb_sub4frame:   db 0,1,4,8,5,2,3,6,9,12,13,10,7,11,14,15
 pb_sub4field:   db 0,4,1,8,12,5,9,13,2,6,10,14,3,7,11,15
@@ -1881,5 +1887,21 @@ cglobal zigzag_interleave_8x8_cavlc, 3,3,6
     mov  [r2+0], r0w
     shr     r0d, 16
     mov  [r2+8], r0w
+    RET
+%endif ; !HIGH_BIT_DEPTH
+
+%if HIGH_BIT_DEPTH
+INIT_ZMM avx512
+cglobal zigzag_scan_4x4_frame, 2,2
+    mova        m0, [scan_frame_avx512]
+    vpermd      m0, m0, [r1]
+    mova      [r0], m0
+    RET
+%else ; !HIGH_BIT_DEPTH
+INIT_YMM avx512
+cglobal zigzag_scan_4x4_frame, 2,2
+    mova        m0, [scan_frame_avx512]
+    vpermw      m0, m0, [r1]
+    mova      [r0], m0
     RET
 %endif ; !HIGH_BIT_DEPTH

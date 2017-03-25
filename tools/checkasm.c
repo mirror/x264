@@ -839,9 +839,9 @@ static int check_dct( int cpu_ref, int cpu_new )
     x264_dct_function_t dct_asm;
     x264_quant_function_t qf;
     int ret = 0, ok, used_asm, interlace = 0;
-    ALIGNED_ARRAY_32( dctcoef, dct1, [16],[16] );
+    ALIGNED_ARRAY_64( dctcoef, dct1, [16],[16] );
     ALIGNED_ARRAY_32( dctcoef, dct2, [16],[16] );
-    ALIGNED_ARRAY_32( dctcoef, dct4, [16],[16] );
+    ALIGNED_ARRAY_64( dctcoef, dct4, [16],[16] );
     ALIGNED_ARRAY_32( dctcoef, dct8, [4],[64] );
     ALIGNED_16( dctcoef dctdc[2][8] );
     x264_t h_buf;
@@ -1044,8 +1044,8 @@ static int check_dct( int cpu_ref, int cpu_new )
     x264_zigzag_function_t zigzag_ref[2];
     x264_zigzag_function_t zigzag_asm[2];
 
-    ALIGNED_ARRAY_16( dctcoef, level1,[64] );
-    ALIGNED_ARRAY_16( dctcoef, level2,[64] );
+    ALIGNED_ARRAY_64( dctcoef, level1,[64] );
+    ALIGNED_ARRAY_64( dctcoef, level2,[64] );
 
 #define TEST_ZIGZAG_SCAN( name, t1, t2, dct, size ) \
     if( zigzag_asm[interlace].name != zigzag_ref[interlace].name ) \

@@ -116,7 +116,7 @@ static ALWAYS_INLINE void x264_mb_encode_i4x4( x264_t *h, int p, int idx, int i_
     int nz;
     pixel *p_src = &h->mb.pic.p_fenc[p][block_idx_xy_fenc[idx]];
     pixel *p_dst = &h->mb.pic.p_fdec[p][block_idx_xy_fdec[idx]];
-    ALIGNED_ARRAY_32( dctcoef, dct4x4,[16] );
+    ALIGNED_ARRAY_64( dctcoef, dct4x4,[16] );
 
     if( b_predict )
     {

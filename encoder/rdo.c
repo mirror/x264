@@ -635,7 +635,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
                          int b_chroma, int dc, int num_coefs, int idx )
 {
     ALIGNED_ARRAY_32( dctcoef, orig_coefs, [64] );
-    ALIGNED_ARRAY_32( dctcoef, quant_coefs, [64] );
+    ALIGNED_ARRAY_64( dctcoef, quant_coefs, [64] );
     const uint32_t *coef_weight1 = num_coefs == 64 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
     const uint32_t *coef_weight2 = num_coefs == 64 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
     const int b_interlaced = MB_INTERLACED;
