@@ -42,6 +42,10 @@ scan_field_avx512: dd 0x0006b240, 0x000735a1, 0x0007b9c2, 0x0009bde8 ; bits 0-4:
                    dd 0x000c4e69, 0x000ce723, 0x000a0004, 0x000aeb4a ; bits 5-9:   8x8_field2
                    dd 0x000b5290, 0x000bd6ab, 0x000d5ac5, 0x000ddee6 ; bits 10-14: 8x8_field3
                    dd 0x000e6f67, 0x000e842c, 0x000f0911, 0x000ff058 ; bits 15-19: 8x8_field4
+cavlc_shuf_avx512: dd 0x00018820, 0x000398a4, 0x0005a928, 0x0007b9ac ; bits 0-4:   interleave1
+                   dd 0x0009ca30, 0x000bdab4, 0x000deb38, 0x000ffbbc ; bits 5-9:   interleave2
+                   dd 0x00010c01, 0x00031c85, 0x00052d09, 0x00073d8d ; bits 10-14: interleave3
+                   dd 0x00094e11, 0x000b5e95, 0x000d6f19, 0x000f7f9d ; bits 15-19: interleave4
 %else
 scan_frame_avx512: dw 0x7000, 0x5484, 0x3811, 0x1c22, 0x3c95, 0x5908, 0x758c, 0x9119 ; bits 0-3:   4x4_frame
                    dw 0xaca6, 0xc833, 0xe447, 0xe8ba, 0xcd2d, 0xb19e, 0x960b, 0x7a8f ; bits 4-9:   8x8_frame1
@@ -51,6 +55,10 @@ scan_field_avx512: dw 0x0700, 0x0741, 0x0782, 0x07c8, 0x08c9, 0x0a43, 0x0c04, 0x
                    dw 0x0910, 0x094b, 0x0985, 0x09c6, 0x0ac7, 0x0c4c, 0x0c91, 0x0b18 ; bits 6-11:  8x8_field2
                    dw 0x0b52, 0x0b8d, 0x0bce, 0x0ccf, 0x0e13, 0x0e59, 0x0d20, 0x0d5a
                    dw 0x0d94, 0x0dd5, 0x0e96, 0x0ed7, 0x0f1b, 0x0f61, 0x0fa8, 0x0fe2
+cavlc_shuf_avx512: dw 0x0080, 0x0184, 0x0288, 0x038c, 0x0490, 0x0594, 0x0698, 0x079c ; bits 0-5:   interleave1
+                   dw 0x08a0, 0x09a4, 0x0aa8, 0x0bac, 0x0cb0, 0x0db4, 0x0eb8, 0x0fbc ; bits 6-11:  interleave2
+                   dw 0x00c1, 0x01c5, 0x02c9, 0x03cd, 0x04d1, 0x05d5, 0x06d9, 0x07dd
+                   dw 0x08e1, 0x09e5, 0x0ae9, 0x0bed, 0x0cf1, 0x0df5, 0x0ef9, 0x0ffd
 %endif
 
 pw_ppmmmmpp:    dw 1,1,-1,-1,-1,-1,1,1
@@ -1974,6 +1982,43 @@ cglobal zigzag_scan_8x8_field, 2,2
     mova [r0+2*64], m2
     mova [r0+3*64], m3
     RET
+
+cglobal zigzag_interleave_8x8_cavlc, 3,3
+    mova        m0, [cavlc_shuf_avx512]
+    mova        m1, [r1+0*64]
+    mova        m2, [r1+1*64]
+    mova        m3, [r1+2*64]
+    mova        m4, [r1+3*64]
+    kxnorb      k1, k1, k1
+    por         m7, m1, m2
+    psrld       m5, m0, 5
+    vpermi2d    m0, m1, m2        ; a0 a1 b0 b1
+    vpternlogd  m7, m3, m4, 0xfe  ; m1|m2|m3|m4
+    psrld       m6, m5, 5
+    vpermi2d    m5, m3, m4        ; b2 b3 a2 a3
+    vptestmd    k0, m7, m7
+    vpermt2d    m1, m6, m2        ; c0 c1 d0 d1
+    psrld       m6, 5
+    vpermt2d    m3, m6, m4        ; d2 d3 c2 c3
+    vshufi32x4  m2, m0, m5, q1032 ; b0 b1 b2 b3
+    vmovdqa32   m5 {k1}, m0       ; a0 a1 a2 a3
+    vshufi32x4  m4, m1, m3, q1032 ; d0 d1 d2 d3
+    vmovdqa32   m3 {k1}, m1       ; c0 c1 c2 c3
+    mova [r0+0*64], m5
+    mova [r0+1*64], m2
+    mova [r0+2*64], m3
+    mova [r0+3*64], m4
+    kmovw      r1d, k0
+    test       r1d, 0x1111
+    setnz     [r2]
+    test       r1d, 0x2222
+    setnz   [r2+1]
+    test       r1d, 0x4444
+    setnz   [r2+8]
+    test       r1d, 0x8888
+    setnz   [r2+9]
+    RET
+
 %else ; !HIGH_BIT_DEPTH
 INIT_YMM avx512
 cglobal zigzag_scan_4x4_frame, 2,2
@@ -2005,4 +2050,24 @@ scan8_avx512:
 cglobal zigzag_scan_8x8_field, 2,2
     mova        m0, [scan_field_avx512]
     jmp scan8_avx512
+
+cglobal zigzag_interleave_8x8_cavlc, 3,3
+    mova       m0, [cavlc_shuf_avx512]
+    mova       m1, [r1]
+    mova       m2, [r1+64]
+    psrlw      m3, m0, 6
+    vpermi2w   m0, m1, m2
+    vpermt2w   m1, m3, m2
+    kxnorb     k2, k2, k2
+    vptestmd   k0, m0, m0
+    vptestmd   k1, m1, m1
+    mova     [r0], m0
+    mova  [r0+64], m1
+    ktestw     k2, k0
+    setnz    [r2]
+    setnc  [r2+1]
+    ktestw     k2, k1
+    setnz  [r2+8]
+    setnc  [r2+9]
+    RET
 %endif ; !HIGH_BIT_DEPTH
