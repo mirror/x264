@@ -1756,6 +1756,70 @@ cglobal coeff_last64, 1,3
     RET
 %endif
 
+%macro COEFF_LAST_AVX512 2 ; num, w/d
+cglobal coeff_last%1, 1,2
+    mova         m0, [r0-(%1&1)*SIZEOF_DCTCOEF]
+    vptestm%2    k0, m0, m0
+%if %1 == 15
+    mov         eax, 30
+    kmovw       r1d, k0
+    lzcnt       r1d, r1d
+    sub         eax, r1d
+%else
+    kmovw       eax, k0
+    lzcnt       eax, eax
+    xor         eax, 31
+%endif
+    RET
+%endmacro
+
+%macro COEFF_LAST64_AVX512 1 ; w/d
+cglobal coeff_last64, 1,2
+    pxor        xm0, xm0
+    vpcmp%1      k0, m0, [r0+0*64], 4
+    vpcmp%1      k1, m0, [r0+1*64], 4
+%if HIGH_BIT_DEPTH
+    vpcmp%1      k2, m0, [r0+2*64], 4
+    vpcmp%1      k3, m0, [r0+3*64], 4
+    kunpckwd     k0, k1, k0
+    kunpckwd     k1, k3, k2
+%endif
+%if ARCH_X86_64
+    kunpckdq     k0, k1, k0
+    kmovq       rax, k0
+    lzcnt       rax, rax
+    xor         eax, 63
+%else
+    kmovd       r1d, k1
+    kmovd       eax, k0
+    lzcnt       r1d, r1d
+    lzcnt       eax, eax
+    xor         r1d, 32
+    cmovnz      eax, r1d
+    xor         eax, 31
+%endif
+    RET
+%endmacro
+
+%if HIGH_BIT_DEPTH
+INIT_XMM avx512
+COEFF_LAST_AVX512  4, d
+INIT_YMM avx512
+COEFF_LAST_AVX512  8, d
+INIT_ZMM avx512
+COEFF_LAST_AVX512 15, d
+COEFF_LAST_AVX512 16, d
+COEFF_LAST64_AVX512 d
+%else ; !HIGH_BIT_DEPTH
+INIT_XMM avx512
+COEFF_LAST_AVX512  8, w
+INIT_YMM avx512
+COEFF_LAST_AVX512 15, w
+COEFF_LAST_AVX512 16, w
+INIT_ZMM avx512
+COEFF_LAST64_AVX512 w
+%endif ; !HIGH_BIT_DEPTH
+
 ;-----------------------------------------------------------------------------
 ; int coeff_level_run( dctcoef *dct, run_level_t *runlevel )
 ;-----------------------------------------------------------------------------

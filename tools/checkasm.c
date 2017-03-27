@@ -2008,7 +2008,7 @@ static int check_quant( int cpu_ref, int cpu_new )
     x264_quant_function_t qf_c;
     x264_quant_function_t qf_ref;
     x264_quant_function_t qf_a;
-    ALIGNED_ARRAY_32( dctcoef, dct1,[64] );
+    ALIGNED_ARRAY_64( dctcoef, dct1,[64] );
     ALIGNED_ARRAY_32( dctcoef, dct2,[64] );
     ALIGNED_ARRAY_32( dctcoef, dct3,[8],[16] );
     ALIGNED_ARRAY_32( dctcoef, dct4,[8],[16] );
@@ -2631,7 +2631,7 @@ static int check_cabac( int cpu_ref, int cpu_new )
             {\
                 for( int j = 0; j < 256; j++ )\
                 {\
-                    ALIGNED_ARRAY_32( dctcoef, dct, [2],[64] );\
+                    ALIGNED_ARRAY_64( dctcoef, dct, [2],[64] );\
                     uint8_t bitstream[2][1<<16];\
                     static const uint8_t ctx_ac[14] = {0,1,0,0,1,0,0,1,0,0,0,1,0,0};\
                     int ac = ctx_ac[ctx_block_cat];\
