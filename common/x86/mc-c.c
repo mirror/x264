@@ -160,14 +160,16 @@ void x264_integral_init4v_avx2( uint16_t *sum8, uint16_t *sum4, intptr_t stride 
 void x264_integral_init8v_mmx ( uint16_t *sum8, intptr_t stride );
 void x264_integral_init8v_sse2( uint16_t *sum8, intptr_t stride );
 void x264_integral_init8v_avx2( uint16_t *sum8, intptr_t stride );
-void x264_mbtree_propagate_cost_sse2( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
-                                      uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
-void x264_mbtree_propagate_cost_avx ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
-                                      uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
-void x264_mbtree_propagate_cost_fma4( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
-                                      uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
-void x264_mbtree_propagate_cost_avx2( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
-                                      uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+void x264_mbtree_propagate_cost_sse2  ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+                                        uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+void x264_mbtree_propagate_cost_avx   ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+                                        uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+void x264_mbtree_propagate_cost_fma4  ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+                                        uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+void x264_mbtree_propagate_cost_avx2  ( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+                                        uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
+void x264_mbtree_propagate_cost_avx512( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
+                                        uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
 void x264_mbtree_fix8_pack_ssse3( uint16_t *dst, float *src, int count );
 void x264_mbtree_fix8_pack_avx2 ( uint16_t *dst, float *src, int count );
 void x264_mbtree_fix8_unpack_ssse3( float *dst, uint16_t *src, int count );
@@ -864,4 +866,8 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx2;
     pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_avx2;
     pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_avx2;
+
+    if( !(cpu&X264_CPU_AVX512) )
+        return;
+    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx512;
 }

@@ -1743,7 +1743,7 @@ static int check_mc( int cpu_ref, int cpu_new )
             {
                 ok &= abs( dstc[j]-dsta[j] ) <= 1 || fabs( (double)dstc[j]/dsta[j]-1 ) < 1e-4;
                 if( !ok )
-                    fprintf( stderr, "mbtree_propagate_cost FAILED: %f !~= %f\n", (double)dstc[j], (double)dsta[j] );
+                    fprintf( stderr, "mbtree_propagate_cost FAILED: %d !~= %d\n", dstc[j], dsta[j] );
             }
         }
     }

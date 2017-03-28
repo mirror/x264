@@ -2147,13 +2147,13 @@ MBTREE
 cglobal mbtree_propagate_cost, 6,6,8-2*cpuflag(avx2)
     vbroadcastss m5, [r5]
     mov         r5d, r6m
-    lea          r0, [r0+r5*2]
+    lea          r2, [r2+r5*2]
     add         r5d, r5d
-    add          r1, r5
-    add          r2, r5
-    add          r3, r5
     add          r4, r5
     neg          r5
+    sub          r1, r5
+    sub          r3, r5
+    sub          r0, r5
     mova        xm4, [pw_3fff]
 %if notcpuflag(avx2)
     pxor        xm7, xm7
@@ -2165,9 +2165,8 @@ cglobal mbtree_propagate_cost, 6,6,8-2*cpuflag(avx2)
     pmovzxwd     m2, [r1+r5]      ; prop
     pand        xm3, xm4, [r3+r5] ; inter
     pmovzxwd     m3, xm3
-    pminsd       m3, m0
     pmaddwd      m1, m0
-    psubd        m3, m0, m3
+    psubusw      m3, m0, m3
     cvtdq2ps     m0, m0
     cvtdq2ps     m1, m1
     cvtdq2ps     m2, m2
@@ -2184,7 +2183,7 @@ cglobal mbtree_propagate_cost, 6,6,8-2*cpuflag(avx2)
     movu        xm1, [r4+r5]
     movu        xm2, [r1+r5]
     pand        xm3, xm4, [r3+r5]
-    pminsw      xm3, xm0
+    psubusw     xm3, xm0, xm3
     INT16_UNPACK 0
     INT16_UNPACK 1
     INT16_UNPACK 2
@@ -2194,7 +2193,6 @@ cglobal mbtree_propagate_cost, 6,6,8-2*cpuflag(avx2)
     cvtdq2ps     m2, m2
     cvtdq2ps     m3, m3
     mulps        m1, m0
-    subps        m3, m0, m3
     mulps        m1, m5         ; intra*invq*fps_factor>>8
     addps        m1, m2         ; prop + (intra*invq*fps_factor>>8)
     rcpps        m2, m0         ; 1 / intra 1st approximation
@@ -2205,7 +2203,7 @@ cglobal mbtree_propagate_cost, 6,6,8-2*cpuflag(avx2)
     subps        m2, m0         ; 2nd approximation for 1/intra
     mulps        m1, m2         ; / intra
 %endif
-    vcvtps2dq    m1, m1
+    cvtps2dq     m1, m1
     vextractf128 xm2, m1, 1
     packssdw    xm1, xm2
     mova    [r0+r5], xm1
@@ -2218,6 +2216,39 @@ INIT_YMM avx
 MBTREE_AVX
 INIT_YMM avx2
 MBTREE_AVX
+
+INIT_ZMM avx512
+cglobal mbtree_propagate_cost, 6,6
+    vbroadcastss  m5, [r5]
+    mov          r5d, 0x3fff3fff
+    vpbroadcastd ym4, r5d
+    mov          r5d, r6m
+    lea           r2, [r2+r5*2]
+    add          r5d, r5d
+    add           r1, r5
+    neg           r5
+    sub           r4, r5
+    sub           r3, r5
+    sub           r0, r5
+.loop:
+    pmovzxwd      m0, [r2+r5]      ; intra
+    pmovzxwd      m1, [r1+r5]      ; prop
+    pmovzxwd      m2, [r4+r5]      ; invq
+    pand         ym3, ym4, [r3+r5] ; inter
+    pmovzxwd      m3, ym3
+    psubusw       m3, m0, m3
+    cvtdq2ps      m0, m0
+    cvtdq2ps      m1, m1
+    cvtdq2ps      m2, m2
+    cvtdq2ps      m3, m3
+    vdivps        m1, m0, {rn-sae}
+    fmaddps       m1, m2, m5, m1
+    mulps         m1, m3
+    cvtps2dq      m1, m1
+    vpmovsdw [r0+r5], m1
+    add           r5, 32
+    jl .loop
+    RET
 
 %macro MBTREE_PROPAGATE_LIST 0
 ;-----------------------------------------------------------------------------
