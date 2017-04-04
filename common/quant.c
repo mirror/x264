@@ -561,6 +561,7 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
     if( cpu&X264_CPU_AVX512 )
     {
         pf->dequant_4x4 = x264_dequant_4x4_avx512;
+        pf->dequant_8x8 = x264_dequant_8x8_avx512;
         pf->coeff_last4 = x264_coeff_last4_avx512;
         pf->coeff_last8 = x264_coeff_last8_avx512;
         pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_avx512;
@@ -729,7 +730,10 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
     if( cpu&X264_CPU_AVX512 )
     {
         if( h->param.i_cqm_preset != X264_CQM_FLAT )
+        {
             pf->dequant_4x4 = x264_dequant_4x4_avx512;
+            pf->dequant_8x8 = x264_dequant_8x8_avx512;
+        }
         pf->coeff_last8 = x264_coeff_last8_avx512;
         pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_avx512;
         pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_avx512;

@@ -30,7 +30,12 @@
 %include "x86inc.asm"
 %include "x86util.asm"
 
-SECTION_RODATA 32
+SECTION_RODATA 64
+
+%if HIGH_BIT_DEPTH == 0
+dequant_shuf_avx512: dw  0, 2, 4, 6, 8,10,12,14,16,18,20,22,24,26,28,30
+                     dw 32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62
+%endif
 
 %macro DQM4 3
     dw %1, %2, %1, %2, %2, %3, %2, %3
@@ -797,6 +802,78 @@ cglobal dequant_4x4, 0,3
     mova        [r0], m0
 %else
     vpmovsdw    [r0], m0
+%endif
+    RET
+
+cglobal dequant_8x8, 0,3
+    DEQUANT_START_AVX512 8
+    mova          m0, [dmf+0*64]
+    mova          m1, [dmf+1*64]
+    mova          m2, [dmf+2*64]
+    mova          m3, [dmf+3*64]
+%if HIGH_BIT_DEPTH
+    pmaddwd       m0, [r0+0*64]
+    pmaddwd       m1, [r0+1*64]
+    pmaddwd       m2, [r0+2*64]
+    pmaddwd       m3, [r0+3*64]
+%else
+    mova          m6, [dequant_shuf_avx512]
+%endif
+    sub          t0d, 6
+    jl .rshift
+%if HIGH_BIT_DEPTH
+    vpbroadcastd  m4, t0d
+    vpsllvd       m0, m4
+    vpsllvd       m1, m4
+    vpsllvd       m2, m4
+    vpsllvd       m3, m4
+    jmp .end
+.rshift:
+%else
+    vpbroadcastw  m4, t0d
+    vpermt2w      m0, m6, m1
+    vpermt2w      m2, m6, m3
+    pmullw        m0, [r0]
+    pmullw        m2, [r0+64]
+    vpsllvw       m0, m4
+    vpsllvw       m2, m4
+    mova        [r0], m0
+    mova     [r0+64], m2
+    RET
+.rshift:
+    pmovzxwd      m4, [r0+0*32]
+    pmovzxwd      m5, [r0+1*32]
+    pmaddwd       m0, m4
+    pmaddwd       m1, m5
+    pmovzxwd      m4, [r0+2*32]
+    pmovzxwd      m5, [r0+3*32]
+    pmaddwd       m2, m4
+    pmaddwd       m3, m5
+%endif
+    mov          r1d, 1<<31
+    shrx         r1d, r1d, t0d ; 1 << (-i_qbits-1)
+    neg          t0d
+    vpbroadcastd  m4, r1d
+    vpbroadcastd  m5, t0d
+    paddd         m0, m4
+    paddd         m1, m4
+    vpsravd       m0, m5
+    vpsravd       m1, m5
+    paddd         m2, m4
+    paddd         m3, m4
+    vpsravd       m2, m5
+    vpsravd       m3, m5
+%if HIGH_BIT_DEPTH
+.end:
+    mova   [r0+0*64], m0
+    mova   [r0+1*64], m1
+    mova   [r0+2*64], m2
+    mova   [r0+3*64], m3
+%else
+    vpermt2w      m0, m6, m1
+    vpermt2w      m2, m6, m3
+    mova        [r0], m0
+    mova     [r0+64], m2
 %endif
     RET
 
