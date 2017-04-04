@@ -743,6 +743,65 @@ DEQUANT 4, 4, 4
 DEQUANT 8, 6, 4
 %endif
 
+%macro DEQUANT_START_AVX512 1
+    movifnidn t2d, r2m
+    imul t0d, t2d, 0x2b
+    shr  t0d, 8     ; i_qbits = i_qp / 6
+    lea  t1d, [t0*5]
+    sub  t2d, t0d
+    sub  t2d, t1d   ; i_mf = i_qp % 6
+    shl  t2d, %1
+%if ARCH_X86_64
+%define dmf r1+t2
+%else
+%define dmf r1
+    add  r1, r1mp   ; dequant_mf[i_mf]
+    mov  r0, r0mp   ; dct
+%endif
+%endmacro
+
+INIT_ZMM avx512
+cglobal dequant_4x4, 0,3
+    DEQUANT_START_AVX512 6
+    mova          m0, [dmf]
+%if HIGH_BIT_DEPTH
+    pmaddwd       m0, [r0]
+%endif
+    sub          t0d, 4
+    jl .rshift
+%if HIGH_BIT_DEPTH
+    vpbroadcastd  m1, t0d
+    vpsllvd       m0, m1
+    mova        [r0], m0
+%else
+    vpbroadcastw ym1, t0d
+    vpmovsdw     ym0, m0
+    pmullw       ym0, [r0]
+    vpsllvw      ym0, ym1
+    mova        [r0], ym0
+%endif
+    RET
+.rshift:
+%if HIGH_BIT_DEPTH == 0
+    pmovzxwd      m1, [r0]
+    pmaddwd       m0, m1
+%endif
+    mov          r1d, 1<<31
+    shrx         r1d, r1d, t0d ; 1 << (-i_qbits-1)
+    neg          t0d
+    vpbroadcastd  m1, r1d
+    vpbroadcastd  m2, t0d
+    paddd         m0, m1
+    vpsravd       m0, m2
+%if HIGH_BIT_DEPTH
+    mova        [r0], m0
+%else
+    vpmovsdw    [r0], m0
+%endif
+    RET
+
+%undef dmf
+
 %macro DEQUANT_DC 2
 cglobal dequant_4x4dc, 0,3,6
     DEQUANT_START 6, 6

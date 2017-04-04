@@ -2009,7 +2009,7 @@ static int check_quant( int cpu_ref, int cpu_new )
     x264_quant_function_t qf_ref;
     x264_quant_function_t qf_a;
     ALIGNED_ARRAY_64( dctcoef, dct1,[64] );
-    ALIGNED_ARRAY_32( dctcoef, dct2,[64] );
+    ALIGNED_ARRAY_64( dctcoef, dct2,[64] );
     ALIGNED_ARRAY_32( dctcoef, dct3,[8],[16] );
     ALIGNED_ARRAY_32( dctcoef, dct4,[8],[16] );
     ALIGNED_ARRAY_32( uint8_t, cqm_buf,[64] );
