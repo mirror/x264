@@ -47,14 +47,6 @@ dequant_shuf_avx512: dw  0, 2, 4, 6, 8,10,12,14,16,18,20,22,24,26,28,30
     dw %4, %2, %6, %2, %4, %2, %6, %2
 %endmacro
 
-dequant4_scale:
-    DQM4 10, 13, 16
-    DQM4 11, 14, 18
-    DQM4 13, 16, 20
-    DQM4 14, 18, 23
-    DQM4 16, 20, 25
-    DQM4 18, 23, 29
-
 dequant8_scale:
     DQM8 20, 18, 32, 19, 25, 24
     DQM8 22, 19, 35, 21, 28, 26
@@ -62,6 +54,14 @@ dequant8_scale:
     DQM8 28, 25, 45, 26, 35, 33
     DQM8 32, 28, 51, 30, 40, 38
     DQM8 36, 32, 58, 34, 46, 43
+
+dequant4_scale:
+    DQM4 10, 13, 16
+    DQM4 11, 14, 18
+    DQM4 13, 16, 20
+    DQM4 14, 18, 23
+    DQM4 16, 20, 25
+    DQM4 18, 23, 29
 
 decimate_mask_table4:
     db  0,3,2,6,2,5,5,9,1,5,4,8,5,8,8,12,1,4,4,8,4,7,7,11,4,8,7,11,8,11,11,15,1,4
@@ -748,21 +748,30 @@ DEQUANT 4, 4, 4
 DEQUANT 8, 6, 4
 %endif
 
-%macro DEQUANT_START_AVX512 1
+%macro DEQUANT_START_AVX512 1-2 0 ; shift, flat
+%if %2 == 0
     movifnidn t2d, r2m
+%endif
     imul t0d, t2d, 0x2b
     shr  t0d, 8     ; i_qbits = i_qp / 6
     lea  t1d, [t0*5]
     sub  t2d, t0d
     sub  t2d, t1d   ; i_mf = i_qp % 6
     shl  t2d, %1
-%if ARCH_X86_64
+%if %2
+%ifdef PIC
+%define dmf r1+t2
+    lea   r1, [dequant8_scale]
+%else
+%define dmf t2+dequant8_scale
+%endif
+%elif ARCH_X86_64
 %define dmf r1+t2
 %else
 %define dmf r1
     add  r1, r1mp   ; dequant_mf[i_mf]
-    mov  r0, r0mp   ; dct
 %endif
+    movifnidn r0, r0mp
 %endmacro
 
 INIT_ZMM avx512
@@ -876,6 +885,23 @@ cglobal dequant_8x8, 0,3
     mova     [r0+64], m2
 %endif
     RET
+
+%if HIGH_BIT_DEPTH == 0
+cglobal dequant_8x8_flat16, 0,3
+    movifnidn    t2d, r2m
+    cmp          t2d, 12
+    jl dequant_8x8_avx512
+    sub          t2d, 12
+    DEQUANT_START_AVX512 6, 1
+    vpbroadcastw  m0, t0d
+    mova          m1, [dmf]
+    vpsllvw       m1, m0
+    pmullw        m0, m1, [r0]
+    pmullw        m1, [r0+64]
+    mova        [r0], m0
+    mova     [r0+64], m1
+    RET
+%endif
 
 %undef dmf
 

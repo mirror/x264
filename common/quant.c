@@ -729,7 +729,9 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
     }
     if( cpu&X264_CPU_AVX512 )
     {
-        if( h->param.i_cqm_preset != X264_CQM_FLAT )
+        if( h->param.i_cqm_preset == X264_CQM_FLAT )
+            pf->dequant_8x8 = x264_dequant_8x8_flat16_avx512;
+        else
         {
             pf->dequant_4x4 = x264_dequant_4x4_avx512;
             pf->dequant_8x8 = x264_dequant_8x8_avx512;
