@@ -784,8 +784,8 @@ struct x264_t
             /* i4x4 and i8x8 backup data, for skipping the encode stage when possible */
             ALIGNED_16( pixel i4x4_fdec_buf[16*16] );
             ALIGNED_16( pixel i8x8_fdec_buf[16*16] );
-            ALIGNED_16( dctcoef i8x8_dct_buf[3][64] );
-            ALIGNED_16( dctcoef i4x4_dct_buf[15][16] );
+            ALIGNED_64( dctcoef i8x8_dct_buf[3][64] );
+            ALIGNED_64( dctcoef i4x4_dct_buf[15][16] );
             uint32_t i4x4_nnz_buf[4];
             uint32_t i8x8_nnz_buf[4];
             int i4x4_cbp;

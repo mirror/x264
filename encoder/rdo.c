@@ -64,9 +64,8 @@ static uint16_t cabac_size_5ones[128];
 #include "cabac.c"
 
 #define COPY_CABAC h->mc.memcpy_aligned( &cabac_tmp.f8_bits_encoded, &h->cabac.f8_bits_encoded, \
-        sizeof(x264_cabac_t) - offsetof(x264_cabac_t,f8_bits_encoded) - (CHROMA444 ? 0 : (1024+12)-460) )
-#define COPY_CABAC_PART( pos, size )\
-        memcpy( &cb->state[pos], &h->cabac.state[pos], size )
+        sizeof(int) + (CHROMA444 ? 1024+12 : 460) )
+#define COPY_CABAC_PART( pos, size ) memcpy( &cb->state[pos], &h->cabac.state[pos], size )
 
 static ALWAYS_INLINE uint64_t cached_hadamard( x264_t *h, int size, int x, int y )
 {
@@ -634,7 +633,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
                          const uint8_t *zigzag, int ctx_block_cat, int lambda2, int b_ac,
                          int b_chroma, int dc, int num_coefs, int idx )
 {
-    ALIGNED_ARRAY_32( dctcoef, orig_coefs, [64] );
+    ALIGNED_ARRAY_64( dctcoef, orig_coefs, [64] );
     ALIGNED_ARRAY_64( dctcoef, quant_coefs, [64] );
     const uint32_t *coef_weight1 = num_coefs == 64 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
     const uint32_t *coef_weight2 = num_coefs == 64 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;

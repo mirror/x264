@@ -1473,52 +1473,65 @@ LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
 PLANE_DEINTERLEAVE_RGB
 %endif
 
-; These functions are not general-use; not only do the SSE ones require aligned input,
-; but they also will fail if given a non-mod16 size.
-; memzero SSE will fail for non-mod128.
+; These functions are not general-use; not only do they require aligned input, but memcpy
+; requires size to be a multiple of 16 and memzero requires size to be a multiple of 128.
 
 ;-----------------------------------------------------------------------------
 ; void *memcpy_aligned( void *dst, const void *src, size_t n );
 ;-----------------------------------------------------------------------------
 %macro MEMCPY 0
 cglobal memcpy_aligned, 3,3
-%if mmsize == 16
+%if mmsize == 32
     test r2d, 16
-    jz .copy2
-    mova  m0, [r1+r2-16]
-    mova [r0+r2-16], m0
+    jz .copy32
+    mova xm0, [r1+r2-16]
+    mova [r0+r2-16], xm0
     sub  r2d, 16
-.copy2:
+    jle .ret
+.copy32:
 %endif
-    test r2d, 2*mmsize
-    jz .copy4start
+    test r2d, mmsize
+    jz .loop
+    mova  m0, [r1+r2-mmsize]
+    mova [r0+r2-mmsize], m0
+    sub      r2d, mmsize
+    jle .ret
+.loop:
     mova  m0, [r1+r2-1*mmsize]
     mova  m1, [r1+r2-2*mmsize]
     mova [r0+r2-1*mmsize], m0
     mova [r0+r2-2*mmsize], m1
     sub  r2d, 2*mmsize
-.copy4start:
-    test r2d, r2d
-    jz .ret
-.copy4:
-    mova  m0, [r1+r2-1*mmsize]
-    mova  m1, [r1+r2-2*mmsize]
-    mova  m2, [r1+r2-3*mmsize]
-    mova  m3, [r1+r2-4*mmsize]
-    mova [r0+r2-1*mmsize], m0
-    mova [r0+r2-2*mmsize], m1
-    mova [r0+r2-3*mmsize], m2
-    mova [r0+r2-4*mmsize], m3
-    sub  r2d, 4*mmsize
-    jg .copy4
+    jg .loop
 .ret:
-    REP_RET
+    RET
 %endmacro
 
-INIT_MMX mmx
-MEMCPY
 INIT_XMM sse
 MEMCPY
+INIT_YMM avx
+MEMCPY
+
+INIT_ZMM avx512
+cglobal memcpy_aligned, 3,4
+    dec      r2d           ; offset of the last byte
+    rorx     r3d, r2d, 2
+    and      r2d, ~63
+    and      r3d, 15       ; n = number of dwords minus one to copy in the tail
+    mova      m0, [r1+r2]
+    not      r3d           ; bits 0-4: (n^15)+16, bits 16-31: 0xffff
+    shrx     r3d, r3d, r3d ; 0xffff >> (n^15)
+    kmovw     k1, r3d      ; (1 << (n+1)) - 1
+    vmovdqa32 [r0+r2] {k1}, m0
+    sub      r2d, 64
+    jl .ret
+.loop:
+    mova      m0, [r1+r2]
+    mova [r0+r2], m0
+    sub      r2d, 64
+    jge .loop
+.ret:
+    RET
 
 ;-----------------------------------------------------------------------------
 ; void *memzero_aligned( void *dst, size_t n );

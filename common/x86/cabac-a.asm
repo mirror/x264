@@ -100,7 +100,7 @@ struc cb
     .start: pointer 1
     .p: pointer 1
     .end: pointer 1
-    align 16, resb 1
+    align 64, resb 1
     .bits_encoded: resd 1
     .state: resb 1024
 endstruc

@@ -1855,12 +1855,14 @@ static int check_mc( int cpu_ref, int cpu_new )
     {
         set_func_name( "memcpy_aligned" );
         ok = 1; used_asm = 1;
-        for( size_t size = 16; size < 256; size += 16 )
+        for( size_t size = 16; size < 512; size += 16 )
         {
-            memset( buf4, 0xAA, size + 1 );
+            for( int i = 0; i < size; i++ )
+                buf1[i] = rand();
+            memset( buf4-1, 0xAA, size + 2 );
             call_c( mc_c.memcpy_aligned, buf3, buf1, size );
             call_a( mc_a.memcpy_aligned, buf4, buf1, size );
-            if( memcmp( buf3, buf4, size ) || buf4[size] != 0xAA )
+            if( memcmp( buf3, buf4, size ) || buf4[-1] != 0xAA || buf4[size] != 0xAA )
             {
                 ok = 0;
                 fprintf( stderr, "memcpy_aligned FAILED: size=%d\n", (int)size );
