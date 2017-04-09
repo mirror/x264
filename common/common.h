@@ -788,16 +788,17 @@ struct x264_t
             ALIGNED_64( dctcoef i4x4_dct_buf[15][16] );
             uint32_t i4x4_nnz_buf[4];
             uint32_t i8x8_nnz_buf[4];
-            int i4x4_cbp;
-            int i8x8_cbp;
 
             /* Psy trellis DCT data */
             ALIGNED_16( dctcoef fenc_dct8[4][64] );
             ALIGNED_16( dctcoef fenc_dct4[16][16] );
 
             /* Psy RD SATD/SA8D scores cache */
-            ALIGNED_32( uint64_t fenc_hadamard_cache[9] );
-            ALIGNED_32( uint32_t fenc_satd_cache[32] );
+            ALIGNED_64( uint32_t fenc_satd_cache[32] );
+            ALIGNED_16( uint64_t fenc_hadamard_cache[9] );
+
+            int i4x4_cbp;
+            int i8x8_cbp;
 
             /* pointer over mb of the frame to be compressed */
             pixel *p_fenc[3]; /* y,u,v */

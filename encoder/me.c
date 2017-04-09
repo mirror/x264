@@ -1059,7 +1059,7 @@ static void ALWAYS_INLINE x264_me_refine_bidir( x264_t *h, x264_me_t *m0, x264_m
     uint64_t bcostrd = COST_MAX64;
     uint16_t amvd;
     /* each byte of visited represents 8 possible m1y positions, so a 4D array isn't needed */
-    ALIGNED_ARRAY_32( uint8_t, visited,[8],[8][8] );
+    ALIGNED_ARRAY_64( uint8_t, visited,[8],[8][8] );
     /* all permutations of an offset in up to 2 of the dimensions */
     ALIGNED_4( static const int8_t dia4d[33][4] ) =
     {

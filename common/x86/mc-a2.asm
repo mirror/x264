@@ -1507,12 +1507,32 @@ cglobal memcpy_aligned, 3,3
     RET
 %endmacro
 
+;-----------------------------------------------------------------------------
+; void *memzero_aligned( void *dst, size_t n );
+;-----------------------------------------------------------------------------
+%macro MEMZERO 0
+cglobal memzero_aligned, 2,2
+    xorps m0, m0
+.loop:
+%assign %%i mmsize
+%rep 128 / mmsize
+    movaps [r0 + r1 - %%i], m0
+%assign %%i %%i+mmsize
+%endrep
+    sub r1d, 128
+    jg .loop
+    RET
+%endmacro
+
 INIT_XMM sse
 MEMCPY
+MEMZERO
 INIT_YMM avx
 MEMCPY
-
+MEMZERO
 INIT_ZMM avx512
+MEMZERO
+
 cglobal memcpy_aligned, 3,4
     dec      r2d           ; offset of the last byte
     rorx     r3d, r2d, 2
@@ -1532,36 +1552,6 @@ cglobal memcpy_aligned, 3,4
     jge .loop
 .ret:
     RET
-
-;-----------------------------------------------------------------------------
-; void *memzero_aligned( void *dst, size_t n );
-;-----------------------------------------------------------------------------
-%macro MEMZERO 1
-cglobal memzero_aligned, 2,2
-    add  r0, r1
-    neg  r1
-%if mmsize == 8
-    pxor m0, m0
-%else
-    xorps m0, m0
-%endif
-.loop:
-%assign i 0
-%rep %1
-    mova [r0 + r1 + i], m0
-%assign i i+mmsize
-%endrep
-    add r1, mmsize*%1
-    jl .loop
-    RET
-%endmacro
-
-INIT_MMX mmx
-MEMZERO 8
-INIT_XMM sse
-MEMZERO 8
-INIT_YMM avx
-MEMZERO 4
 
 %if HIGH_BIT_DEPTH == 0
 ;-----------------------------------------------------------------------------

@@ -1878,10 +1878,10 @@ static int check_mc( int cpu_ref, int cpu_new )
         ok = 1; used_asm = 1;
         for( size_t size = 128; size < 1024; size += 128 )
         {
-            memset( buf4, 0xAA, size + 1 );
+            memset( buf4-1, 0xAA, size + 2 );
             call_c( mc_c.memzero_aligned, buf3, size );
             call_a( mc_a.memzero_aligned, buf4, size );
-            if( memcmp( buf3, buf4, size ) || buf4[size] != 0xAA )
+            if( memcmp( buf3, buf4, size ) || buf4[-1] != 0xAA || buf4[size] != 0xAA )
             {
                 ok = 0;
                 fprintf( stderr, "memzero_aligned FAILED: size=%d\n", (int)size );

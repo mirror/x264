@@ -695,8 +695,12 @@ static inline void x264_mb_init_fenc_cache( x264_t *h, int b_satd )
         x264_psy_trellis_init( h, h->param.analyse.b_transform_8x8 );
     if( !h->mb.i_psy_rd )
         return;
-    /* Writes beyond the end of the array, but not a problem since fenc_satd_cache is right after. */
-    h->mc.memzero_aligned( h->mb.pic.fenc_hadamard_cache, sizeof(h->mb.pic.fenc_hadamard_cache) );
+
+    M128( &h->mb.pic.fenc_hadamard_cache[0] ) = M128_ZERO;
+    M128( &h->mb.pic.fenc_hadamard_cache[2] ) = M128_ZERO;
+    M128( &h->mb.pic.fenc_hadamard_cache[4] ) = M128_ZERO;
+    M128( &h->mb.pic.fenc_hadamard_cache[6] ) = M128_ZERO;
+    h->mb.pic.fenc_hadamard_cache[8] = 0;
     if( b_satd )
         h->mc.memzero_aligned( h->mb.pic.fenc_satd_cache, sizeof(h->mb.pic.fenc_satd_cache) );
 }
