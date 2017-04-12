@@ -634,7 +634,7 @@ case $host_os in
             SYS="WINDOWS"
             DEVNULL="NUL"
             LDFLAGSCLI="$LDFLAGSCLI -lshell32"
-            [ $compiler = GNU ] && RC="${RC-${cross_prefix}windres}" || RC="${RC-rc}"
+            [ $compiler = GNU ] && RC="${RC-${cross_prefix}windres}" || RC="${RC-rc.exe}"
         fi
         ;;
     sunos*|solaris*)
@@ -1316,13 +1316,13 @@ fi
 DEPMM="${QPRE}MM"
 DEPMT="${QPRE}MT"
 if [ $compiler_style = MS ]; then
-    AR="lib -nologo -out:"
-    LD="link -out:"
+    AR="lib.exe -nologo -out:"
+    LD="link.exe -out:"
     if [ $compiler = ICL ]; then
         AR="xi$AR"
         LD="xi$LD"
     else
-        mslink="$(dirname "$(command -v cl 2>/dev/null)")/link"
+        mslink="$(dirname "$(command -v cl.exe 2>/dev/null)")/link.exe"
         [ -x "$mslink" ] && LD="\"$mslink\" -out:"
     fi
     HAVE_GETOPT_LONG=0
