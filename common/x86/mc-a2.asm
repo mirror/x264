@@ -30,18 +30,15 @@
 %include "x86inc.asm"
 %include "x86util.asm"
 
-SECTION_RODATA 32
-
-pw_1024: times 16 dw 1024
-filt_mul20: times 32 db 20
-filt_mul15: times 16 db 1, -5
-filt_mul51: times 16 db -5, 1
-hpel_shuf: times 2 db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
+SECTION_RODATA 64
 
 %if HIGH_BIT_DEPTH
-v210_mask: times 4 dq 0xc00ffc003ff003ff
-v210_luma_shuf: times 2 db 1,2,4,5,6,7,9,10,12,13,14,15,12,13,14,15
-v210_chroma_shuf: times 2 db 0,1,2,3,5,6,8,9,10,11,13,14,10,11,13,14
+v210_shuf_avx512: db  0, 0,34, 1,35,34, 4, 4,38, 5,39,38, 8, 8,42, 9, ; luma, chroma
+                  db 43,42,12,12,46,13,47,46,16,16,50,17,51,50,20,20,
+                  db 54,21,55,54,24,24,58,25,59,58,28,28,62,29,63,62
+v210_mask:        dd 0x3ff003ff, 0xc00ffc00, 0x3ff003ff, 0xc00ffc00
+v210_luma_shuf:   db  1, 2, 4, 5, 6, 7, 9,10,12,13,14,15,12,13,14,15
+v210_chroma_shuf: db  0, 1, 2, 3, 5, 6, 8, 9,10,11,13,14,10,11,13,14
 ; vpermd indices {0,1,2,4,5,7,_,_} merged in the 3 lsb of each dword to save a register
 v210_mult: dw 0x2000,0x7fff,0x0801,0x2000,0x7ffa,0x0800,0x7ffc,0x0800
            dw 0x1ffd,0x7fff,0x07ff,0x2000,0x7fff,0x0800,0x7fff,0x0800
@@ -57,6 +54,12 @@ deinterleave_shuf:     db  0, 2, 4, 6, 8,10,12,14, 1, 3, 5, 7, 9,11,13,15
 deinterleave_shuf32a: db 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30
 deinterleave_shuf32b: db 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
 %endif ; !HIGH_BIT_DEPTH
+
+pw_1024: times 16 dw 1024
+filt_mul20: times 32 db 20
+filt_mul15: times 16 db 1, -5
+filt_mul51: times 16 db -5, 1
+hpel_shuf: times 2 db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
 
 mbtree_fix8_unpack_shuf: db -1,-1, 1, 0,-1,-1, 3, 2,-1,-1, 5, 4,-1,-1, 7, 6
                          db -1,-1, 9, 8,-1,-1,11,10,-1,-1,13,12,-1,-1,15,14
@@ -1400,43 +1403,64 @@ cglobal plane_copy_deinterleave_v210, 7,7,7
 %define org_w r6m
 %define h     dword r7m
 %endif
-    FIX_STRIDES r1, r3, r6d
-    shl    r5, 2
-    add    r0, r6
-    add    r2, r6
-    neg    r6
-    mov   src, r4
-    mov org_w, r6
-    mova   m2, [v210_mask]
-    mova   m3, [v210_luma_shuf]
-    mova   m4, [v210_chroma_shuf]
-    mova   m5, [v210_mult] ; also functions as vpermd index for avx2
-    pshufd m6, m5, q1102
-
+    FIX_STRIDES  r1, r3, r6d
+    shl          r5, 2
+    add          r0, r6
+    add          r2, r6
+    neg          r6
+    mov         src, r4
+    mov       org_w, r6
+%if cpuflag(avx512)
+    vpbroadcastd m2, [v210_mask]
+    vpbroadcastd m3, [v210_shuf_avx512]
+    psrlw        m3, 6                  ; dw 0, 4
+    mova         m4, [v210_shuf_avx512] ; luma
+    psrlw        m5, m4, 8              ; chroma
+%else
+%if mmsize == 32
+    vbroadcasti128 m2, [v210_mask]
+    vbroadcasti128 m3, [v210_luma_shuf]
+    vbroadcasti128 m4, [v210_chroma_shuf]
+%else
+    mova         m2, [v210_mask]
+    mova         m3, [v210_luma_shuf]
+    mova         m4, [v210_chroma_shuf]
+%endif
+    mova         m5, [v210_mult] ; also functions as vpermd index for avx2
+    pshufd       m6, m5, q1102
+%endif
 ALIGN 16
 .loop:
-    movu   m1, [r4]
-    pandn  m0, m2, m1
-    pand   m1, m2
-    pshufb m0, m3
-    pshufb m1, m4
-    pmulhrsw m0, m5 ; y0 y1 y2 y3 y4 y5 __ __
-    pmulhrsw m1, m6 ; u0 v0 u1 v1 u2 v2 __ __
+    movu         m1, [r4]
+    pandn        m0, m2, m1
+    pand         m1, m2
+%if cpuflag(avx512)
+    psrld        m0, 10
+    vpsrlvw      m1, m3
+    mova         m6, m0
+    vpermt2w     m0, m4, m1
+    vpermt2w     m1, m5, m6
+%else
+    pshufb       m0, m3
+    pshufb       m1, m4
+    pmulhrsw     m0, m5 ; y0 y1 y2 y3 y4 y5 __ __
+    pmulhrsw     m1, m6 ; u0 v0 u1 v1 u2 v2 __ __
 %if mmsize == 32
-    vpermd m0, m5, m0
-    vpermd m1, m5, m1
+    vpermd       m0, m5, m0
+    vpermd       m1, m5, m1
 %endif
-    movu [r0+r6], m0
-    movu [r2+r6], m1
-    add    r4, mmsize
-    add    r6, 3*mmsize/4
+%endif
+    movu    [r0+r6], m0
+    movu    [r2+r6], m1
+    add          r4, mmsize
+    add          r6, mmsize*3/4
     jl .loop
-    add    r0, r1
-    add    r2, r3
-    add   src, r5
-    mov    r4, src
-    mov    r6, org_w
-    dec     h
+    add          r0, r1
+    add          r2, r3
+    add         src, r5
+    mov          r4, src
+    mov          r6, org_w
+    dec           h
     jg .loop
     RET
 %endmacro ; PLANE_DEINTERLEAVE_V210
@@ -1460,6 +1484,8 @@ LOAD_DEINTERLEAVE_CHROMA
 PLANE_DEINTERLEAVE_V210
 INIT_YMM avx2
 LOAD_DEINTERLEAVE_CHROMA
+PLANE_DEINTERLEAVE_V210
+INIT_ZMM avx512
 PLANE_DEINTERLEAVE_V210
 %else
 INIT_XMM sse2

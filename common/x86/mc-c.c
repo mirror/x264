@@ -123,15 +123,18 @@ void x264_plane_copy_deinterleave_rgb_avx2 ( pixel *dsta, intptr_t i_dsta,
                                              pixel *dstb, intptr_t i_dstb,
                                              pixel *dstc, intptr_t i_dstc,
                                              pixel *src,  intptr_t i_src, int pw, int w, int h );
-void x264_plane_copy_deinterleave_v210_ssse3( uint16_t *dstu, intptr_t i_dstu,
-                                              uint16_t *dstv, intptr_t i_dstv,
-                                              uint32_t *src,  intptr_t i_src, int w, int h );
-void x264_plane_copy_deinterleave_v210_avx  ( uint16_t *dstu, intptr_t i_dstu,
-                                              uint16_t *dstv, intptr_t i_dstv,
-                                              uint32_t *src,  intptr_t i_src, int w, int h );
-void x264_plane_copy_deinterleave_v210_avx2 ( uint16_t *dstu, intptr_t i_dstu,
-                                              uint16_t *dstv, intptr_t i_dstv,
-                                              uint32_t *src,  intptr_t i_src, int w, int h );
+void x264_plane_copy_deinterleave_v210_ssse3 ( uint16_t *dstu, intptr_t i_dstu,
+                                               uint16_t *dstv, intptr_t i_dstv,
+                                               uint32_t *src,  intptr_t i_src, int w, int h );
+void x264_plane_copy_deinterleave_v210_avx   ( uint16_t *dstu, intptr_t i_dstu,
+                                               uint16_t *dstv, intptr_t i_dstv,
+                                               uint32_t *src,  intptr_t i_src, int w, int h );
+void x264_plane_copy_deinterleave_v210_avx2  ( uint16_t *dstu, intptr_t i_dstu,
+                                               uint16_t *dstv, intptr_t i_dstv,
+                                               uint32_t *src,  intptr_t i_src, int w, int h );
+void x264_plane_copy_deinterleave_v210_avx512( uint16_t *dstu, intptr_t i_dstu,
+                                               uint16_t *dstv, intptr_t i_dstv,
+                                               uint32_t *src,  intptr_t i_src, int w, int h );
 void x264_store_interleave_chroma_mmx2( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
 void x264_store_interleave_chroma_sse2( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
 void x264_store_interleave_chroma_avx ( pixel *dst, intptr_t i_dst, pixel *srcu, pixel *srcv, int height );
@@ -688,6 +691,11 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->mc_luma = mc_luma_avx2;
         pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_avx2;
         pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_avx2;
+    }
+
+    if( cpu&X264_CPU_AVX512 )
+    {
+        pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_avx512;
     }
 #else // !HIGH_BIT_DEPTH
 

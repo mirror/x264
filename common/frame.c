@@ -78,7 +78,7 @@ static x264_frame_t *x264_frame_new( x264_t *h, int b_fdec )
     int i_padv = PADV << PARAM_INTERLACED;
     int align = 16;
 #if ARCH_X86 || ARCH_X86_64
-    if( h->param.cpu&X264_CPU_CACHELINE_64 )
+    if( h->param.cpu&X264_CPU_CACHELINE_64 || h->param.cpu&X264_CPU_AVX512 )
         align = 64;
     else if( h->param.cpu&X264_CPU_CACHELINE_32 || h->param.cpu&X264_CPU_AVX )
         align = 32;

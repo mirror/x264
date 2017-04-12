@@ -1605,7 +1605,7 @@ static int check_mc( int cpu_ref, int cpu_new )
         {
             int w = (plane_specs[i].w + 1) >> 1;
             int h = plane_specs[i].h;
-            intptr_t dst_stride = ALIGN( w, 16 );
+            intptr_t dst_stride = ALIGN( w, 32 );
             intptr_t src_stride = (w + 47) / 48 * 128 / sizeof(uint32_t);
             intptr_t offv = dst_stride*h + 32;
             memset( pbuf3, 0, 0x1000 );
