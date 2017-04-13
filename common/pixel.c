@@ -1351,6 +1351,11 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->sa8d_satd[PIXEL_16x16] = x264_pixel_sa8d_satd_16x16_avx2;
 #endif
     }
+
+    if( cpu&X264_CPU_AVX512 )
+    {
+        INIT8( satd, _avx512 );
+    }
 #endif //HAVE_MMX
 
 #if HAVE_ARMV6
