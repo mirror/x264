@@ -729,13 +729,13 @@ lowres_intra_mb:
         if( h->param.analyse.i_subpel_refine > 1 )
         {
             h->predict_8x8c[I_PRED_CHROMA_P]( pix );
-            int satd = h->pixf.mbcmp[PIXEL_8x8]( pix, FDEC_STRIDE, h->mb.pic.p_fenc[0], FENC_STRIDE );
+            int satd = h->pixf.mbcmp[PIXEL_8x8]( h->mb.pic.p_fenc[0], FENC_STRIDE, pix, FDEC_STRIDE );
             i_icost = X264_MIN( i_icost, satd );
             h->predict_8x8_filter( pix, edge, ALL_NEIGHBORS, ALL_NEIGHBORS );
             for( int i = 3; i < 9; i++ )
             {
                 h->predict_8x8[i]( pix, edge );
-                satd = h->pixf.mbcmp[PIXEL_8x8]( pix, FDEC_STRIDE, h->mb.pic.p_fenc[0], FENC_STRIDE );
+                satd = h->pixf.mbcmp[PIXEL_8x8]( h->mb.pic.p_fenc[0], FENC_STRIDE, pix, FDEC_STRIDE );
                 i_icost = X264_MIN( i_icost, satd );
             }
         }

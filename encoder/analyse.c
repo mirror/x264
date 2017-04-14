@@ -739,8 +739,8 @@ static void x264_mb_analyse_intra_chroma( x264_t *h, x264_mb_analysis_t *a )
             h->predict_16x16[a->i_predict16x16]( h->mb.pic.p_fdec[1] );
             h->predict_16x16[a->i_predict16x16]( h->mb.pic.p_fdec[2] );
         }
-        a->i_satd_chroma = h->pixf.mbcmp[PIXEL_16x16]( h->mb.pic.p_fdec[1], FDEC_STRIDE, h->mb.pic.p_fenc[1], FENC_STRIDE )
-                         + h->pixf.mbcmp[PIXEL_16x16]( h->mb.pic.p_fdec[2], FDEC_STRIDE, h->mb.pic.p_fenc[2], FENC_STRIDE );
+        a->i_satd_chroma = h->pixf.mbcmp[PIXEL_16x16]( h->mb.pic.p_fenc[1], FENC_STRIDE, h->mb.pic.p_fdec[1], FDEC_STRIDE )
+                         + h->pixf.mbcmp[PIXEL_16x16]( h->mb.pic.p_fenc[2], FENC_STRIDE, h->mb.pic.p_fdec[2], FDEC_STRIDE );
         return;
     }
 
@@ -755,8 +755,8 @@ static void x264_mb_analyse_intra_chroma( x264_t *h, x264_mb_analysis_t *a )
         h->pixf.intra_mbcmp_x3_chroma( h->mb.pic.p_fenc[2], h->mb.pic.p_fdec[2], satdv );
         h->predict_chroma[I_PRED_CHROMA_P]( h->mb.pic.p_fdec[1] );
         h->predict_chroma[I_PRED_CHROMA_P]( h->mb.pic.p_fdec[2] );
-        satdu[I_PRED_CHROMA_P] = h->pixf.mbcmp[chromapix]( h->mb.pic.p_fdec[1], FDEC_STRIDE, h->mb.pic.p_fenc[1], FENC_STRIDE );
-        satdv[I_PRED_CHROMA_P] = h->pixf.mbcmp[chromapix]( h->mb.pic.p_fdec[2], FDEC_STRIDE, h->mb.pic.p_fenc[2], FENC_STRIDE );
+        satdu[I_PRED_CHROMA_P] = h->pixf.mbcmp[chromapix]( h->mb.pic.p_fenc[1], FENC_STRIDE, h->mb.pic.p_fdec[1], FDEC_STRIDE );
+        satdv[I_PRED_CHROMA_P] = h->pixf.mbcmp[chromapix]( h->mb.pic.p_fenc[2], FENC_STRIDE, h->mb.pic.p_fdec[2], FDEC_STRIDE );
 
         for( ; *predict_mode >= 0; predict_mode++ )
         {
@@ -784,8 +784,8 @@ static void x264_mb_analyse_intra_chroma( x264_t *h, x264_mb_analysis_t *a )
             }
 
             /* we calculate the cost */
-            i_satd = h->pixf.mbcmp[chromapix]( h->mb.pic.p_fdec[1], FDEC_STRIDE, h->mb.pic.p_fenc[1], FENC_STRIDE ) +
-                     h->pixf.mbcmp[chromapix]( h->mb.pic.p_fdec[2], FDEC_STRIDE, h->mb.pic.p_fenc[2], FENC_STRIDE ) +
+            i_satd = h->pixf.mbcmp[chromapix]( h->mb.pic.p_fenc[1], FENC_STRIDE, h->mb.pic.p_fdec[1], FDEC_STRIDE ) +
+                     h->pixf.mbcmp[chromapix]( h->mb.pic.p_fenc[2], FENC_STRIDE, h->mb.pic.p_fdec[2], FDEC_STRIDE ) +
                      a->i_lambda * bs_size_ue( x264_mb_chroma_pred_mode_fix[i_mode] );
 
             a->i_satd_chroma_dir[i_mode] = i_satd;
@@ -841,7 +841,7 @@ static void x264_mb_analyse_intra( x264_t *h, x264_mb_analysis_t *a, int i_satd_
             if( a->i_satd_i16x16 <= i16x16_thresh )
             {
                 h->predict_16x16[I_PRED_16x16_P]( p_dst );
-                a->i_satd_i16x16_dir[I_PRED_16x16_P] = h->pixf.mbcmp[PIXEL_16x16]( p_dst, FDEC_STRIDE, p_src, FENC_STRIDE );
+                a->i_satd_i16x16_dir[I_PRED_16x16_P] = h->pixf.mbcmp[PIXEL_16x16]( p_src, FENC_STRIDE, p_dst, FDEC_STRIDE );
                 a->i_satd_i16x16_dir[I_PRED_16x16_P] += lambda * bs_size_ue(3);
                 COPY2_IF_LT( a->i_satd_i16x16, a->i_satd_i16x16_dir[I_PRED_16x16_P], a->i_predict16x16, 3 );
             }
@@ -858,7 +858,7 @@ static void x264_mb_analyse_intra( x264_t *h, x264_mb_analysis_t *a, int i_satd_
                 else
                     h->predict_16x16[i_mode]( p_dst );
 
-                i_satd = h->pixf.mbcmp[PIXEL_16x16]( p_dst, FDEC_STRIDE, p_src, FENC_STRIDE ) +
+                i_satd = h->pixf.mbcmp[PIXEL_16x16]( p_src, FENC_STRIDE, p_dst, FDEC_STRIDE ) +
                          lambda * bs_size_ue( x264_mb_pred_mode16x16_fix[i_mode] );
                 COPY2_IF_LT( a->i_satd_i16x16, i_satd, a->i_predict16x16, i_mode );
                 a->i_satd_i16x16_dir[i_mode] = i_satd;
@@ -1061,7 +1061,7 @@ static void x264_mb_analyse_intra( x264_t *h, x264_mb_analysis_t *a, int i_satd_
                         else
                             h->predict_4x4[i_mode]( p_dst_by );
 
-                        i_satd = h->pixf.mbcmp[PIXEL_4x4]( p_dst_by, FDEC_STRIDE, p_src_by, FENC_STRIDE );
+                        i_satd = h->pixf.mbcmp[PIXEL_4x4]( p_src_by, FENC_STRIDE, p_dst_by, FDEC_STRIDE );
                         if( i_pred_mode == x264_mb_pred_mode4x4_fix(i_mode) )
                         {
                             i_satd -= lambda * 3;
