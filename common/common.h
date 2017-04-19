@@ -823,10 +823,10 @@ struct x264_t
         struct
         {
             /* real intra4x4_pred_mode if I_4X4 or I_8X8, I_PRED_4x4_DC if mb available, -1 if not */
-            ALIGNED_8( int8_t intra4x4_pred_mode[X264_SCAN8_LUMA_SIZE] );
+            ALIGNED_16( int8_t intra4x4_pred_mode[X264_SCAN8_LUMA_SIZE] );
 
-            /* i_non_zero_count if available else 0x80 */
-            ALIGNED_16( uint8_t non_zero_count[X264_SCAN8_SIZE] );
+            /* i_non_zero_count if available else 0x80. intentionally misaligned by 8 for asm */
+            ALIGNED_8( uint8_t non_zero_count[X264_SCAN8_SIZE] );
 
             /* -1 if unused, -2 if unavailable */
             ALIGNED_4( int8_t ref[2][X264_SCAN8_LUMA_SIZE] );
