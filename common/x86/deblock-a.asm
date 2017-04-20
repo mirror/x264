@@ -906,9 +906,8 @@ DEBLOCK_LUMA_INTRA
     movq       m3, %4
     punpcklwd  m0, m2
     punpcklwd  m1, m3
-    mova       m2, m0
+    punpckhdq  m2, m0, m1
     punpckldq  m0, m1
-    punpckhdq  m2, m1
 
     movq       m4, %5
     movq       m6, %6
@@ -916,9 +915,8 @@ DEBLOCK_LUMA_INTRA
     movq       m7, %8
     punpcklwd  m4, m6
     punpcklwd  m5, m7
-    mova       m6, m4
+    punpckhdq  m6, m4, m5
     punpckldq  m4, m5
-    punpckhdq  m6, m5
 
     punpckhqdq m1, m0, m4
     punpckhqdq m3, m2, m6
