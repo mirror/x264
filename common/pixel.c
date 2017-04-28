@@ -1355,6 +1355,7 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     if( cpu&X264_CPU_AVX512 )
     {
         INIT8( satd, _avx512 );
+        pixf->sa8d[PIXEL_8x8] = x264_pixel_sa8d_8x8_avx512;
     }
 #endif //HAVE_MMX
 

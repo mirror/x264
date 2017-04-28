@@ -84,6 +84,7 @@ DECL_X1( sa8d, sse4 )
 DECL_X1( sa8d, avx )
 DECL_X1( sa8d, xop )
 DECL_X1( sa8d, avx2 )
+DECL_X1( sa8d, avx512 )
 DECL_X1( sad, cache32_mmx2 );
 DECL_X1( sad, cache64_mmx2 );
 DECL_X1( sad, cache64_sse2 );
