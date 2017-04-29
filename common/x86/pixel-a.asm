@@ -32,6 +32,8 @@
 %include "x86util.asm"
 
 SECTION_RODATA 32
+var_shuf_avx512: db 0,-1, 1,-1, 2,-1, 3,-1, 4,-1, 5,-1, 6,-1, 7,-1
+                 db 8,-1, 9,-1,10,-1,11,-1,12,-1,13,-1,14,-1,15,-1
 hmul_16p:  times 16 db 1
            times 8 db 1, -1
 hmul_8p:   times 8 db 1
@@ -701,25 +703,32 @@ SSD_NV12
 %if HIGH_BIT_DEPTH == 0
 %if %1
     mova  m7, [pw_00ff]
-%elif mmsize < 32
+%elif mmsize == 16
     pxor  m7, m7    ; zero
 %endif
 %endif ; !HIGH_BIT_DEPTH
 %endmacro
 
-%macro VAR_END 2
-%if HIGH_BIT_DEPTH && mmsize == 8 && %1*%2 == 256
-    HADDUW  m5, m2
-%else
-    HADDW   m5, m2
+%macro VAR_END 0
+    pmaddwd       m5, [pw_1]
+    SBUTTERFLY    dq, 5, 6, 0
+    paddd         m5, m6
+%if mmsize == 32
+    vextracti128 xm6, m5, 1
+    paddd        xm5, xm6
 %endif
-    HADDD   m6, m1
+    MOVHL        xm6, xm5
+    paddd        xm5, xm6
 %if ARCH_X86_64
-    punpckldq m5, m6
-    movq   rax, m5
+    movq         rax, xm5
 %else
-    movd   eax, m5
-    movd   edx, m6
+    movd         eax, xm5
+%if cpuflag(avx)
+    pextrd       edx, xm5, 1
+%else
+    pshuflw      xm5, xm5, q1032
+    movd         edx, xm5
+%endif
 %endif
     RET
 %endmacro
@@ -739,61 +748,25 @@ SSD_NV12
     paddd     m6, m4
 %endmacro
 
-%macro VAR_2ROW 2
-    mov      r2d, %2
-.loop:
-%if HIGH_BIT_DEPTH
-    mova      m0, [r0]
-    mova      m1, [r0+mmsize]
-    mova      m3, [r0+%1]
-    mova      m4, [r0+%1+mmsize]
-%else ; !HIGH_BIT_DEPTH
-    mova      m0, [r0]
-    mova      m3, [r0+%1]
-    punpckhbw m1, m0, m7
-    punpcklbw m0, m7
-    punpckhbw m4, m3, m7
-    punpcklbw m3, m7
-%endif ; HIGH_BIT_DEPTH
-%ifidn %1, r1
-    lea       r0, [r0+%1*2]
-%else
-    add       r0, r1
-%endif
-    VAR_CORE
-    dec r2d
-    jg .loop
-%endmacro
-
 ;-----------------------------------------------------------------------------
 ; int pixel_var_wxh( uint8_t *, intptr_t )
 ;-----------------------------------------------------------------------------
-INIT_MMX mmx2
-cglobal pixel_var_16x16, 2,3
-    FIX_STRIDES r1
-    VAR_START 0
-    VAR_2ROW 8*SIZEOF_PIXEL, 16
-    VAR_END 16, 16
-
-cglobal pixel_var_8x16, 2,3
-    FIX_STRIDES r1
-    VAR_START 0
-    VAR_2ROW r1, 8
-    VAR_END 8, 16
-
-cglobal pixel_var_8x8, 2,3
-    FIX_STRIDES r1
-    VAR_START 0
-    VAR_2ROW r1, 4
-    VAR_END 8, 8
-
 %if HIGH_BIT_DEPTH
 %macro VAR 0
 cglobal pixel_var_16x16, 2,3,8
     FIX_STRIDES r1
     VAR_START 0
-    VAR_2ROW r1, 8
-    VAR_END 16, 16
+    mov      r2d, 8
+.loop:
+    mova      m0, [r0]
+    mova      m1, [r0+mmsize]
+    mova      m3, [r0+r1]
+    mova      m4, [r0+r1+mmsize]
+    lea       r0, [r0+r1*2]
+    VAR_CORE
+    dec      r2d
+    jg .loop
+    VAR_END
 
 cglobal pixel_var_8x8, 2,3,8
     lea       r2, [r1*3]
@@ -809,18 +782,16 @@ cglobal pixel_var_8x8, 2,3,8
     mova      m3, [r0+r1*4]
     mova      m4, [r0+r2*2]
     VAR_CORE
-    VAR_END 8, 8
+    VAR_END
 %endmacro ; VAR
 
 INIT_XMM sse2
 VAR
 INIT_XMM avx
 VAR
-INIT_XMM xop
-VAR
-%endif ; HIGH_BIT_DEPTH
 
-%if HIGH_BIT_DEPTH == 0
+%else ; HIGH_BIT_DEPTH == 0
+
 %macro VAR 0
 cglobal pixel_var_16x16, 2,3,8
     VAR_START 1
@@ -833,7 +804,7 @@ cglobal pixel_var_16x16, 2,3,8
     VAR_CORE
     dec r2d
     jg .loop
-    VAR_END 16, 16
+    VAR_END
 
 cglobal pixel_var_8x8, 2,4,8
     VAR_START 1
@@ -849,7 +820,7 @@ cglobal pixel_var_8x8, 2,4,8
     VAR_CORE
     dec r2d
     jg .loop
-    VAR_END 8, 8
+    VAR_END
 
 cglobal pixel_var_8x16, 2,4,8
     VAR_START 1
@@ -865,14 +836,12 @@ cglobal pixel_var_8x16, 2,4,8
     VAR_CORE
     dec r2d
     jg .loop
-    VAR_END 8, 16
+    VAR_END
 %endmacro ; VAR
 
 INIT_XMM sse2
 VAR
 INIT_XMM avx
-VAR
-INIT_XMM xop
 VAR
 %endif ; !HIGH_BIT_DEPTH
 
@@ -898,20 +867,119 @@ cglobal pixel_var_16x16, 2,4,7
     VAR_CORE
     dec r2d
     jg .loop
-    vextracti128 xm0, m5, 1
-    vextracti128 xm1, m6, 1
-    paddw  xm5, xm0
-    paddd  xm6, xm1
-    HADDW  xm5, xm2
-    HADDD  xm6, xm1
-%if ARCH_X86_64
-    punpckldq xm5, xm6
-    movq   rax, xm5
+    VAR_END
+
+%macro VAR_AVX512_CORE 1 ; accum
+%if %1
+    paddw    m0, m2
+    pmaddwd  m2, m2
+    paddw    m0, m3
+    pmaddwd  m3, m3
+    paddd    m1, m2
+    paddd    m1, m3
 %else
-    movd   eax, xm5
-    movd   edx, xm6
+    paddw    m0, m2, m3
+    pmaddwd  m2, m2
+    pmaddwd  m3, m3
+    paddd    m1, m2, m3
+%endif
+%endmacro
+
+%macro VAR_AVX512_CORE_16x16 1 ; accum
+%if HIGH_BIT_DEPTH
+    mova            ym2, [r0]
+    vinserti64x4     m2, [r0+r1], 1
+    mova            ym3, [r0+2*r1]
+    vinserti64x4     m3, [r0+r3], 1
+%else
+    vbroadcasti64x2 ym2, [r0]
+    vbroadcasti64x2  m2 {k1}, [r0+r1]
+    vbroadcasti64x2 ym3, [r0+2*r1]
+    vbroadcasti64x2  m3 {k1}, [r0+r3]
+    pshufb           m2, m4
+    pshufb           m3, m4
+%endif
+    VAR_AVX512_CORE %1
+%endmacro
+
+%macro VAR_AVX512_CORE_8x8 1 ; accum
+%if HIGH_BIT_DEPTH
+    mova            xm2, [r0]
+    mova            xm3, [r0+r1]
+%else
+    movq            xm2, [r0]
+    movq            xm3, [r0+r1]
+%endif
+    vinserti128     ym2, [r0+2*r1], 1
+    vinserti128     ym3, [r0+r2], 1
+    lea              r0, [r0+4*r1]
+    vinserti32x4     m2, [r0], 2
+    vinserti32x4     m3, [r0+r1], 2
+    vinserti32x4     m2, [r0+2*r1], 3
+    vinserti32x4     m3, [r0+r2], 3
+%if HIGH_BIT_DEPTH == 0
+    punpcklbw        m2, m4
+    punpcklbw        m3, m4
+%endif
+    VAR_AVX512_CORE %1
+%endmacro
+
+INIT_ZMM avx512
+cglobal pixel_var_16x16, 2,4
+    FIX_STRIDES     r1
+    mov            r2d, 0xf0
+    lea             r3, [3*r1]
+%if HIGH_BIT_DEPTH == 0
+    vbroadcasti64x4 m4, [var_shuf_avx512]
+    kmovb           k1, r2d
+%endif
+    VAR_AVX512_CORE_16x16 0
+.loop:
+    lea             r0, [r0+4*r1]
+    VAR_AVX512_CORE_16x16 1
+    sub            r2d, 0x50
+    jg .loop
+%if ARCH_X86_64 == 0
+    pop            r3d
+    %assign regs_used 3
+%endif
+var_avx512_end:
+    vbroadcasti32x4 m2, [pw_1]
+    pmaddwd         m0, m2
+    SBUTTERFLY      dq, 0, 1, 2
+    paddd           m0, m1
+    vextracti32x8  ym1, m0, 1
+    paddd          ym0, ym1
+    vextracti128   xm1, ym0, 1
+    paddd         xmm0, xm0, xm1
+    punpckhqdq    xmm1, xmm0, xmm0
+    paddd         xmm0, xmm1
+%if ARCH_X86_64
+    movq           rax, xmm0
+%else
+    movd           eax, xmm0
+    pextrd         edx, xmm0, 1
 %endif
     RET
+
+%if HIGH_BIT_DEPTH == 0 ; 8x8 doesn't benefit from AVX-512 in high bit-depth
+cglobal pixel_var_8x8, 2,3
+    lea             r2, [3*r1]
+    pxor           xm4, xm4
+    VAR_AVX512_CORE_8x8 0
+    jmp var_avx512_end
+%endif
+
+cglobal pixel_var_8x16, 2,3
+    FIX_STRIDES     r1
+    lea             r2, [3*r1]
+%if HIGH_BIT_DEPTH == 0
+    pxor           xm4, xm4
+%endif
+    VAR_AVX512_CORE_8x8 0
+    lea             r0, [r0+4*r1]
+    VAR_AVX512_CORE_8x8 1
+    jmp var_avx512_end
 
 %macro VAR2_END 3
     HADDW   %2, xm1
