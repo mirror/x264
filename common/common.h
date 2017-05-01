@@ -778,8 +778,8 @@ struct x264_t
             /* space for p_fenc and p_fdec */
 #define FENC_STRIDE 16
 #define FDEC_STRIDE 32
-            ALIGNED_32( pixel fenc_buf[48*FENC_STRIDE] );
-            ALIGNED_32( pixel fdec_buf[52*FDEC_STRIDE] );
+            ALIGNED_64( pixel fenc_buf[48*FENC_STRIDE] );
+            ALIGNED_64( pixel fdec_buf[52*FDEC_STRIDE] );
 
             /* i4x4 and i8x8 backup data, for skipping the encode stage when possible */
             ALIGNED_16( pixel i4x4_fdec_buf[16*16] );

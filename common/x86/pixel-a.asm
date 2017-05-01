@@ -1128,10 +1128,17 @@ VAR2_8x8_SSSE3 16, 7
 
 %macro VAR2_AVX2_LOAD 3 ; offset_reg, row1_offset, row2_offset
 %if HIGH_BIT_DEPTH
+%if mmsize == 64
+    mova        m2, [r1+2*%1+%2*FDEC_STRIDEB]
+    vshufi32x4  m2, [r1+2*%1+%2*FDEC_STRIDEB+64], q2020
+    mova        m3, [r1+2*%1+%3*FDEC_STRIDEB]
+    vshufi32x4  m3, [r1+2*%1+%3*FDEC_STRIDEB+64], q2020
+%else
     mova       xm2, [r1+2*%1+%2*FDEC_STRIDEB]
     vinserti128 m2, [r1+2*%1+%2*FDEC_STRIDEB+32], 1
     mova       xm3, [r1+2*%1+%3*FDEC_STRIDEB]
     vinserti128 m3, [r1+2*%1+%3*FDEC_STRIDEB+32], 1
+%endif
     psubw       m2, [r0+1*%1+%2*FENC_STRIDEB]
     psubw       m3, [r0+1*%1+%3*FENC_STRIDEB]
 %else
@@ -1173,6 +1180,44 @@ cglobal pixel_var2_8x%1, 2,3,7
 INIT_YMM avx2
 VAR2_8x8_AVX2  8, 6
 VAR2_8x8_AVX2 16, 7
+
+%macro VAR2_AVX512_END 1 ; shift
+    vbroadcasti32x4 m2, [pw_1]
+    pmaddwd         m0, m2
+    SBUTTERFLY     qdq, 0, 1, 2
+    paddd           m0, m1
+    vextracti32x8  ym1, m0, 1
+    paddd          ym0, ym1
+    psrlq          ym1, ym0, 32
+    paddd          ym0, ym1
+    vpmovqd       xmm0, ym0 ; sum_u, sqr_u, sum_v, sqr_v
+    VAR2_END      xmm0, xmm1, %1
+%endmacro
+
+INIT_ZMM avx512
+cglobal pixel_var2_8x8, 2,3
+%if HIGH_BIT_DEPTH == 0
+    pxor          xm6, xm6
+%endif
+    VAR2_AVX2_LOAD  0, 0, 2
+    VAR2_CORE      m2, m3, 0
+    VAR2_AVX2_LOAD  0, 4, 6
+    VAR2_CORE      m2, m3, 1
+    VAR2_AVX512_END 6
+
+cglobal pixel_var2_8x16, 2,3
+%if HIGH_BIT_DEPTH == 0
+    pxor          xm6, xm6
+%endif
+    mov           t0d, 10*FENC_STRIDEB
+    VAR2_AVX2_LOAD  0, 14, 12
+    VAR2_CORE      m2, m3, 0
+.loop:
+    VAR2_AVX2_LOAD t0, 0, -2
+    VAR2_CORE      m2, m3, 1
+    sub           t0d, 4*FENC_STRIDEB
+    jg .loop
+    VAR2_AVX512_END 7
 
 ;=============================================================================
 ; SATD

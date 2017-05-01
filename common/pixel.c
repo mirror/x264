@@ -1049,6 +1049,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     {
         pixf->var[PIXEL_8x16]  = x264_pixel_var_8x16_avx512;
         pixf->var[PIXEL_16x16] = x264_pixel_var_16x16_avx512;
+        pixf->var2[PIXEL_8x8]  = x264_pixel_var2_8x8_avx512;
+        pixf->var2[PIXEL_8x16] = x264_pixel_var2_8x16_avx512;
     }
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH
@@ -1351,6 +1353,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_avx512;
         pixf->var[PIXEL_8x16]  = x264_pixel_var_8x16_avx512;
         pixf->var[PIXEL_16x16] = x264_pixel_var_16x16_avx512;
+        pixf->var2[PIXEL_8x8]  = x264_pixel_var2_8x8_avx512;
+        pixf->var2[PIXEL_8x16] = x264_pixel_var2_8x16_avx512;
     }
 #endif //HAVE_MMX
 
