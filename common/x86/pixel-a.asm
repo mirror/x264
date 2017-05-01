@@ -981,194 +981,198 @@ cglobal pixel_var_8x16, 2,3
     VAR_AVX512_CORE_8x8 1
     jmp var_avx512_end
 
-%macro VAR2_END 3
-    HADDW   %2, xm1
-    movd   r1d, %2
-    imul   r1d, r1d
-    HADDD   %3, xm1
-    shr    r1d, %1
-    movd   eax, %3
-    movd  [r4], %3
-    sub    eax, r1d  ; sqr - (sum * sum >> shift)
+;-----------------------------------------------------------------------------
+; int pixel_var2_8x8( pixel *fenc, pixel *fdec, int ssd[2] )
+;-----------------------------------------------------------------------------
+
+%if ARCH_X86_64
+    DECLARE_REG_TMP 6
+%else
+    DECLARE_REG_TMP 2
+%endif
+
+%macro VAR2_END 3 ; src, tmp, shift
+    movifnidn r2, r2mp
+    pshufd    %2, %1, q3331
+    pmuludq   %1, %1
+    movq    [r2], %2 ; sqr_u sqr_v
+    psrld     %1, %3
+    psubd     %2, %1 ; sqr - (sum * sum >> shift)
+    MOVHL     %1, %2
+    paddd     %1, %2
+    movd     eax, %1
     RET
 %endmacro
 
-;-----------------------------------------------------------------------------
-; int pixel_var2_8x8( pixel *, intptr_t, pixel *, intptr_t, int * )
-;-----------------------------------------------------------------------------
-%macro VAR2_8x8_MMX 2
-cglobal pixel_var2_8x%1, 5,6
-    FIX_STRIDES r1, r3
-    VAR_START 0
-    mov      r5d, %1
-.loop:
-%if HIGH_BIT_DEPTH
-    mova      m0, [r0]
-    mova      m1, [r0+mmsize]
-    psubw     m0, [r2]
-    psubw     m1, [r2+mmsize]
-%else ; !HIGH_BIT_DEPTH
-    movq      m0, [r0]
-    movq      m1, m0
-    movq      m2, [r2]
-    movq      m3, m2
-    punpcklbw m0, m7
-    punpckhbw m1, m7
-    punpcklbw m2, m7
-    punpckhbw m3, m7
-    psubw     m0, m2
-    psubw     m1, m3
-%endif ; HIGH_BIT_DEPTH
-    paddw     m5, m0
-    paddw     m5, m1
-    pmaddwd   m0, m0
-    pmaddwd   m1, m1
-    paddd     m6, m0
-    paddd     m6, m1
-    add       r0, r1
-    add       r2, r3
-    dec       r5d
-    jg .loop
-    VAR2_END %2, m5, m6
-%endmacro
-
-%if ARCH_X86_64 == 0
-INIT_MMX mmx2
-VAR2_8x8_MMX  8, 6
-VAR2_8x8_MMX 16, 7
-%endif
-
 %macro VAR2_8x8_SSE2 2
-cglobal pixel_var2_8x%1, 5,6,8
-    VAR_START 1
-    mov      r5d, %1/2
+%if HIGH_BIT_DEPTH
+cglobal pixel_var2_8x%1, 2,3,6
+    pxor       m4, m4
+    pxor       m5, m5
+%define %%sum2 m4
+%define %%sqr2 m5
+%else
+cglobal pixel_var2_8x%1, 2,3,7
+    mova       m6, [pw_00ff]
+%define %%sum2 m0
+%define %%sqr2 m1
+%endif
+    pxor       m0, m0 ; sum
+    pxor       m1, m1 ; sqr
+    mov       t0d, (%1-1)*FENC_STRIDEB
 .loop:
 %if HIGH_BIT_DEPTH
-    mova      m0, [r0]
-    mova      m1, [r0+r1*2]
-    mova      m2, [r2]
-    mova      m3, [r2+r3*2]
-%else ; !HIGH_BIT_DEPTH
-    movq      m1, [r0]
-    movhps    m1, [r0+r1]
-    movq      m3, [r2]
-    movhps    m3, [r2+r3]
-    DEINTB    0, 1, 2, 3, 7
-%endif ; HIGH_BIT_DEPTH
-    psubw     m0, m2
-    psubw     m1, m3
-    paddw     m5, m0
-    paddw     m5, m1
-    pmaddwd   m0, m0
-    pmaddwd   m1, m1
-    paddd     m6, m0
-    paddd     m6, m1
-    lea       r0, [r0+r1*2*SIZEOF_PIXEL]
-    lea       r2, [r2+r3*2*SIZEOF_PIXEL]
-    dec      r5d
-    jg .loop
-    VAR2_END %2, m5, m6
+    mova       m2, [r0+1*t0]
+    psubw      m2, [r1+2*t0]
+    mova       m3, [r0+1*t0+16]
+    psubw      m3, [r1+2*t0+32]
+%else
+    mova       m3, [r0+1*t0]
+    movq       m5, [r1+2*t0]
+    punpcklqdq m5, [r1+2*t0+16]
+    DEINTB      2, 3, 4, 5, 6
+    psubw      m2, m4
+    psubw      m3, m5
+%endif
+    paddw      m0, m2
+    pmaddwd    m2, m2
+    paddw  %%sum2, m3
+    pmaddwd    m3, m3
+    paddd      m1, m2
+    paddd  %%sqr2, m3
+    sub       t0d, FENC_STRIDEB
+    jge .loop
+%if HIGH_BIT_DEPTH
+    SBUTTERFLY dq, 0, 4, 2
+    paddw      m0, m4 ; sum_u sum_v
+    pmaddwd    m0, [pw_1]
+    SBUTTERFLY dq, 1, 5, 2
+    paddd      m1, m5 ; sqr_u sqr_v
+    SBUTTERFLY dq, 0, 1, 2
+    paddd      m0, m1
+%else
+    pmaddwd    m0, [pw_1]
+    shufps     m2, m0, m1, q2020
+    shufps     m0, m1, q3131
+    paddd      m0, m2
+    pshufd     m0, m0, q3120 ; sum_u sqr_u sum_v sqr_v
+%endif
+    VAR2_END   m0, m1, %2
 %endmacro
 
 INIT_XMM sse2
 VAR2_8x8_SSE2  8, 6
 VAR2_8x8_SSE2 16, 7
 
-%if HIGH_BIT_DEPTH == 0
-%macro VAR2_8x8_SSSE3 2
-cglobal pixel_var2_8x%1, 5,6,8
-    pxor      m5, m5    ; sum
-    pxor      m6, m6    ; sum squared
-    mova      m7, [hsub_mul]
-    mov      r5d, %1/4
-.loop:
-    movq      m0, [r0]
-    movq      m2, [r2]
-    movq      m1, [r0+r1]
-    movq      m3, [r2+r3]
-    lea       r0, [r0+r1*2]
-    lea       r2, [r2+r3*2]
-    punpcklbw m0, m2
-    punpcklbw m1, m3
-    movq      m2, [r0]
-    movq      m3, [r2]
-    punpcklbw m2, m3
-    movq      m3, [r0+r1]
-    movq      m4, [r2+r3]
-    punpcklbw m3, m4
-    pmaddubsw m0, m7
-    pmaddubsw m1, m7
-    pmaddubsw m2, m7
-    pmaddubsw m3, m7
-    paddw     m5, m0
-    paddw     m5, m1
-    paddw     m5, m2
-    paddw     m5, m3
-    pmaddwd   m0, m0
-    pmaddwd   m1, m1
-    pmaddwd   m2, m2
-    pmaddwd   m3, m3
-    paddd     m6, m0
-    paddd     m6, m1
-    paddd     m6, m2
-    paddd     m6, m3
-    lea       r0, [r0+r1*2]
-    lea       r2, [r2+r3*2]
-    dec      r5d
-    jg .loop
-    VAR2_END %2, m5, m6
+%macro VAR2_CORE 3 ; src1, src2, accum
+%if %3
+    paddw    m0, %1
+    pmaddwd  %1, %1
+    paddw    m0, %2
+    pmaddwd  %2, %2
+    paddd    m1, %1
+    paddd    m1, %2
+%else
+    paddw    m0, %1, %2
+    pmaddwd  %1, %1
+    pmaddwd  %2, %2
+    paddd    m1, %1, %2
+%endif
 %endmacro
 
+%if HIGH_BIT_DEPTH == 0
 INIT_XMM ssse3
+cglobal pixel_var2_internal
+    pxor        m0, m0 ; sum
+    pxor        m1, m1 ; sqr
+.loop:
+    movq        m2, [r0+1*t0]
+    punpcklbw   m2, [r1+2*t0]
+    movq        m3, [r0+1*t0-1*FENC_STRIDE]
+    punpcklbw   m3, [r1+2*t0-1*FDEC_STRIDE]
+    movq        m4, [r0+1*t0-2*FENC_STRIDE]
+    punpcklbw   m4, [r1+2*t0-2*FDEC_STRIDE]
+    movq        m5, [r0+1*t0-3*FENC_STRIDE]
+    punpcklbw   m5, [r1+2*t0-3*FDEC_STRIDE]
+    pmaddubsw   m2, m7
+    pmaddubsw   m3, m7
+    pmaddubsw   m4, m7
+    pmaddubsw   m5, m7
+    VAR2_CORE   m2, m3, 1
+    VAR2_CORE   m4, m5, 1
+    sub        t0d, 4*FENC_STRIDE
+    jg .loop
+    pmaddwd     m0, [pw_1]
+    ret
+
+%macro VAR2_8x8_SSSE3 2
+cglobal pixel_var2_8x%1, 2,3,8
+    mova        m7, [hsub_mul]
+    mov        t0d, (%1-1)*FENC_STRIDE
+    call pixel_var2_internal_ssse3 ; u
+    add         r0, 8
+    add         r1, 16
+    SBUTTERFLY qdq, 0, 1, 6
+    paddd       m1, m0
+    mov        t0d, (%1-1)*FENC_STRIDE
+    call pixel_var2_internal_ssse3 ; v
+    SBUTTERFLY qdq, 0, 6, 2
+    paddd       m0, m6
+    phaddd      m1, m0 ; sum_u sqr_u sum_v sqr_v
+    VAR2_END    m1, m0, %2
+%endmacro
+
 VAR2_8x8_SSSE3  8, 6
 VAR2_8x8_SSSE3 16, 7
-INIT_XMM xop
-VAR2_8x8_SSSE3  8, 6
-VAR2_8x8_SSSE3 16, 7
+%endif ; !HIGH_BIT_DEPTH
+
+%macro VAR2_AVX2_LOAD 3 ; offset_reg, row1_offset, row2_offset
+%if HIGH_BIT_DEPTH
+    mova       xm2, [r1+2*%1+%2*FDEC_STRIDEB]
+    vinserti128 m2, [r1+2*%1+%2*FDEC_STRIDEB+32], 1
+    mova       xm3, [r1+2*%1+%3*FDEC_STRIDEB]
+    vinserti128 m3, [r1+2*%1+%3*FDEC_STRIDEB+32], 1
+    psubw       m2, [r0+1*%1+%2*FENC_STRIDEB]
+    psubw       m3, [r0+1*%1+%3*FENC_STRIDEB]
+%else
+    pmovzxbw    m2, [r0+1*%1+%2*FENC_STRIDE]
+    mova        m4, [r1+2*%1+%2*FDEC_STRIDE]
+    pmovzxbw    m3, [r0+1*%1+%3*FENC_STRIDE]
+    mova        m5, [r1+2*%1+%3*FDEC_STRIDE]
+    punpcklbw   m4, m6
+    punpcklbw   m5, m6
+    psubw       m2, m4
+    psubw       m3, m5
+%endif
+%endmacro
 
 %macro VAR2_8x8_AVX2 2
-cglobal pixel_var2_8x%1, 5,6,6
-    pxor      m3, m3    ; sum
-    pxor      m4, m4    ; sum squared
-    mova      m5, [hsub_mul]
-    mov      r5d, %1/4
+%if HIGH_BIT_DEPTH
+cglobal pixel_var2_8x%1, 2,3,4
+%else
+cglobal pixel_var2_8x%1, 2,3,7
+    pxor           m6, m6
+%endif
+    mov           t0d, (%1-3)*FENC_STRIDEB
+    VAR2_AVX2_LOAD t0, 2, 1
+    VAR2_CORE      m2, m3, 0
 .loop:
-    movq     xm0, [r0]
-    movq     xm1, [r2]
-    vinserti128 m0, m0, [r0+r1], 1
-    vinserti128 m1, m1, [r2+r3], 1
-    lea       r0, [r0+r1*2]
-    lea       r2, [r2+r3*2]
-    punpcklbw m0, m1
-    movq     xm1, [r0]
-    movq     xm2, [r2]
-    vinserti128 m1, m1, [r0+r1], 1
-    vinserti128 m2, m2, [r2+r3], 1
-    lea       r0, [r0+r1*2]
-    lea       r2, [r2+r3*2]
-    punpcklbw m1, m2
-    pmaddubsw m0, m5
-    pmaddubsw m1, m5
-    paddw     m3, m0
-    paddw     m3, m1
-    pmaddwd   m0, m0
-    pmaddwd   m1, m1
-    paddd     m4, m0
-    paddd     m4, m1
-    dec      r5d
+    VAR2_AVX2_LOAD t0, 0, -1
+    VAR2_CORE      m2, m3, 1
+    sub           t0d, 2*FENC_STRIDEB
     jg .loop
-    vextracti128 xm0, m3, 1
-    vextracti128 xm1, m4, 1
-    paddw    xm3, xm0
-    paddd    xm4, xm1
-    VAR2_END %2, xm3, xm4
+
+    pmaddwd        m0, [pw_1]
+    SBUTTERFLY    qdq, 0, 1, 2
+    paddd          m0, m1
+    vextracti128  xm1, m0, 1
+    phaddd        xm0, xm1
+    VAR2_END      xm0, xm1, %2
 %endmacro
 
 INIT_YMM avx2
 VAR2_8x8_AVX2  8, 6
 VAR2_8x8_AVX2 16, 7
-
-%endif ; !HIGH_BIT_DEPTH
 
 ;=============================================================================
 ; SATD

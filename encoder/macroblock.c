@@ -283,13 +283,10 @@ static ALWAYS_INLINE void x264_mb_encode_chroma_internal( x264_t *h, int b_inter
     if( b_decimate && i_qp >= (h->mb.b_trellis ? 12 : 18) && !h->mb.b_noise_reduction )
     {
         int thresh = chroma422 ? (x264_lambda2_tab[i_qp] + 16) >> 5 : (x264_lambda2_tab[i_qp] + 32) >> 6;
-        int ssd[2];
+        ALIGNED_ARRAY_8( int, ssd,[2] );
         int chromapix = chroma422 ? PIXEL_8x16 : PIXEL_8x8;
 
-        int score  = h->pixf.var2[chromapix]( h->mb.pic.p_fenc[1], FENC_STRIDE, h->mb.pic.p_fdec[1], FDEC_STRIDE, &ssd[0] );
-        if( score < thresh*4 )
-            score += h->pixf.var2[chromapix]( h->mb.pic.p_fenc[2], FENC_STRIDE, h->mb.pic.p_fdec[2], FDEC_STRIDE, &ssd[1] );
-        if( score < thresh*4 )
+        if( h->pixf.var2[chromapix]( h->mb.pic.p_fenc[1], h->mb.pic.p_fdec[1], ssd ) < thresh*4 )
         {
             h->mb.cache.non_zero_count[x264_scan8[CHROMA_DC+0]] = 0;
             h->mb.cache.non_zero_count[x264_scan8[CHROMA_DC+1]] = 0;

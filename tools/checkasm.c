@@ -506,15 +506,17 @@ static int check_pixel( int cpu_ref, int cpu_new )
 #define TEST_PIXEL_VAR2( i ) \
     if( pixel_asm.var2[i] != pixel_ref.var2[i] ) \
     { \
-        int res_c, res_asm, ssd_c, ssd_asm; \
+        int res_c, res_asm; \
+        ALIGNED_ARRAY_8( int, ssd_c,  [2] ); \
+        ALIGNED_ARRAY_8( int, ssd_asm,[2] ); \
         set_func_name( "%s_%s", "var2", pixel_names[i] ); \
         used_asm = 1; \
-        res_c   = call_c( pixel_c.var2[i],   pbuf1, (intptr_t)16, pbuf2, (intptr_t)16, &ssd_c   ); \
-        res_asm = call_a( pixel_asm.var2[i], pbuf1, (intptr_t)16, pbuf2, (intptr_t)16, &ssd_asm ); \
-        if( res_c != res_asm || ssd_c != ssd_asm ) \
+        res_c   = call_c( pixel_c.var2[i],   pbuf1, pbuf2, ssd_c   ); \
+        res_asm = call_a( pixel_asm.var2[i], pbuf1, pbuf2, ssd_asm ); \
+        if( res_c != res_asm || memcmp( ssd_c, ssd_asm, 2*sizeof(int) ) ) \
         { \
             ok = 0; \
-            fprintf( stderr, "var2[%d]: %d != %d or %d != %d [FAILED]\n", i, res_c, res_asm, ssd_c, ssd_asm ); \
+            fprintf( stderr, "var2[%d]: {%d, %d, %d} != {%d, %d, %d} [FAILED]\n", i, res_c, ssd_c[0], ssd_c[1], res_asm, ssd_asm[0], ssd_asm[1] ); \
         } \
     }
 
