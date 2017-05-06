@@ -1556,7 +1556,7 @@ cglobal coeff_last4, 1,3
 
 INIT_MMX mmx2
 COEFF_LAST4
-INIT_MMX mmx2, lzcnt
+INIT_MMX lzcnt
 COEFF_LAST4
 
 %macro COEFF_LAST8 0
@@ -1579,7 +1579,7 @@ COEFF_LAST8
 %endif
 INIT_XMM sse2
 COEFF_LAST8
-INIT_XMM sse2, lzcnt
+INIT_XMM lzcnt
 COEFF_LAST8
 
 %else ; !HIGH_BIT_DEPTH
@@ -1642,7 +1642,7 @@ cglobal coeff_last8, 1,3
 
 INIT_MMX mmx2
 COEFF_LAST48
-INIT_MMX mmx2, lzcnt
+INIT_MMX lzcnt
 COEFF_LAST48
 %endif ; HIGH_BIT_DEPTH
 
@@ -1707,7 +1707,7 @@ COEFF_LAST
 %endif
 INIT_XMM sse2
 COEFF_LAST
-INIT_XMM sse2, lzcnt
+INIT_XMM lzcnt
 COEFF_LAST
 
 %macro LAST_MASK_AVX2 2
@@ -1729,7 +1729,7 @@ COEFF_LAST
 %endmacro
 
 %if ARCH_X86_64 == 0
-INIT_YMM avx2,lzcnt
+INIT_YMM avx2
 cglobal coeff_last64, 1,2
     pxor m2, m2
     LAST_MASK_AVX2 r1d, r0+SIZEOF_DCTCOEF*32
@@ -1744,7 +1744,7 @@ cglobal coeff_last64, 1,2
     add eax, 32
     RET
 %else
-INIT_YMM avx2,lzcnt
+INIT_YMM avx2
 cglobal coeff_last64, 1,3
     pxor m2, m2
     LAST_MASK_AVX2 r1d, r0+SIZEOF_DCTCOEF* 0
@@ -1833,15 +1833,17 @@ COEFF_LEVELRUN 8
 %endif
 COEFF_LEVELRUN 15
 COEFF_LEVELRUN 16
-INIT_XMM sse2, lzcnt
+INIT_MMX lzcnt
+COEFF_LEVELRUN 4
+%if HIGH_BIT_DEPTH == 0
+COEFF_LEVELRUN 8
+%endif
+INIT_XMM lzcnt
 %if HIGH_BIT_DEPTH
 COEFF_LEVELRUN 8
 %endif
 COEFF_LEVELRUN 15
 COEFF_LEVELRUN 16
-INIT_MMX mmx2, lzcnt
-COEFF_LEVELRUN 4
-COEFF_LEVELRUN 8
 
 ; Similar to the one above, but saves the DCT
 ; coefficients in m0/m1 so we don't have to load
@@ -1968,7 +1970,7 @@ INIT_XMM ssse3, lzcnt
 COEFF_LEVELRUN_LUT 8
 COEFF_LEVELRUN_LUT 15
 COEFF_LEVELRUN_LUT 16
-INIT_XMM avx2, lzcnt
+INIT_XMM avx2
 COEFF_LEVELRUN_LUT 15
 COEFF_LEVELRUN_LUT 16
 %endif

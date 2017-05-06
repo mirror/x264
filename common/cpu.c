@@ -56,6 +56,7 @@ const x264_cpu_name_t x264_cpu_names[] =
     {"SSE2Slow",    SSE2|X264_CPU_SSE2_IS_SLOW},
     {"SSE2",        SSE2},
     {"SSE2Fast",    SSE2|X264_CPU_SSE2_IS_FAST},
+    {"LZCNT",       SSE2|X264_CPU_LZCNT},
     {"SSE3",        SSE2|X264_CPU_SSE3},
     {"SSSE3",       SSE2|X264_CPU_SSE3|X264_CPU_SSSE3},
     {"SSE4.1",      SSE2|X264_CPU_SSE3|X264_CPU_SSSE3|X264_CPU_SSE4},
@@ -66,15 +67,16 @@ const x264_cpu_name_t x264_cpu_names[] =
     {"XOP",         AVX|X264_CPU_XOP},
     {"FMA4",        AVX|X264_CPU_FMA4},
     {"FMA3",        AVX|X264_CPU_FMA3},
-    {"AVX2",        AVX|X264_CPU_FMA3|X264_CPU_AVX2},
+    {"BMI1",        AVX|X264_CPU_LZCNT|X264_CPU_BMI1},
+    {"BMI2",        AVX|X264_CPU_LZCNT|X264_CPU_BMI1|X264_CPU_BMI2},
+#define AVX2 AVX|X264_CPU_FMA3|X264_CPU_LZCNT|X264_CPU_BMI1|X264_CPU_BMI2|X264_CPU_AVX2
+    {"AVX2",        AVX2},
+#undef AVX2
 #undef AVX
 #undef SSE2
 #undef MMX2
     {"Cache32",         X264_CPU_CACHELINE_32},
     {"Cache64",         X264_CPU_CACHELINE_64},
-    {"LZCNT",           X264_CPU_LZCNT},
-    {"BMI1",            X264_CPU_BMI1},
-    {"BMI2",            X264_CPU_BMI1|X264_CPU_BMI2},
     {"SlowCTZ",         X264_CPU_SLOW_CTZ},
     {"SlowAtom",        X264_CPU_SLOW_ATOM},
     {"SlowPshufb",      X264_CPU_SLOW_PSHUFB},

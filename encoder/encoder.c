@@ -1567,8 +1567,14 @@ x264_t *x264_encoder_open( x264_param_t *param )
         if( !strcmp(x264_cpu_names[i].name, "SSE4.1")
             && (h->param.cpu & X264_CPU_SSE42) )
             continue;
+        if( !strcmp(x264_cpu_names[i].name, "LZCNT")
+            && (h->param.cpu & X264_CPU_BMI1) )
+            continue;
         if( !strcmp(x264_cpu_names[i].name, "BMI1")
             && (h->param.cpu & X264_CPU_BMI2) )
+            continue;
+        if( !strcmp(x264_cpu_names[i].name, "FMA4")
+            && (h->param.cpu & X264_CPU_FMA3) )
             continue;
         if( (h->param.cpu & x264_cpu_names[i].flags) == x264_cpu_names[i].flags
             && (!i || x264_cpu_names[i].flags != x264_cpu_names[i-1].flags) )

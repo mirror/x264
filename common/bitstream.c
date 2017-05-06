@@ -43,16 +43,16 @@ uint8_t *x264_nal_escape_mmx2( uint8_t *dst, uint8_t *src, uint8_t *end );
 uint8_t *x264_nal_escape_sse2( uint8_t *dst, uint8_t *src, uint8_t *end );
 uint8_t *x264_nal_escape_avx2( uint8_t *dst, uint8_t *src, uint8_t *end );
 void x264_cabac_block_residual_rd_internal_sse2       ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_rd_internal_sse2_lzcnt ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
+void x264_cabac_block_residual_rd_internal_lzcnt      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
 void x264_cabac_block_residual_rd_internal_ssse3      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
 void x264_cabac_block_residual_rd_internal_ssse3_lzcnt( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
 void x264_cabac_block_residual_8x8_rd_internal_sse2       ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_8x8_rd_internal_sse2_lzcnt ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
+void x264_cabac_block_residual_8x8_rd_internal_lzcnt      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
 void x264_cabac_block_residual_8x8_rd_internal_ssse3      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
 void x264_cabac_block_residual_8x8_rd_internal_ssse3_lzcnt( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_internal_sse2      ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_internal_sse2_lzcnt( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
-void x264_cabac_block_residual_internal_avx2_bmi2 ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
+void x264_cabac_block_residual_internal_sse2  ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
+void x264_cabac_block_residual_internal_lzcnt ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
+void x264_cabac_block_residual_internal_avx2  ( dctcoef *l, int b_interlaced, intptr_t ctx_block_cat, x264_cabac_t *cb );
 
 uint8_t *x264_nal_escape_neon( uint8_t *dst, uint8_t *src, uint8_t *end );
 
@@ -126,18 +126,17 @@ void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
         pf->nal_escape = x264_nal_escape_mmx2;
     if( cpu&X264_CPU_SSE2 )
     {
-#if ARCH_X86_64
-        if( cpu&X264_CPU_LZCNT )
-        {
-            pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_sse2_lzcnt;
-            pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_sse2_lzcnt;
-            pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_sse2_lzcnt;
-        }
-#endif
         if( cpu&X264_CPU_SSE2_IS_FAST )
             pf->nal_escape = x264_nal_escape_sse2;
     }
 #if ARCH_X86_64
+    if( cpu&X264_CPU_LZCNT )
+    {
+        pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_lzcnt;
+        pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_lzcnt;
+        pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_lzcnt;
+    }
+
     if( cpu&X264_CPU_SSSE3 )
     {
         pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_ssse3;
@@ -152,8 +151,7 @@ void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
     if( cpu&X264_CPU_AVX2 )
     {
         pf->nal_escape = x264_nal_escape_avx2;
-        if( cpu&X264_CPU_BMI2 )
-            pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_avx2_bmi2;
+        pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_avx2;
     }
 #endif
 #endif

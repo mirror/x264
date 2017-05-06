@@ -473,8 +473,6 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
 #endif
         pf->coeff_last4 = x264_coeff_last4_mmx2;
         pf->coeff_level_run4 = x264_coeff_level_run4_mmx2;
-        if( cpu&X264_CPU_LZCNT )
-            pf->coeff_level_run4 = x264_coeff_level_run4_mmx2_lzcnt;
     }
     if( cpu&X264_CPU_SSE2 )
     {
@@ -499,17 +497,18 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->coeff_level_run8 = x264_coeff_level_run8_sse2;
         pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_sse2;
         pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_sse2;
-        if( cpu&X264_CPU_LZCNT )
-        {
-            pf->coeff_last4 = x264_coeff_last4_mmx2_lzcnt;
-            pf->coeff_last8 = x264_coeff_last8_sse2_lzcnt;
-            pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_sse2_lzcnt;
-            pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_sse2_lzcnt;
-            pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_sse2_lzcnt;
-            pf->coeff_level_run8 = x264_coeff_level_run8_sse2_lzcnt;
-            pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_sse2_lzcnt;
-            pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_sse2_lzcnt;
-        }
+    }
+    if( cpu&X264_CPU_LZCNT )
+    {
+        pf->coeff_last4 = x264_coeff_last4_lzcnt;
+        pf->coeff_last8 = x264_coeff_last8_lzcnt;
+        pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_lzcnt;
+        pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_lzcnt;
+        pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_lzcnt;
+        pf->coeff_level_run4 = x264_coeff_level_run4_lzcnt;
+        pf->coeff_level_run8 = x264_coeff_level_run8_lzcnt;
+        pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_lzcnt;
+        pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_lzcnt;
     }
     if( cpu&X264_CPU_SSSE3 )
     {
@@ -557,8 +556,7 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->dequant_8x8 = x264_dequant_8x8_avx2;
         pf->dequant_4x4_dc = x264_dequant_4x4dc_avx2;
         pf->denoise_dct = x264_denoise_dct_avx2;
-        if( cpu&X264_CPU_LZCNT )
-            pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx2_lzcnt;
+        pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx2;
     }
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH
@@ -599,13 +597,6 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->coeff_last8 = x264_coeff_last8_mmx2;
         pf->coeff_level_run4 = x264_coeff_level_run4_mmx2;
         pf->coeff_level_run8 = x264_coeff_level_run8_mmx2;
-        if( cpu&X264_CPU_LZCNT )
-        {
-            pf->coeff_last4 = x264_coeff_last4_mmx2_lzcnt;
-            pf->coeff_last8 = x264_coeff_last8_mmx2_lzcnt;
-            pf->coeff_level_run4 = x264_coeff_level_run4_mmx2_lzcnt;
-            pf->coeff_level_run8 = x264_coeff_level_run8_mmx2_lzcnt;
-        }
     }
 
     if( cpu&X264_CPU_SSE2 )
@@ -634,14 +625,19 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_sse2;
         pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_sse2;
         pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_sse2;
-        if( cpu&X264_CPU_LZCNT )
-        {
-            pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_sse2_lzcnt;
-            pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_sse2_lzcnt;
-            pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_sse2_lzcnt;
-            pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_sse2_lzcnt;
-            pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_sse2_lzcnt;
-        }
+    }
+
+    if( cpu&X264_CPU_LZCNT )
+    {
+        pf->coeff_last4 = x264_coeff_last4_lzcnt;
+        pf->coeff_last8 = x264_coeff_last8_lzcnt;
+        pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_lzcnt;
+        pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_lzcnt;
+        pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_lzcnt;
+        pf->coeff_level_run4 = x264_coeff_level_run4_lzcnt;
+        pf->coeff_level_run8 = x264_coeff_level_run8_lzcnt;
+        pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_lzcnt;
+        pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_lzcnt;
     }
 
     if( cpu&X264_CPU_SSSE3 )
@@ -663,8 +659,8 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_ssse3;
         if( cpu&X264_CPU_LZCNT )
         {
-            pf->coeff_level_run4 = x264_coeff_level_run4_ssse3;
-            pf->coeff_level_run8 = x264_coeff_level_run8_ssse3;
+            pf->coeff_level_run4 = x264_coeff_level_run4_ssse3_lzcnt;
+            pf->coeff_level_run8 = x264_coeff_level_run8_ssse3_lzcnt;
             pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_ssse3_lzcnt;
             pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_ssse3_lzcnt;
         }
@@ -717,12 +713,9 @@ void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
         }
         pf->decimate_score64 = x264_decimate_score64_avx2;
         pf->denoise_dct = x264_denoise_dct_avx2;
-        if( cpu&X264_CPU_LZCNT )
-        {
-            pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx2_lzcnt;
-            pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_avx2_lzcnt;
-            pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_avx2_lzcnt;
-        }
+        pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx2;
+        pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_avx2;
+        pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_avx2;
     }
 #endif // HAVE_MMX
 
