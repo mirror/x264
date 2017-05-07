@@ -267,7 +267,7 @@ static NOINLINE unsigned int x264_weight_cost_chroma444( x264_t *h, x264_frame_t
     int i_lines = fenc->i_lines[p];
     int i_width = fenc->i_width[p];
     pixel *src = fenc->plane[p];
-    ALIGNED_ARRAY_16( pixel, buf, [16*16] );
+    ALIGNED_ARRAY_64( pixel, buf, [16*16] );
     int pixoff = 0;
     if( w )
     {

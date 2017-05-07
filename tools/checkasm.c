@@ -370,8 +370,9 @@ static int check_pixel( int cpu_ref, int cpu_new )
             used_asm = 1; \
             for( int j = 0; j < 64; j++ ) \
             { \
-                res_c   = call_c( pixel_c.name[i],   pbuf1, (intptr_t)16, pbuf2+j*!align, (intptr_t)64 ); \
-                res_asm = call_a( pixel_asm.name[i], pbuf1, (intptr_t)16, pbuf2+j*!align, (intptr_t)64 ); \
+                intptr_t stride1 = (j&31) == 31 ? 32 : FENC_STRIDE; \
+                res_c   = call_c( pixel_c.name[i],   pbuf1, stride1, pbuf2+j*!align, (intptr_t)64 ); \
+                res_asm = call_a( pixel_asm.name[i], pbuf1, stride1, pbuf2+j*!align, (intptr_t)64 ); \
                 if( res_c != res_asm ) \
                 { \
                     ok = 0; \
