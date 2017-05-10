@@ -1617,6 +1617,225 @@ SAD_X_AVX2 3, 16,  8, 7
 SAD_X_AVX2 4, 16, 16, 8
 SAD_X_AVX2 4, 16,  8, 8
 
+%macro SAD_X_W4_AVX512 2 ; x, h
+cglobal pixel_sad_x%1_4x%2, %1+2,%1+3
+    mov           t1d, 0xa
+    kmovb          k1, t1d
+    lea            t1, [3*t0]
+    kaddb          k2, k1, k1
+    kshiftlb       k3, k1, 2
+%assign %%i 0
+%rep %2/4
+    movu           m6,      [r0+%%i*64]
+    vmovddup       m6 {k1}, [r0+%%i*64+32]
+    movd         xmm2,      [r1]
+    movd         xmm4,      [r1+t0]
+    vpbroadcastd xmm2 {k1}, [r1+2*t0]
+    vpbroadcastd xmm4 {k1}, [r1+t1]
+    vpbroadcastd xmm2 {k2}, [r2+t0]
+    vpbroadcastd xmm4 {k2}, [r2]
+    vpbroadcastd xmm2 {k3}, [r2+t1]   ; a0 a2 b1 b3
+    vpbroadcastd xmm4 {k3}, [r2+2*t0] ; a1 a3 b0 b2
+    vpmovqd        s1, m6             ; s0 s2 s1 s3
+    movd         xmm3,      [r3]
+    movd         xmm5,      [r3+t0]
+    vpbroadcastd xmm3 {k1}, [r3+2*t0]
+    vpbroadcastd xmm5 {k1}, [r3+t1]
+%if %1 == 4
+    vpbroadcastd xmm3 {k2}, [r4+t0]
+    vpbroadcastd xmm5 {k2}, [r4]
+    vpbroadcastd xmm3 {k3}, [r4+t1]   ; c0 c2 d1 d3
+    vpbroadcastd xmm5 {k3}, [r4+2*t0] ; c1 c3 d0 d2
+%endif
+%if %%i != %2/4-1
+%assign %%j 1
+%rep %1
+    lea        r%+%%j, [r%+%%j+4*t0]
+    %assign %%j %%j+1
+%endrep
+%endif
+    pshufd         s2, s1, q1032
+    psadbw       xmm2, s1
+    psadbw       xmm4, s2
+    psadbw       xmm3, s1
+    psadbw       xmm5, s2
+%if %%i
+    paddd        xmm0, xmm2
+    paddd        xmm1, xmm3
+    paddd        xmm0, xmm4
+    paddd        xmm1, xmm5
+%else
+    paddd        xmm0, xmm2, xmm4
+    paddd        xmm1, xmm3, xmm5
+%endif
+    %assign %%i %%i+1
+%endrep
+%if %1 == 4
+    movifnidn      t2, r6mp
+%else
+    movifnidn      t2, r5mp
+%endif
+    packusdw     xmm0, xmm1
+    mova         [t2], xmm0
+    RET
+%endmacro
+
+%macro SAD_X_W8_AVX512 2 ; x, h
+cglobal pixel_sad_x%1_8x%2, %1+2,%1+3
+    kxnorb        k3, k3, k3
+    lea           t1, [3*t0]
+    kaddb         k1, k3, k3
+    kshiftlb      k2, k3, 2
+    kshiftlb      k3, k3, 3
+%assign %%i 0
+%rep %2/4
+    movddup       m6, [r0+%%i*64]    ; s0 s0 s1 s1
+    movq         xm2,      [r1]
+    movq         xm4,      [r1+2*t0]
+    vpbroadcastq xm2 {k1}, [r2]
+    vpbroadcastq xm4 {k1}, [r2+2*t0]
+    vpbroadcastq  m2 {k2}, [r1+t0]
+    vpbroadcastq  m4 {k2}, [r1+t1]
+    vpbroadcastq  m2 {k3}, [r2+t0]   ; a0 b0 a1 b1
+    vpbroadcastq  m4 {k3}, [r2+t1]   ; a2 b2 a3 b3
+    movddup       m7, [r0+%%i*64+32] ; s2 s2 s3 s3
+    movq         xm3,      [r3]
+    movq         xm5,      [r3+2*t0]
+%if %1 == 4
+    vpbroadcastq xm3 {k1}, [r4]
+    vpbroadcastq xm5 {k1}, [r4+2*t0]
+%endif
+    vpbroadcastq  m3 {k2}, [r3+t0]
+    vpbroadcastq  m5 {k2}, [r3+t1]
+%if %1 == 4
+    vpbroadcastq  m3 {k3}, [r4+t0]   ; c0 d0 c1 d1
+    vpbroadcastq  m5 {k3}, [r4+t1]   ; c2 d2 c3 d3
+%endif
+%if %%i != %2/4-1
+%assign %%j 1
+%rep %1
+    lea       r%+%%j, [r%+%%j+4*t0]
+    %assign %%j %%j+1
+%endrep
+%endif
+    psadbw        m2, m6
+    psadbw        m4, m7
+    psadbw        m3, m6
+    psadbw        m5, m7
+    ACCUM      paddd, 0, 2, %%i
+    ACCUM      paddd, 1, 3, %%i
+    paddd         m0, m4
+    paddd         m1, m5
+    %assign %%i %%i+1
+%endrep
+%if %1 == 4
+    movifnidn     t2, r6mp
+%else
+    movifnidn     t2, r5mp
+%endif
+    packusdw      m0, m1
+    vextracti128 xm1, m0, 1
+    paddd        xm0, xm1
+    mova        [t2], xm0
+    RET
+%endmacro
+
+%macro SAD_X_W16_AVX512 2 ; x, h
+cglobal pixel_sad_x%1_16x%2, %1+2,%1+3
+    lea           t1, [3*t0]
+%assign %%i 0
+%rep %2/4
+    mova          m6, [r0+%%i*64]  ; s0 s1 s2 s3
+    movu         xm2, [r3]
+    movu         xm4, [r3+t0]
+%if %1 == 4
+    vinserti128  ym2, [r4+t0],   1
+    vinserti128  ym4, [r4],      1
+%endif
+    vinserti32x4  m2, [r1+2*t0], 2
+    vinserti32x4  m4, [r1+t1],   2
+    vinserti32x4  m2, [r2+t1],   3 ; c0 d1 a2 b3
+    vinserti32x4  m4, [r2+2*t0], 3 ; c1 d0 a3 b2
+    vpermq        m7, m6, q1032    ; s1 s0 s3 s2
+    movu         xm3, [r1]
+    movu         xm5, [r1+t0]
+    vinserti128  ym3, [r2+t0],   1
+    vinserti128  ym5, [r2],      1
+    vinserti32x4  m3, [r3+2*t0], 2
+    vinserti32x4  m5, [r3+t1],   2
+%if %1 == 4
+    vinserti32x4  m3, [r4+t1],   3 ; a0 b1 c2 d3
+    vinserti32x4  m5, [r4+2*t0], 3 ; a1 b0 c3 d2
+%endif
+%if %%i != %2/4-1
+%assign %%j 1
+%rep %1
+    lea       r%+%%j, [r%+%%j+4*t0]
+    %assign %%j %%j+1
+%endrep
+%endif
+    psadbw        m2, m6
+    psadbw        m4, m7
+    psadbw        m3, m6
+    psadbw        m5, m7
+    ACCUM      paddd, 0, 2, %%i
+    ACCUM      paddd, 1, 3, %%i
+    paddd         m0, m4
+    paddd         m1, m5
+    %assign %%i %%i+1
+%endrep
+%if %1 == 4
+    movifnidn     t2, r6mp
+%else
+    movifnidn     t2, r5mp
+%endif
+    mov          t1d, 0x1111
+    kmovw         k1, t1d
+    vshufi32x4    m0, m0, q1032
+    paddd         m0, m1
+    punpckhqdq    m1, m0, m0
+    paddd         m0, m1
+    vpcompressd   m0 {k1}{z}, m0
+    mova        [t2], xm0
+    RET
+%endmacro
+
+; t0 = stride, t1 = tmp/stride3, t2 = scores
+%if WIN64
+    %define s1 xmm16 ; xmm6 and xmm7 reduces code size, but
+    %define s2 xmm17 ; they're callee-saved on win64
+    DECLARE_REG_TMP 4, 6, 0
+%else
+    %define s1 xmm6
+    %define s2 xmm7
+%if ARCH_X86_64
+    DECLARE_REG_TMP 4, 6, 5 ; scores is passed in a register on unix64
+%else
+    DECLARE_REG_TMP 4, 5, 0
+%endif
+%endif
+
+INIT_YMM avx512
+SAD_X_W4_AVX512  3, 4  ; x3_4x4
+SAD_X_W4_AVX512  3, 8  ; x3_4x8
+SAD_X_W8_AVX512  3, 4  ; x3_8x4
+SAD_X_W8_AVX512  3, 8  ; x3_8x8
+SAD_X_W8_AVX512  3, 16 ; x3_8x16
+INIT_ZMM avx512
+SAD_X_W16_AVX512 3, 8  ; x3_16x8
+SAD_X_W16_AVX512 3, 16 ; x3_16x16
+
+DECLARE_REG_TMP 5, 6, 0
+INIT_YMM avx512
+SAD_X_W4_AVX512  4, 4  ; x4_4x4
+SAD_X_W4_AVX512  4, 8  ; x4_4x8
+SAD_X_W8_AVX512  4, 4  ; x4_8x4
+SAD_X_W8_AVX512  4, 8  ; x4_8x8
+SAD_X_W8_AVX512  4, 16 ; x4_8x16
+INIT_ZMM avx512
+SAD_X_W16_AVX512 4, 8  ; x4_16x8
+SAD_X_W16_AVX512 4, 16 ; x4_16x16
+
 ;=============================================================================
 ; SAD cacheline split
 ;=============================================================================

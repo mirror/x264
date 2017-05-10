@@ -1350,6 +1350,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
     {
         INIT8( sad, _avx512 );
         INIT8_NAME( sad_aligned, sad, _avx512 );
+        INIT7( sad_x3, _avx512 );
+        INIT7( sad_x4, _avx512 );
         INIT8( satd, _avx512 );
         pixf->sa8d[PIXEL_8x8] = x264_pixel_sa8d_8x8_avx512;
         pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_avx512;
