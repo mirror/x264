@@ -225,3 +225,14 @@ cglobal stack_pagealign, 2,2
     leave
     RET
 
+; Trigger a warmup of vector units
+%macro WARMUP 0
+cglobal checkasm_warmup, 0,0
+    xorps m0, m0
+    RET
+%endmacro
+
+INIT_YMM avx
+WARMUP
+INIT_ZMM avx512
+WARMUP

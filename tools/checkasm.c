@@ -222,8 +222,18 @@ static void print_bench(void)
         }
 }
 
+/* YMM and ZMM registers on x86 are turned off to save power when they haven't been
+ * used for some period of time. When they are used there will be a "warmup" period
+ * during which performance will be reduced and inconsistent which is problematic when
+ * trying to benchmark individual functions. We can work around this by periodically
+ * issuing "dummy" instructions that uses those registers to keep them powered on. */
+static void (*simd_warmup_func)( void ) = NULL;
+#define simd_warmup() do { if( simd_warmup_func ) simd_warmup_func(); } while( 0 )
+
 #if ARCH_X86 || ARCH_X86_64
 int x264_stack_pagealign( int (*func)(), int align );
+void x264_checkasm_warmup_avx( void );
+void x264_checkasm_warmup_avx512( void );
 
 /* detect when callee-saved regs aren't saved
  * needs an explicit asm check because it only sometimes crashes in normal use. */
@@ -258,6 +268,7 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 #define call_a1(func,...) ({ \
     uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
     x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
+    simd_warmup(); \
     x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
 #elif ARCH_AARCH64 && !defined(__APPLE__)
 void x264_checkasm_stack_clobber( uint64_t clobber, ... );
@@ -285,6 +296,7 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
         call_a1(func, __VA_ARGS__);\
         for( int ti = 0; ti < (cpu?BENCH_RUNS:BENCH_RUNS/4); ti++ )\
         {\
+            simd_warmup();\
             uint32_t t = read_time();\
             func(__VA_ARGS__);\
             func(__VA_ARGS__);\
@@ -2785,6 +2797,14 @@ static int check_all_flags( void )
     int ret = 0;
     int cpu0 = 0, cpu1 = 0;
     uint32_t cpu_detect = x264_cpu_detect();
+#if ARCH_X86 || ARCH_X86_64
+    if( cpu_detect & X264_CPU_AVX512 )
+        simd_warmup_func = x264_checkasm_warmup_avx512;
+    else if( cpu_detect & X264_CPU_AVX )
+        simd_warmup_func = x264_checkasm_warmup_avx;
+#endif
+    simd_warmup();
+
 #if HAVE_MMX
     if( cpu_detect & X264_CPU_MMX2 )
     {
