@@ -1526,6 +1526,12 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_rdo_init();
 
     /* init CPU functions */
+#if (ARCH_X86 || ARCH_X86_64) && HIGH_BIT_DEPTH
+    /* FIXME: Only 8-bit has been optimized for AVX-512 so far. The few AVX-512 functions
+     * enabled in high bit-depth are insignificant and just causes potential issues with
+     * unnecessary thermal throttling and whatnot, so keep it disabled for now. */
+    h->param.cpu &= ~X264_CPU_AVX512;
+#endif
     x264_predict_16x16_init( h->param.cpu, h->predict_16x16 );
     x264_predict_8x8c_init( h->param.cpu, h->predict_8x8c );
     x264_predict_8x16c_init( h->param.cpu, h->predict_8x16c );
