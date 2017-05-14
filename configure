@@ -554,9 +554,12 @@ if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
         compiler_style=MS
         CFLAGS="$CFLAGS -Qstd=c99 -nologo -Qms0 -DHAVE_STRING_H -I\$(SRCPATH)/extras"
         QPRE="-Q"
-        `$CC 2>&1 | grep -q IA-32` && host_cpu=i486
-        `$CC 2>&1 | grep -q "Intel(R) 64"` && host_cpu=x86_64
-        cpp_check "" "" "_MSC_VER >= 1400" || die "Windows Intel Compiler support requires Visual Studio 2005 or newer"
+        cpp_check '' '' '_MSC_VER >= 1400' || die "Windows Intel Compiler support requires Visual Studio 2005 or newer"
+        if cpp_check '' '' 'defined(_M_AMD64) || defined(_M_X64)' ; then
+            host_cpu=x86_64
+        elif cpp_check '' '' 'defined(_M_IX86)' ; then
+            host_cpu=i486
+        fi
         if cc_check '' -Qdiag-error:10006,10157 ; then
             CHECK_CFLAGS="$CHECK_CFLAGS -Qdiag-error:10006,10157"
         fi
@@ -565,9 +568,16 @@ if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
         compiler=CL
         compiler_style=MS
         CFLAGS="$CFLAGS -nologo -GS- -DHAVE_STRING_H -I\$(SRCPATH)/extras"
-        `$CC 2>&1 | grep -q 'x86'` && host_cpu=i486
-        `$CC 2>&1 | grep -q 'x64'` && host_cpu=x86_64
         cpp_check '' '' '_MSC_VER > 1800 || (_MSC_VER == 1800 && _MSC_FULL_VER >= 180030324)' || die "Microsoft Visual Studio support requires Visual Studio 2013 Update 2 or newer"
+        if cpp_check '' '' 'defined(_M_AMD64) || defined(_M_X64)' ; then
+            host_cpu=x86_64
+        elif cpp_check '' '' 'defined(_M_IX86)' ; then
+            host_cpu=i486
+        elif cpp_check '' '' 'defined(_M_ARM64)' ; then
+            host_cpu=aarch64
+        elif cpp_check '' '' 'defined(_M_ARM)' ; then
+            host_cpu=arm
+        fi
     else
         # MinGW uses broken pre-VS2015 Microsoft printf functions unless it's told to use the POSIX ones.
         CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
