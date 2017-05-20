@@ -4867,7 +4867,7 @@ ASD8
     add     r6, 4*%1
     sub    r0d, 4*%1
     jg .loop
-    WIN64_RESTORE_XMM rsp
+    WIN64_RESTORE_XMM
 %if mmsize==32
     vzeroupper
 %endif
