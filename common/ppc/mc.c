@@ -210,6 +210,20 @@ void x264_plane_copy_deinterleave_altivec( uint8_t *dstu, intptr_t i_dstu,
     }
 }
 
+static void load_deinterleave_chroma_fenc_altivec( uint8_t *dst, uint8_t *src, intptr_t i_src, int height )
+{
+    const vec_u8_t mask = { 0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E, 0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F };
+
+    for( int y = 0; y < height; y += 2, dst += 2*FENC_STRIDE, src += 2*i_src )
+    {
+        vec_u8_t src0 = vec_ld( 0, src );
+        vec_u8_t src1 = vec_ld( i_src, src );
+
+        vec_st( vec_perm( src0, src0, mask ), 0*FENC_STRIDE, dst );
+        vec_st( vec_perm( src1, src1, mask ), 1*FENC_STRIDE, dst );
+    }
+}
+
 #if HAVE_VSX
 void x264_plane_copy_deinterleave_rgb_altivec( uint8_t *dsta, intptr_t i_dsta,
                                                uint8_t *dstb, intptr_t i_dstb,
@@ -1398,6 +1412,7 @@ void x264_mc_init_altivec( x264_mc_functions_t *pf )
     pf->plane_copy_interleave = plane_copy_interleave_altivec;
     pf->store_interleave_chroma = x264_store_interleave_chroma_altivec;
     pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_altivec;
+    pf->load_deinterleave_chroma_fenc = load_deinterleave_chroma_fenc_altivec;
 #if HAVE_VSX
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_altivec;
 #endif // HAVE_VSX
