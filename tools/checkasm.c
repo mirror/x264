@@ -2260,7 +2260,7 @@ static int check_quant( int cpu_ref, int cpu_new )
                     int max = X264_MIN( i, PIXEL_MAX*16 ); \
                     for( int j = 0; j < size; j++ ) \
                         dct1[j] = rand()%(max*2+1) - max; \
-                    for( int j = 0; i <= size; j += 4 ) \
+                    for( int j = 0; j <= size; j += 4 ) \
                         qf_c.quant_2x2_dc( &dct1[j], h->quant4_mf[CQM_4IC][qpdc][0]>>1, h->quant4_bias[CQM_4IC][qpdc][0]>>1 ); \
                     memcpy( dct2, dct1, size*sizeof(dctcoef) ); \
                     res_c   = call_c1( qf_c.optname, dct1, dmf ); \
