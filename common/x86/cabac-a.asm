@@ -54,7 +54,9 @@ coeff_abs_level_transition: db 1, 2, 3, 3, 4, 5, 6, 7
 
 cextern coeff_last4_mmx2
 cextern coeff_last4_lzcnt
+%if HIGH_BIT_DEPTH
 cextern coeff_last4_avx512
+%endif
 cextern coeff_last15_sse2
 cextern coeff_last15_lzcnt
 cextern coeff_last15_avx512
