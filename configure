@@ -589,7 +589,7 @@ else
     fi
 fi
 
-if [[ "$cc_base" = clang* ]]; then
+if [ $compiler = GNU ]; then
     if cc_check '' -Werror=unknown-warning-option ; then
         CHECK_CFLAGS="$CHECK_CFLAGS -Werror=unknown-warning-option"
     fi
