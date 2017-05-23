@@ -694,7 +694,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
         return !!dct[0];
     }
 
-#if HAVE_MMX && ARCH_X86_64
+#if HAVE_MMX && ARCH_X86_64 && !defined( __MACH__ )
 #define TRELLIS_ARGS unquant_mf, zigzag, lambda2, last_nnz, orig_coefs, quant_coefs, dct,\
                      cabac_state_sig, cabac_state_last, M64(cabac_state), M16(cabac_state+8)
     if( num_coefs == 16 && !dc )
