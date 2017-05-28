@@ -553,6 +553,21 @@ PROPAGATE_LIST(ssse3)
 PROPAGATE_LIST(avx)
 PROPAGATE_LIST(avx2)
 
+#if ARCH_X86_64
+void x264_mbtree_propagate_list_internal_avx512( size_t len, uint16_t *ref_costs, int16_t (*mvs)[2], int16_t *propagate_amount,
+                                                 uint16_t *lowres_costs, int bipred_weight, int mb_y,
+                                                 int width, int height, int stride, int list_mask );
+
+static void x264_mbtree_propagate_list_avx512( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
+                                               int16_t *propagate_amount, uint16_t *lowres_costs,
+                                               int bipred_weight, int mb_y, int len, int list )
+{
+    x264_mbtree_propagate_list_internal_avx512( len, ref_costs, mvs, propagate_amount, lowres_costs, bipred_weight << 9,
+                                                mb_y << 16, h->mb.i_mb_width, h->mb.i_mb_height, h->mb.i_mb_stride,
+                                                (1 << LOWRES_COST_SHIFT) << list );
+}
+#endif
+
 void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 {
     if( !(cpu&X264_CPU_MMX) )
@@ -880,4 +895,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     pf->memcpy_aligned = x264_memcpy_aligned_avx512;
     pf->memzero_aligned = x264_memzero_aligned_avx512;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx512;
+#if ARCH_X86_64
+    pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx512;
+#endif
 }

@@ -1765,15 +1765,16 @@ static int check_mc( int cpu_ref, int cpu_new )
             h.mb.i_mb_width = width;
             h.mb.i_mb_height = height;
 
-            uint16_t *ref_costsc = (uint16_t*)buf3;
-            uint16_t *ref_costsa = (uint16_t*)buf4;
-            int16_t (*mvs)[2] = (int16_t(*)[2])(ref_costsc + size);
+            uint16_t *ref_costsc = (uint16_t*)buf3 + width;
+            uint16_t *ref_costsa = (uint16_t*)buf4 + width;
+            int16_t (*mvs)[2] = (int16_t(*)[2])(ref_costsc + width + size);
             int16_t *propagate_amount = (int16_t*)(mvs + width);
             uint16_t *lowres_costs = (uint16_t*)(propagate_amount + width);
-            h.scratch_buffer2 = (uint8_t*)(ref_costsa + size);
+            h.scratch_buffer2 = (uint8_t*)(ref_costsa + width + size);
             int bipred_weight = (rand()%63)+1;
+            int mb_y = rand()&3;
             int list = i&1;
-            for( int j = 0; j < size; j++ )
+            for( int j = -width; j < size+width; j++ )
                 ref_costsc[j] = ref_costsa[j] = rand()&32767;
             for( int j = 0; j < width; j++ )
             {
@@ -1784,18 +1785,18 @@ static int check_mc( int cpu_ref, int cpu_new )
                 lowres_costs[j] = list_dist[list][rand()&7] << LOWRES_COST_SHIFT;
             }
 
-            call_c1( mc_c.mbtree_propagate_list, &h, ref_costsc, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
-            call_a1( mc_a.mbtree_propagate_list, &h, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
+            call_c1( mc_c.mbtree_propagate_list, &h, ref_costsc, mvs, propagate_amount, lowres_costs, bipred_weight, mb_y, width, list );
+            call_a1( mc_a.mbtree_propagate_list, &h, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, mb_y, width, list );
 
-            for( int j = 0; j < size && ok; j++ )
+            for( int j = -width; j < size+width && ok; j++ )
             {
                 ok &= abs(ref_costsa[j] - ref_costsc[j]) <= 1;
                 if( !ok )
                     fprintf( stderr, "mbtree_propagate_list FAILED at %d: %d !~= %d\n", j, ref_costsc[j], ref_costsa[j] );
             }
 
-            call_c2( mc_c.mbtree_propagate_list, &h, ref_costsc, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
-            call_a2( mc_a.mbtree_propagate_list, &h, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
+            call_c2( mc_c.mbtree_propagate_list, &h, ref_costsc, mvs, propagate_amount, lowres_costs, bipred_weight, mb_y, width, list );
+            call_a2( mc_a.mbtree_propagate_list, &h, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, mb_y, width, list );
         }
     }
 
