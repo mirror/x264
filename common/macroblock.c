@@ -1739,7 +1739,7 @@ void x264_macroblock_cache_save( x264_t *h )
         h->mb.i_last_dqp = 0;
         h->mb.i_cbp_chroma = CHROMA444 ? 0 : 2;
         h->mb.i_cbp_luma = 0xf;
-        h->mb.cbp[i_mb_xy] = (h->mb.i_cbp_chroma << 4) | h->mb.i_cbp_luma | 0x700;
+        h->mb.cbp[i_mb_xy] = (h->mb.i_cbp_chroma << 4) | h->mb.i_cbp_luma | 0x1700;
         h->mb.b_transform_8x8 = 0;
         for( int i = 0; i < 48; i++ )
             h->mb.cache.non_zero_count[x264_scan8[i]] = h->param.b_cabac ? 1 : 16;

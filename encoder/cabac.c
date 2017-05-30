@@ -1057,29 +1057,29 @@ static ALWAYS_INLINE void x264_macroblock_write_cabac_internal( x264_t *h, x264_
     src = dst;
 
 #define MUNGE_8x8_NNZ( MUNGE )\
-if( (h->mb.i_neighbour & MB_LEFT) && !h->mb.mb_transform_size[h->mb.i_mb_left_xy[0]] )\
+if( (h->mb.i_neighbour & MB_LEFT) && !h->mb.mb_transform_size[h->mb.i_mb_left_xy[0]] && !(h->mb.cbp[h->mb.i_mb_left_xy[0]] & 0x1000) )\
 {\
-    MUNGE( nnzbak[0][0], h->mb.cache.non_zero_count[x264_scan8[16*0+ 0] - 1], 0x80 )\
-    MUNGE( nnzbak[0][1], h->mb.cache.non_zero_count[x264_scan8[16*0+ 2] - 1], 0x80 )\
-    MUNGE( nnzbak[1][0], h->mb.cache.non_zero_count[x264_scan8[16*1+ 0] - 1], 0x80 )\
-    MUNGE( nnzbak[1][1], h->mb.cache.non_zero_count[x264_scan8[16*1+ 2] - 1], 0x80 )\
-    MUNGE( nnzbak[2][0], h->mb.cache.non_zero_count[x264_scan8[16*2+ 0] - 1], 0x80 )\
-    MUNGE( nnzbak[2][1], h->mb.cache.non_zero_count[x264_scan8[16*2+ 2] - 1], 0x80 )\
+    MUNGE( nnzbak[0][0], h->mb.cache.non_zero_count[x264_scan8[16*0+ 0] - 1], 0x00 )\
+    MUNGE( nnzbak[0][1], h->mb.cache.non_zero_count[x264_scan8[16*0+ 2] - 1], 0x00 )\
+    MUNGE( nnzbak[1][0], h->mb.cache.non_zero_count[x264_scan8[16*1+ 0] - 1], 0x00 )\
+    MUNGE( nnzbak[1][1], h->mb.cache.non_zero_count[x264_scan8[16*1+ 2] - 1], 0x00 )\
+    MUNGE( nnzbak[2][0], h->mb.cache.non_zero_count[x264_scan8[16*2+ 0] - 1], 0x00 )\
+    MUNGE( nnzbak[2][1], h->mb.cache.non_zero_count[x264_scan8[16*2+ 2] - 1], 0x00 )\
 }\
-if( (h->mb.i_neighbour & MB_LEFT) && !h->mb.mb_transform_size[h->mb.i_mb_left_xy[1]] )\
+if( (h->mb.i_neighbour & MB_LEFT) && !h->mb.mb_transform_size[h->mb.i_mb_left_xy[1]] && !(h->mb.cbp[h->mb.i_mb_left_xy[1]] & 0x1000) )\
 {\
-    MUNGE( nnzbak[0][2], h->mb.cache.non_zero_count[x264_scan8[16*0+ 8] - 1], 0x80 )\
-    MUNGE( nnzbak[0][3], h->mb.cache.non_zero_count[x264_scan8[16*0+10] - 1], 0x80 )\
-    MUNGE( nnzbak[1][2], h->mb.cache.non_zero_count[x264_scan8[16*1+ 8] - 1], 0x80 )\
-    MUNGE( nnzbak[1][3], h->mb.cache.non_zero_count[x264_scan8[16*1+10] - 1], 0x80 )\
-    MUNGE( nnzbak[2][2], h->mb.cache.non_zero_count[x264_scan8[16*2+ 8] - 1], 0x80 )\
-    MUNGE( nnzbak[2][3], h->mb.cache.non_zero_count[x264_scan8[16*2+10] - 1], 0x80 )\
+    MUNGE( nnzbak[0][2], h->mb.cache.non_zero_count[x264_scan8[16*0+ 8] - 1], 0x00 )\
+    MUNGE( nnzbak[0][3], h->mb.cache.non_zero_count[x264_scan8[16*0+10] - 1], 0x00 )\
+    MUNGE( nnzbak[1][2], h->mb.cache.non_zero_count[x264_scan8[16*1+ 8] - 1], 0x00 )\
+    MUNGE( nnzbak[1][3], h->mb.cache.non_zero_count[x264_scan8[16*1+10] - 1], 0x00 )\
+    MUNGE( nnzbak[2][2], h->mb.cache.non_zero_count[x264_scan8[16*2+ 8] - 1], 0x00 )\
+    MUNGE( nnzbak[2][3], h->mb.cache.non_zero_count[x264_scan8[16*2+10] - 1], 0x00 )\
 }\
-if( (h->mb.i_neighbour & MB_TOP) && !h->mb.mb_transform_size[h->mb.i_mb_top_xy] )\
+if( (h->mb.i_neighbour & MB_TOP) && !h->mb.mb_transform_size[h->mb.i_mb_top_xy] && !(h->mb.cbp[h->mb.i_mb_top_xy] & 0x1000) )\
 {\
-    MUNGE( M32( &nnzbak[0][4] ), M32( &h->mb.cache.non_zero_count[x264_scan8[16*0] - 8] ), 0x80808080U )\
-    MUNGE( M32( &nnzbak[1][4] ), M32( &h->mb.cache.non_zero_count[x264_scan8[16*1] - 8] ), 0x80808080U )\
-    MUNGE( M32( &nnzbak[2][4] ), M32( &h->mb.cache.non_zero_count[x264_scan8[16*2] - 8] ), 0x80808080U )\
+    MUNGE( M32( &nnzbak[0][4] ), M32( &h->mb.cache.non_zero_count[x264_scan8[16*0] - 8] ), 0x00000000U )\
+    MUNGE( M32( &nnzbak[1][4] ), M32( &h->mb.cache.non_zero_count[x264_scan8[16*1] - 8] ), 0x00000000U )\
+    MUNGE( M32( &nnzbak[2][4] ), M32( &h->mb.cache.non_zero_count[x264_scan8[16*2] - 8] ), 0x00000000U )\
 }
 
                 MUNGE_8x8_NNZ( BACKUP )
