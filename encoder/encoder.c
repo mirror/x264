@@ -889,13 +889,6 @@ static int validate_parameters( x264_t *h, int b_open )
         /* 8x8dct is not useful without RD in CAVLC lossless */
         if( !h->param.b_cabac && h->param.analyse.i_subpel_refine < 6 )
             h->param.analyse.b_transform_8x8 = 0;
-        h->param.analyse.inter &= ~X264_ANALYSE_I8x8;
-        h->param.analyse.intra &= ~X264_ANALYSE_I8x8;
-    }
-    if( i_csp >= X264_CSP_I444 && h->param.b_cabac )
-    {
-        /* Disable 8x8dct during 4:4:4+CABAC encoding for compatibility with libavcodec */
-        h->param.analyse.b_transform_8x8 = 0;
     }
     if( h->param.rc.i_rc_method == X264_RC_CQP )
     {
