@@ -558,9 +558,16 @@ void x264_predict_lossless_4x4( x264_t *h, pixel *p_dst, int p, int idx, int i_m
     pixel *p_src = h->mb.pic.p_fenc_plane[p] + block_idx_x[idx]*4 + block_idx_y[idx]*4 * stride;
 
     if( i_mode == I_PRED_4x4_V )
+    {
         h->mc.copy[PIXEL_4x4]( p_dst, FDEC_STRIDE, p_src-stride, stride, 4 );
+        memcpy( p_dst, p_dst-FDEC_STRIDE, 4*sizeof(pixel) );
+    }
     else if( i_mode == I_PRED_4x4_H )
+    {
         h->mc.copy[PIXEL_4x4]( p_dst, FDEC_STRIDE, p_src-1, stride, 4 );
+        for( int i = 0; i < 4; i++ )
+            p_dst[i*FDEC_STRIDE] = p_dst[i*FDEC_STRIDE-1];
+    }
     else
         h->predict_4x4[i_mode]( p_dst );
 }
@@ -571,9 +578,16 @@ void x264_predict_lossless_8x8( x264_t *h, pixel *p_dst, int p, int idx, int i_m
     pixel *p_src = h->mb.pic.p_fenc_plane[p] + (idx&1)*8 + (idx>>1)*8*stride;
 
     if( i_mode == I_PRED_8x8_V )
+    {
         h->mc.copy[PIXEL_8x8]( p_dst, FDEC_STRIDE, p_src-stride, stride, 8 );
+        memcpy( p_dst, &edge[16], 8*sizeof(pixel) );
+    }
     else if( i_mode == I_PRED_8x8_H )
+    {
         h->mc.copy[PIXEL_8x8]( p_dst, FDEC_STRIDE, p_src-1, stride, 8 );
+        for( int i = 0; i < 8; i++ )
+            p_dst[i*FDEC_STRIDE] = edge[14-i];
+    }
     else
         h->predict_8x8[i_mode]( p_dst, edge );
 }
@@ -581,12 +595,21 @@ void x264_predict_lossless_8x8( x264_t *h, pixel *p_dst, int p, int idx, int i_m
 void x264_predict_lossless_16x16( x264_t *h, int p, int i_mode )
 {
     int stride = h->fenc->i_stride[p] << MB_INTERLACED;
+    pixel *p_dst = h->mb.pic.p_fdec[p];
+
     if( i_mode == I_PRED_16x16_V )
-        h->mc.copy[PIXEL_16x16]( h->mb.pic.p_fdec[p], FDEC_STRIDE, h->mb.pic.p_fenc_plane[p]-stride, stride, 16 );
+    {
+        h->mc.copy[PIXEL_16x16]( p_dst, FDEC_STRIDE, h->mb.pic.p_fenc_plane[p]-stride, stride, 16 );
+        memcpy( p_dst, p_dst-FDEC_STRIDE, 16*sizeof(pixel) );
+    }
     else if( i_mode == I_PRED_16x16_H )
-        h->mc.copy_16x16_unaligned( h->mb.pic.p_fdec[p], FDEC_STRIDE, h->mb.pic.p_fenc_plane[p]-1, stride, 16 );
+    {
+        h->mc.copy_16x16_unaligned( p_dst, FDEC_STRIDE, h->mb.pic.p_fenc_plane[p]-1, stride, 16 );
+        for( int i = 0; i < 16; i++ )
+            p_dst[i*FDEC_STRIDE] = p_dst[i*FDEC_STRIDE-1];
+    }
     else
-        h->predict_16x16[i_mode]( h->mb.pic.p_fdec[p] );
+        h->predict_16x16[i_mode]( p_dst );
 }
 
 /*****************************************************************************
