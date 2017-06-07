@@ -31,7 +31,7 @@
 %include "x86util.asm"
 
 SECTION_RODATA 64
-; Permutation indices for AVX-512 zigzags are bit-packed to save cache
+; AVX-512 permutation indices are bit-packed to save cache
 %if HIGH_BIT_DEPTH
 scan_frame_avx512: dd 0x00bf0200, 0x00fd7484, 0x0033a611, 0x0069d822 ; bits 0-3:   4x4_frame
                    dd 0x00a3ca95, 0x00dd8d08, 0x00e75b8c, 0x00a92919 ; bits 4-8:   8x8_frame1
@@ -47,6 +47,10 @@ cavlc_shuf_avx512: dd 0x00018820, 0x000398a4, 0x0005a928, 0x0007b9ac ; bits 0-4:
                    dd 0x00010c01, 0x00031c85, 0x00052d09, 0x00073d8d ; bits 10-14: interleave3
                    dd 0x00094e11, 0x000b5e95, 0x000d6f19, 0x000f7f9d ; bits 15-19: interleave4
 %else
+dct_avx512:        dd 0x00000000, 0x00000104, 0x0000014c, 0x00000048 ; bits 0-4:   dct8x8_fenc
+                   dd 0x00000210, 0x00000314, 0x0000035c, 0x00000258 ; bits 5-9:   dct8x8_fdec
+                   dd 0x00000021, 0x00000125, 0x0000016d, 0x00000069
+                   dd 0x00000231, 0x00000335, 0x0000037d, 0x00000279
 scan_frame_avx512: dw 0x7000, 0x5484, 0x3811, 0x1c22, 0x3c95, 0x5908, 0x758c, 0x9119 ; bits 0-3:   4x4_frame
                    dw 0xaca6, 0xc833, 0xe447, 0xe8ba, 0xcd2d, 0xb19e, 0x960b, 0x7a8f ; bits 4-9:   8x8_frame1
                    dw 0x5e10, 0x7da0, 0x9930, 0xb4c0, 0xd050, 0xec60, 0xf0d0, 0xd540 ; bits 10-15: 8x8_frame2
@@ -653,6 +657,47 @@ cglobal sub4x4_dct
     DCT4x4_AVX512
     mova       [r0], m2
     mova    [r0+16], m0
+    RET
+
+INIT_ZMM avx512
+cglobal dct4x4x4_internal
+    punpcklbw  m0, m1, m4
+    punpcklbw  m2, m3, m4
+    punpckhbw  m1, m4
+    punpckhbw  m3, m4
+    DCT4x4_AVX512
+    mova       m1, m2
+    vshufi32x4 m2 {k2}, m0, m0, q2200 ; m0
+    vshufi32x4 m0 {k3}, m1, m1, q3311 ; m1
+    ret
+
+%macro DCT8x8_LOAD_FENC_AVX512 4 ; dst, perm, row1, row2
+    movu     %1,     [r1+%3*FENC_STRIDE]
+    vpermt2d %1, %2, [r1+%4*FENC_STRIDE]
+%endmacro
+
+%macro DCT8x8_LOAD_FDEC_AVX512 5 ; dst, perm, tmp, row1, row2
+    movu     %1,      [r2+(%4  )*FDEC_STRIDE]
+    vmovddup %1 {k1}, [r2+(%4+2)*FDEC_STRIDE]
+    movu     %3,      [r2+(%5  )*FDEC_STRIDE]
+    vmovddup %3 {k1}, [r2+(%5+2)*FDEC_STRIDE]
+    vpermt2d %1, %2, %3
+%endmacro
+
+cglobal sub8x8_dct, 3,3
+    mova       m0, [dct_avx512]
+    DCT8x8_LOAD_FENC_AVX512 m1, m0, 0, 4 ; 0 2 1 3
+    mov       r1d, 0xaaaaaaaa
+    kmovd      k1, r1d
+    psrld      m0, 5
+    DCT8x8_LOAD_FDEC_AVX512 m3, m0, m2, 0, 4
+    mov       r1d, 0xf0f0f0f0
+    kmovd      k2, r1d
+    pxor      xm4, xm4
+    knotw      k3, k2
+    call dct4x4x4_internal_avx512
+    mova     [r0], m0
+    mova  [r0+64], m1
     RET
 %endif ; HIGH_BIT_DEPTH
 

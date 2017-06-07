@@ -715,6 +715,7 @@ void x264_dct_init( int cpu, x264_dct_function_t *dctf )
     if( cpu&X264_CPU_AVX512 )
     {
         dctf->sub4x4_dct       = x264_sub4x4_dct_avx512;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_avx512;
     }
 #endif //HAVE_MMX
 
