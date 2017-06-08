@@ -420,7 +420,7 @@ static int x264_macroblock_tree_rescale_init( x264_t *h, x264_ratecontrol_t *rc 
     float dstdim[2] = {    h->param.i_width / 16.f,    h->param.i_height / 16.f};
     int srcdimi[2] = {ceil(srcdim[0]), ceil(srcdim[1])};
     int dstdimi[2] = {ceil(dstdim[0]), ceil(dstdim[1])};
-    if( PARAM_INTERLACED )
+    if( h->param.b_interlaced || h->param.b_fake_interlaced )
     {
         srcdimi[1] = (srcdimi[1]+1)&~1;
         dstdimi[1] = (dstdimi[1]+1)&~1;
