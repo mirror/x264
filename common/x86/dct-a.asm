@@ -610,6 +610,50 @@ cglobal sub16x16_dct, 3,3,6
     DCT4_1D 0, 1, 2, 3, 4
     STORE16_DCT_AVX2 0, 1, 2, 3, 4
     ret
+
+%macro DCT4x4_AVX512 0
+    psubw      m0, m2            ; 0 1
+    psubw      m1, m3            ; 3 2
+    SUMSUB_BA   w, 1, 0, 2
+    SBUTTERFLY wd, 1, 0, 2
+    paddw      m2, m1, m0
+    psubw      m3, m1, m0
+    paddw      m2 {k1}, m1       ; 0+1+2+3 0<<1+1-2-3<<1
+    psubw      m3 {k1}, m0       ; 0-1-2+3 0-1<<1+2<<1-3
+    shufps     m1, m2, m3, q2323 ; a3 b3 a2 b2 c3 d3 c2 d2
+    punpcklqdq m2, m3            ; a0 b0 a1 b1 c0 d0 c1 d1
+    SUMSUB_BA   w, 1, 2, 3
+    shufps     m3, m1, m2, q3131 ; a1+a2 b1+b2 c1+c2 d1+d2 a1-a2 b1-b2 b1-b2 d1-d2
+    shufps     m1, m2, q2020     ; a0+a3 b0+b3 c0+c3 d0+d3 a0-a3 b0-b3 c0-c3 d0-d3
+    paddw      m2, m1, m3
+    psubw      m0, m1, m3
+    paddw      m2 {k2}, m1       ; 0'+1'+2'+3' 0'<<1+1'-2'-3'<<1
+    psubw      m0 {k2}, m3       ; 0'-1'-2'+3' 0'-1'<<1+2'<<1-3'
+%endmacro
+
+INIT_XMM avx512
+cglobal sub4x4_dct
+    mov         eax, 0xf0aa
+    kmovw        k1, eax
+    PROLOGUE 3,3
+    movd         m0,      [r1+0*FENC_STRIDE]
+    movd         m2,      [r2+0*FDEC_STRIDE]
+    vpbroadcastd m0 {k1}, [r1+1*FENC_STRIDE]
+    vpbroadcastd m2 {k1}, [r2+1*FDEC_STRIDE]
+    movd         m1,      [r1+3*FENC_STRIDE]
+    movd         m3,      [r2+3*FDEC_STRIDE]
+    vpbroadcastd m1 {k1}, [r1+2*FENC_STRIDE]
+    vpbroadcastd m3 {k1}, [r2+2*FDEC_STRIDE]
+    kshiftrw     k2, k1, 8
+    pxor         m4, m4
+    punpcklbw    m0, m4
+    punpcklbw    m2, m4
+    punpcklbw    m1, m4
+    punpcklbw    m3, m4
+    DCT4x4_AVX512
+    mova       [r0], m2
+    mova    [r0+16], m0
+    RET
 %endif ; HIGH_BIT_DEPTH
 
 INIT_MMX
