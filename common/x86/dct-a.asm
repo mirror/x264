@@ -47,10 +47,10 @@ cavlc_shuf_avx512: dd 0x00018820, 0x000398a4, 0x0005a928, 0x0007b9ac ; bits 0-4:
                    dd 0x00010c01, 0x00031c85, 0x00052d09, 0x00073d8d ; bits 10-14: interleave3
                    dd 0x00094e11, 0x000b5e95, 0x000d6f19, 0x000f7f9d ; bits 15-19: interleave4
 %else
-dct_avx512:        dd 0x00000000, 0x00000104, 0x0000014c, 0x00000048 ; bits 0-4:   dct8x8_fenc
-                   dd 0x00000210, 0x00000314, 0x0000035c, 0x00000258 ; bits 5-9:   dct8x8_fdec
-                   dd 0x00000021, 0x00000125, 0x0000016d, 0x00000069
-                   dd 0x00000231, 0x00000335, 0x0000037d, 0x00000279
+dct_avx512:        dd 0x00000000, 0x00021104, 0x0006314c, 0x00042048 ; bits 0-4:   dct8x8_fenc
+                   dd 0x00008a10, 0x00029b14, 0x0006bb5c, 0x0004aa58 ; bits 5-9:   dct8x8_fdec
+                   dd 0x00004421, 0x00025525, 0x0006756d, 0x00046469 ; bits 10-13: dct16x16_fenc
+                   dd 0x0000ce31, 0x0002df35, 0x0006ff7d, 0x0004ee79 ; bits 14-18: dct16x16_fdec
 scan_frame_avx512: dw 0x7000, 0x5484, 0x3811, 0x1c22, 0x3c95, 0x5908, 0x758c, 0x9119 ; bits 0-3:   4x4_frame
                    dw 0xaca6, 0xc833, 0xe447, 0xe8ba, 0xcd2d, 0xb19e, 0x960b, 0x7a8f ; bits 4-9:   8x8_frame1
                    dw 0x5e10, 0x7da0, 0x9930, 0xb4c0, 0xd050, 0xec60, 0xf0d0, 0xd540 ; bits 10-15: 8x8_frame2
@@ -698,6 +698,31 @@ cglobal sub8x8_dct, 3,3
     call dct4x4x4_internal_avx512
     mova     [r0], m0
     mova  [r0+64], m1
+    RET
+
+%macro SUB4x16_DCT_AVX512 2 ; dst, src
+    vpermd   m1, m5, [r1+1*%2*64]
+    mova     m3,     [r2+2*%2*64]
+    vpermt2d m3, m6, [r2+2*%2*64+64]
+    call dct4x4x4_internal_avx512
+    mova [r0+%1*64    ], m0
+    mova [r0+%1*64+128], m1
+%endmacro
+
+cglobal sub16x16_dct
+    psrld    m5, [dct_avx512], 10
+    mov     eax, 0xaaaaaaaa
+    kmovd    k1, eax
+    mov     eax, 0xf0f0f0f0
+    kmovd    k2, eax
+    PROLOGUE 3,3
+    pxor    xm4, xm4
+    knotw    k3, k2
+    psrld    m6, m5, 4
+    SUB4x16_DCT_AVX512 0, 0
+    SUB4x16_DCT_AVX512 1, 1
+    SUB4x16_DCT_AVX512 4, 2
+    SUB4x16_DCT_AVX512 5, 3
     RET
 %endif ; HIGH_BIT_DEPTH
 
