@@ -749,6 +749,40 @@ cglobal sub8x8_dct_dc, 3,3
     movhps     [r0], xmm0
     RET
 
+cglobal sub8x16_dct_dc, 3,3
+    mova         m5, [dct_avx512]
+    DCT8x8_LOAD_FENC_AVX512 m0, m5, 0, 8  ; 0 4 1 5
+    DCT8x8_LOAD_FENC_AVX512 m1, m5, 4, 12 ; 2 6 3 7
+    mov         r1d, 0xaa
+    kmovb        k1, r1d
+    psrld        m5, 5
+    DCT8x8_LOAD_FDEC_AVX512 m2, m5, m4, 0, 8
+    DCT8x8_LOAD_FDEC_AVX512 m3, m5, m4, 4, 12
+    pxor        xm4, xm4
+    psadbw       m0, m4
+    psadbw       m1, m4
+    psadbw       m2, m4
+    psadbw       m3, m4
+    psubw        m0, m2
+    psubw        m1, m3
+    SBUTTERFLY  qdq, 0, 1, 2
+    paddw        m0, m1
+    vpmovqw    xmm0, m0         ; 0 2 4 6 1 3 5 7
+    psrlq      xmm2, xmm0, 32
+    psubw      xmm1, xmm0, xmm2 ; 0-4 2-6 1-5 3-7
+    paddw      xmm0, xmm2       ; 0+4 2+6 1+5 3+7
+    punpckhdq  xmm2, xmm0, xmm1
+    punpckldq  xmm0, xmm1
+    psubw      xmm1, xmm0, xmm2 ; 0-1+4-5 2-3+6-7 0-1-4+5 2-3-6+7
+    paddw      xmm0, xmm2       ; 0+1+4+5 2+3+6+7 0+1-4-5 2+3-6-7
+    punpcklwd  xmm0, xmm1
+    psrlq      xmm2, xmm0, 32
+    psubw      xmm1, xmm0, xmm2 ; 0+1-2-3+4+5-6-7 0-1-2+3+4-5-6+7 0+1-2-3-4-5+6+7 0-1-2+3-4+5+6-7
+    paddw      xmm0, xmm2       ; 0+1+2+3+4+5+6+7 0-1+2-3+4-5+6-7 0+1+2+3-4-5-6-7 0-1+2-3-4+5-6+7
+    shufps     xmm0, xmm1, q0220
+    mova       [r0], xmm0
+    RET
+
 %macro SARSUMSUB 3 ; a, b, tmp
     mova    m%3, m%1
     vpsraw  m%1 {k1}, 1
