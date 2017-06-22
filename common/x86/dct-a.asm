@@ -725,6 +725,30 @@ cglobal sub16x16_dct
     SUB4x16_DCT_AVX512 5, 3
     RET
 
+cglobal sub8x8_dct_dc, 3,3
+    mova         m3, [dct_avx512]
+    DCT8x8_LOAD_FENC_AVX512 m0, m3, 0, 4 ; 0 2 1 3
+    mov         r1d, 0xaa
+    kmovb        k1, r1d
+    psrld        m3, 5
+    DCT8x8_LOAD_FDEC_AVX512 m1, m3, m2, 0, 4
+    pxor        xm3, xm3
+    psadbw       m0, m3
+    psadbw       m1, m3
+    psubw        m0, m1
+    vpmovqw    xmm0, m0
+    vprold     xmm1, xmm0, 16
+    paddw      xmm0, xmm1       ; 0 0 2 2 1 1 3 3
+    punpckhqdq xmm2, xmm0, xmm0
+    psubw      xmm1, xmm0, xmm2 ; 0-1 0-1 2-3 2-3
+    paddw      xmm0, xmm2       ; 0+1 0+1 2+3 2+3
+    punpckldq  xmm0, xmm1       ; 0+1 0+1 0-1 0-1 2+3 2+3 2-3 2-3
+    punpcklqdq xmm1, xmm0, xmm0
+    psubw      xmm0 {k1}, xm3, xmm0
+    paddw      xmm0, xmm1       ; 0+1+2+3 0+1-2-3 0-1+2-3 0-1-2+3
+    movhps     [r0], xmm0
+    RET
+
 %macro SARSUMSUB 3 ; a, b, tmp
     mova    m%3, m%1
     vpsraw  m%1 {k1}, 1
