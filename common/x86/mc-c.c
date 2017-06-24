@@ -871,6 +871,9 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     {
         pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_avx512;
         pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_avx512;
+        pf->avg[PIXEL_8x16]  = x264_pixel_avg_8x16_avx512;
+        pf->avg[PIXEL_8x8]   = x264_pixel_avg_8x8_avx512;
+        pf->avg[PIXEL_8x4]   = x264_pixel_avg_8x4_avx512;
     }
 #endif // HIGH_BIT_DEPTH
 
