@@ -83,11 +83,11 @@ cextern deinterleave_shufd
     %endmacro
 %endif
 
-%macro AVG_END 0
-    lea  t4, [t4+t5*2*SIZEOF_PIXEL]
+%macro AVG_END 0-1 2 ; rows
     lea  t2, [t2+t3*2*SIZEOF_PIXEL]
+    lea  t4, [t4+t5*2*SIZEOF_PIXEL]
     lea  t0, [t0+t1*2*SIZEOF_PIXEL]
-    sub eax, 2
+    sub eax, %1
     jg .height_loop
     RET
 %endmacro
@@ -147,17 +147,24 @@ cextern deinterleave_shufd
 %endmacro
 
 %macro BIWEIGHT_START_SSSE3 0
-    movzx  t6d, byte r6m ; FIXME x86_64
-    mov    t7d, 64
-    sub    t7d, t6d
-    shl    t7d, 8
-    add    t6d, t7d
-    mova    m4, [pw_512]
-    movd   xm3, t6d
-%if cpuflag(avx2)
-    vpbroadcastw m3, xm3
+    movzx         t6d, byte r6m ; FIXME x86_64
+%if mmsize > 16
+    vbroadcasti128 m4, [pw_512]
 %else
-    SPLATW  m3, m3   ; weight_dst,src
+    mova           m4, [pw_512]
+%endif
+    lea           t7d, [t6+(64<<8)]
+    shl           t6d, 8
+    sub           t7d, t6d
+%if cpuflag(avx512)
+    vpbroadcastw   m3, t7d
+%else
+    movd          xm3, t7d
+%if cpuflag(avx2)
+    vpbroadcastw   m3, xm3
+%else
+    SPLATW         m3, m3   ; weight_dst,src
+%endif
 %endif
 %endmacro
 
@@ -268,6 +275,34 @@ cglobal pixel_avg_weight_w16
     mova    [t0], xm0
     vextracti128 [t0+t1], m0, 1
     AVG_END
+
+INIT_ZMM avx512
+cglobal pixel_avg_weight_w16
+    BIWEIGHT_START
+    AVG_START 5
+.height_loop:
+    movu        xm0, [t2]
+    movu        xm1, [t4]
+    vinserti128 ym0, [t2+t3], 1
+    vinserti128 ym1, [t4+t5], 1
+    lea          t2, [t2+t3*2]
+    lea          t4, [t4+t5*2]
+    vinserti32x4 m0, [t2], 2
+    vinserti32x4 m1, [t4], 2
+    vinserti32x4 m0, [t2+t3], 3
+    vinserti32x4 m1, [t4+t5], 3
+    SBUTTERFLY   bw, 0, 1, 2
+    pmaddubsw    m0, m3
+    pmaddubsw    m1, m3
+    pmulhrsw     m0, m4
+    pmulhrsw     m1, m4
+    packuswb     m0, m1
+    mova       [t0], xm0
+    vextracti128 [t0+t1], ym0, 1
+    lea          t0, [t0+t1*2]
+    vextracti32x4 [t0], m0, 2
+    vextracti32x4 [t0+t1], m0, 3
+    AVG_END 4
 %endif ;HIGH_BIT_DEPTH
 
 ;=============================================================================
@@ -736,6 +771,9 @@ AVGH  4,  4
 AVGH  4,  2
 INIT_XMM avx2
 AVG_FUNC 16, movdqu, movdqa
+AVGH 16, 16
+AVGH 16,  8
+INIT_XMM avx512
 AVGH 16, 16
 AVGH 16,  8
 

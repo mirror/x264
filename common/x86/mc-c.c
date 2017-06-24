@@ -32,7 +32,8 @@
     void func##_mmx2 args;\
     void func##_sse2 args;\
     void func##_ssse3 args;\
-    void func##_avx2 args;
+    void func##_avx2 args;\
+    void func##_avx512 args;
 
 DECL_SUF( x264_pixel_avg_16x16, ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
 DECL_SUF( x264_pixel_avg_16x8,  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
@@ -864,6 +865,12 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         pf->integral_init4h = x264_integral_init4h_avx2;
         pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx2;
         pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_avx2;
+    }
+
+    if( cpu&X264_CPU_AVX512 )
+    {
+        pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_avx512;
+        pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_avx512;
     }
 #endif // HIGH_BIT_DEPTH
 
