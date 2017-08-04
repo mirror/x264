@@ -866,12 +866,17 @@ if [ $compiler = GNU -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
     if cc_check '' -mpreferred-stack-boundary=6 ; then
         CFLAGS="$CFLAGS -mpreferred-stack-boundary=6"
         stack_alignment=64
-    elif cc_check '' -mpreferred-stack-boundary=5 ; then
-        CFLAGS="$CFLAGS -mpreferred-stack-boundary=5"
-        stack_alignment=32
-    elif [ $stack_alignment -lt 16 ] && cc_check '' -mpreferred-stack-boundary=4 ; then
-        CFLAGS="$CFLAGS -mpreferred-stack-boundary=4"
-        stack_alignment=16
+    elif cc_check '' -mstack-alignment=64 ; then
+        CFLAGS="$CFLAGS -mstack-alignment=64"
+        stack_alignment=64
+    elif [ $stack_alignment -lt 16 ] ; then
+        if cc_check '' -mpreferred-stack-boundary=4 ; then
+            CFLAGS="$CFLAGS -mpreferred-stack-boundary=4"
+            stack_alignment=16
+        elif cc_check '' -mstack-alignment=16 ; then
+            CFLAGS="$CFLAGS -mstack-alignment=16"
+            stack_alignment=16
+        fi
     fi
 elif [ $compiler = ICC -a $ARCH = X86 ]; then
     # icc on linux has various degrees of mod16 stack support
