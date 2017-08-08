@@ -409,6 +409,7 @@ void x264_param_default( x264_param_t *param )
     param->b_pic_struct = 0;
     param->b_fake_interlaced = 0;
     param->i_frame_packing = -1;
+    param->i_alternative_transfer = 2; /* undef */
     param->b_opencl = 0;
     param->i_opencl_device = 0;
     param->opencl_device_id = NULL;
@@ -936,6 +937,8 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->vui.i_chroma_loc = atoi(value);
         b_error = ( p->vui.i_chroma_loc < 0 || p->vui.i_chroma_loc > 5 );
     }
+    OPT("alternative-transfer")
+        b_error |= parse_enum( value, x264_transfer_names, &p->i_alternative_transfer );
     OPT("fps")
     {
         if( sscanf( value, "%u/%u", &p->i_fps_num, &p->i_fps_den ) != 2 )

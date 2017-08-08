@@ -3636,6 +3636,15 @@ int     x264_encoder_encode( x264_t *h,
         overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;
     }
 
+    if( h->param.i_alternative_transfer != 2 )
+    {
+        nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
+        x264_sei_alternative_transfer_write( h, &h->out.bs );
+        if( nal_end( h ) )
+            return -1;
+        overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;
+    }
+
     /* generate sei pic timing */
     if( h->sps->vui.b_pic_struct_present || h->sps->vui.b_nal_hrd_parameters_present )
     {

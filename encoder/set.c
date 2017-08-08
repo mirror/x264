@@ -690,6 +690,23 @@ void x264_sei_frame_packing_write( x264_t *h, bs_t *s )
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_FRAME_PACKING );
 }
 
+void x264_sei_alternative_transfer_write( x264_t *h, bs_t *s )
+{
+    bs_t q;
+    ALIGNED_4( uint8_t tmp_buf[100] );
+    M32( tmp_buf ) = 0; // shut up gcc
+    bs_init( &q, tmp_buf, 100 );
+
+    bs_realign( &q );
+
+    bs_write ( &q, 8, h->param.i_alternative_transfer ); // preferred_transfer_characteristics
+
+    bs_align_10( &q );
+    bs_flush( &q );
+
+    x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_ALTERNATIVE_TRANSFER );
+}
+
 void x264_filler_write( x264_t *h, bs_t *s, int filler )
 {
     bs_realign( s );

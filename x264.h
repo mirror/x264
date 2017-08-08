@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 154
+#define X264_BUILD 155
 
 /* Application developers planning to link against a shared library version of
  * libx264 from a Microsoft Visual Studio or similar development environment
@@ -459,6 +459,9 @@ typedef struct x264_param_t
 
     /* frame packing arrangement flag */
     int i_frame_packing;
+
+    /* alternative transfer SEI */
+    int i_alternative_transfer;
 
     /* Muxing parameters */
     int b_aud;                  /* generate access unit delimiters */
