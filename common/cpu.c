@@ -127,7 +127,6 @@ uint32_t x264_cpu_detect( void )
     uint32_t eax, ebx, ecx, edx;
     uint32_t vendor[4] = {0};
     uint32_t max_extended_cap, max_basic_cap;
-    uint64_t xcr0 = 0;
 
 #if !ARCH_X86_64
     if( !x264_cpu_cpuid_test() )
@@ -158,34 +157,29 @@ uint32_t x264_cpu_detect( void )
 
     if( ecx&0x08000000 ) /* XGETBV supported and XSAVE enabled by OS */
     {
-        xcr0 = x264_cpu_xgetbv( 0 );
+        uint64_t xcr0 = x264_cpu_xgetbv( 0 );
         if( (xcr0&0x6) == 0x6 ) /* XMM/YMM state */
         {
             if( ecx&0x10000000 )
                 cpu |= X264_CPU_AVX;
             if( ecx&0x00001000 )
                 cpu |= X264_CPU_FMA3;
-        }
-    }
 
-    if( max_basic_cap >= 7 )
-    {
-        x264_cpu_cpuid( 7, &eax, &ebx, &ecx, &edx );
-
-        if( ebx&0x00000008 )
-            cpu |= X264_CPU_BMI1;
-        if( ebx&0x00000100 )
-            cpu |= X264_CPU_BMI2;
-
-        if( (xcr0&0x6) == 0x6 ) /* XMM/YMM state */
-        {
-            if( ebx&0x00000020 )
-                cpu |= X264_CPU_AVX2;
-
-            if( (xcr0&0xE0) == 0xE0 ) /* OPMASK/ZMM state */
+            if( max_basic_cap >= 7 )
             {
-                if( (ebx&0xD0030000) == 0xD0030000 )
-                    cpu |= X264_CPU_AVX512;
+                x264_cpu_cpuid( 7, &eax, &ebx, &ecx, &edx );
+                if( ebx&0x00000008 )
+                    cpu |= X264_CPU_BMI1;
+                if( ebx&0x00000100 )
+                    cpu |= X264_CPU_BMI2;
+                if( ebx&0x00000020 )
+                    cpu |= X264_CPU_AVX2;
+
+                if( (xcr0&0xE0) == 0xE0 ) /* OPMASK/ZMM state */
+                {
+                    if( (ebx&0xD0030000) == 0xD0030000 )
+                        cpu |= X264_CPU_AVX512;
+                }
             }
         }
     }
