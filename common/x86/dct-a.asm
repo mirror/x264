@@ -510,8 +510,7 @@ cglobal add8x8_idct, 2,3,8
     add    r0, 4*FDEC_STRIDE
     pxor   m7, m7
     TAIL_CALL .skip_prologue, 0
-global current_function %+ .skip_prologue
-.skip_prologue:
+cglobal_label .skip_prologue
     ; TRANSPOSE4x4Q
     mova       xm0, [r1+ 0]
     mova       xm1, [r1+32]
