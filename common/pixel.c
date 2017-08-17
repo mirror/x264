@@ -503,6 +503,7 @@ SATD_X_DECL6( _ssse3_atom )
 SATD_X_DECL7( _sse4 )
 SATD_X_DECL7( _avx )
 SATD_X_DECL7( _xop )
+SATD_X_DECL7( _avx512 )
 #endif // !HIGH_BIT_DEPTH
 #endif
 
@@ -1363,6 +1364,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         INIT7( sad_x3, _avx512 );
         INIT7( sad_x4, _avx512 );
         INIT8( satd, _avx512 );
+        INIT7( satd_x3, _avx512 );
+        INIT7( satd_x4, _avx512 );
         pixf->sa8d[PIXEL_8x8] = x264_pixel_sa8d_8x8_avx512;
         pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_avx512;
         pixf->var[PIXEL_8x16]  = x264_pixel_var_8x16_avx512;
