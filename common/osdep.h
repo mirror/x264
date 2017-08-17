@@ -72,11 +72,11 @@ int x264_vsnprintf( char *s, size_t n, const char *fmt, va_list arg );
 #define isfinite finite
 #endif
 
-#ifdef _WIN32
-#ifndef strtok_r
+#if !HAVE_STRTOK_R && !defined(strtok_r)
 #define strtok_r(str,delim,save) strtok(str,delim)
 #endif
 
+#ifdef _WIN32
 #define utf8_to_utf16( utf8, utf16 )\
     MultiByteToWideChar( CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, utf16, sizeof(utf16)/sizeof(wchar_t) )
 FILE *x264_fopen( const char *filename, const char *mode );

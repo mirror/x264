@@ -377,7 +377,7 @@ NL="
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
              LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
-             MSA MMAP WINRT VSX ARM_INLINE_ASM"
+             MSA MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R"
 
 # parse options
 
@@ -1042,6 +1042,10 @@ fi
 
 if cc_check "math.h" "-Werror" "return log2f(2);" ; then
     define HAVE_LOG2F
+fi
+
+if cc_check 'string.h' '' 'strtok_r(0, 0, 0);' ; then
+    define HAVE_STRTOK_R
 fi
 
 if [ "$SYS" != "WINDOWS" ] && cpp_check "sys/mman.h unistd.h" "" "defined(MAP_PRIVATE)"; then
