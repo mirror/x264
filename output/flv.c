@@ -196,7 +196,7 @@ static int write_headers( hnd_t handle, x264_nal_t *p_nal )
     flv_put_be24( c, 0 ); // StreamID - Always 0
     p_flv->start = c->d_cur; // needed for overwriting length
 
-    flv_put_byte( c, 7 | FLV_FRAME_KEY ); // Frametype and CodecID
+    flv_put_byte( c, FLV_FRAME_KEY | FLV_CODECID_H264 ); // FrameType and CodecID
     flv_put_byte( c, 0 ); // AVC sequence header
     flv_put_be24( c, 0 ); // composition time
 
@@ -279,7 +279,7 @@ static int write_frame( hnd_t handle, uint8_t *p_nalu, int i_size, x264_picture_
     flv_put_be24( c, 0 );
 
     p_flv->start = c->d_cur;
-    flv_put_byte( c, p_picture->b_keyframe ? FLV_FRAME_KEY : FLV_FRAME_INTER );
+    flv_put_byte( c, (p_picture->b_keyframe ? FLV_FRAME_KEY : FLV_FRAME_INTER) | FLV_CODECID_H264 );
     flv_put_byte( c, 1 ); // AVC NALU
     flv_put_be24( c, offset );
 
