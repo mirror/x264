@@ -817,21 +817,34 @@ static int validate_parameters( x264_t *h, int b_open )
         memcpy( h->param.cqm_4ic, avcintra_lut[type][res][i].cqm_4ic, sizeof(h->param.cqm_4ic) );
         memcpy( h->param.cqm_8iy, avcintra_lut[type][res][i].cqm_8iy, sizeof(h->param.cqm_8iy) );
 
-        /* Need exactly 10 slices of equal MB count... why?  $deity knows... */
-        h->param.i_slice_max_mbs = ((h->param.i_width + 15) / 16) * ((h->param.i_height + 15) / 16) / 10;
-        h->param.i_slice_max_size = 0;
-        /* The slice structure only allows a maximum of 2 threads for 1080i/p
-         * and 1 or 5 threads for 720p */
-        if( h->param.b_sliced_threads )
+        /* Sony XAVC flavor much more simple */
+        if( h->param.i_avcintra_flavor == X264_AVCINTRA_FLAVOR_SONY )
         {
-            if( res )
-                h->param.i_threads = X264_MIN( 2, h->param.i_threads );
-            else
+            h->param.i_slice_count = 8;
+            /* Sony XAVC unlike AVC-Intra doesn't seem to have a QP floor */
+        }
+        else
+        {
+            /* Need exactly 10 slices of equal MB count... why?  $deity knows... */
+            h->param.i_slice_max_mbs = ((h->param.i_width + 15) / 16) * ((h->param.i_height + 15) / 16) / 10;
+            h->param.i_slice_max_size = 0;
+            /* The slice structure only allows a maximum of 2 threads for 1080i/p
+             * and 1 or 5 threads for 720p */
+            if( h->param.b_sliced_threads )
             {
-                h->param.i_threads = X264_MIN( 5, h->param.i_threads );
-                if( h->param.i_threads < 5 )
-                    h->param.i_threads = 1;
+                if( res )
+                    h->param.i_threads = X264_MIN( 2, h->param.i_threads );
+                else
+                {
+                    h->param.i_threads = X264_MIN( 5, h->param.i_threads );
+                    if( h->param.i_threads < 5 )
+                        h->param.i_threads = 1;
+                }
             }
+
+            /* Official encoder doesn't appear to go under 13
+             * and Avid cannot handle negative QPs */
+            h->param.rc.i_qp_min = X264_MAX( h->param.rc.i_qp_min, QP_BD_OFFSET + 1 );
         }
 
         if( type )
@@ -841,10 +854,6 @@ static int validate_parameters( x264_t *h, int b_open )
             h->param.vui.i_sar_width  = 4;
             h->param.vui.i_sar_height = 3;
         }
-
-        /* Official encoder doesn't appear to go under 13
-         * and Avid cannot handle negative QPs */
-        h->param.rc.i_qp_min = X264_MAX( h->param.rc.i_qp_min, QP_BD_OFFSET + 1 );
     }
 
     h->param.rc.f_rf_constant = x264_clip3f( h->param.rc.f_rf_constant, -QP_BD_OFFSET, 51 );
@@ -3582,7 +3591,13 @@ int     x264_encoder_encode( x264_t *h,
             if( nal_end( h ) )
                 return -1;
             if( h->param.i_avcintra_class )
-                h->out.nal[h->out.i_nal-1].i_padding = 256 - h->out.nal[h->out.i_nal-1].i_payload - NALU_OVERHEAD;
+            {
+                int total_len = 256;
+                /* Sony XAVC uses an oversized PPS instead of SEI padding */
+                if( h->param.i_avcintra_flavor == X264_AVCINTRA_FLAVOR_SONY )
+                    total_len += h->param.i_height == 1080 ? 18*512 : 10*512;
+                h->out.nal[h->out.i_nal-1].i_padding = total_len - h->out.nal[h->out.i_nal-1].i_payload - NALU_OVERHEAD;
+            }
             overhead += h->out.nal[h->out.i_nal-1].i_payload + h->out.nal[h->out.i_nal-1].i_padding + NALU_OVERHEAD;
         }
 
@@ -3689,7 +3704,7 @@ int     x264_encoder_encode( x264_t *h,
         h->i_cpb_delay_pir_offset_next = h->fenc->i_cpb_delay;
 
     /* Filler space: 10 or 18 SEIs' worth of space, depending on resolution */
-    if( h->param.i_avcintra_class )
+    if( h->param.i_avcintra_class && h->param.i_avcintra_flavor != X264_AVCINTRA_FLAVOR_SONY )
     {
         /* Write an empty filler NAL to mimic the AUD in the P2 format*/
         nal_start( h, NAL_FILLER, NAL_PRIORITY_DISPOSABLE );

@@ -429,6 +429,8 @@ static void param_default( x264_param_t *param )
     param->i_opencl_device = 0;
     param->opencl_device_id = NULL;
     param->psz_clbin_file = NULL;
+    param->i_avcintra_class = 0;
+    param->i_avcintra_flavor = X264_AVCINTRA_FLAVOR_PANASONIC;
 }
 
 void x264_param_default( x264_param_t *param )
@@ -955,6 +957,8 @@ static int param_parse( x264_param_t *p, const char *name, const char *value )
         p->b_bluray_compat = atobool(value);
     OPT("avcintra-class")
         p->i_avcintra_class = atoi(value);
+    OPT("avcintra-flavor")
+        b_error |= parse_enum( value, x264_avcintra_flavor_names, &p->i_avcintra_flavor );
     OPT("sar")
     {
         b_error = ( 2 != sscanf( value, "%d:%d", &p->vui.i_sar_width, &p->vui.i_sar_height ) &&

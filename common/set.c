@@ -94,7 +94,7 @@ int x264_cqm_init( x264_t *h )
         int start = w == 8 ? 4 : 0;\
         int j;\
         for( j = 0; j < i; j++ )\
-            if( !memcmp( h->pps->scaling_list[i+start], h->pps->scaling_list[j+start], size*sizeof(uint8_t) ) )\
+            if( !memcmp( h->sps->scaling_list[i+start], h->sps->scaling_list[j+start], size*sizeof(uint8_t) ) )\
                 break;\
         if( j < i )\
         {\
@@ -110,7 +110,7 @@ int x264_cqm_init( x264_t *h )
         }\
         for( j = 0; j < i; j++ )\
             if( deadzone[j] == deadzone[i] &&\
-                !memcmp( h->pps->scaling_list[i+start], h->pps->scaling_list[j+start], size*sizeof(uint8_t) ) )\
+                !memcmp( h->sps->scaling_list[i+start], h->sps->scaling_list[j+start], size*sizeof(uint8_t) ) )\
                 break;\
         if( j < i )\
         {\
@@ -148,14 +148,14 @@ int x264_cqm_init( x264_t *h )
         for( int i_list = 0; i_list < 4; i_list++ )
             for( int i = 0; i < 16; i++ )
             {
-                h->dequant4_mf[i_list][q][i] = def_dequant4[q][i] * h->pps->scaling_list[i_list][i];
-                     quant4_mf[i_list][q][i] = DIV(def_quant4[q][i] * 16, h->pps->scaling_list[i_list][i]);
+                h->dequant4_mf[i_list][q][i] = def_dequant4[q][i] * h->sps->scaling_list[i_list][i];
+                     quant4_mf[i_list][q][i] = DIV(def_quant4[q][i] * 16, h->sps->scaling_list[i_list][i]);
             }
         for( int i_list = 0; i_list < num_8x8_lists; i_list++ )
             for( int i = 0; i < 64; i++ )
             {
-                h->dequant8_mf[i_list][q][i] = def_dequant8[q][i] * h->pps->scaling_list[4+i_list][i];
-                     quant8_mf[i_list][q][i] = DIV(def_quant8[q][i] * 16, h->pps->scaling_list[4+i_list][i]);
+                h->dequant8_mf[i_list][q][i] = def_dequant8[q][i] * h->sps->scaling_list[4+i_list][i];
+                     quant8_mf[i_list][q][i] = DIV(def_quant8[q][i] * 16, h->sps->scaling_list[4+i_list][i]);
             }
     }
     for( int q = 0; q <= QP_MAX_SPEC; q++ )

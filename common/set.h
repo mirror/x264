@@ -140,6 +140,10 @@ typedef struct
     int b_qpprime_y_zero_transform_bypass;
     int i_chroma_format_idc;
 
+    int b_avcintra;
+    int i_cqm_preset;
+    const uint8_t *scaling_list[8]; /* could be 12, but we don't allow separate Cb/Cr lists */
+
 } x264_sps_t;
 
 typedef struct
@@ -168,9 +172,6 @@ typedef struct
     int b_redundant_pic_cnt;
 
     int b_transform_8x8_mode;
-
-    int i_cqm_preset;
-    const uint8_t *scaling_list[8]; /* could be 12, but we don't allow separate Cb/Cr lists */
 
 } x264_pps_t;
 

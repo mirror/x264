@@ -935,6 +935,8 @@ static void help( x264_param_t *defaults, int longhelp )
     H1( "      --bluray-compat         Enable compatibility hacks for Blu-ray support\n" );
     H1( "      --avcintra-class <integer> Use compatibility hacks for AVC-Intra class\n"
         "                                  - 50, 100, 200\n" );
+    H1( "      --avcintra-flavor <string> AVC-Intra flavor [\"%s\"]\n"
+        "                                  - %s\n", x264_avcintra_flavor_names[0], stringify_names( buf, x264_avcintra_flavor_names ) );
     H1( "      --stitchable            Don't optimize headers based on video content\n"
         "                              Ensures ability to recombine a segmented encode\n" );
     H1( "\n" );
@@ -1038,6 +1040,7 @@ static struct option long_options[] =
     { "open-gop",          no_argument, NULL, 0 },
     { "bluray-compat",     no_argument, NULL, 0 },
     { "avcintra-class", required_argument, NULL, 0 },
+    { "avcintra-flavor", required_argument, NULL, 0 },
     { "min-keyint",  required_argument, NULL, 'i' },
     { "keyint",      required_argument, NULL, 'I' },
     { "intra-refresh",     no_argument, NULL, 0 },

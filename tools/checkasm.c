@@ -861,7 +861,7 @@ static int check_dct( int cpu_ref, int cpu_new )
     h->param.analyse.i_luma_deadzone[1] = 0;
     h->param.analyse.b_transform_8x8 = 1;
     for( int i = 0; i < 6; i++ )
-        h->pps->scaling_list[i] = x264_cqm_flat16;
+        h->sps->scaling_list[i] = x264_cqm_flat16;
     x264_cqm_init( h );
     x264_quant_init( h, 0, &qf );
 
@@ -2037,14 +2037,14 @@ static int check_quant( int cpu_ref, int cpu_new )
         if( i_cqm == 0 )
         {
             for( int i = 0; i < 6; i++ )
-                h->pps->scaling_list[i] = x264_cqm_flat16;
-            h->param.i_cqm_preset = h->pps->i_cqm_preset = X264_CQM_FLAT;
+                h->sps->scaling_list[i] = x264_cqm_flat16;
+            h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_FLAT;
         }
         else if( i_cqm == 1 )
         {
             for( int i = 0; i < 6; i++ )
-                h->pps->scaling_list[i] = x264_cqm_jvt[i];
-            h->param.i_cqm_preset = h->pps->i_cqm_preset = X264_CQM_JVT;
+                h->sps->scaling_list[i] = x264_cqm_jvt[i];
+            h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_JVT;
         }
         else
         {
@@ -2056,8 +2056,8 @@ static int check_quant( int cpu_ref, int cpu_new )
                 for( int i = 0; i < 64; i++ )
                     cqm_buf[i] = 1;
             for( int i = 0; i < 6; i++ )
-                h->pps->scaling_list[i] = cqm_buf;
-            h->param.i_cqm_preset = h->pps->i_cqm_preset = X264_CQM_CUSTOM;
+                h->sps->scaling_list[i] = cqm_buf;
+            h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_CUSTOM;
         }
 
         h->param.rc.i_qp_min = 0;
