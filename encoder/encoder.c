@@ -1527,6 +1527,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     h->frames.i_largest_pts = h->frames.i_second_largest_pts = -1;
     h->frames.i_poc_last_open_gop = -1;
 
+    CHECKED_MALLOCZERO( h->cost_table, sizeof(*h->cost_table) );
     CHECKED_MALLOCZERO( h->frames.unused[0], (h->frames.i_delay + 3) * sizeof(x264_frame_t *) );
     /* Allocate room for max refs plus a few extra just in case. */
     CHECKED_MALLOCZERO( h->frames.unused[1], (h->i_thread_frames + X264_REF_MAX + 4) * sizeof(x264_frame_t *) );
@@ -4364,6 +4365,7 @@ void    x264_encoder_close  ( x264_t *h )
     x264_free( h->nal_buffer );
     x264_free( h->reconfig_h );
     x264_analyse_free_costs( h );
+    x264_free( h->cost_table );
 
     if( h->i_thread_frames > 1 )
         h = h->thread[h->i_thread_phase];

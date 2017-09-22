@@ -140,10 +140,6 @@ static const uint8_t i_sub_mb_p_cost_table[4] =
 
 static void analyse_update_cache( x264_t *h, x264_mb_analysis_t *a );
 
-static uint16_t x264_cost_ref[QP_MAX+1][3][33];
-static UNUSED x264_pthread_mutex_t cost_ref_mutex = X264_PTHREAD_MUTEX_INITIALIZER;
-static uint16_t x264_cost_i4x4_mode[(QP_MAX+2)*32];
-
 static int init_costs( x264_t *h, float *logs, int qp )
 {
     if( h->cost_mv[qp] )
@@ -159,11 +155,9 @@ static int init_costs( x264_t *h, float *logs, int qp )
         h->cost_mv[qp][-i] =
         h->cost_mv[qp][i]  = X264_MIN( (int)(lambda * logs[i] + .5f), UINT16_MAX );
     }
-    x264_pthread_mutex_lock( &cost_ref_mutex );
     for( int i = 0; i < 3; i++ )
         for( int j = 0; j < 33; j++ )
-            x264_cost_ref[qp][i][j] = i ? X264_MIN( lambda * bs_size_te( i, j ), UINT16_MAX ) : 0;
-    x264_pthread_mutex_unlock( &cost_ref_mutex );
+            h->cost_table->ref[qp][i][j] = i ? X264_MIN( lambda * bs_size_te( i, j ), UINT16_MAX ) : 0;
     if( h->param.analyse.i_me_method >= X264_ME_ESA && !h->cost_mv_fpel[qp][0] )
     {
         for( int j = 0; j < 4; j++ )
@@ -174,7 +168,7 @@ static int init_costs( x264_t *h, float *logs, int qp )
                 h->cost_mv_fpel[qp][j][i] = h->cost_mv[qp][i*4+j];
         }
     }
-    uint16_t *cost_i4x4_mode = (uint16_t*)ALIGN((intptr_t)x264_cost_i4x4_mode,64) + qp*32;
+    uint16_t *cost_i4x4_mode = h->cost_table->i4x4_mode[qp];
     for( int i = 0; i < 17; i++ )
         cost_i4x4_mode[i] = 3*lambda*(i!=8);
     return 0;
@@ -252,8 +246,8 @@ void x264_analyse_weight_frame( x264_t *h, int end )
 static void mb_analyse_load_costs( x264_t *h, x264_mb_analysis_t *a )
 {
     a->p_cost_mv = h->cost_mv[a->i_qp];
-    a->p_cost_ref[0] = x264_cost_ref[a->i_qp][x264_clip3(h->sh.i_num_ref_idx_l0_active-1,0,2)];
-    a->p_cost_ref[1] = x264_cost_ref[a->i_qp][x264_clip3(h->sh.i_num_ref_idx_l1_active-1,0,2)];
+    a->p_cost_ref[0] = h->cost_table->ref[a->i_qp][x264_clip3(h->sh.i_num_ref_idx_l0_active-1,0,2)];
+    a->p_cost_ref[1] = h->cost_table->ref[a->i_qp][x264_clip3(h->sh.i_num_ref_idx_l1_active-1,0,2)];
 }
 
 static void mb_analyse_init_qp( x264_t *h, x264_mb_analysis_t *a, int qp )
@@ -749,7 +743,7 @@ static void mb_analyse_intra( x264_t *h, x264_mb_analysis_t *a, int i_satd_inter
             return;
     }
 
-    uint16_t *cost_i4x4_mode = (uint16_t*)ALIGN((intptr_t)x264_cost_i4x4_mode,64) + a->i_qp*32 + 8;
+    uint16_t *cost_i4x4_mode = h->cost_table->i4x4_mode[a->i_qp] + 8;
     /* 8x8 prediction selection */
     if( flags & X264_ANALYSE_I8x8 )
     {

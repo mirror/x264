@@ -343,9 +343,14 @@ struct x264_t
     udctcoef        (*quant8_bias0[4])[64];  /* [4][QP_MAX_SPEC+1][64] */
     udctcoef        (*nr_offset_emergency)[4][64];
 
-    /* mv/ref cost arrays. */
+    /* mv/ref/mode cost arrays. */
     uint16_t *cost_mv[QP_MAX+1];
     uint16_t *cost_mv_fpel[QP_MAX+1][4];
+    struct
+    {
+        uint16_t ref[QP_MAX+1][3][33];
+        ALIGNED_64( uint16_t i4x4_mode[QP_MAX+1][32] );
+    } *cost_table;
 
     const uint8_t   *chroma_qp_table; /* includes both the nonlinear luma->chroma mapping and chroma_qp_offset */
 
