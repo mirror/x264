@@ -443,14 +443,12 @@ static void mb_analyse_init( x264_t *h, x264_mb_analysis_t *a, int qp )
         /* Fast intra decision */
         if( a->b_early_terminate && h->mb.i_mb_xy - h->sh.i_first_mb > 4 )
         {
-            /* Always run in fast-intra mode for subme < 3 */
-            if( h->mb.i_subpel_refine > 2 &&
-              ( IS_INTRA( h->mb.i_mb_type_left[0] ) ||
+            if( IS_INTRA( h->mb.i_mb_type_left[0] ) ||
                 IS_INTRA( h->mb.i_mb_type_top ) ||
                 IS_INTRA( h->mb.i_mb_type_topleft ) ||
                 IS_INTRA( h->mb.i_mb_type_topright ) ||
                 (h->sh.i_type == SLICE_TYPE_P && IS_INTRA( h->fref[0][0]->mb_type[h->mb.i_mb_xy] )) ||
-                (h->mb.i_mb_xy - h->sh.i_first_mb < 3*(h->stat.frame.i_mb_count[I_4x4] + h->stat.frame.i_mb_count[I_8x8] + h->stat.frame.i_mb_count[I_16x16])) ) )
+                (h->mb.i_mb_xy - h->sh.i_first_mb < 3*(h->stat.frame.i_mb_count[I_4x4] + h->stat.frame.i_mb_count[I_8x8] + h->stat.frame.i_mb_count[I_16x16])) )
             { /* intra is likely */ }
             else
             {
