@@ -95,7 +95,15 @@ int x264_pthread_mutex_lock( x264_pthread_mutex_t *mutex )
 {
     static const x264_pthread_mutex_t init = X264_PTHREAD_MUTEX_INITIALIZER;
     if( !memcmp( mutex, &init, sizeof(x264_pthread_mutex_t) ) )
-        *mutex = static_mutex;
+    {
+        int ret = 0;
+        EnterCriticalSection( &static_mutex );
+        if( !memcmp( mutex, &init, sizeof(x264_pthread_mutex_t) ) )
+            ret = x264_pthread_mutex_init( mutex, NULL );
+        LeaveCriticalSection( &static_mutex );
+        if( ret )
+            return ret;
+    }
     EnterCriticalSection( mutex );
     return 0;
 }

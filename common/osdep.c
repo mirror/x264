@@ -72,11 +72,8 @@ static void threading_destroy( void )
 #endif
 }
 
-int x264_threading_init( void )
+static int threading_init( void )
 {
-    /* if already init, then do nothing */
-    if( InterlockedCompareExchange( &threading_is_init, 1, 0 ) )
-        return 0;
 #if PTW32_STATIC_LIB
     /* if static pthread-win32 is already initialized, then do nothing */
     if( ptw32_processInitialized )
@@ -89,7 +86,24 @@ int x264_threading_init( void )
 #endif
     /* register cleanup to run at process termination */
     atexit( threading_destroy );
+    return 0;
+}
 
+int x264_threading_init( void )
+{
+    LONG state;
+    while( (state = InterlockedCompareExchange( &threading_is_init, -1, 0 )) != 0 )
+    {
+        /* if already init, then do nothing */
+        if( state > 0 )
+            return 0;
+    }
+    if( threading_init() < 0 )
+    {
+        InterlockedExchange( &threading_is_init, 0 );
+        return -1;
+    }
+    InterlockedExchange( &threading_is_init, 1 );
     return 0;
 }
 #endif

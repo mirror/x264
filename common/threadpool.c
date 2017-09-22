@@ -78,6 +78,9 @@ int x264_threadpool_init( x264_threadpool_t **p_pool, int threads,
     if( threads <= 0 )
         return -1;
 
+    if( x264_threading_init() < 0 )
+        return -1;
+
     x264_threadpool_t *pool;
     CHECKED_MALLOCZERO( pool, sizeof(x264_threadpool_t) );
     *p_pool = pool;
