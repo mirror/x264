@@ -253,6 +253,24 @@ rc_check() {
     return $res
 }
 
+pkg_check() {
+    log_check "for packages: $1"
+    pkg_cmd="$PKGCONFIG --exists $1"
+    if $pkg_cmd >conftest.log 2>&1; then
+        res=$?
+        log_ok
+    else
+        res=$?
+        log_fail
+        log_msg "Failed commandline was:"
+        log_msg "--------------------------------------------------"
+        log_msg "$pkg_cmd"
+        cat conftest.log >> config.log
+        log_msg "--------------------------------------------------"
+    fi
+    return $res
+}
+
 define() {
     echo "#define $1$([ -n "$2" ] && echo " $2" || echo " 1")" >> config.h
 }
@@ -978,7 +996,7 @@ fi
 
 if [ "$cli_libx264" = "system" -a "$shared" != "yes" ] ; then
     [ "$static" = "yes" ] && die "Option --system-libx264 can not be used together with --enable-static"
-    if $PKGCONFIG --exists x264 2>/dev/null; then
+    if pkg_check x264 ; then
         X264_LIBS="$($PKGCONFIG --libs x264)"
         X264_INCLUDE_DIR="${X264_INCLUDE_DIR-$($PKGCONFIG --variable=includedir x264)}"
         configure_system_override "$X264_INCLUDE_DIR" || die "Detection of system libx264 configuration failed"
@@ -1040,7 +1058,7 @@ if [ "$thread" = "posix" ]; then
 fi
 [ "$thread" != "no" ] && define HAVE_THREAD
 
-if cc_check "math.h" "-Werror" "return log2f(2);" ; then
+if cc_check 'math.h' '' 'log2f(2);' ; then
     define HAVE_LOG2F
 fi
 
@@ -1068,7 +1086,7 @@ fi
 
 if [ "$swscale" = "auto" ] ; then
     swscale="no"
-    if $PKGCONFIG --exists libswscale 2>/dev/null; then
+    if pkg_check 'libswscale libavutil' ; then
         SWSCALE_LIBS="$SWSCALE_LIBS $($PKGCONFIG --libs libswscale libavutil)"
         SWSCALE_CFLAGS="$SWSCALE_CFLAGS $($PKGCONFIG --cflags libswscale libavutil)"
     fi
@@ -1085,18 +1103,18 @@ fi
 
 if [ "$lavf" = "auto" ] ; then
     lavf="no"
-    if $PKGCONFIG --exists libavformat libavcodec libswscale 2>/dev/null; then
-        LAVF_LIBS="$LAVF_LIBS $($PKGCONFIG --libs libavformat libavcodec libavutil libswscale)"
-        LAVF_CFLAGS="$LAVF_CFLAGS $($PKGCONFIG --cflags libavformat libavcodec libavutil libswscale)"
+    if pkg_check 'libavformat libavcodec libavutil' ; then
+        LAVF_LIBS="$LAVF_LIBS $($PKGCONFIG --libs libavformat libavcodec libavutil)"
+        LAVF_CFLAGS="$LAVF_CFLAGS $($PKGCONFIG --cflags libavformat libavcodec libavutil)"
     fi
-    if [ -z "$LAVF_LIBS" -a -z "$LAVF_CFLAGS" ]; then
+    if [ -z "$LAVF_LIBS" ] && cc_check '' -lavformat ; then
         LAVF_LIBS="-lavformat"
-        for lib in -lpostproc -lavcodec -lswscale -lavutil -lm -lz -lbz2 $libpthread -lavifil32 -lws2_32; do
+        for lib in -lavcodec -lavresample -lswresample -lavutil -lbz2 -lz $libpthread -lole32 -luser32 -lws2_32 -lsecur32 ; do
             cc_check "" $lib && LAVF_LIBS="$LAVF_LIBS $lib"
         done
     fi
-    LAVF_LIBS="-L. $LAVF_LIBS"
-    if cc_check libavformat/avformat.h "$LAVF_CFLAGS $LAVF_LIBS" "av_frame_free(0);" ; then
+
+    if cc_check libavformat/avformat.h "$LAVF_CFLAGS $LAVF_LIBS" "av_register_all();" ; then
         if [ "$swscale" = "yes" ]; then
             lavf="yes"
         else
@@ -1109,7 +1127,7 @@ if [ "$ffms" = "auto" ] ; then
     ffms_major="2"; ffms_minor="21"; ffms_micro="0"; ffms_bump="0"
     ffms="no"
 
-    if $PKGCONFIG --exists ffms2 2>/dev/null; then
+    if pkg_check ffms2 ; then
         FFMS2_LIBS="$FFMS2_LIBS $($PKGCONFIG --libs ffms2)"
         FFMS2_CFLAGS="$FFMS2_CFLAGS $($PKGCONFIG --cflags ffms2)"
     fi
@@ -1151,13 +1169,13 @@ fi
 
 if [ "$lsmash" = "auto" ] ; then
     lsmash="no"
-    if $PKGCONFIG --exists liblsmash 2>/dev/null; then
+    if pkg_check liblsmash ; then
         LSMASH_LIBS="$LSMASH_LIBS $($PKGCONFIG --libs liblsmash)"
         LSMASH_CFLAGS="$LSMASH_CFLAGS $($PKGCONFIG --cflags liblsmash)"
     fi
     [ -z "$LSMASH_LIBS" ] && LSMASH_LIBS="-llsmash"
 
-    if cc_check lsmash.h "$LSMASH_CFLAGS $LSMASH_LIBS" ; then
+    if cc_check lsmash.h "$LSMASH_CFLAGS $LSMASH_LIBS" "lsmash_destroy_root(0);" ; then
         if cpp_check lsmash.h "$LSMASH_CFLAGS" "LSMASH_VERSION_MAJOR > 1 || (LSMASH_VERSION_MAJOR == 1 && LSMASH_VERSION_MINOR >= 5)" ; then
             lsmash="yes"
         else
@@ -1174,7 +1192,7 @@ if [ "$gpac" = "auto" -a "$lsmash" != "yes" ] ; then
         cc_check "" -lws2_32 && GPAC_LIBS="$GPAC_LIBS -lws2_32"
         cc_check "" -lwinmm && GPAC_LIBS="$GPAC_LIBS -lwinmm"
     fi
-    if cc_check gpac/isomedia.h "$GPAC_LIBS" ; then
+    if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_close(0);" ; then
         if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_set_pixel_aspect_ratio(0,0,0,0,0);" ; then
             gpac="yes"
         else
@@ -1190,8 +1208,8 @@ if [ "$lsmash" = "yes" ] ; then
     define HAVE_LSMASH
 elif [ "$gpac" = "yes" ] ; then
     mp4="gpac"
-    define HAVE_GPAC
     LDFLAGSCLI="$GPAC_LIBS $LDFLAGSCLI"
+    define HAVE_GPAC
 fi
 
 if [ "$avs" = "auto" ] ; then
