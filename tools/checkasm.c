@@ -1799,6 +1799,8 @@ static int check_mc( int cpu_ref, int cpu_new )
         }
     }
 
+    static const uint16_t mbtree_fix8_counts[] = { 5, 384, 392, 400, 415 };
+
     if( mc_a.mbtree_fix8_pack != mc_ref.mbtree_fix8_pack )
     {
         set_func_name( "mbtree_fix8_pack" );
@@ -1806,9 +1808,9 @@ static int check_mc( int cpu_ref, int cpu_new )
         float *fix8_src = (float*)(buf3 + 0x800);
         uint16_t *dstc = (uint16_t*)buf3;
         uint16_t *dsta = (uint16_t*)buf4;
-        for( int i = 0; i < 5; i++ )
+        for( int i = 0; i < ARRAY_SIZE(mbtree_fix8_counts); i++ )
         {
-            int count = 256 + i;
+            int count = mbtree_fix8_counts[i];
 
             for( int j = 0; j < count; j++ )
                 fix8_src[j] = (int16_t)(rand()) / 256.0f;
@@ -1833,9 +1835,9 @@ static int check_mc( int cpu_ref, int cpu_new )
         uint16_t *fix8_src = (uint16_t*)(buf3 + 0x800);
         float *dstc = (float*)buf3;
         float *dsta = (float*)buf4;
-        for( int i = 0; i < 5; i++ )
+        for( int i = 0; i < ARRAY_SIZE(mbtree_fix8_counts); i++ )
         {
-            int count = 256 + i;
+            int count = mbtree_fix8_counts[i];
 
             for( int j = 0; j < count; j++ )
                 fix8_src[j] = rand();

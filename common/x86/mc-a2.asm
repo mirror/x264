@@ -64,7 +64,8 @@ hpel_shuf: times 2 db 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15
 mbtree_prop_list_avx512_shuf: dw 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7
 mbtree_fix8_unpack_shuf: db -1,-1, 1, 0,-1,-1, 3, 2,-1,-1, 5, 4,-1,-1, 7, 6
                          db -1,-1, 9, 8,-1,-1,11,10,-1,-1,13,12,-1,-1,15,14
-mbtree_fix8_pack_shuf:   db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
+; bits 0-3: pshufb, bits 4-7: AVX-512 vpermq
+mbtree_fix8_pack_shuf:   db 0x01,0x20,0x43,0x62,0x15,0x34,0x57,0x76,0x09,0x08,0x0b,0x0a,0x0d,0x0c,0x0f,0x0e
 
 pf_256:         times 4 dd 256.0
 pf_inv16777216: times 4 dd 0x1p-24
@@ -2641,3 +2642,69 @@ INIT_XMM ssse3
 MBTREE_FIX8
 INIT_YMM avx2
 MBTREE_FIX8
+
+%macro MBTREE_FIX8_AVX512_END 0
+    add      r2, mmsize/2
+    jle .loop
+    cmp     r2d, mmsize/2
+    jl .tail
+    RET
+.tail:
+    ; Do the final loop iteration with partial masking to handle the remaining elements.
+    shrx    r3d, r3d, r2d ; (1 << count) - 1
+    kmovd    k1, r3d
+    kshiftrd k2, k1, 16
+    jmp .loop
+%endmacro
+
+INIT_ZMM avx512
+cglobal mbtree_fix8_pack, 3,4
+    vbroadcastf32x4 m2, [pf_256]
+    vbroadcasti32x4 m3, [mbtree_fix8_pack_shuf]
+    psrld       xm4, xm3, 4
+    pmovzxbq     m4, xm4
+    sub         r2d, mmsize/2
+    mov         r3d, -1
+    movsxdifnidn r2, r2d
+    lea          r1, [r1+4*r2]
+    lea          r0, [r0+2*r2]
+    neg          r2
+    jg .tail
+    kmovd        k1, r3d
+    kmovw        k2, k1
+.loop:
+    vmulps       m0 {k1}{z}, m2, [r1+4*r2]
+    vmulps       m1 {k2}{z}, m2, [r1+4*r2+mmsize]
+    cvttps2dq    m0, m0
+    cvttps2dq    m1, m1
+    packssdw     m0, m1
+    pshufb       m0, m3
+    vpermq       m0, m4, m0
+    vmovdqu16 [r0+2*r2] {k1}, m0
+    MBTREE_FIX8_AVX512_END
+
+cglobal mbtree_fix8_unpack, 3,4
+    vbroadcasti32x8 m3, [mbtree_fix8_unpack_shuf]
+    vbroadcastf32x4 m2, [pf_inv16777216]
+    sub         r2d, mmsize/2
+    mov         r3d, -1
+    movsxdifnidn r2, r2d
+    lea          r1, [r1+2*r2]
+    lea          r0, [r0+4*r2]
+    neg          r2
+    jg .tail
+    kmovw        k1, r3d
+    kmovw        k2, k1
+.loop:
+    mova         m1, [r1+2*r2]
+    vshufi32x4   m0, m1, m1, q1100
+    vshufi32x4   m1, m1, m1, q3322
+    pshufb       m0, m3
+    pshufb       m1, m3
+    cvtdq2ps     m0, m0
+    cvtdq2ps     m1, m1
+    mulps        m0, m2
+    mulps        m1, m2
+    vmovaps [r0+4*r2] {k1}, m0
+    vmovaps [r0+4*r2+mmsize] {k2}, m1
+    MBTREE_FIX8_AVX512_END
