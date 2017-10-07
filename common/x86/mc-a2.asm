@@ -66,8 +66,8 @@ mbtree_fix8_unpack_shuf: db -1,-1, 1, 0,-1,-1, 3, 2,-1,-1, 5, 4,-1,-1, 7, 6
                          db -1,-1, 9, 8,-1,-1,11,10,-1,-1,13,12,-1,-1,15,14
 mbtree_fix8_pack_shuf:   db  1, 0, 3, 2, 5, 4, 7, 6, 9, 8,11,10,13,12,15,14
 
-pf_256:    times 4 dd 256.0
-pf_inv256: times 4 dd 0.00390625
+pf_256:         times 4 dd 256.0
+pf_inv16777216: times 4 dd 0x1p-24
 
 pd_16: times 4 dd 16
 
@@ -2589,9 +2589,9 @@ cglobal mbtree_fix8_pack, 3,4
 ;-----------------------------------------------------------------------------
 cglobal mbtree_fix8_unpack, 3,4
 %if mmsize == 32
-    vbroadcastf128 m2, [pf_inv256]
+    vbroadcastf128 m2, [pf_inv16777216]
 %else
-    movaps       m2, [pf_inv256]
+    movaps       m2, [pf_inv16777216]
     mova         m4, [mbtree_fix8_unpack_shuf+16]
 %endif
     mova         m3, [mbtree_fix8_unpack_shuf]
@@ -2612,8 +2612,6 @@ cglobal mbtree_fix8_unpack, 3,4
     pshufb       m0, m1, m3
     pshufb       m1, m4
 %endif
-    psrad        m0, 16 ; sign-extend
-    psrad        m1, 16
     cvtdq2ps     m0, m0
     cvtdq2ps     m1, m1
     mulps        m0, m2
@@ -2627,8 +2625,7 @@ cglobal mbtree_fix8_unpack, 3,4
     jz .end
 .scalar:
     movzx       r3d, word [r1+2*r2+mmsize]
-    rol         r3w, 8
-    movsx       r3d, r3w
+    bswap       r3d
     ; Use 3-arg cvtsi2ss as a workaround for the fact that the instruction has a stupid dependency on
     ; dst which causes terrible performance when used in a loop otherwise. Blame Intel for poor design.
     cvtsi2ss    xm0, xm2, r3d
