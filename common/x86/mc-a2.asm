@@ -1264,17 +1264,27 @@ cglobal load_deinterleave_chroma_fenc, 4,5
     vbroadcasti128 m0, [deinterleave_shuf]
     lea            r4, [r2*3]
 .loop:
-    mova          xm1, [r1]
-    vinserti128    m1, m1, [r1+r2], 1
-    mova          xm2, [r1+r2*2]
-    vinserti128    m2, m2, [r1+r4], 1
+    mova          xm1, [r1]         ; 0
+    vinserti128   ym1, [r1+r2], 1   ; 1
+%if mmsize == 64
+    mova          xm2, [r1+r2*4]    ; 4
+    vinserti32x4   m1, [r1+r2*2], 2 ; 2
+    vinserti32x4   m2, [r1+r4*2], 2 ; 6
+    vinserti32x4   m1, [r1+r4], 3   ; 3
+    lea            r1, [r1+r2*4]
+    vinserti32x4   m2, [r1+r2], 1   ; 5
+    vinserti32x4   m2, [r1+r4], 3   ; 7
+%else
+    mova          xm2, [r1+r2*2]    ; 2
+    vinserti128    m2, [r1+r4], 1   ; 3
+%endif
+    lea            r1, [r1+r2*4]
     pshufb         m1, m0
     pshufb         m2, m0
-    mova [r0+0*FENC_STRIDE], m1
-    mova [r0+2*FENC_STRIDE], m2
-    lea            r1, [r1+r2*4]
-    add            r0, 4*FENC_STRIDE
-    sub           r3d, 4
+    mova         [r0], m1
+    mova  [r0+mmsize], m2
+    add            r0, 2*mmsize
+    sub           r3d, mmsize/8
     jg .loop
     RET
 %endmacro ; LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
@@ -1499,6 +1509,8 @@ PLANE_DEINTERLEAVE_RGB
 INIT_YMM avx2
 LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
 PLANE_DEINTERLEAVE_RGB
+INIT_ZMM avx512
+LOAD_DEINTERLEAVE_CHROMA_FENC_AVX2
 %endif
 
 ; These functions are not general-use; not only do they require aligned input, but memcpy
