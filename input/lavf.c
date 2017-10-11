@@ -28,9 +28,10 @@
 
 #undef DECLARE_ALIGNED
 #include <libavformat/avformat.h>
+#include <libavutil/dict.h>
+#include <libavutil/error.h>
 #include <libavutil/mem.h>
 #include <libavutil/pixdesc.h>
-#include <libavutil/dict.h>
 
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "lavf", __VA_ARGS__ )
 
@@ -101,31 +102,32 @@ static int read_frame_internal( cli_pic_t *p_pic, lavf_hnd_t *h, int i_frame, vi
 
     while( i_frame >= h->next_frame )
     {
-        int finished = 0;
-        int ret = 0;
-        do
+        int ret;
+
+        while( (ret = avcodec_receive_frame( h->lavc, h->frame )) )
         {
-            ret = av_read_frame( h->lavf, &pkt );
-
-            if( ret < 0 )
+            if( ret == AVERROR(EAGAIN) )
             {
-                av_init_packet( &pkt );
-                pkt.data = NULL;
-                pkt.size = 0;
-            }
+                while( !(ret = av_read_frame( h->lavf, &pkt )) && pkt.stream_index != h->stream_id )
+                    av_packet_unref( &pkt );
 
-            if( ret < 0 || pkt.stream_index == h->stream_id )
+                if( ret )
+                    ret = avcodec_send_packet( h->lavc, NULL );
+                else
+                {
+                    ret = avcodec_send_packet( h->lavc, &pkt );
+                    av_packet_unref( &pkt );
+                }
+            }
+            else if( ret == AVERROR_EOF )
+                return -1;
+
+            if( ret )
             {
-                if( avcodec_decode_video2( h->lavc, h->frame, &finished, &pkt ) < 0 )
-                    x264_cli_log( "lavf", X264_LOG_WARNING, "video decoding failed on frame %d\n", h->next_frame );
+                x264_cli_log( "lavf", X264_LOG_WARNING, "video decoding failed on frame %d\n", h->next_frame );
+                return -1;
             }
-
-            if( ret >= 0 )
-                av_packet_unref( &pkt );
-        } while( !finished && ret >= 0 );
-
-        if( !finished )
-            return -1;
+        }
 
         h->next_frame++;
     }
