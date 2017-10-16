@@ -28,7 +28,7 @@
 
 .syntax unified
 
-#ifndef __APPLE__
+#ifdef __ELF__
 .arch armv7-a
 .fpu neon
 #endif
