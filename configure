@@ -807,9 +807,13 @@ case $host_cpu in
     aarch64)
         ARCH="AARCH64"
         stack_alignment=16
-        AS="${AS-${CC}}"
         if [ "$SYS" = MACOSX ] ; then
+            AS="${AS-${CC}}"
             ASFLAGS="$ASFLAGS -DPREFIX -DPIC"
+        elif [ "$SYS" = WINDOWS ] ; then
+            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -as-type armasm -- armasm64 -nologo}"
+        else
+            AS="${AS-${CC}}"
         fi
         ;;
     s390|s390x)
@@ -944,7 +948,10 @@ if [ $asm = auto -a $ARCH = ARM ] ; then
 fi
 
 if [ $asm = auto -a $ARCH = AARCH64 ] ; then
-    if  cc_check '' '' '__asm__("cmeq v0.8h, v0.8h, #0");' ; then define HAVE_NEON
+    if [ $compiler = CL ] && cpp_check '' '' 'defined(_M_ARM64)' ; then
+        define HAVE_NEON
+    elif cc_check '' '' '__asm__("cmeq v0.8h, v0.8h, #0");' ; then
+        define HAVE_NEON
         ASFLAGS="$ASFLAGS -c"
     else
         echo "no NEON support, try adding -mfpu=neon to CFLAGS"
