@@ -718,9 +718,9 @@ endfunc
 function mc_chroma_w\width\()_neon
 // since the element size varies, there's a different index for the 2nd store
 .if \width == 4
-    .set st2, 1
+    .set idx2, 1
 .else
-    .set st2, 2
+    .set idx2, 2
 .endif
     CHROMA_MC_START
     b.eq        2f
@@ -785,10 +785,10 @@ function mc_chroma_w\width\()_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.\vsize}[0],   [x0], x2
-    st1        {v16.\vsize}[st2], [x1], x2
-    st1        {v17.\vsize}[0],   [x0], x2
-    st1        {v17.\vsize}[st2], [x1], x2
+    st1        {v16.\vsize}[0],    [x0], x2
+    st1        {v16.\vsize}[idx2], [x1], x2
+    st1        {v17.\vsize}[0],    [x0], x2
+    st1        {v17.\vsize}[idx2], [x1], x2
     b.gt        1b
 
     ret
@@ -820,10 +820,10 @@ function mc_chroma_w\width\()_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.\vsize}[0],   [x0], x2
-    st1        {v16.\vsize}[st2], [x0], x2
-    st1        {v17.\vsize}[0],   [x1], x2
-    st1        {v17.\vsize}[st2], [x1], x2
+    st1        {v16.\vsize}[0],    [x0], x2
+    st1        {v16.\vsize}[idx2], [x0], x2
+    st1        {v17.\vsize}[0],    [x1], x2
+    st1        {v17.\vsize}[idx2], [x1], x2
     b.gt        3b
 
     ret
@@ -853,10 +853,10 @@ function mc_chroma_w\width\()_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.\vsize}[0],   [x0], x2
-    st1        {v16.\vsize}[st2], [x0], x2
-    st1        {v17.\vsize}[0],   [x1], x2
-    st1        {v17.\vsize}[st2], [x1], x2
+    st1        {v16.\vsize}[0],    [x0], x2
+    st1        {v16.\vsize}[idx2], [x0], x2
+    st1        {v17.\vsize}[0],    [x1], x2
+    st1        {v17.\vsize}[idx2], [x1], x2
     b.gt        5b
 
     ret
