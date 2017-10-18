@@ -63,7 +63,7 @@ endconst
 
 
 function predict_4x4_h_aarch64, export=1
-    ldrb    w1,  [x0, #0*FDEC_STRIDE-1]
+    ldurb   w1,  [x0, #0*FDEC_STRIDE-1]
     mov     w5,  #0x01010101
     ldrb    w2,  [x0, #1*FDEC_STRIDE-1]
     ldrb    w3,  [x0, #2*FDEC_STRIDE-1]
@@ -80,7 +80,7 @@ function predict_4x4_h_aarch64, export=1
 endfunc
 
 function predict_4x4_v_aarch64, export=1
-    ldr     w1,  [x0, #0 - 1 * FDEC_STRIDE]
+    ldur    w1,  [x0, #0 - 1 * FDEC_STRIDE]
     str     w1,  [x0, #0 + 0 * FDEC_STRIDE]
     str     w1,  [x0, #0 + 1 * FDEC_STRIDE]
     str     w1,  [x0, #0 + 2 * FDEC_STRIDE]
@@ -90,7 +90,7 @@ endfunc
 
 function predict_4x4_dc_neon, export=1
     sub         x1,  x0,  #FDEC_STRIDE
-    ldrb        w4,  [x0, #-1 + 0 * FDEC_STRIDE]
+    ldurb       w4,  [x0, #-1 + 0 * FDEC_STRIDE]
     ldrb        w5,  [x0, #-1 + 1 * FDEC_STRIDE]
     ldrb        w6,  [x0, #-1 + 2 * FDEC_STRIDE]
     ldrb        w7,  [x0, #-1 + 3 * FDEC_STRIDE]
@@ -430,7 +430,7 @@ function predict_8x8c_dc_top_neon, export=1
 endfunc
 
 function predict_8x8c_dc_left_neon, export=1
-    ldrb        w2,  [x0, #0 * FDEC_STRIDE - 1]
+    ldurb       w2,  [x0, #0 * FDEC_STRIDE - 1]
     ldrb        w3,  [x0, #1 * FDEC_STRIDE - 1]
     ldrb        w4,  [x0, #2 * FDEC_STRIDE - 1]
     ldrb        w5,  [x0, #3 * FDEC_STRIDE - 1]
@@ -455,7 +455,7 @@ endfunc
 function predict_8x8c_dc_neon, export=1
     mov         x1,  #FDEC_STRIDE
     sub         x2,  x0,  #FDEC_STRIDE
-    ldrb        w10, [x0, #0 * FDEC_STRIDE - 1]
+    ldurb       w10, [x0, #0 * FDEC_STRIDE - 1]
     ldrb        w11, [x0, #1 * FDEC_STRIDE - 1]
     ldrb        w12, [x0, #2 * FDEC_STRIDE - 1]
     ldrb        w13, [x0, #3 * FDEC_STRIDE - 1]
@@ -511,7 +511,7 @@ function predict_8x8c_h_neon, export=1
 endfunc
 
 function predict_8x8c_v_aarch64, export=1
-    ldr         x1,  [x0, #-FDEC_STRIDE]
+    ldur        x1,  [x0, #-FDEC_STRIDE]
 .irp c, 0,1,2,3,4,5,6,7
     str         x1,  [x0, #\c * FDEC_STRIDE]
 .endr
@@ -568,7 +568,11 @@ endfunc
 
 
 .macro loadsum4 wd, t1, t2, t3, x, idx
+  .if \idx == 0
+    ldurb       \wd,  [\x, #(\idx + 0) * FDEC_STRIDE - 1]
+  .else
     ldrb        \wd,  [\x, #(\idx + 0) * FDEC_STRIDE - 1]
+  .endif
     ldrb        \t1,  [\x, #(\idx + 1) * FDEC_STRIDE - 1]
     ldrb        \t2,  [\x, #(\idx + 2) * FDEC_STRIDE - 1]
     ldrb        \t3,  [\x, #(\idx + 3) * FDEC_STRIDE - 1]
@@ -720,7 +724,7 @@ endfunc
 
 function predict_8x16c_dc_left_neon, export=1
     mov         x1,  #FDEC_STRIDE
-    ldrb        w2,  [x0, # 0 * FDEC_STRIDE - 1]
+    ldurb       w2,  [x0, # 0 * FDEC_STRIDE - 1]
     ldrb        w3,  [x0, # 1 * FDEC_STRIDE - 1]
     ldrb        w4,  [x0, # 2 * FDEC_STRIDE - 1]
     ldrb        w5,  [x0, # 3 * FDEC_STRIDE - 1]

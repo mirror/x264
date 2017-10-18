@@ -82,10 +82,10 @@ cabac_putbyte:
 1:
     ldr         x7,  [x0, #CABAC_P]
     asr         w5,  w4,  #8            // carry
-    ldrb        w8,  [x7, #-1]
+    ldurb       w8,  [x7, #-1]
     add         w8,  w8,  w5
     sub         w5,  w5,  #1
-    strb        w8,  [x7, #-1]
+    sturb       w8,  [x7, #-1]
     cbz         w6,  3f
 2:
     subs        w6,  w6,  #1
