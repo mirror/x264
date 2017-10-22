@@ -1501,8 +1501,8 @@ void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
         pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_msa;
       //pixf->var2[PIXEL_8x16]  = x264_pixel_var2_8x16_msa;
       //pixf->var2[PIXEL_8x8]   = x264_pixel_var2_8x8_msa;
-        pixf->sa8d[PIXEL_16x16] = x264_pixel_sa8d_16x16;
-        pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8;
+        pixf->sa8d[PIXEL_16x16] = x264_pixel_sa8d_16x16_msa;
+        pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_msa;
     }
 #endif // HAVE_MSA
 
