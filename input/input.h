@@ -138,8 +138,10 @@ const x264_cli_csp_t *x264_cli_get_csp( int csp );
 
 typedef struct
 {
+    int64_t file_size;
     int align_mask;
 #ifdef _WIN32
+    int page_mask;
     BOOL (WINAPI *prefetch_virtual_memory)( HANDLE, ULONG_PTR, PVOID, ULONG );
     HANDLE process_handle;
     HANDLE map_handle;

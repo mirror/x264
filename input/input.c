@@ -148,35 +148,71 @@ const x264_cli_csp_t *x264_cli_get_csp( int csp )
 /* Functions for handling memory-mapped input frames */
 int x264_cli_mmap_init( cli_mmap_t *h, FILE *fh )
 {
-#ifdef _WIN32
-    HANDLE osfhandle = (HANDLE)_get_osfhandle( _fileno( fh ) );
-    if( osfhandle != INVALID_HANDLE_VALUE )
+#if defined(_WIN32) || HAVE_MMAP
+    int fd = fileno( fh );
+    x264_struct_stat file_stat;
+    if( !x264_fstat( fd, &file_stat ) )
     {
-        SYSTEM_INFO si;
-        GetSystemInfo( &si );
-        h->align_mask = si.dwAllocationGranularity - 1;
-        h->prefetch_virtual_memory = (void*)GetProcAddress( GetModuleHandleW( L"kernel32.dll" ), "PrefetchVirtualMemory" );
-        h->process_handle = GetCurrentProcess();
-        h->map_handle = CreateFileMappingW( osfhandle, NULL, PAGE_READONLY, 0, 0, NULL );
-        return !h->map_handle;
-    }
+        h->file_size = file_stat.st_size;
+#ifdef _WIN32
+        HANDLE osfhandle = (HANDLE)_get_osfhandle( fd );
+        if( osfhandle != INVALID_HANDLE_VALUE )
+        {
+            SYSTEM_INFO si;
+            GetSystemInfo( &si );
+            h->page_mask = si.dwPageSize - 1;
+            h->align_mask = si.dwAllocationGranularity - 1;
+            h->prefetch_virtual_memory = (void*)GetProcAddress( GetModuleHandleW( L"kernel32.dll" ), "PrefetchVirtualMemory" );
+            h->process_handle = GetCurrentProcess();
+            h->map_handle = CreateFileMappingW( osfhandle, NULL, PAGE_READONLY, 0, 0, NULL );
+            return !h->map_handle;
+        }
 #elif HAVE_MMAP && defined(_SC_PAGESIZE)
-    h->align_mask = sysconf( _SC_PAGESIZE ) - 1;
-    h->fd = fileno( fh );
-    return h->align_mask < 0 || h->fd < 0;
+        h->align_mask = sysconf( _SC_PAGESIZE ) - 1;
+        h->fd = fd;
+        return h->align_mask < 0 || fd < 0;
+#endif
+    }
 #endif
     return -1;
 }
 
+/* Third-party filters such as swscale can overread the input buffer which may result
+ * in segfaults. We have to pad the buffer size as a workaround to avoid that. */
+#define MMAP_PADDING 64
+
 void *x264_cli_mmap( cli_mmap_t *h, int64_t offset, size_t size )
 {
 #if defined(_WIN32) || HAVE_MMAP
+    uint8_t *base;
     int align = offset & h->align_mask;
     offset -= align;
     size   += align;
 #ifdef _WIN32
-    uint8_t *base = MapViewOfFile( h->map_handle, FILE_MAP_READ, offset >> 32, offset, size );
-    if( base )
+    /* If the padding crosses a page boundary we need to increase the mapping size. */
+    size_t padded_size = (-size & h->page_mask) < MMAP_PADDING ? size + MMAP_PADDING : size;
+    if( offset + padded_size > h->file_size )
+    {
+        /* It's not possible to do the POSIX mmap() remapping trick on Windows, so if the padding crosses a
+         * page boundary past the end of the file we have to copy the entire frame into a padded buffer. */
+        if( (base = MapViewOfFile( h->map_handle, FILE_MAP_READ, offset >> 32, offset, size )) )
+        {
+            uint8_t *buf = NULL;
+            HANDLE anon_map = CreateFileMappingW( INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, padded_size, NULL );
+            if( anon_map )
+            {
+                if( (buf = MapViewOfFile( anon_map, FILE_MAP_WRITE, 0, 0, 0 )) )
+                {
+                    buf += align;
+                    memcpy( buf, base + align, size - align );
+                }
+                CloseHandle( anon_map );
+            }
+            UnmapViewOfFile( base );
+            return buf;
+        }
+    }
+    else if( (base = MapViewOfFile( h->map_handle, FILE_MAP_READ, offset >> 32, offset, padded_size )) )
     {
         /* PrefetchVirtualMemory() is only available on Windows 8 and newer. */
         if( h->prefetch_virtual_memory )
@@ -187,8 +223,8 @@ void *x264_cli_mmap( cli_mmap_t *h, int64_t offset, size_t size )
         return base + align;
     }
 #else
-    uint8_t *base = mmap( NULL, size, PROT_READ, MAP_PRIVATE, h->fd, offset );
-    if( base != MAP_FAILED )
+    size_t padded_size = size + MMAP_PADDING;
+    if( (base = mmap( NULL, padded_size, PROT_READ, MAP_PRIVATE, h->fd, offset )) != MAP_FAILED )
     {
         /* Ask the OS to readahead pages. This improves performance whereas
          * forcing page faults by manually accessing every page does not.
@@ -199,6 +235,12 @@ void *x264_cli_mmap( cli_mmap_t *h, int64_t offset, size_t size )
 #elif defined(POSIX_MADV_WILLNEED)
         posix_madvise( base, size, POSIX_MADV_WILLNEED );
 #endif
+        /* Remap the file mapping of any padding that crosses a page boundary past the end of
+         * the file into a copy of the last valid page to prevent reads from invalid memory. */
+        size_t aligned_size = (padded_size - 1) & ~h->align_mask;
+        if( offset + aligned_size >= h->file_size )
+            mmap( base + aligned_size, padded_size - aligned_size, PROT_READ, MAP_PRIVATE|MAP_FIXED, h->fd, (offset + size - 1) & ~h->align_mask );
+
         return base + align;
     }
 #endif
@@ -213,7 +255,7 @@ int x264_cli_munmap( cli_mmap_t *h, void *addr, size_t size )
 #ifdef _WIN32
     return !UnmapViewOfFile( base );
 #else
-    return munmap( base, size + (intptr_t)addr - (intptr_t)base );
+    return munmap( base, size + MMAP_PADDING + (intptr_t)addr - (intptr_t)base );
 #endif
 #endif
     return -1;
