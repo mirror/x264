@@ -212,7 +212,7 @@ static int pick_closest_supported_csp( int csp )
     }
     // now determine high depth
     for( int i = 0; i < pix_desc->nb_components; i++ )
-        if( pix_desc->comp[i].depth_minus1 >= 8 )
+        if( pix_desc->comp[i].depth > 8 )
             ret |= X264_CSP_HIGH_DEPTH;
     return ret;
 }
