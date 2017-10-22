@@ -737,14 +737,14 @@ cglobal cabac_block_residual_internal, 4,15,0,-4*64
     push     r7
     push     r8
 %else
-    sub      rsp, 32 ; shadow space
+    sub      rsp, 40 ; shadow space and alignment
 %endif
     call cabac_encode_ue_bypass
 %if UNIX64
     pop      r8
     pop      r7
 %else
-    add      rsp, 32
+    add      rsp, 40
 %endif
     pop      r0
 .level_gt1_end:
