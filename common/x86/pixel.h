@@ -25,8 +25,8 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#ifndef X264_I386_PIXEL_H
-#define X264_I386_PIXEL_H
+#ifndef X264_X86_PIXEL_H
+#define X264_X86_PIXEL_H
 
 #define x264_pixel_ads1_avx x264_template(pixel_ads1_avx)
 #define x264_pixel_ads1_avx2 x264_template(pixel_ads1_avx2)

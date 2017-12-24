@@ -23,8 +23,8 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#ifndef X264_MIPS_SAD_H
-#define X264_MIPS_SAD_H
+#ifndef X264_MIPS_PIXEL_H
+#define X264_MIPS_PIXEL_H
 
 #define x264_pixel_sad_16x16_msa x264_template(pixel_sad_16x16_msa)
 int32_t x264_pixel_sad_16x16_msa( uint8_t *p_src, intptr_t i_src_stride,

@@ -24,8 +24,8 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#ifndef X264_RATECONTROL_H
-#define X264_RATECONTROL_H
+#ifndef X264_ENCODER_RATECONTROL_H
+#define X264_ENCODER_RATECONTROL_H
 
 /* Completely arbitrary.  Ratecontrol lowers relative quality at higher framerates
  * and the reverse at lower framerates; this serves as the center of the curve.
@@ -85,4 +85,3 @@ void x264_threads_merge_ratecontrol( x264_t *h );
 void x264_hrd_fullness( x264_t *h );
 
 #endif
-

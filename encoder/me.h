@@ -24,8 +24,8 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#ifndef X264_ME_H
-#define X264_ME_H
+#ifndef X264_ENCODER_ME_H
+#define X264_ENCODER_ME_H
 
 #define COST_MAX (1<<28)
 #define COST_MAX64 (1ULL<<60)

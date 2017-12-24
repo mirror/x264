@@ -24,8 +24,8 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#ifndef X264_I386_PREDICT_H
-#define X264_I386_PREDICT_H
+#ifndef X264_X86_PREDICT_H
+#define X264_X86_PREDICT_H
 
 #define x264_predict_16x16_init_mmx x264_template(predict_16x16_init_mmx)
 void x264_predict_16x16_init_mmx( int cpu, x264_predict_t pf[7] );

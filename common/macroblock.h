@@ -461,4 +461,3 @@ static ALWAYS_INLINE int x264_mb_transform_8x8_allowed( x264_t *h )
 }
 
 #endif
-

@@ -25,8 +25,8 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#ifndef X264_I386_DCT_H
-#define X264_I386_DCT_H
+#ifndef X264_X86_DCT_H
+#define X264_X86_DCT_H
 
 #define x264_sub4x4_dct_mmx x264_template(sub4x4_dct_mmx)
 void x264_sub4x4_dct_mmx    ( dctcoef dct    [16], pixel   *pix1, pixel   *pix2 );

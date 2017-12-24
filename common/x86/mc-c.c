@@ -78,6 +78,7 @@ DECL_SUF( x264_pixel_avg_4x16,  ( pixel *, intptr_t, pixel *, intptr_t, pixel *,
 DECL_SUF( x264_pixel_avg_4x8,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
 DECL_SUF( x264_pixel_avg_4x4,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
 DECL_SUF( x264_pixel_avg_4x2,   ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int ))
+#undef DECL_SUF
 
 #define x264_mc_weight_w12_mmx2 x264_template(mc_weight_w12_mmx2)
 #define x264_mc_weight_w12_sse2 x264_template(mc_weight_w12_sse2)
@@ -139,7 +140,7 @@ MC_WEIGHT( 20, ssse3 )
 MC_WEIGHT( 8, avx2 )
 MC_WEIGHT( 16, avx2 )
 MC_WEIGHT( 20, avx2 )
-#undef MC_OFFSET
+#undef MC_WEIGHT_OFFSET
 #undef MC_WEIGHT
 
 #define x264_mc_copy_w4_mmx x264_template(mc_copy_w4_mmx)
@@ -336,6 +337,7 @@ MC_CHROMA(ssse3)
 MC_CHROMA(cache64_ssse3)
 MC_CHROMA(avx)
 MC_CHROMA(avx2)
+#undef MC_CHROMA
 
 #define x264_frame_init_lowres_core_avx x264_template(frame_init_lowres_core_avx)
 #define x264_frame_init_lowres_core_avx2 x264_template(frame_init_lowres_core_avx2)
@@ -354,6 +356,7 @@ LOWRES(ssse3)
 LOWRES(avx)
 LOWRES(xop)
 LOWRES(avx2)
+#undef LOWRES
 
 #define x264_pixel_avg2_w10_mmx2 x264_template(pixel_avg2_w10_mmx2)
 #define x264_pixel_avg2_w10_sse2 x264_template(pixel_avg2_w10_sse2)
@@ -394,6 +397,8 @@ PIXEL_AVG_WALL(cache64_sse2)
 PIXEL_AVG_WALL(sse2)
 PIXEL_AVG_WALL(cache64_ssse3)
 PIXEL_AVG_WALL(avx2)
+#undef PIXEL_AVG_W
+#undef PIXEL_AVG_WALL
 
 #define PIXEL_AVG_WTAB(instr, name1, name2, name3, name4, name5)\
 static void (* const pixel_avg_wtab_##instr[6])( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t ) =\
