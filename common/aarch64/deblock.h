@@ -1,7 +1,7 @@
 /*****************************************************************************
  * deblock.h: aarch64 deblocking
  *****************************************************************************
- * Copyright (C) 2017 x264 project
+ * Copyright (C) 2017-2018 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *

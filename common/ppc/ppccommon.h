@@ -1,7 +1,7 @@
 /*****************************************************************************
  * ppccommon.h: ppc utility macros
  *****************************************************************************
- * Copyright (C) 2003-2017 x264 project
+ * Copyright (C) 2003-2018 x264 project
  *
  * Authors: Eric Petit <eric.petit@lapsus.org>
  *
