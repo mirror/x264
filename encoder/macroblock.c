@@ -975,8 +975,10 @@ void x264_macroblock_encode( x264_t *h )
 {
     if( CHROMA444 )
         macroblock_encode_internal( h, 3, 0 );
-    else
+    else if( CHROMA_FORMAT )
         macroblock_encode_internal( h, 1, 1 );
+    else
+        macroblock_encode_internal( h, 1, 0 );
 }
 
 /*****************************************************************************
@@ -1126,12 +1128,14 @@ static ALWAYS_INLINE int macroblock_probe_skip_internal( x264_t *h, int b_bidir,
 
 int x264_macroblock_probe_skip( x264_t *h, int b_bidir )
 {
-    if( CHROMA_FORMAT == CHROMA_444 )
-        return macroblock_probe_skip_internal( h, b_bidir, 3, CHROMA_444 );
+    if( CHROMA_FORMAT == CHROMA_420 )
+        return macroblock_probe_skip_internal( h, b_bidir, 1, CHROMA_420 );
     else if( CHROMA_FORMAT == CHROMA_422 )
         return macroblock_probe_skip_internal( h, b_bidir, 1, CHROMA_422 );
+    else if( CHROMA_FORMAT == CHROMA_444 )
+        return macroblock_probe_skip_internal( h, b_bidir, 3, CHROMA_444 );
     else
-        return macroblock_probe_skip_internal( h, b_bidir, 1, CHROMA_420 );
+        return macroblock_probe_skip_internal( h, b_bidir, 1, CHROMA_400 );
 }
 
 /****************************************************************************
@@ -1365,12 +1369,14 @@ static ALWAYS_INLINE void macroblock_encode_p8x8_internal( x264_t *h, int i8, in
 
 void x264_macroblock_encode_p8x8( x264_t *h, int i8 )
 {
-    if( CHROMA444 )
-        macroblock_encode_p8x8_internal( h, i8, 3, CHROMA_444 );
+    if( CHROMA_FORMAT == CHROMA_420 )
+        macroblock_encode_p8x8_internal( h, i8, 1, CHROMA_420 );
     else if( CHROMA_FORMAT == CHROMA_422 )
         macroblock_encode_p8x8_internal( h, i8, 1, CHROMA_422 );
+    else if( CHROMA_FORMAT == CHROMA_444 )
+        macroblock_encode_p8x8_internal( h, i8, 3, CHROMA_444 );
     else
-        macroblock_encode_p8x8_internal( h, i8, 1, CHROMA_420 );
+        macroblock_encode_p8x8_internal( h, i8, 1, CHROMA_400 );
 }
 
 /*****************************************************************************

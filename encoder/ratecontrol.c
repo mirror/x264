@@ -278,7 +278,7 @@ static NOINLINE uint32_t ac_energy_mb( x264_t *h, int mb_x, int mb_y, x264_frame
             var_interlaced  += ac_energy_plane( h, mb_x, mb_y, frame, 2, 0, 1, 1 );
             var_progressive += ac_energy_plane( h, mb_x, mb_y, frame, 2, 0, 0, 0 );
         }
-        else
+        else if( CHROMA_FORMAT )
         {
             var_interlaced  += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, 1, 1 );
             var_progressive += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, 0, 0 );
@@ -293,7 +293,7 @@ static NOINLINE uint32_t ac_energy_mb( x264_t *h, int mb_x, int mb_y, x264_frame
             var += ac_energy_plane( h, mb_x, mb_y, frame, 1, 0, PARAM_INTERLACED, 1 );
             var += ac_energy_plane( h, mb_x, mb_y, frame, 2, 0, PARAM_INTERLACED, 1 );
         }
-        else
+        else if( CHROMA_FORMAT )
             var += ac_energy_plane( h, mb_x, mb_y, frame, 1, 1, PARAM_INTERLACED, 1 );
     }
     x264_emms();

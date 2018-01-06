@@ -1515,6 +1515,25 @@ INIT_MMX mmx2
 PREFETCH_FENC 420
 PREFETCH_FENC 422
 
+%if ARCH_X86_64
+    DECLARE_REG_TMP 4
+%else
+    DECLARE_REG_TMP 2
+%endif
+
+cglobal prefetch_fenc_400, 2,3
+    movifnidn  t0d, r4m
+    FIX_STRIDES r1
+    and        t0d, 3
+    imul       t0d, r1d
+    lea         r0, [r0+t0*4+64*SIZEOF_PIXEL]
+    prefetcht0 [r0]
+    prefetcht0 [r0+r1]
+    lea         r0, [r0+r1*2]
+    prefetcht0 [r0]
+    prefetcht0 [r0+r1]
+    RET
+
 ;-----------------------------------------------------------------------------
 ; void prefetch_ref( pixel *pix, intptr_t stride, int parity )
 ;-----------------------------------------------------------------------------

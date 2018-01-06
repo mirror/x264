@@ -190,6 +190,8 @@ fail:
 #define AVS_IS_YUV420P16( vi ) (0)
 #define AVS_IS_YUV422P16( vi ) (0)
 #define AVS_IS_YUV444P16( vi ) (0)
+#define AVS_IS_Y( vi ) (0)
+#define AVS_IS_Y16( vi ) (0)
 #else
 #define AVS_IS_AVISYNTHPLUS (h->func.avs_is_420 && h->func.avs_is_422 && h->func.avs_is_444)
 #define AVS_IS_420( vi ) (h->func.avs_is_420 ? h->func.avs_is_420( vi ) : avs_is_yv12( vi ))
@@ -200,6 +202,8 @@ fail:
 #define AVS_IS_YUV420P16( vi ) (h->func.avs_is_yuv420p16 && h->func.avs_is_yuv420p16( vi ))
 #define AVS_IS_YUV422P16( vi ) (h->func.avs_is_yuv422p16 && h->func.avs_is_yuv422p16( vi ))
 #define AVS_IS_YUV444P16( vi ) (h->func.avs_is_yuv444p16 && h->func.avs_is_yuv444p16( vi ))
+#define AVS_IS_Y( vi ) (h->func.avs_is_y ? h->func.avs_is_y( vi ) : avs_is_y8( vi ))
+#define AVS_IS_Y16( vi ) (h->func.avs_is_y16 && h->func.avs_is_y16( vi ))
 #endif
 
 /* generate a filter sequence to try based on the filename extension */
@@ -288,7 +292,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     if( !strcasecmp( filename_ext, "avs" ) )
     {
         res = h->func.avs_invoke( h->env, "Import", arg, NULL );
-        FAIL_IF_ERROR( avs_is_error( res ), "%s\n", avs_as_string( res ) );
+        FAIL_IF_ERROR( avs_is_error( res ), "%s\n", avs_as_error( res ) );
         /* check if the user is using a multi-threaded script and apply distributor if necessary.
            adapted from avisynth's vfw interface */
         AVS_Value mt_test = h->func.avs_invoke( h->env, "GetMTMode", avs_new_value_bool( 0 ), NULL );
@@ -339,16 +343,17 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     {
         x264_cli_log( "avs", X264_LOG_WARNING, "detected fieldbased (separated) input, weaving to frames\n" );
         AVS_Value tmp = h->func.avs_invoke( h->env, "Weave", res, NULL );
-        FAIL_IF_ERROR( avs_is_error( tmp ), "couldn't weave fields into frames\n" );
+        FAIL_IF_ERROR( avs_is_error( tmp ), "couldn't weave fields into frames: %s\n", avs_as_error( tmp ) );
         res = update_clip( h, &vi, tmp, res );
         info->interlaced = 1;
         info->tff = avs_is_tff( vi );
     }
 #if !HAVE_SWSCALE
     /* if swscale is not available, convert the CSP if necessary */
-    FAIL_IF_ERROR( avs_version < 2.6f && (opt->output_csp == X264_CSP_I422 || opt->output_csp == X264_CSP_I444),
-                   "avisynth >= 2.6 is required for i422/i444 output\n" );
-    if( (opt->output_csp == X264_CSP_I420 && !AVS_IS_420( vi )) ||
+    FAIL_IF_ERROR( avs_version < 2.6f && (opt->output_csp == X264_CSP_I400 || opt->output_csp == X264_CSP_I422 || opt->output_csp == X264_CSP_I444),
+                   "avisynth >= 2.6 is required for i400/i422/i444 output\n" );
+    if( (opt->output_csp == X264_CSP_I400 && !AVS_IS_Y( vi )) ||
+        (opt->output_csp == X264_CSP_I420 && !AVS_IS_420( vi )) ||
         (opt->output_csp == X264_CSP_I422 && !AVS_IS_422( vi )) ||
         (opt->output_csp == X264_CSP_I444 && !AVS_IS_444( vi )) ||
         (opt->output_csp == X264_CSP_RGB && !avs_is_rgb( vi )) )
@@ -356,46 +361,58 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         const char *csp;
         if( AVS_IS_AVISYNTHPLUS )
         {
-            csp = opt->output_csp == X264_CSP_I420 ? "YUV420" :
+            csp = opt->output_csp == X264_CSP_I400 ? "Y" :
+                  opt->output_csp == X264_CSP_I420 ? "YUV420" :
                   opt->output_csp == X264_CSP_I422 ? "YUV422" :
                   opt->output_csp == X264_CSP_I444 ? "YUV444" :
                   "RGB";
         }
         else
         {
-            csp = opt->output_csp == X264_CSP_I420 ? "YV12" :
+            csp = opt->output_csp == X264_CSP_I400 ? "Y8" :
+                  opt->output_csp == X264_CSP_I420 ? "YV12" :
                   opt->output_csp == X264_CSP_I422 ? "YV16" :
                   opt->output_csp == X264_CSP_I444 ? "YV24" :
                   "RGB";
         }
         x264_cli_log( "avs", X264_LOG_WARNING, "converting input clip to %s\n", csp );
-        FAIL_IF_ERROR( opt->output_csp < X264_CSP_I444 && (vi->width&1),
-                       "input clip width not divisible by 2 (%dx%d)\n", vi->width, vi->height );
-        FAIL_IF_ERROR( opt->output_csp == X264_CSP_I420 && info->interlaced && (vi->height&3),
-                       "input clip height not divisible by 4 (%dx%d)\n", vi->width, vi->height );
-        FAIL_IF_ERROR( (opt->output_csp == X264_CSP_I420 || info->interlaced) && (vi->height&1),
-                       "input clip height not divisible by 2 (%dx%d)\n", vi->width, vi->height );
+        if( opt->output_csp != X264_CSP_I400 )
+        {
+            FAIL_IF_ERROR( opt->output_csp < X264_CSP_I444 && (vi->width&1),
+                           "input clip width not divisible by 2 (%dx%d)\n", vi->width, vi->height );
+            FAIL_IF_ERROR( opt->output_csp == X264_CSP_I420 && info->interlaced && (vi->height&3),
+                           "input clip height not divisible by 4 (%dx%d)\n", vi->width, vi->height );
+            FAIL_IF_ERROR( (opt->output_csp == X264_CSP_I420 || info->interlaced) && (vi->height&1),
+                           "input clip height not divisible by 2 (%dx%d)\n", vi->width, vi->height );
+        }
         char conv_func[16];
         snprintf( conv_func, sizeof(conv_func), "ConvertTo%s", csp );
-        char matrix[7] = "";
-        int arg_count = 2;
+        AVS_Value arg_arr[3];
+        const char *arg_name[3];
+        int arg_count = 1;
+        arg_arr[0] = res;
+        arg_name[0] = NULL;
+        if( opt->output_csp != X264_CSP_I400 )
+        {
+            arg_arr[arg_count] = avs_new_value_bool( info->interlaced );
+            arg_name[arg_count] = "interlaced";
+            arg_count++;
+        }
         /* if doing a rgb <-> yuv conversion then range is handled via 'matrix'. though it's only supported in 2.56+ */
+        char matrix[7];
         if( avs_version >= 2.56f && ((opt->output_csp == X264_CSP_RGB && avs_is_yuv( vi )) || (opt->output_csp != X264_CSP_RGB && avs_is_rgb( vi ))) )
         {
             // if converting from yuv, then we specify the matrix for the input, otherwise use the output's.
             int use_pc_matrix = avs_is_yuv( vi ) ? opt->input_range == RANGE_PC : opt->output_range == RANGE_PC;
             snprintf( matrix, sizeof(matrix), "%s601", use_pc_matrix ? "PC." : "Rec" ); /* FIXME: use correct coefficients */
+            arg_arr[arg_count] = avs_new_value_string( matrix );
+            arg_name[arg_count] = "matrix";
             arg_count++;
             // notification that the input range has changed to the desired one
             opt->input_range = opt->output_range;
         }
-        const char *arg_name[] = { NULL, "interlaced", "matrix" };
-        AVS_Value arg_arr[3];
-        arg_arr[0] = res;
-        arg_arr[1] = avs_new_value_bool( info->interlaced );
-        arg_arr[2] = avs_new_value_string( matrix );
         AVS_Value res2 = h->func.avs_invoke( h->env, conv_func, avs_new_value_array( arg_arr, arg_count ), arg_name );
-        FAIL_IF_ERROR( avs_is_error( res2 ), "couldn't convert input clip to %s\n", csp );
+        FAIL_IF_ERROR( avs_is_error( res2 ), "couldn't convert input clip to %s: %s\n", csp, avs_as_error( res2 ) );
         res = update_clip( h, &vi, res2, res );
     }
     /* if swscale is not available, change the range if necessary. This only applies to YUV-based CSPs however */
@@ -443,13 +460,15 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         info->csp = X264_CSP_I420 | X264_CSP_HIGH_DEPTH;
     else if( avs_is_yv12( vi ) )
         info->csp = X264_CSP_I420;
-#if HAVE_SWSCALE
+    else if( AVS_IS_Y16( vi ) )
+        info->csp = X264_CSP_I400 | X264_CSP_HIGH_DEPTH;
+    else if( avs_is_y8( vi ) )
+        info->csp = X264_CSP_I400;
     else if( avs_is_yuy2( vi ) )
-        info->csp = AV_PIX_FMT_YUYV422 | X264_CSP_OTHER;
+        info->csp = X264_CSP_YUYV;
+#if HAVE_SWSCALE
     else if( avs_is_yv411( vi ) )
         info->csp = AV_PIX_FMT_YUV411P | X264_CSP_OTHER;
-    else if( avs_is_y8( vi ) )
-        info->csp = AV_PIX_FMT_GRAY8 | X264_CSP_OTHER;
 #endif
     else
     {

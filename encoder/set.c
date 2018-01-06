@@ -106,7 +106,8 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->i_mb_width = ( param->i_width + 15 ) / 16;
     sps->i_mb_height= ( param->i_height + 15 ) / 16;
     sps->i_chroma_format_idc = csp >= X264_CSP_I444 ? CHROMA_444 :
-                               csp >= X264_CSP_I422 ? CHROMA_422 : CHROMA_420;
+                               csp >= X264_CSP_I422 ? CHROMA_422 :
+                               csp >= X264_CSP_I420 ? CHROMA_420 : CHROMA_400;
 
     sps->b_qpprime_y_zero_transform_bypass = param->rc.i_rc_method == X264_RC_CQP && param->rc.i_qp_constant == 0;
     if( sps->b_qpprime_y_zero_transform_bypass || sps->i_chroma_format_idc == CHROMA_444 )
@@ -115,7 +116,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
         sps->i_profile_idc  = PROFILE_HIGH422;
     else if( BIT_DEPTH > 8 )
         sps->i_profile_idc  = PROFILE_HIGH10;
-    else if( param->analyse.b_transform_8x8 || param->i_cqm_preset != X264_CQM_FLAT )
+    else if( param->analyse.b_transform_8x8 || param->i_cqm_preset != X264_CQM_FLAT || sps->i_chroma_format_idc == CHROMA_400 )
         sps->i_profile_idc  = PROFILE_HIGH;
     else if( param->b_cabac || param->i_bframe > 0 || param->b_interlaced || param->b_fake_interlaced || param->analyse.i_weighted_pred > 0 )
         sps->i_profile_idc  = PROFILE_MAIN;
@@ -200,19 +201,11 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->vui.i_transfer  = ( param->vui.i_transfer  >= 0 && param->vui.i_transfer  <= 18 ? param->vui.i_transfer  : 2 );
     sps->vui.i_colmatrix = ( param->vui.i_colmatrix >= 0 && param->vui.i_colmatrix <= 14 ? param->vui.i_colmatrix :
                            ( csp >= X264_CSP_BGR ? 0 : 2 ) );
-    if( sps->vui.i_colorprim != 2 ||
-        sps->vui.i_transfer  != 2 ||
-        sps->vui.i_colmatrix != 2 )
-    {
+    if( sps->vui.i_colorprim != 2 || sps->vui.i_transfer != 2 || sps->vui.i_colmatrix != 2 )
         sps->vui.b_color_description_present = 1;
-    }
 
-    if( sps->vui.i_vidformat != 5 ||
-        sps->vui.b_fullrange ||
-        sps->vui.b_color_description_present )
-    {
+    if( sps->vui.i_vidformat != 5 || sps->vui.b_fullrange || sps->vui.b_color_description_present )
         sps->vui.b_signal_type_present = 1;
-    }
 
     /* FIXME: not sufficient for interlaced video */
     sps->vui.b_chroma_loc_info_present = param->vui.i_chroma_loc > 0 && param->vui.i_chroma_loc <= 5 &&

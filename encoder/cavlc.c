@@ -489,7 +489,7 @@ void x264_macroblock_write_cavlc( x264_t *h )
     bs_t *s = &h->out.bs;
     const int i_mb_type = h->mb.i_type;
     int plane_count = CHROMA444 ? 3 : 1;
-    int chroma = !CHROMA444;
+    int chroma = CHROMA_FORMAT == CHROMA_420 || CHROMA_FORMAT == CHROMA_422;
 
 #if RDO_SKIP_BS
     s->i_bits_encoded = 0;

@@ -48,10 +48,12 @@ typedef struct
 
 static int parse_csp_and_depth( char *csp_name, int *bit_depth )
 {
-    int csp    = X264_CSP_MAX;
+    int csp = X264_CSP_MAX;
 
     /* Set colorspace from known variants */
-    if( !strncmp( "420", csp_name, 3 ) )
+    if( !strncmp( "mono", csp_name, 4 ) )
+        csp = X264_CSP_I400;
+    else if( !strncmp( "420", csp_name, 3 ) )
         csp = X264_CSP_I420;
     else if( !strncmp( "422", csp_name, 3 ) )
         csp = X264_CSP_I422;
@@ -59,7 +61,8 @@ static int parse_csp_and_depth( char *csp_name, int *bit_depth )
         csp = X264_CSP_I444;
 
     /* Set high bit depth from known extensions */
-    if( sscanf( csp_name, "%*d%*[pP]%d", bit_depth ) != 1 )
+    if( sscanf( csp_name, "mono%d", bit_depth ) != 1 &&
+        sscanf( csp_name, "%*d%*[pP]%d", bit_depth ) != 1 )
         *bit_depth = 8;
 
     return csp;

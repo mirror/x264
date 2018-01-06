@@ -148,10 +148,14 @@ static inline int ssd_plane( x264_t *h, int size, int p, int x, int y )
 
 static inline int ssd_mb( x264_t *h )
 {
-    int chroma_size = h->luma2chroma_pixel[PIXEL_16x16];
-    int chroma_ssd = ssd_plane(h, chroma_size, 1, 0, 0) + ssd_plane(h, chroma_size, 2, 0, 0);
-    chroma_ssd = ((uint64_t)chroma_ssd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
-    return ssd_plane(h, PIXEL_16x16, 0, 0, 0) + chroma_ssd;
+    int i_ssd = ssd_plane( h, PIXEL_16x16, 0, 0, 0 );
+    if( CHROMA_FORMAT )
+    {
+        int chroma_size = h->luma2chroma_pixel[PIXEL_16x16];
+        int chroma_ssd = ssd_plane( h, chroma_size, 1, 0, 0 ) + ssd_plane( h, chroma_size, 2, 0, 0 );
+        i_ssd += ((uint64_t)chroma_ssd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
+    }
+    return i_ssd;
 }
 
 static int rd_cost_mb( x264_t *h, int i_lambda2 )
@@ -250,10 +254,13 @@ uint64_t x264_rd_cost_part( x264_t *h, int i_lambda2, int i4, int i_pixel )
     int ssd_x = 8*(i8&1);
     int ssd_y = 8*(i8>>1);
     i_ssd = ssd_plane( h, i_pixel, 0, ssd_x, ssd_y );
-    int chromapix = h->luma2chroma_pixel[i_pixel];
-    int chromassd = ssd_plane( h, chromapix, 1, ssd_x>>CHROMA_H_SHIFT, ssd_y>>CHROMA_V_SHIFT )
-                  + ssd_plane( h, chromapix, 2, ssd_x>>CHROMA_H_SHIFT, ssd_y>>CHROMA_V_SHIFT );
-    i_ssd += ((uint64_t)chromassd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
+    if( CHROMA_FORMAT )
+    {
+        int chroma_size = h->luma2chroma_pixel[i_pixel];
+        int chroma_ssd = ssd_plane( h, chroma_size, 1, ssd_x>>CHROMA_H_SHIFT, ssd_y>>CHROMA_V_SHIFT )
+                       + ssd_plane( h, chroma_size, 2, ssd_x>>CHROMA_H_SHIFT, ssd_y>>CHROMA_V_SHIFT );
+        i_ssd += ((uint64_t)chroma_ssd * h->mb.i_chroma_lambda2_offset + 128) >> 8;
+    }
 
     if( h->param.b_cabac )
     {

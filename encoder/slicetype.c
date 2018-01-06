@@ -319,7 +319,7 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
     }
 
     /* Don't check chroma in lookahead, or if there wasn't a luma weight. */
-    for( int plane = 0; plane <= 2 && !( plane && ( !weights[0].weightfn || b_lookahead ) ); plane++ )
+    for( int plane = 0; plane < (CHROMA_FORMAT ? 3 : 1) && !( plane && ( !weights[0].weightfn || b_lookahead ) ); plane++ )
     {
         int minoff, minscale, mindenom;
         unsigned int minscore, origscore;

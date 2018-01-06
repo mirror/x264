@@ -31,7 +31,7 @@ Configuration options:
   --disable-win32thread    disable win32threads (windows only)
   --disable-interlaced     disable interlaced encoding support
   --bit-depth=BIT_DEPTH    set output bit depth (8, 10, all) [all]
-  --chroma-format=FORMAT   output chroma format (420, 422, 444, all) [all]
+  --chroma-format=FORMAT   output chroma format (400, 420, 422, 444, all) [all]
 
 Advanced options:
   --disable-asm            disable platform-specific assembly optimizations
@@ -517,8 +517,8 @@ for opt do
             ;;
         --chroma-format=*)
             chroma_format="$optarg"
-            if [ $chroma_format != "420" -a $chroma_format != "422" -a $chroma_format != "444" -a $chroma_format != "all" ]; then
-                echo "Supplied chroma format must be 420, 422, 444 or all."
+            if [ $chroma_format != "400" -a $chroma_format != "420" -a $chroma_format != "422" -a $chroma_format != "444" -a $chroma_format != "all" ]; then
+                echo "Supplied chroma format must be 400, 420, 422, 444 or all."
                 exit 1
             fi
             ;;

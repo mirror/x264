@@ -1089,8 +1089,10 @@ void x264_macroblock_write_cabac( x264_t *h, x264_cabac_t *cb )
 {
     if( CHROMA444 )
         macroblock_write_cabac_internal( h, cb, 3, 0 );
-    else
+    else if( CHROMA_FORMAT )
         macroblock_write_cabac_internal( h, cb, 1, 1 );
+    else
+        macroblock_write_cabac_internal( h, cb, 1, 0 );
 }
 
 #if RDO_SKIP_BS

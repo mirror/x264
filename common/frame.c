@@ -44,29 +44,16 @@ static int align_plane_size( int x, int disalign )
 
 static int frame_internal_csp( int external_csp )
 {
-    switch( external_csp & X264_CSP_MASK )
-    {
-        case X264_CSP_NV12:
-        case X264_CSP_NV21:
-        case X264_CSP_I420:
-        case X264_CSP_YV12:
-            return X264_CSP_NV12;
-        case X264_CSP_NV16:
-        case X264_CSP_I422:
-        case X264_CSP_YV16:
-        case X264_CSP_YUYV:
-        case X264_CSP_UYVY:
-        case X264_CSP_V210:
-            return X264_CSP_NV16;
-        case X264_CSP_I444:
-        case X264_CSP_YV24:
-        case X264_CSP_BGR:
-        case X264_CSP_BGRA:
-        case X264_CSP_RGB:
-            return X264_CSP_I444;
-        default:
-            return X264_CSP_NONE;
-    }
+    int csp = external_csp & X264_CSP_MASK;
+    if( csp == X264_CSP_I400 )
+        return X264_CSP_I400;
+    if( csp >= X264_CSP_I420 && csp < X264_CSP_I422 )
+        return X264_CSP_NV12;
+    if( csp >= X264_CSP_I422 && csp < X264_CSP_I444 )
+        return X264_CSP_NV16;
+    if( csp >= X264_CSP_I444 && csp <= X264_CSP_RGB )
+        return X264_CSP_I444;
+    return X264_CSP_NONE;
 }
 
 static x264_frame_t *frame_new( x264_t *h, int b_fdec )
@@ -118,6 +105,14 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
             frame->i_lines[i] = i_lines;
             frame->i_stride[i] = i_stride;
         }
+    }
+    else if( i_csp == X264_CSP_I400 )
+    {
+        luma_plane_count = 1;
+        frame->i_plane = 1;
+        frame->i_width[0] = i_width;
+        frame->i_lines[0] = i_lines;
+        frame->i_stride[0] = i_stride;
     }
     else
         goto fail;
@@ -470,7 +465,7 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
                                          (pixel*)pix[2], stride[2]/sizeof(pixel),
                                          h->param.i_width>>1, h->param.i_height>>v_shift );
         }
-        else //if( i_csp == X264_CSP_I444 || i_csp == X264_CSP_YV24 )
+        else if( i_csp == X264_CSP_I444 || i_csp == X264_CSP_YV24 )
         {
             get_plane_ptr( h, src, &pix[1], &stride[1], i_csp==X264_CSP_I444 ? 1 : 2, 0, 0 );
             get_plane_ptr( h, src, &pix[2], &stride[2], i_csp==X264_CSP_I444 ? 2 : 1, 0, 0 );

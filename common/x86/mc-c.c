@@ -159,6 +159,8 @@ void x264_mc_copy_w16_aligned_sse( pixel *, intptr_t, pixel *, intptr_t, int );
 void x264_mc_copy_w16_avx( uint16_t *, intptr_t, uint16_t *, intptr_t, int );
 #define x264_mc_copy_w16_aligned_avx x264_template(mc_copy_w16_aligned_avx)
 void x264_mc_copy_w16_aligned_avx( uint16_t *, intptr_t, uint16_t *, intptr_t, int );
+#define x264_prefetch_fenc_400_mmx2 x264_template(prefetch_fenc_400_mmx2)
+void x264_prefetch_fenc_400_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_prefetch_fenc_420_mmx2 x264_template(prefetch_fenc_420_mmx2)
 void x264_prefetch_fenc_420_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_prefetch_fenc_422_mmx2 x264_template(prefetch_fenc_422_mmx2)
@@ -796,6 +798,7 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( !(cpu&X264_CPU_MMX2) )
         return;
 
+    pf->prefetch_fenc_400 = x264_prefetch_fenc_400_mmx2;
     pf->prefetch_fenc_420 = x264_prefetch_fenc_420_mmx2;
     pf->prefetch_fenc_422 = x264_prefetch_fenc_422_mmx2;
     pf->prefetch_ref  = x264_prefetch_ref_mmx2;

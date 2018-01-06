@@ -199,6 +199,9 @@ static const char * const pulldown_names[] = { "none", "22", "32", "64", "double
 static const char * const log_level_names[] = { "none", "error", "warning", "info", "debug", 0 };
 static const char * const output_csp_names[] =
 {
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I400
+    "i400",
+#endif
 #if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
     "i420",
 #endif
@@ -213,6 +216,7 @@ static const char * const output_csp_names[] =
 static const char * const chroma_format_names[] =
 {
     [0] = "all",
+    [X264_CSP_I400] = "i400",
     [X264_CSP_I420] = "i420",
     [X264_CSP_I422] = "i422",
     [X264_CSP_I444] = "i444"
@@ -554,8 +558,9 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --profile <string>      Force the limits of an H.264 profile\n"
         "                                  Overrides all settings.\n" );
     H2(
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT <= X264_CSP_I420
 #if HAVE_BITDEPTH8
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
         "                                  - baseline:\n"
         "                                    --no-8x8dct --bframes 0 --no-cabac\n"
         "                                    --cqm flat --weightp 0\n"
@@ -564,6 +569,7 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                  - main:\n"
         "                                    --no-8x8dct --cqm flat\n"
         "                                    No lossless.\n"
+#endif
         "                                  - high:\n"
         "                                    No lossless.\n"
 #endif
@@ -584,9 +590,12 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                    Support for 4:2:0/4:2:2/4:4:4 chroma subsampling.\n" );
         else H0(
         "                                  - "
-#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT <= X264_CSP_I420
 #if HAVE_BITDEPTH8
-        "baseline,main,high,"
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
+        "baseline,main,"
+#endif
+        "high,"
 #endif
 #if HAVE_BITDEPTH10
         "high10,"
@@ -905,7 +914,13 @@ static void help( x264_param_t *defaults, int longhelp )
     H1( "      --input-csp <string>    Specify input colorspace format for raw input\n" );
     print_csp_names( longhelp );
     H1( "      --output-csp <string>   Specify output colorspace [\"%s\"]\n"
-        "                                  - %s\n", output_csp_names[0], stringify_names( buf, output_csp_names ) );
+        "                                  - %s\n",
+#if X264_CHROMA_FORMAT
+        output_csp_names[0],
+#else
+        "i420",
+#endif
+        stringify_names( buf, output_csp_names ) );
     H1( "      --input-depth <integer> Specify input bit depth for raw input\n" );
     H1( "      --output-depth <integer> Specify output bit depth\n" );
     H1( "      --input-range <string>  Specify input color range [\"%s\"]\n"
@@ -1325,7 +1340,9 @@ static int init_vid_filters( char *sequence, hnd_t *handle, video_info_t *info, 
     /* force the output csp to what the user specified (or the default) */
     param->i_csp = info->csp;
     int csp = info->csp & X264_CSP_MASK;
-    if( output_csp == X264_CSP_I420 && (csp < X264_CSP_I420 || csp >= X264_CSP_I422) )
+    if( output_csp == X264_CSP_I400 && csp != X264_CSP_I400 )
+        param->i_csp = X264_CSP_I400;
+    else if( output_csp == X264_CSP_I420 && (csp < X264_CSP_I420 || csp >= X264_CSP_I422) )
         param->i_csp = X264_CSP_I420;
     else if( output_csp == X264_CSP_I422 && (csp < X264_CSP_I422 || csp >= X264_CSP_I444) )
         param->i_csp = X264_CSP_I422;
@@ -1556,7 +1573,7 @@ static int parse( int argc, char **argv, x264_param_t *param, cli_opt_t *opt )
 #if X264_CHROMA_FORMAT
                 static const uint8_t output_csp_fix[] = { X264_CHROMA_FORMAT, X264_CSP_RGB };
 #else
-                static const uint8_t output_csp_fix[] = { X264_CSP_I420, X264_CSP_I422, X264_CSP_I444, X264_CSP_RGB };
+                static const uint8_t output_csp_fix[] = { X264_CSP_I400, X264_CSP_I420, X264_CSP_I422, X264_CSP_I444, X264_CSP_RGB };
 #endif
                 param->i_csp = output_csp = output_csp_fix[output_csp];
                 break;

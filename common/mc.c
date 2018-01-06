@@ -652,6 +652,7 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
 
     pf->hpel_filter = hpel_filter;
 
+    pf->prefetch_fenc_400 = prefetch_fenc_null;
     pf->prefetch_fenc_420 = prefetch_fenc_null;
     pf->prefetch_fenc_422 = prefetch_fenc_null;
     pf->prefetch_ref  = prefetch_ref_null;

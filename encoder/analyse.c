@@ -309,8 +309,8 @@ static void mb_analyse_init( x264_t *h, x264_mb_analysis_t *a, int qp )
     /* I: Intra part */
     a->i_satd_i16x16 =
     a->i_satd_i8x8   =
-    a->i_satd_i4x4   =
-    a->i_satd_chroma = COST_MAX;
+    a->i_satd_i4x4   = COST_MAX;
+    a->i_satd_chroma = CHROMA_FORMAT ? COST_MAX : 0;
 
     /* non-RD PCM decision is inaccurate (as is psy-rd), so don't do it.
      * PCM cost can overflow with high lambda2, so cap it at COST_MAX. */
@@ -1035,7 +1035,7 @@ static void intra_rd_refine( x264_t *h, x264_mb_analysis_t *a )
     }
 
     /* RD selection for chroma prediction */
-    if( !CHROMA444 )
+    if( CHROMA_FORMAT == CHROMA_420 || CHROMA_FORMAT == CHROMA_422 )
     {
         const int8_t *predict_mode = predict_chroma_mode_available( h->mb.i_neighbour_intra );
         if( predict_mode[1] >= 0 )
