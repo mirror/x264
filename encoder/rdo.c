@@ -96,7 +96,6 @@ static ALWAYS_INLINE int cached_satd( x264_t *h, int size, int x, int y )
     static const uint8_t satd_shift_x[3] = {3,   2,   2};
     static const uint8_t satd_shift_y[3] = {2-1, 3-2, 2-2};
     static const uint8_t  satd_offset[3] = {0,   8,   16};
-    ALIGNED_16( static pixel zero[16] ) = {0};
     int cache_index = (x >> satd_shift_x[size - PIXEL_8x4]) + (y >> satd_shift_y[size - PIXEL_8x4])
                     + satd_offset[size - PIXEL_8x4];
     int res = h->mb.pic.fenc_satd_cache[cache_index];
@@ -105,8 +104,8 @@ static ALWAYS_INLINE int cached_satd( x264_t *h, int size, int x, int y )
     else
     {
         pixel *fenc = h->mb.pic.p_fenc[0] + x + y*FENC_STRIDE;
-        int dc = h->pixf.sad[size]( fenc, FENC_STRIDE, zero, 0 ) >> 1;
-        res = h->pixf.satd[size]( fenc, FENC_STRIDE, zero, 0 ) - dc;
+        int dc = h->pixf.sad[size]( fenc, FENC_STRIDE, (pixel*)x264_zero, 0 ) >> 1;
+        res = h->pixf.satd[size]( fenc, FENC_STRIDE, (pixel*)x264_zero, 0 ) - dc;
         h->mb.pic.fenc_satd_cache[cache_index] = res + 1;
         return res;
     }
@@ -123,7 +122,6 @@ static ALWAYS_INLINE int cached_satd( x264_t *h, int size, int x, int y )
 
 static inline int ssd_plane( x264_t *h, int size, int p, int x, int y )
 {
-    ALIGNED_16( static pixel zero[16] ) = {0};
     int satd = 0;
     pixel *fdec = h->mb.pic.p_fdec[p] + x + y*FDEC_STRIDE;
     pixel *fenc = h->mb.pic.p_fenc[p] + x + y*FENC_STRIDE;
@@ -140,8 +138,8 @@ static inline int ssd_plane( x264_t *h, int size, int p, int x, int y )
         }
         else
         {
-            int dc = h->pixf.sad[size]( fdec, FDEC_STRIDE, zero, 0 ) >> 1;
-            satd = abs(h->pixf.satd[size]( fdec, FDEC_STRIDE, zero, 0 ) - dc - cached_satd( h, size, x, y ));
+            int dc = h->pixf.sad[size]( fdec, FDEC_STRIDE, (pixel*)x264_zero, 0 ) >> 1;
+            satd = abs(h->pixf.satd[size]( fdec, FDEC_STRIDE, (pixel*)x264_zero, 0 ) - dc - cached_satd( h, size, x, y ));
         }
         satd = (satd * h->mb.i_psy_rd * h->mb.i_psy_rd_lambda + 128) >> 8;
     }

@@ -558,12 +558,10 @@ static ALWAYS_INLINE const int8_t *predict_4x4_mode_available( int force_intra, 
 /* For trellis=2, we need to do this for both sizes of DCT, for trellis=1 we only need to use it on the chosen mode. */
 static void inline psy_trellis_init( x264_t *h, int do_both_dct )
 {
-    ALIGNED_64( static pixel zero[16*FDEC_STRIDE] ) = {0};
-
     if( do_both_dct || h->mb.b_transform_8x8 )
-        h->dctf.sub16x16_dct8( h->mb.pic.fenc_dct8, h->mb.pic.p_fenc[0], zero );
+        h->dctf.sub16x16_dct8( h->mb.pic.fenc_dct8, h->mb.pic.p_fenc[0], (pixel*)x264_zero );
     if( do_both_dct || !h->mb.b_transform_8x8 )
-        h->dctf.sub16x16_dct( h->mb.pic.fenc_dct4, h->mb.pic.p_fenc[0], zero );
+        h->dctf.sub16x16_dct( h->mb.pic.fenc_dct4, h->mb.pic.p_fenc[0], (pixel*)x264_zero );
 }
 
 /* Reset fenc satd scores cache for psy RD */

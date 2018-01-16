@@ -633,7 +633,6 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
             /* successive elimination by comparing DC before a full SAD,
              * because sum(abs(diff)) >= abs(diff(sum)). */
             uint16_t *sums_base = m->integral;
-            ALIGNED_16( static pixel zero[8*FENC_STRIDE] ) = {0};
             ALIGNED_ARRAY_16( int, enc_dc,[4] );
             int sad_size = i_pixel <= PIXEL_8x8 ? PIXEL_8x8 : PIXEL_4x4;
             int delta = x264_pixel_size[sad_size].w;
@@ -641,7 +640,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
             int xn;
             uint16_t *cost_fpel_mvx = h->cost_mv_fpel[h->mb.i_qp][-m->mvp[0]&3] + (-m->mvp[0]>>2);
 
-            h->pixf.sad_x4[sad_size]( zero, p_fenc, p_fenc+delta,
+            h->pixf.sad_x4[sad_size]( (pixel*)x264_zero, p_fenc, p_fenc+delta,
                 p_fenc+delta*FENC_STRIDE, p_fenc+delta+delta*FENC_STRIDE,
                 FENC_STRIDE, enc_dc );
             if( delta == 4 )
