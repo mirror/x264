@@ -912,8 +912,8 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
                          const uint8_t *zigzag, int ctx_block_cat, int lambda2, int b_ac,
                          int b_chroma, int dc, int num_coefs, int idx, int b_8x8 )
 {
-    ALIGNED_16( dctcoef quant_coefs[2][16] );
-    ALIGNED_16( dctcoef coefs[16] ) = {0};
+    ALIGNED_ARRAY_16( dctcoef, quant_coefs,[2],[16] );
+    ALIGNED_ARRAY_16( dctcoef, coefs,[16] );
     const uint32_t *coef_weight1 = b_8x8 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
     const uint32_t *coef_weight2 = b_8x8 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
     int delta_distortion[16];
@@ -922,6 +922,9 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
     const int f = 1<<15;
     int nC = b_chroma && dc ? 3 + (num_coefs>>2)
                             : ct_index[x264_mb_predict_non_zero_code( h, !b_chroma && dc ? (idx - LUMA_DC)*16 : idx )];
+
+    for( i = 0; i < 16; i += 16/sizeof(*coefs) )
+        M128( &coefs[i] ) = M128_ZERO;
 
     /* Code for handling 8x8dct -> 4x4dct CAVLC munging.  Input/output use a different
      * step/start/end than internal processing. */
