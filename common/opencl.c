@@ -364,7 +364,7 @@ static int opencl_lookahead_alloc( x264_t *h )
     if( !h->opencl.lookahead_program )
         goto fail;
 
-    for( int i = 0; i < ARRAY_SIZE(kernelnames); i++ )
+    for( int i = 0; i < ARRAY_ELEMS(kernelnames); i++ )
     {
         *kernels[i] = ocl->clCreateKernel( h->opencl.lookahead_program, kernelnames[i], &status );
         if( status != CL_SUCCESS )

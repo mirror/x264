@@ -1808,7 +1808,7 @@ static int check_mc( int cpu_ref, int cpu_new )
         float *fix8_src = (float*)(buf3 + 0x800);
         uint16_t *dstc = (uint16_t*)buf3;
         uint16_t *dsta = (uint16_t*)buf4;
-        for( int i = 0; i < ARRAY_SIZE(mbtree_fix8_counts); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(mbtree_fix8_counts); i++ )
         {
             int count = mbtree_fix8_counts[i];
 
@@ -1835,7 +1835,7 @@ static int check_mc( int cpu_ref, int cpu_new )
         uint16_t *fix8_src = (uint16_t*)(buf3 + 0x800);
         float *dstc = (float*)buf3;
         float *dsta = (float*)buf4;
-        for( int i = 0; i < ARRAY_SIZE(mbtree_fix8_counts); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(mbtree_fix8_counts); i++ )
         {
             int count = mbtree_fix8_counts[i];
 
