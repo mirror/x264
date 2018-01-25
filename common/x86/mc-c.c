@@ -171,10 +171,14 @@ void x264_prefetch_ref_mmx2( pixel *, intptr_t, int );
 void x264_plane_copy_core_sse( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 #define x264_plane_copy_core_avx x264_template(plane_copy_core_avx)
 void x264_plane_copy_core_avx( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
+#define x264_plane_copy_avx512 x264_template(plane_copy_avx512)
+void x264_plane_copy_avx512( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 #define x264_plane_copy_swap_core_ssse3 x264_template(plane_copy_swap_core_ssse3)
 void x264_plane_copy_swap_core_ssse3( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 #define x264_plane_copy_swap_core_avx2 x264_template(plane_copy_swap_core_avx2)
 void x264_plane_copy_swap_core_avx2 ( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
+#define x264_plane_copy_swap_avx512 x264_template(plane_copy_swap_avx512)
+void x264_plane_copy_swap_avx512( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 #define x264_plane_copy_interleave_core_mmx2 x264_template(plane_copy_interleave_core_mmx2)
 void x264_plane_copy_interleave_core_mmx2( pixel *dst,  intptr_t i_dst,
                                            pixel *srcu, intptr_t i_srcu,
@@ -1122,6 +1126,8 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         return;
     pf->memcpy_aligned = x264_memcpy_aligned_avx512;
     pf->memzero_aligned = x264_memzero_aligned_avx512;
+    pf->plane_copy = x264_plane_copy_avx512;
+    pf->plane_copy_swap = x264_plane_copy_swap_avx512;
     pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx512;
 #if ARCH_X86_64
     pf->mbtree_propagate_list = mbtree_propagate_list_avx512;
