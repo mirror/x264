@@ -798,8 +798,10 @@ case $host_cpu in
                 CFLAGS="$CFLAGS -arch armv7"
                 LDFLAGS="$LDFLAGS -arch armv7"
             fi
-        elif [ "$SYS" = WINDOWS ] ; then
+        elif [ "$SYS" = WINDOWS ] && [ "$compiler" = CL ] ; then
             AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type armasm -force-thumb -- armasm -nologo -ignore 4509}"
+        elif [ "$SYS" = WINDOWS ] ; then
+            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type clang -force-thumb -- ${CC} -mimplicit-it=always}"
         else
             AS="${AS-${CC}}"
         fi
@@ -810,7 +812,7 @@ case $host_cpu in
         if [ "$SYS" = MACOSX ] ; then
             AS="${AS-${CC}}"
             ASFLAGS="$ASFLAGS -DPREFIX -DPIC"
-        elif [ "$SYS" = WINDOWS ] ; then
+        elif [ "$SYS" = WINDOWS ] && [ "$compiler" = CL ] ; then
             AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -as-type armasm -- armasm64 -nologo}"
         else
             AS="${AS-${CC}}"
