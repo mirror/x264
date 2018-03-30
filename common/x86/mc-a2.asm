@@ -2518,8 +2518,8 @@ cglobal mbtree_propagate_list_internal, 5,7,21
     paddd           m6, m7             ; i_mb_x += 8
     pand            m3, m8             ; {x, y}
     vprold          m1, m3, 20         ; {y, x} << 4
-    psubw           m3 {k4}, m9, m3    ; {32-x, 32-y}, {32-x, y}
-    psubw           m1 {k5}, m10, m1   ; ({32-y, x}, {y, x}) << 4
+    vpsubw          m3 {k4}, m9, m3    ; {32-x, 32-y}, {32-x, y}
+    vpsubw          m1 {k5}, m10, m1   ; ({32-y, x}, {y, x}) << 4
     pmullw          m3, m1
     paddsw          m3, m3             ; prevent signed overflow in idx0 (32*32<<5 == 0x8000)
     pmulhrsw        m2, m3, m4         ; idx01weight idx23weightp
@@ -2530,11 +2530,11 @@ cglobal mbtree_propagate_list_internal, 5,7,21
     vpcmpuw         k2, ym1, ym20, 1    ; {mbx, mbx+1} < width
     kunpckwd        k2, k2, k2
     psrad           m1, m0, 16
-    paddd           m1 {k6}, m11
+    vpaddd          m1 {k6}, m11
     vpcmpud         k1 {k1}, m1, m13, 1 ; mby < height | mby+1 < height
 
     pmaddwd         m0, m15
-    paddd           m0 {k6}, m14        ; idx0 | idx2
+    vpaddd          m0 {k6}, m14        ; idx0 | idx2
     vmovdqu16       m2 {k2}{z}, m2      ; idx01weight | idx23weight
     vptestmd        k1 {k1}, m2, m2     ; mask out offsets with no changes
 

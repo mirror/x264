@@ -4744,7 +4744,7 @@ cglobal intra_sad_x9_8x8, 5,7,8
 %endmacro
 
 %macro SATD_AVX512_END 0-1 0 ; sa8d
-    paddw          m0 {k1}{z}, m1 ; zero-extend to dwords
+    vpaddw         m0 {k1}{z}, m1 ; zero-extend to dwords
 %if ARCH_X86_64
 %if mmsize == 64
     vextracti32x8 ym1, m0, 1
