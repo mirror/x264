@@ -1654,6 +1654,11 @@ FMA4_INSTR fnmsub,   pd, ps, sd, ss
                 %assign %%evex_required 1
             %endif
         %endif
+        %ifnum regnumof%3
+            %if regnumof%3 >= 16 || sizeof%3 > 32
+                %assign %%evex_required 1
+            %endif
+        %endif
         %if %%evex_required
             %6 %%args
         %else
