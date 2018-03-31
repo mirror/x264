@@ -1240,9 +1240,40 @@ INIT_XMM
     %elif %0 >= 9
         __instr %6, %7, %8, %9
     %elif %0 == 8
-        __instr %6, %7, %8
+        %if avx_enabled && %5
+            %xdefine __src1 %7
+            %xdefine __src2 %8
+            %ifnum regnumof%7
+                %ifnum regnumof%8
+                    %if regnumof%7 < 8 && regnumof%8 >= 8 && regnumof%8 < 16 && sizeof%8 <= 32
+                        ; Most VEX-encoded instructions require an additional byte to encode when
+                        ; src2 is a high register (e.g. m8..15). If the instruction is commutative
+                        ; we can swap src1 and src2 when doing so reduces the instruction length.
+                        %xdefine __src1 %8
+                        %xdefine __src2 %7
+                    %endif
+                %endif
+            %endif
+            __instr %6, __src1, __src2
+        %else
+            __instr %6, %7, %8
+        %endif
     %elif %0 == 7
-        __instr %6, %7
+        %if avx_enabled && %5
+            %xdefine __src1 %6
+            %xdefine __src2 %7
+            %ifnum regnumof%6
+                %ifnum regnumof%7
+                    %if regnumof%6 < 8 && regnumof%7 >= 8 && regnumof%7 < 16 && sizeof%7 <= 32
+                        %xdefine __src1 %7
+                        %xdefine __src2 %6
+                    %endif
+                %endif
+            %endif
+            __instr %6, __src1, __src2
+        %else
+            __instr %6, %7
+        %endif
     %else
         __instr %6
     %endif
