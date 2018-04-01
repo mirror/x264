@@ -555,7 +555,6 @@ void x264_sei_recovery_point_write( x264_t *h, bs_t *s, int recovery_frame_cnt )
     bs_write( &q, 2, 0 ); //changing_slice_group 0
 
     bs_align_10( &q );
-    bs_flush( &q );
 
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_RECOVERY_POINT );
 }
@@ -610,7 +609,6 @@ void x264_sei_buffering_period_write( x264_t *h, bs_t *s )
     }
 
     bs_align_10( &q );
-    bs_flush( &q );
 
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_BUFFERING_PERIOD );
 }
@@ -642,7 +640,6 @@ void x264_sei_pic_timing_write( x264_t *h, bs_t *s )
     }
 
     bs_align_10( &q );
-    bs_flush( &q );
 
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_PIC_TIMING );
 }
@@ -685,7 +682,6 @@ void x264_sei_frame_packing_write( x264_t *h, bs_t *s )
     bs_write1( &q, 0 );                           // frame_packing_arrangement_extension_flag
 
     bs_align_10( &q );
-    bs_flush( &q );
 
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_FRAME_PACKING );
 }
@@ -702,7 +698,6 @@ void x264_sei_alternative_transfer_write( x264_t *h, bs_t *s )
     bs_write ( &q, 8, h->param.i_alternative_transfer ); // preferred_transfer_characteristics
 
     bs_align_10( &q );
-    bs_flush( &q );
 
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_ALTERNATIVE_TRANSFER );
 }
@@ -746,7 +741,6 @@ void x264_sei_dec_ref_pic_marking_write( x264_t *h, bs_t *s )
     }
 
     bs_align_10( &q );
-    bs_flush( &q );
 
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_DEC_REF_PIC_MARKING );
 }
