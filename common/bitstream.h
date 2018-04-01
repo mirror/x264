@@ -89,8 +89,13 @@ static inline void bs_init( bs_t *s, void *p_data, int i_data )
     s->p       = s->p_start = (uint8_t*)p_data - offset;
     s->p_end   = (uint8_t*)p_data + i_data;
     s->i_left  = (WORD_SIZE - offset)*8;
-    s->cur_bits = endian_fix32( M32(s->p) );
-    s->cur_bits >>= (4-offset)*8;
+    if( offset )
+    {
+        s->cur_bits = endian_fix32( M32(s->p) );
+        s->cur_bits >>= (4-offset)*8;
+    }
+    else
+        s->cur_bits = 0;
 }
 static inline int bs_pos( bs_t *s )
 {
