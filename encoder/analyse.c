@@ -208,9 +208,11 @@ void x264_analyse_free_costs( x264_t *h )
     {
         if( h->cost_mv[i] )
             x264_free( h->cost_mv[i] - 2*4*mv_range );
-        if( h->cost_mv_fpel[i][0] )
-            for( int j = 0; j < 4; j++ )
+        for( int j = 0; j < 4; j++ )
+        {
+            if( h->cost_mv_fpel[i][j] )
                 x264_free( h->cost_mv_fpel[i][j] - 2*mv_range );
+        }
     }
 }
 
