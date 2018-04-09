@@ -1764,10 +1764,13 @@ x264_t *x264_encoder_open( x264_param_t *param )
 
     const char *profile = h->sps->i_profile_idc == PROFILE_BASELINE ? "Constrained Baseline" :
                           h->sps->i_profile_idc == PROFILE_MAIN ? "Main" :
-                          h->sps->i_profile_idc == PROFILE_HIGH ? "High" :
-                          h->sps->i_profile_idc == PROFILE_HIGH10 ? (h->sps->b_constraint_set3 == 1 ? "High 10 Intra" : "High 10") :
-                          h->sps->i_profile_idc == PROFILE_HIGH422 ? (h->sps->b_constraint_set3 == 1 ? "High 4:2:2 Intra" : "High 4:2:2") :
-                          h->sps->b_constraint_set3 == 1 ? "High 4:4:4 Intra" : "High 4:4:4 Predictive";
+                          h->sps->i_profile_idc == PROFILE_HIGH ?
+                              (h->sps->b_constraint_set4 ? (h->sps->b_constraint_set5 ? "Constrained High" : "Progressive High") : "High") :
+                          h->sps->i_profile_idc == PROFILE_HIGH10 ?
+                              (h->sps->b_constraint_set3 ? "High 10 Intra" : (h->sps->b_constraint_set4 ? "Progressive High 10" : "High 10")) :
+                          h->sps->i_profile_idc == PROFILE_HIGH422 ?
+                              (h->sps->b_constraint_set3 ? "High 4:2:2 Intra" : "High 4:2:2") :
+                          h->sps->b_constraint_set3 ? "High 4:4:4 Intra" : "High 4:4:4 Predictive";
     char level[4];
     snprintf( level, sizeof(level), "%d.%d", h->sps->i_level_idc/10, h->sps->i_level_idc%10 );
     if( h->sps->i_level_idc == 9 || ( h->sps->i_level_idc == 11 && h->sps->b_constraint_set3 &&

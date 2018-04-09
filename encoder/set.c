@@ -105,6 +105,9 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->i_id = i_id;
     sps->i_mb_width = ( param->i_width + 15 ) / 16;
     sps->i_mb_height= ( param->i_height + 15 ) / 16;
+    sps->b_frame_mbs_only = !(param->b_interlaced || param->b_fake_interlaced);
+    if( !sps->b_frame_mbs_only )
+        sps->i_mb_height = ( sps->i_mb_height + 1 ) & ~1;
     sps->i_chroma_format_idc = csp >= X264_CSP_I444 ? CHROMA_444 :
                                csp >= X264_CSP_I422 ? CHROMA_422 :
                                csp >= X264_CSP_I420 ? CHROMA_420 : CHROMA_400;
@@ -130,6 +133,8 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     /* Never set constraint_set2, it is not necessary and not used in real world. */
     sps->b_constraint_set2  = 0;
     sps->b_constraint_set3  = 0;
+    sps->b_constraint_set4  = sps->i_profile_idc >= PROFILE_MAIN && sps->i_profile_idc <= PROFILE_HIGH10 && sps->b_frame_mbs_only;
+    sps->b_constraint_set5  = (sps->i_profile_idc == PROFILE_MAIN || sps->i_profile_idc == PROFILE_HIGH) && param->i_bframe == 0;
 
     sps->i_level_idc = param->i_level_idc;
     if( param->i_level_idc == 9 && ( sps->i_profile_idc == PROFILE_BASELINE || sps->i_profile_idc == PROFILE_MAIN ) )
@@ -179,9 +184,6 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->b_vui = 1;
 
     sps->b_gaps_in_frame_num_value_allowed = 0;
-    sps->b_frame_mbs_only = !(param->b_interlaced || param->b_fake_interlaced);
-    if( !sps->b_frame_mbs_only )
-        sps->i_mb_height = ( sps->i_mb_height + 1 ) & ~1;
     sps->b_mb_adaptive_frame_field = param->b_interlaced;
     sps->b_direct8x8_inference = 1;
 
@@ -309,8 +311,10 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
     bs_write1( s, sps->b_constraint_set1 );
     bs_write1( s, sps->b_constraint_set2 );
     bs_write1( s, sps->b_constraint_set3 );
+    bs_write1( s, sps->b_constraint_set4 );
+    bs_write1( s, sps->b_constraint_set5 );
 
-    bs_write( s, 4, 0 );    /* reserved */
+    bs_write( s, 2, 0 );    /* reserved */
 
     bs_write( s, 8, sps->i_level_idc );
 
