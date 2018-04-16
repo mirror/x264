@@ -767,7 +767,7 @@ typedef struct
 // included at the end because it needs x264_t
 #include "macroblock.h"
 
-static int ALWAYS_INLINE x264_predictor_roundclip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
+static ALWAYS_INLINE int x264_predictor_roundclip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
 {
     int cnt = 0;
     for( int i = 0; i < i_mvc; i++ )
@@ -783,7 +783,7 @@ static int ALWAYS_INLINE x264_predictor_roundclip( int16_t (*dst)[2], int16_t (*
     return cnt;
 }
 
-static int ALWAYS_INLINE x264_predictor_clip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
+static ALWAYS_INLINE int x264_predictor_clip( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
 {
     int cnt = 0;
     int qpel_limit[4] = {mv_limit[0][0] << 2, mv_limit[0][1] << 2, mv_limit[1][0] << 2, mv_limit[1][1] << 2};

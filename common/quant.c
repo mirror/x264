@@ -320,7 +320,7 @@ static void denoise_dct( dctcoef *dct, uint32_t *sum, udctcoef *offset, int size
  *  chroma: for the complete mb: if score < 7 -> null
  */
 
-static int ALWAYS_INLINE decimate_score_internal( dctcoef *dct, int i_max )
+static ALWAYS_INLINE int decimate_score_internal( dctcoef *dct, int i_max )
 {
     const uint8_t *ds_table = (i_max == 64) ? x264_decimate_table8 : x264_decimate_table4;
     int i_score = 0;

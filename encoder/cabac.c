@@ -609,7 +609,7 @@ static ALWAYS_INLINE void cabac_mb_header_b( x264_t *h, x264_cabac_t *cb, int i_
         cabac_mb_header_i( h, cb, i_mb_type, SLICE_TYPE_B, chroma );
 }
 
-static int ALWAYS_INLINE cabac_cbf_ctxidxinc( x264_t *h, int i_cat, int i_idx, int b_intra, int b_dc )
+static ALWAYS_INLINE int cabac_cbf_ctxidxinc( x264_t *h, int i_cat, int i_idx, int b_intra, int b_dc )
 {
     static const uint16_t base_ctx[14] = {85,89,93,97,101,1012,460,464,468,1016,472,476,480,1020};
 
@@ -752,7 +752,7 @@ void x264_cabac_block_residual_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat
     cabac_block_residual_internal( h, cb, ctx_block_cat, l, 0 );
 }
 
-static void ALWAYS_INLINE cabac_block_residual( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+static ALWAYS_INLINE void cabac_block_residual( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l )
 {
 #if ARCH_X86_64 && HAVE_MMX && !defined( __MACH__ )
     h->bsf.cabac_block_residual_internal( l, MB_INTERLACED, ctx_block_cat, cb );
@@ -772,7 +772,7 @@ static void cabac_block_residual_422_dc( x264_t *h, x264_cabac_t *cb, int ctx_bl
 /* Faster RDO by merging sigmap and level coding. Note that for 8x8dct and chroma 4:2:2 dc this is
  * slightly incorrect because the sigmap is not reversible (contexts are repeated). However, there
  * is nearly no quality penalty for this (~0.001db) and the speed boost (~30%) is worth it. */
-static void ALWAYS_INLINE cabac_block_residual_internal( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l, int b_8x8, int chroma422dc )
+static ALWAYS_INLINE void cabac_block_residual_internal( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l, int b_8x8, int chroma422dc )
 {
     const uint8_t *sig_offset = x264_significant_coeff_flag_offset_8x8[MB_INTERLACED];
     int ctx_sig = x264_significant_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];

@@ -475,7 +475,7 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
     return 0;
 }
 
-static void ALWAYS_INLINE pixel_memset( pixel *dst, pixel *src, int len, int size )
+static ALWAYS_INLINE void pixel_memset( pixel *dst, pixel *src, int len, int size )
 {
     uint8_t *dstp = (uint8_t*)dst;
     uint32_t v1 = *src;
@@ -527,7 +527,7 @@ static void ALWAYS_INLINE pixel_memset( pixel *dst, pixel *src, int len, int siz
     }
 }
 
-static void ALWAYS_INLINE plane_expand_border( pixel *pix, int i_stride, int i_width, int i_height, int i_padh, int i_padv, int b_pad_top, int b_pad_bottom, int b_chroma )
+static ALWAYS_INLINE void plane_expand_border( pixel *pix, int i_stride, int i_width, int i_height, int i_padh, int i_padv, int b_pad_top, int b_pad_bottom, int b_chroma )
 {
 #define PPIXEL(x, y) ( pix + (x) + (y)*i_stride )
     for( int y = 0; y < i_height; y++ )

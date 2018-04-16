@@ -437,7 +437,7 @@ static void add16x16_idct8( pixel *dst, dctcoef dct[4][64] )
     add8x8_idct8( &dst[8*FDEC_STRIDE+8], dct[3] );
 }
 
-static void inline add4x4_idct_dc( pixel *p_dst, dctcoef dc )
+static inline void add4x4_idct_dc( pixel *p_dst, dctcoef dc )
 {
     dc = (dc + 32) >> 6;
     for( int i = 0; i < 4; i++, p_dst += FDEC_STRIDE )

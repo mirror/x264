@@ -565,7 +565,7 @@ NOINLINE void x264_copy_column8( pixel *dst, pixel *src )
         dst[i*FDEC_STRIDE] = src[i*FDEC_STRIDE];
 }
 
-static void ALWAYS_INLINE macroblock_load_pic_pointers( x264_t *h, int mb_x, int mb_y, int i, int b_chroma, int b_mbaff )
+static ALWAYS_INLINE void macroblock_load_pic_pointers( x264_t *h, int mb_x, int mb_y, int i, int b_chroma, int b_mbaff )
 {
     int mb_interlaced = b_mbaff && MB_INTERLACED;
     int height = b_chroma ? 16 >> CHROMA_V_SHIFT : 16;
@@ -669,7 +669,7 @@ static const x264_left_table_t left_indices[4] =
     {{ 4, 5, 6, 3}, { 3,  7, 11, 15}, {16+1, 16+5, 32+1, 32+5}, {0, 1, 2, 3}, {0, 0, 1, 1}}
 };
 
-static void ALWAYS_INLINE macroblock_cache_load_neighbours( x264_t *h, int mb_x, int mb_y, int b_interlaced )
+static ALWAYS_INLINE void macroblock_cache_load_neighbours( x264_t *h, int mb_x, int mb_y, int b_interlaced )
 {
     const int mb_interlaced = b_interlaced && MB_INTERLACED;
     int top_y = mb_y - (1 << mb_interlaced);
@@ -851,7 +851,7 @@ static void ALWAYS_INLINE macroblock_cache_load_neighbours( x264_t *h, int mb_x,
 #   define LBOT 0
 #endif
 
-static void ALWAYS_INLINE macroblock_cache_load( x264_t *h, int mb_x, int mb_y, int b_mbaff )
+static ALWAYS_INLINE void macroblock_cache_load( x264_t *h, int mb_x, int mb_y, int b_mbaff )
 {
     macroblock_cache_load_neighbours( h, mb_x, mb_y, b_mbaff );
 
@@ -1619,7 +1619,7 @@ void x264_macroblock_deblock_strength( x264_t *h )
         macroblock_deblock_strength_mbaff( h, bs );
 }
 
-static void ALWAYS_INLINE macroblock_store_pic( x264_t *h, int mb_x, int mb_y, int i, int b_chroma, int b_mbaff )
+static ALWAYS_INLINE void macroblock_store_pic( x264_t *h, int mb_x, int mb_y, int i, int b_chroma, int b_mbaff )
 {
     int height = b_chroma ? 16>>CHROMA_V_SHIFT : 16;
     int i_stride = h->fdec->i_stride[i];
@@ -1633,7 +1633,7 @@ static void ALWAYS_INLINE macroblock_store_pic( x264_t *h, int mb_x, int mb_y, i
         h->mc.copy[PIXEL_16x16]( &h->fdec->plane[i][i_pix_offset], i_stride2, h->mb.pic.p_fdec[i], FDEC_STRIDE, 16 );
 }
 
-static void ALWAYS_INLINE macroblock_backup_intra( x264_t *h, int mb_x, int mb_y, int b_mbaff )
+static ALWAYS_INLINE void macroblock_backup_intra( x264_t *h, int mb_x, int mb_y, int b_mbaff )
 {
     /* In MBAFF we store the last two rows in intra_border_backup[0] and [1].
      * For progressive mbs this is the bottom two rows, and for interlaced the

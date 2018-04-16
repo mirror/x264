@@ -122,7 +122,7 @@ static ALWAYS_INLINE uint16_t x264_cabac_mvd_sum_mmx2(uint8_t *mvdleft, uint8_t 
 }
 
 #define x264_predictor_clip x264_predictor_clip_mmx2
-static int ALWAYS_INLINE x264_predictor_clip_mmx2( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
+static ALWAYS_INLINE int x264_predictor_clip_mmx2( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
 {
     static const uint32_t pd_32 = 0x20;
     intptr_t tmp = (intptr_t)mv_limit, mvc_max = i_mvc, i = 0;
@@ -184,7 +184,7 @@ static int ALWAYS_INLINE x264_predictor_clip_mmx2( int16_t (*dst)[2], int16_t (*
 
 /* Same as the above, except we do (mv + 2) >> 2 on the input. */
 #define x264_predictor_roundclip x264_predictor_roundclip_mmx2
-static int ALWAYS_INLINE x264_predictor_roundclip_mmx2( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
+static ALWAYS_INLINE int x264_predictor_roundclip_mmx2( int16_t (*dst)[2], int16_t (*mvc)[2], int i_mvc, int16_t mv_limit[2][2], uint32_t pmv )
 {
     static const uint64_t pw_2 = 0x0002000200020002ULL;
     static const uint32_t pd_32 = 0x20;
