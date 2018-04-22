@@ -1077,18 +1077,31 @@ INIT_XMM
     %endif
     %assign %%i 0
     %rep num_mmregs
-        CAT_XDEFINE %%f, %%i, m %+ %%i
+        %xdefine %%tmp m %+ %%i
+        CAT_XDEFINE %%f, %%i, regnumof %+ %%tmp
         %assign %%i %%i+1
     %endrep
 %endmacro
 
-%macro LOAD_MM_PERMUTATION 1 ; name to load from
-    %ifdef %1_m0
+%macro LOAD_MM_PERMUTATION 0-1 ; name to load from
+    %if %0
+        %xdefine %%f %1_m
+    %else
+        %xdefine %%f current_function %+ _m
+    %endif
+    %xdefine %%tmp %%f %+ 0
+    %ifnum %%tmp
+        RESET_MM_PERMUTATION
         %assign %%i 0
         %rep num_mmregs
-            CAT_XDEFINE m, %%i, %1_m %+ %%i
-            CAT_XDEFINE nn, m %+ %%i, %%i
+            %xdefine %%tmp %%f %+ %%i
+            CAT_XDEFINE %%m, %%i, m %+ %%tmp
             %assign %%i %%i+1
+        %endrep
+        %rep num_mmregs
+            %assign %%i %%i-1
+            CAT_XDEFINE m, %%i, %%m %+ %%i
+            CAT_XDEFINE nn, m %+ %%i, %%i
         %endrep
     %endif
 %endmacro
