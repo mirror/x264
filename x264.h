@@ -346,7 +346,7 @@ typedef struct x264_param_t
     } vui;
 
     /* Bitstream parameters */
-    int         i_frame_reference;  /* Maximum number of reference frames */
+    int         i_frame_reference;  /* Maximum number of reference pictures */
     int         i_dpb_size;         /* Force a DPB size larger than that implied by B-frames and reference frames.
                                      * Useful in combination with interactive error resilience. */
     int         i_keyint_max;       /* Force an IDR keyframe at this interval */
@@ -357,7 +357,7 @@ typedef struct x264_param_t
     int         i_bframe;   /* how many b-frame between 2 references pictures */
     int         i_bframe_adaptive;
     int         i_bframe_bias;
-    int         i_bframe_pyramid;   /* Keep some B-frames as references: 0=off, 1=strict hierarchical, 2=normal */
+    int         i_bframe_pyramid;   /* Keep some B-pictures as references: 0=off, 1=strict hierarchical, 2=normal */
     int         b_open_gop;
     int         b_bluray_compat;
     int         i_avcintra_class;
@@ -371,6 +371,7 @@ typedef struct x264_param_t
     int         i_cabac_init_idc;
 
     int         b_interlaced;
+    int         b_field_encode;     /* With field encoding, libx264 takes separate fields */
     int         b_constrained_intra;
 
     int         i_cqm_preset;
@@ -497,8 +498,8 @@ typedef struct x264_param_t
     int b_vfr_input;            /* VFR input.  If 1, use timebase and timestamps for ratecontrol purposes.
                                  * If 0, use fps only. */
     int b_pulldown;             /* use explicity set timebase for CFR */
-    uint32_t i_fps_num;
-    uint32_t i_fps_den;
+    uint32_t i_fps_num;         /* Field rate when using field encoding mode, frame rate otherwise */
+    uint32_t i_fps_den;         /* Field rate when using field encoding mode, frame rate otherwise */
     uint32_t i_timebase_num;    /* Timebase numerator */
     uint32_t i_timebase_den;    /* Timebase denominator */
 
@@ -710,7 +711,8 @@ enum pic_struct_e
 {
     PIC_STRUCT_AUTO              = 0, // automatically decide (default)
     PIC_STRUCT_PROGRESSIVE       = 1, // progressive frame
-    // "TOP" and "BOTTOM" are not supported in x264 (PAFF only)
+    PIC_STRUCT_TOP               = 2, // top field
+    PIC_STRUCT_BOTTOM            = 3, // bottom field
     PIC_STRUCT_TOP_BOTTOM        = 4, // top field followed by bottom
     PIC_STRUCT_BOTTOM_TOP        = 5, // bottom field followed by top
     PIC_STRUCT_TOP_BOTTOM_TOP    = 6, // top field, bottom field, top field repeated

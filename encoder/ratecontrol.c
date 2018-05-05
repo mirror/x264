@@ -756,7 +756,7 @@ int x264_ratecontrol_new( x264_t *h )
     if( h->param.i_fps_num > 0 && h->param.i_fps_den > 0 )
         rc->fps = (float) h->param.i_fps_num / h->param.i_fps_den;
     else
-        rc->fps = 25.0;
+        rc->fps = 25.0*(1+PARAM_FIELD_ENCODE);
 
     if( h->param.rc.b_mb_tree )
     {

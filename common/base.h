@@ -120,8 +120,8 @@ enum sei_payload_type_e
     SEI_ALTERNATIVE_TRANSFER   = 147,
 };
 
-#define X264_BFRAME_MAX 16
-#define X264_REF_MAX 16
+#define X264_BFRAME_MAX 32
+#define X264_REF_MAX 32
 #define X264_THREAD_MAX 128
 #define X264_LOOKAHEAD_THREAD_MAX 16
 #define X264_LOOKAHEAD_MAX 250

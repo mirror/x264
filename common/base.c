@@ -328,6 +328,7 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->i_bframe_bias = 0;
     param->i_bframe_pyramid = X264_B_PYRAMID_NORMAL;
     param->b_interlaced = 0;
+    param->b_field_encode = 0;
     param->b_constrained_intra = 0;
 
     param->b_deblocking_filter = 1;
@@ -1045,13 +1046,26 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT("cabac-idc")
         p->i_cabac_init_idc = atoi(value);
     OPT("interlaced")
-        p->b_interlaced = atobool(value);
-    OPT("tff")
-        p->b_interlaced = p->b_tff = atobool(value);
-    OPT("bff")
     {
         p->b_interlaced = atobool(value);
-        p->b_tff = !p->b_interlaced;
+        p->b_field_encode = 0;
+    }
+    OPT("field-encode")
+    {
+        p->b_interlaced = 0;
+        p->b_field_encode = atobool(value);
+    }
+    OPT("tff")
+    {
+        p->b_tff = atobool(value);
+        if( !p->b_field_encode )
+            p->b_interlaced = 1;
+    }
+    OPT("bff")
+    {
+        p->b_tff = !atobool(value);
+        if( !p->b_field_encode )
+            p->b_interlaced = 1;
     }
     OPT("constrained-intra")
         p->b_constrained_intra = atobool(value);

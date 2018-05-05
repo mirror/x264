@@ -3869,8 +3869,8 @@ static void analyse_update_cache( x264_t *h, x264_mb_analysis_t *a  )
             int ref = h->mb.cache.ref[l][x264_scan8[0]];
             if( ref < 0 )
                 continue;
-            completed = x264_frame_cond_wait( h->fref[l][ ref >> MB_INTERLACED ]->orig, -1 );
-            if( (h->mb.cache.mv[l][x264_scan8[15]][1] >> (2 - MB_INTERLACED)) + h->mb.i_mb_y*16 > completed )
+            completed = x264_frame_cond_wait( h->fref[l][ ref >> MB_MBAFF_FIELD ]->orig, -1 );
+            if( (h->mb.cache.mv[l][x264_scan8[15]][1] >> (2 - MB_MBAFF_FIELD)) + h->mb.i_mb_y*16 > completed )
             {
                 x264_log( h, X264_LOG_WARNING, "internal error (MV out of thread range)\n");
                 x264_log( h, X264_LOG_DEBUG, "mb type: %d \n", h->mb.i_type);

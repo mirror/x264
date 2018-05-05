@@ -139,6 +139,7 @@ typedef struct
 
     int b_qpprime_y_zero_transform_bypass;
     int i_chroma_format_idc;
+    int b_half_height;
 
     int b_avcintra;
     int i_cqm_preset;

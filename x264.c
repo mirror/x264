@@ -725,6 +725,7 @@ static void help( x264_param_t *defaults, int longhelp )
     H2( "      --slice-min-mbs <integer> Limit the size of each slice in macroblocks (min)\n");
     H0( "      --tff                   Enable interlaced mode (top field first)\n" );
     H0( "      --bff                   Enable interlaced mode (bottom field first)\n" );
+    H0( "      --field-encode          Enable field encoding - one frame will be encoded as two fields \n" );
     H2( "      --constrained-intra     Enable constrained intra prediction.\n" );
     H0( "      --pulldown <string>     Use soft pulldown to change frame rate\n"
         "                                  - none, 22, 32, 64, double, triple, euro (requires cfr input)\n" );
@@ -1053,6 +1054,7 @@ static struct option long_options[] =
     { "tff",               no_argument, NULL, OPT_INTERLACED },
     { "bff",               no_argument, NULL, OPT_INTERLACED },
     { "no-interlaced",     no_argument, NULL, OPT_INTERLACED },
+    { "field-encode",      no_argument, NULL, OPT_INTERLACED },
     { "constrained-intra", no_argument, NULL, 0 },
     { "cabac",             no_argument, NULL, 0 },
     { "no-cabac",          no_argument, NULL, 0 },
@@ -1938,9 +1940,17 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
 
     opt->b_progress &= param->i_log_level < X264_LOG_DEBUG;
 
-    /* set up pulldown */
-    if( opt->i_pulldown && !param->b_vfr_input )
+    if( param->b_field_encode )
     {
+        FAIL_IF_ERROR2( param->b_vfr_input, "field encoding is not compatible with vfr\n" );
+        param->i_fps_num <<= 1;
+        param->i_height >>= 1;
+    }
+
+    /* set up pulldown */
+    if( opt->i_pulldown )
+    {
+        FAIL_IF_ERROR2( param->b_field_encode, "field encoding is not compatible with pulldown\n" );
         param->b_pulldown = 1;
         param->b_pic_struct = 1;
         pulldown = &pulldown_values[opt->i_pulldown];
@@ -2017,18 +2027,43 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
             parse_qpfile( opt, &pic, i_frame + opt->i_seek );
 
         prev_dts = last_dts;
-        i_frame_size = encode_frame( h, opt->hout, &pic, &last_dts );
-        if( i_frame_size < 0 )
+
+        if( param->b_field_encode )
         {
-            b_ctrl_c = 1; /* lie to exit the loop */
-            retval = -1;
+            for( int i = 0; i < pic.img.i_plane; i++ )
+            {
+                pic.img.plane[i] += param->b_tff ? 0 : pic.img.i_stride[i]; /* first field */
+                pic.img.i_stride[i] <<= 1;
+            }
         }
-        else if( i_frame_size )
+
+        for( int i = 0; i < 1+param->b_field_encode; i++ )
         {
-            i_file += i_frame_size;
-            i_frame_output++;
-            if( i_frame_output == 1 )
-                first_dts = prev_dts = last_dts;
+            /* x264cli takes in frames but in field mode libx264 takes fields
+             * the encode loop separates the fields from the frame */
+            if( i )
+            {
+                for( int j = 0; j < pic.img.i_plane; j++ )
+                    pic.img.plane[j] += param->b_tff ? (pic.img.i_stride[j] >> 1) : -(pic.img.i_stride[j] >> 1); /* second field */
+                pic.i_pts++;
+            }
+            else
+                pic.i_pts <<= 1;
+
+            i_frame_size = encode_frame( h, opt->hout, &pic, &last_dts );
+            if( i_frame_size < 0 )
+            {
+                b_ctrl_c = 1; /* lie to exit the outer encode loop */
+                retval = -1;
+                break;
+            }
+            else if( i_frame_size )
+            {
+                i_file += i_frame_size;
+                i_frame_output++;
+                if( i_frame_output == 1 )
+                    first_dts = prev_dts = last_dts;
+            }
         }
 
         if( filter.release_frame( opt->hin, &cli_pic, i_frame + opt->i_seek ) )
@@ -2036,7 +2071,8 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
 
         /* update status line (up to 1000 times per input file) */
         if( opt->b_progress && i_frame_output )
-            i_previous = print_status( i_start, i_previous, i_frame_output, param->i_frame_total, i_file, param, 2 * last_dts - prev_dts - first_dts );
+            i_previous = print_status( i_start, i_previous, i_frame_output, param->i_frame_total*(1+param->b_field_encode),
+                                       i_file, param, 2 * last_dts - prev_dts - first_dts );
     }
     /* Flush delayed frames */
     while( !b_ctrl_c && x264_encoder_delayed_frames( h ) )
@@ -2056,7 +2092,8 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
                 first_dts = prev_dts = last_dts;
         }
         if( opt->b_progress && i_frame_output )
-            i_previous = print_status( i_start, i_previous, i_frame_output, param->i_frame_total, i_file, param, 2 * last_dts - prev_dts - first_dts );
+            i_previous = print_status( i_start, i_previous, i_frame_output, param->i_frame_total*(1+param->b_field_encode),
+                                       i_file, param, 2 * last_dts - prev_dts - first_dts );
     }
 fail:
     if( pts_warning_cnt >= MAX_PTS_WARNING && cli_log_level < X264_LOG_DEBUG )
@@ -2069,6 +2106,10 @@ fail:
         duration = (double)(2 * last_dts - prev_dts - first_dts) * param->i_timebase_num / param->i_timebase_den;
     else
         duration = (double)(2 * largest_pts - second_largest_pts) * param->i_timebase_num / param->i_timebase_den;
+
+    /* simpler than trying to use exact field timestamps */
+    if( param->b_field_encode )
+        duration *= 2;
 
     i_end = x264_mdate();
     /* Erase progress indicator before printing encoding stats. */

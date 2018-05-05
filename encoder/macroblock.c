@@ -669,6 +669,8 @@ static ALWAYS_INLINE void macroblock_encode_internal( x264_t *h, int plane_count
             if( chroma )
             {
                 int v_shift = CHROMA_V_SHIFT;
+                if( v_shift && PARAM_FIELD_ENCODE )
+                    mvy += h->mb.i_mvy_offset[0][0];
                 int height = 16 >> v_shift;
 
                 /* Special case for mv0, which is (of course) very common in P-skip mode. */
@@ -1040,6 +1042,10 @@ static ALWAYS_INLINE int macroblock_probe_skip_internal( x264_t *h, int b_bidir,
 
         if( !b_bidir )
         {
+            int v_shift = CHROMA_V_SHIFT;
+            if( v_shift && PARAM_FIELD_ENCODE )
+                mvp[1] += h->mb.i_mvy_offset[0][0];
+
             /* Special case for mv0, which is (of course) very common in P-skip mode. */
             if( M32( mvp ) )
                 h->mc.mc_chroma( h->mb.pic.p_fdec[1], h->mb.pic.p_fdec[2], FDEC_STRIDE,

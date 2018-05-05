@@ -70,11 +70,17 @@
 #if HAVE_INTERLACED
 #   define MB_INTERLACED h->mb.b_interlaced
 #   define SLICE_MBAFF h->sh.b_mbaff
+#   define SLICE_FIELD h->sh.b_field_pic
 #   define PARAM_INTERLACED h->param.b_interlaced
+#   define PARAM_FIELD_ENCODE h->param.b_field_encode
+#   define MB_MBAFF_FIELD (SLICE_MBAFF & MB_INTERLACED)
 #else
 #   define MB_INTERLACED 0
 #   define SLICE_MBAFF 0
+#   define SLICE_FIELD 0
 #   define PARAM_INTERLACED 0
+#   define PARAM_FIELD_ENCODE 0
+#   define MB_MBAFF_FIELD 0
 #endif
 
 #ifdef CHROMA_FORMAT
@@ -222,6 +228,7 @@ typedef struct x264_lookahead_t
     int                           i_last_keyframe;
     int                           i_slicetype_length;
     x264_frame_t                  *last_nonb;
+    x264_frame_t                  *penultimate_nonb;
     x264_pthread_t                thread_handle;
     x264_sync_frame_list_t        ifbuf;
     x264_sync_frame_list_t        next;
@@ -674,6 +681,7 @@ struct x264_t
         int ref_blind_dupe; /* The index of the blind reference frame duplicate. */
         int8_t deblock_ref_table[X264_REF_MAX*2+2];
 #define deblock_ref_table(x) h->mb.deblock_ref_table[(x)+2]
+        int     i_mvy_offset[2][X264_REF_MAX];
     } mb;
 
     /* rate control encoding only */

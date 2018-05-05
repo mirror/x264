@@ -93,13 +93,21 @@ static void frame_dump( x264_t *h )
     if( h->param.b_sliced_threads )
         threadpool_wait_all( h );
 
-    /* Write the frame in display order */
-    int frame_size = FRAME_SIZE( h->param.i_height * h->param.i_width * SIZEOF_PIXEL );
-    if( !fseek( f, (int64_t)h->fdec->i_frame * frame_size, SEEK_SET ) )
+    /* Write the picture in display order */
+    int frame_size = FRAME_SIZE( h->param.i_height * (1+PARAM_FIELD_ENCODE) * h->param.i_width * SIZEOF_PIXEL );
+    if( !fseek( f, (int64_t)(h->fdec->i_frame >> PARAM_FIELD_ENCODE) * frame_size, SEEK_SET ) )
     {
+        if( PARAM_FIELD_ENCODE && h->sh.b_bottom_field && fseek( f, (uint64_t)h->param.i_width, SEEK_CUR ) )
+            goto end;
+
         for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
             for( int y = 0; y < h->param.i_height; y++ )
+            {
                 fwrite( &h->fdec->plane[p][y*h->fdec->i_stride[p]], SIZEOF_PIXEL, h->param.i_width, f );
+                if( PARAM_FIELD_ENCODE && fseek( f, h->param.i_width, SEEK_CUR ) )
+                    goto end;
+            }
+
         if( CHROMA_FORMAT == CHROMA_420 || CHROMA_FORMAT == CHROMA_422 )
         {
             int cw = h->param.i_width>>1;
@@ -109,12 +117,35 @@ static void frame_dump( x264_t *h )
             {
                 pixel *planev = planeu + cw*ch + 32/SIZEOF_PIXEL;
                 h->mc.plane_copy_deinterleave( planeu, cw, planev, cw, h->fdec->plane[1], h->fdec->i_stride[1], cw, ch );
-                fwrite( planeu, 1, cw*ch*SIZEOF_PIXEL, f );
-                fwrite( planev, 1, cw*ch*SIZEOF_PIXEL, f );
+                if( PARAM_FIELD_ENCODE )
+                {
+                    if( h->sh.b_bottom_field && fseek( f, (int64_t)(-(h->param.i_width>>1)), SEEK_CUR ) )
+                        goto end;
+
+                    for( int y = 0; y < ch; y++ )
+                    {
+                        fwrite( &planeu[y*cw], SIZEOF_PIXEL, cw, f );
+                        if( fseek( f, (uint64_t)cw, SEEK_CUR ) )
+                            goto end;
+                    }
+                    for( int y = 0; y < ch; y++ )
+                    {
+                        fwrite( &planev[y*cw], SIZEOF_PIXEL, cw, f );
+                        if( fseek( f, (uint64_t)cw, SEEK_CUR ) )
+                            goto end;
+                    }
+                }
+                else
+                {
+                    fwrite( planeu, 1, cw*ch*SIZEOF_PIXEL, f );
+                    fwrite( planev, 1, cw*ch*SIZEOF_PIXEL, f );
+                }
                 x264_free( planeu );
             }
         }
     }
+
+end:
     fclose( f );
 }
 
@@ -136,8 +167,8 @@ static void slice_header_init( x264_t *h, x264_slice_header_t *sh,
     sh->i_frame_num = i_frame;
 
     sh->b_mbaff = PARAM_INTERLACED;
-    sh->b_field_pic = 0;    /* no field support for now */
-    sh->b_bottom_field = 0; /* not yet used */
+    sh->b_field_pic = PARAM_FIELD_ENCODE;
+    sh->b_bottom_field = h->fenc->i_pic_struct == PIC_STRUCT_BOTTOM;
 
     sh->i_idr_pic_id = i_idr_pic_id;
 
@@ -182,13 +213,23 @@ static void slice_header_init( x264_t *h, x264_slice_header_t *sh,
     {
         if( sh->b_ref_pic_list_reordering[list] )
         {
-            int pred_frame_num = i_frame;
+            int pred_frame_num, pic_num;
+            pred_frame_num = PARAM_FIELD_ENCODE ? 2 * sh->i_frame_num + 1 : i_frame;
+
             for( int i = 0; i < h->i_ref[list]; i++ )
             {
-                int diff = h->fref[list][i]->i_frame_num - pred_frame_num;
+                if( PARAM_FIELD_ENCODE )
+                {
+                    int same_parity = ((h->fenc->i_frame ^ h->fref[list][i]->i_frame) & 1) ^ 1;
+                    pic_num = 2 * h->fref[list][i]->i_frame_num + same_parity;
+                }
+                else
+                    pic_num = h->fref[list][i]->i_frame_num;
+
+                int diff = pic_num - pred_frame_num;
                 sh->ref_pic_list_order[list][i].idc = ( diff > 0 );
                 sh->ref_pic_list_order[list][i].arg = (abs(diff) - 1) & ((1 << sps->i_log2_max_frame_num) - 1);
-                pred_frame_num = h->fref[list][i]->i_frame_num;
+                pred_frame_num = pic_num;
             }
         }
     }
@@ -420,6 +461,19 @@ static void encoder_thread_init( x264_t *h )
 }
 #endif
 
+static int x264_diff_pic_num( x264_t *h, x264_frame_t *src, x264_frame_t *ref )
+{
+    if( PARAM_FIELD_ENCODE )
+    {
+        int cur_pic_num = 2 * src->i_frame_num + 1;
+        int same_parity = ((src->i_frame ^ ref->i_frame) & 1) ^ 1;
+        int ref_pic_num = 2 * ref->i_frame_num + same_parity;
+        return cur_pic_num - ref_pic_num;
+    }
+    else
+        return src->i_frame_num - ref->i_frame_num;
+}
+
 /****************************************************************************
  *
  ****************************************************************************
@@ -464,8 +518,14 @@ static int validate_parameters( x264_t *h, int b_open )
 
 #if HAVE_INTERLACED
     h->param.b_interlaced = !!PARAM_INTERLACED;
+    h->param.b_field_encode = !!PARAM_FIELD_ENCODE;
+    if( h->param.b_interlaced && h->param.b_field_encode )
+    {
+        x264_log( h, X264_LOG_ERROR, "MBAFF and field encode is invalid\n" );
+        return -1;
+    }
 #else
-    if( h->param.b_interlaced )
+    if( h->param.b_interlaced || h->param.b_field_encode )
     {
         x264_log( h, X264_LOG_ERROR, "not compiled with interlaced support\n" );
         return -1;
@@ -638,6 +698,12 @@ static int validate_parameters( x264_t *h, int b_open )
                   h->param.i_width - h->param.crop_rect.i_left - h->param.crop_rect.i_right,
                   h->param.i_height - h->param.crop_rect.i_top - h->param.crop_rect.i_bottom );
         return -1;
+    }
+
+    if( PARAM_FIELD_ENCODE && h->param.i_bframe > 0 )
+    {
+        x264_log( h, X264_LOG_WARNING, "B-frames not supported with PAFF\n" );
+        h->param.i_bframe = 0;
     }
 
     /* Detect default ffmpeg settings and terminate with an error. */
@@ -1007,8 +1073,19 @@ static int validate_parameters( x264_t *h, int b_open )
             h->param.b_pic_struct = 1;
     }
 
-    h->param.i_frame_reference = x264_clip3( h->param.i_frame_reference, 1, X264_REF_MAX );
-    h->param.i_dpb_size = x264_clip3( h->param.i_dpb_size, 1, X264_REF_MAX );
+    if( PARAM_FIELD_ENCODE )
+    {
+        if( !(h->param.b_intra_refresh && h->param.i_frame_reference == 1) )
+        {
+            h->param.i_frame_reference <<= 1;
+            h->param.i_frame_reference = x264_clip3( h->param.i_frame_reference, 1, X264_REF_MAX );
+        }
+    }
+    else
+    {
+        h->param.i_frame_reference = x264_clip3( h->param.i_frame_reference, 1, X264_REF_MAX >> 1 );
+        h->param.i_dpb_size = x264_clip3( h->param.i_dpb_size, 1, X264_REF_MAX >> 1 );
+    }
     if( h->param.i_scenecut_threshold < 0 )
         h->param.i_scenecut_threshold = 0;
     h->param.analyse.i_direct_mv_pred = x264_clip3( h->param.analyse.i_direct_mv_pred, X264_DIRECT_PRED_NONE, X264_DIRECT_PRED_AUTO );
@@ -1017,7 +1094,19 @@ static int validate_parameters( x264_t *h, int b_open )
         x264_log( h, X264_LOG_WARNING, "subme=0 + direct=temporal is not supported\n" );
         h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
     }
+    if( PARAM_FIELD_ENCODE )
+    {
+        // FIXME: should this be part of the API for field encoding
+        if( 1 < h->param.i_keyint_max && h->param.i_keyint_max < X264_KEYINT_MAX_INFINITE )
+            h->param.i_keyint_max <<= 1;
+        h->param.i_keyint_max = x264_clip3( h->param.i_keyint_max, 1, X264_KEYINT_MAX_INFINITE );
+        if( 0 < h->param.i_bframe && h->param.i_bframe < X264_KEYINT_MAX_INFINITE )
+            h->param.i_bframe <<= 1;
+    }
+
     h->param.i_bframe = x264_clip3( h->param.i_bframe, 0, X264_MIN( X264_BFRAME_MAX, h->param.i_keyint_max-1 ) );
+    if( PARAM_FIELD_ENCODE )
+        h->param.i_bframe &= ~1;
     h->param.i_bframe_bias = x264_clip3( h->param.i_bframe_bias, -90, 100 );
     if( h->param.i_bframe <= 1 )
         h->param.i_bframe_pyramid = X264_B_PYRAMID_NONE;
@@ -1048,10 +1137,16 @@ static int validate_parameters( x264_t *h, int b_open )
     }
     if( !h->param.i_fps_num || !h->param.i_fps_den )
     {
-        h->param.i_fps_num = 25;
+        h->param.i_fps_num = 25*(1<<PARAM_FIELD_ENCODE);
         h->param.i_fps_den = 1;
     }
     float fps = (float)h->param.i_fps_num / h->param.i_fps_den;
+    if( PARAM_FIELD_ENCODE )
+    {
+        if( h->param.i_keyint_min != X264_KEYINT_MIN_AUTO )
+            if( 0 < h->param.i_keyint_min && h->param.i_keyint_min < X264_KEYINT_MAX_INFINITE )
+                h->param.i_keyint_min <<= 1;
+    }
     if( h->param.i_keyint_min == X264_KEYINT_MIN_AUTO )
         h->param.i_keyint_min = X264_MIN( h->param.i_keyint_max / 10, (int)fps );
     h->param.i_keyint_min = x264_clip3( h->param.i_keyint_min, 1, h->param.i_keyint_max/2+1 );
@@ -1209,9 +1304,9 @@ static int validate_parameters( x264_t *h, int b_open )
             }
         }
         if( h->param.analyse.i_mv_range <= 0 )
-            h->param.analyse.i_mv_range = l->mv_range >> PARAM_INTERLACED;
+            h->param.analyse.i_mv_range = l->mv_range >> (PARAM_INTERLACED|PARAM_FIELD_ENCODE);
         else
-            h->param.analyse.i_mv_range = x264_clip3(h->param.analyse.i_mv_range, 32, 8192 >> PARAM_INTERLACED);
+            h->param.analyse.i_mv_range = x264_clip3(h->param.analyse.i_mv_range, 32, 512 >> (PARAM_INTERLACED|PARAM_FIELD_ENCODE));
     }
 
     h->param.analyse.i_weighted_pred = x264_clip3( h->param.analyse.i_weighted_pred, X264_WEIGHTP_NONE, X264_WEIGHTP_SMART );
@@ -1245,7 +1340,7 @@ static int validate_parameters( x264_t *h, int b_open )
     }
     h->param.i_lookahead_threads = x264_clip3( h->param.i_lookahead_threads, 1, X264_MIN( max_sliced_threads, X264_LOOKAHEAD_THREAD_MAX ) );
 
-    if( PARAM_INTERLACED )
+    if( PARAM_INTERLACED || PARAM_FIELD_ENCODE )
     {
         if( h->param.analyse.i_me_method >= X264_ME_ESA )
         {
@@ -1320,6 +1415,7 @@ static int validate_parameters( x264_t *h, int b_open )
     BOOLIFY( b_deterministic );
     BOOLIFY( b_sliced_threads );
     BOOLIFY( b_interlaced );
+    BOOLIFY( b_field_encode );
     BOOLIFY( b_intra_refresh );
     BOOLIFY( b_aud );
     BOOLIFY( b_repeat_headers );
@@ -1543,7 +1639,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     h->frames.i_bframe_delay = h->param.i_bframe ? (h->param.i_bframe_pyramid ? 2 : 1) : 0;
 
     h->frames.i_max_ref0 = h->param.i_frame_reference;
-    h->frames.i_max_ref1 = X264_MIN( h->sps->vui.i_num_reorder_frames, h->param.i_frame_reference );
+    h->frames.i_max_ref1 = X264_MIN( h->sps->vui.i_num_reorder_frames<<PARAM_FIELD_ENCODE, h->param.i_frame_reference );
     h->frames.i_max_dpb  = h->sps->vui.i_max_dec_frame_buffering;
     h->frames.b_have_lowres = !h->param.rc.b_stat_read
         && ( h->param.rc.i_rc_method == X264_RC_ABR
@@ -1562,7 +1658,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     h->frames.i_poc_last_open_gop = -1;
 
     CHECKED_MALLOCZERO( h->cost_table, sizeof(*h->cost_table) );
-    CHECKED_MALLOCZERO( h->frames.unused[0], (h->frames.i_delay + 3) * sizeof(x264_frame_t *) );
+    CHECKED_MALLOCZERO( h->frames.unused[0], (h->frames.i_delay + 3 + PARAM_FIELD_ENCODE) * sizeof(x264_frame_t *) );
     /* Allocate room for max refs plus a few extra just in case. */
     CHECKED_MALLOCZERO( h->frames.unused[1], (h->i_thread_frames + X264_REF_MAX + 4) * sizeof(x264_frame_t *) );
     CHECKED_MALLOCZERO( h->frames.current, (h->param.i_sync_lookahead + h->param.i_bframe
@@ -1590,7 +1686,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     x264_pixel_init( h->param.cpu, &h->pixf );
     x264_dct_init( h->param.cpu, &h->dctf );
     x264_zigzag_init( h->param.cpu, &h->zigzagf_progressive, &h->zigzagf_interlaced );
-    memcpy( &h->zigzagf, PARAM_INTERLACED ? &h->zigzagf_interlaced : &h->zigzagf_progressive, sizeof(h->zigzagf) );
+    memcpy( &h->zigzagf, PARAM_INTERLACED || PARAM_FIELD_ENCODE ? &h->zigzagf_interlaced : &h->zigzagf_progressive, sizeof(h->zigzagf) );
     x264_mc_init( h->param.cpu, &h->mc, h->param.b_cpu_independent );
     x264_quant_init( h, h->param.cpu, &h->quantf );
     x264_deblock_init( h->param.cpu, &h->loopf, PARAM_INTERLACED );
@@ -2058,6 +2154,17 @@ int x264_encoder_headers( x264_t *h, x264_nal_t **pp_nal, int *pi_nal )
     return frame_size;
 }
 
+static inline int reference_distance( x264_t *h, x264_frame_t *frame )
+{
+    if( h->param.i_frame_packing == 5 )
+        return abs((h->fenc->i_frame&~1) - (frame->i_frame&~1)) +
+                  ((h->fenc->i_frame&1) != (frame->i_frame&1));
+    else if( PARAM_FIELD_ENCODE )
+        return ((h->fenc->i_frame - frame->i_frame - 1) & ~1) + ((h->fenc->i_frame - frame->i_frame) && !!frame->i_frame);
+    else
+        return abs(h->fenc->i_frame - frame->i_frame);
+}
+
 /* Check to see whether we have chosen a reference list ordering different
  * from the standard's default. */
 static inline void reference_check_reorder( x264_t *h )
@@ -2071,17 +2178,48 @@ static inline void reference_check_reorder( x264_t *h )
             return;
         }
     for( int list = 0; list <= (h->sh.i_type == SLICE_TYPE_B); list++ )
-        for( int i = 0; i < h->i_ref[list] - 1; i++ )
+    {
+        if( PARAM_FIELD_ENCODE )
         {
-            int framenum_diff = h->fref[list][i+1]->i_frame_num - h->fref[list][i]->i_frame_num;
-            int poc_diff = h->fref[list][i+1]->i_poc - h->fref[list][i]->i_poc;
-            /* P and B-frames use different default orders. */
-            if( h->sh.i_type == SLICE_TYPE_P ? framenum_diff > 0 : list == 1 ? poc_diff < 0 : poc_diff > 0 )
+            /* check the first field in the reference list has the same parity
+             * as the field to be encoded */
+            if( h->i_ref[list] > 0 && ((h->fenc->i_frame ^ h->fref[list][0]->i_frame) & 1))
             {
+                //printf("\n here %i \n", h->fenc->i_frame);
                 h->b_ref_reorder[list] = 1;
                 return;
             }
+
+            /* FIXME: is there a cleaner way of doing this */
+            for( int i = 0; i < h->i_ref[list] - 1; i++ )
+            {
+                int dist = reference_distance( h, h->fref[list][i] ) > reference_distance( h, h->fref[list][i+1] );
+                int poc_diff = h->fref[list][i+1]->i_poc - h->fref[list][i]->i_poc;
+                //printf("\n %i %i %i %i %i \n", h->fenc->i_frame, i, dist, h->fref[list][i]->i_frame, h->fref[list][i+1]->i_frame );
+                /* P and B-frames use different default orders. */
+                if( h->sh.i_type == SLICE_TYPE_P ? dist : list == 1 ? poc_diff < 0 : poc_diff > 0 )
+                {
+                    h->b_ref_reorder[list] = 1;
+                    return;
+                }
+            }
+
         }
+        else
+        {
+            for( int i = 0; i < h->i_ref[list] - 1; i++ )
+            {
+                int picnum_diff = x264_diff_pic_num( h, h->fref[list][i+1], h->fref[list][i] );
+                int poc_diff = h->fref[list][i+1]->i_poc - h->fref[list][i]->i_poc;
+                /* P and B-frames use different default orders. */
+                if( h->sh.i_type == SLICE_TYPE_P ? picnum_diff > 0 : list == 1 ? poc_diff < 0 : poc_diff > 0 )
+                {
+                    h->b_ref_reorder[list] = 1;
+                    return;
+                }
+            }
+        }
+    }
 }
 
 /* return -1 on failure, else return the index of the new reference frame */
@@ -2208,15 +2346,6 @@ static void weighted_pred_init( x264_t *h )
     h->sh.weight[0][2].i_denom = h->sh.weight[0][1].i_denom;
 }
 
-static inline int reference_distance( x264_t *h, x264_frame_t *frame )
-{
-    if( h->param.i_frame_packing == 5 )
-        return abs((h->fenc->i_frame&~1) - (frame->i_frame&~1)) +
-                  ((h->fenc->i_frame&1) != (frame->i_frame&1));
-    else
-        return abs(h->fenc->i_frame - frame->i_frame);
-}
-
 static inline void reference_build_list( x264_t *h, int i_poc )
 {
     int b_ok;
@@ -2256,13 +2385,13 @@ static inline void reference_build_list( x264_t *h, int i_poc )
 
         for( int i = h->i_ref[0]-1; i >= h->i_ref[0] - h->sh.i_mmco_remove_from_end; i-- )
         {
-            int diff = h->i_frame_num - h->fref[0][i]->i_frame_num;
+            int diff = x264_diff_pic_num( h, h->fdec, h->fref[0][i] );
             h->sh.mmco[h->sh.i_mmco_command_count].i_poc = h->fref[0][i]->i_poc;
             h->sh.mmco[h->sh.i_mmco_command_count++].i_difference_of_pic_nums = diff;
         }
     }
 
-    /* Order reference lists by distance from the current frame. */
+    /* Order reference lists by distance from the current picture. */
     for( int list = 0; list < 2; list++ )
     {
         h->fref_nearest[list] = h->fref[list][0];
@@ -2292,7 +2421,7 @@ static inline void reference_build_list( x264_t *h, int i_poc )
 
     /* For Blu-ray compliance, don't reference frames outside of the minigop. */
     if( IS_X264_TYPE_B( h->fenc->i_type ) && h->param.b_bluray_compat )
-        h->i_ref[0] = X264_MIN( h->i_ref[0], IS_X264_TYPE_B( h->fref[0][0]->i_type ) + 1 );
+        h->i_ref[0] = X264_MIN( h->i_ref[0], (IS_X264_TYPE_B( h->fref[0][0]->i_type ) + 1)<<PARAM_FIELD_ENCODE );
 
     /* add duplicates */
     if( h->fenc->i_type == X264_TYPE_P )
@@ -2477,8 +2606,13 @@ static inline int reference_update( x264_t *h )
 
     /* move frame in the buffer */
     x264_frame_push( h->frames.reference, h->fdec );
-    if( h->frames.reference[h->sps->i_num_ref_frames] )
+    if( h->frames.reference[h->sps->i_num_ref_frames<<PARAM_FIELD_ENCODE] )
+    {
         x264_frame_push_unused( h, x264_frame_shift( h->frames.reference ) );
+        if( PARAM_FIELD_ENCODE )
+            x264_frame_push_unused( h, x264_frame_shift( h->frames.reference ) ); /* 2nd field */
+    }
+
     h->fdec = x264_frame_pop_unused( h, 1 );
     if( !h->fdec )
         return -1;
@@ -2500,8 +2634,8 @@ static inline void reference_hierarchy_reset( x264_t *h )
 
     /* look for delay frames -- chain must only contain frames that are disposable */
     for( int i = 0; h->frames.current[i] && IS_DISPOSABLE( h->frames.current[i]->i_type ); i++ )
-        b_hasdelayframe |= h->frames.current[i]->i_coded
-                        != h->frames.current[i]->i_frame + h->sps->vui.i_num_reorder_frames;
+        b_hasdelayframe |= (h->frames.current[i]->i_coded>>PARAM_FIELD_ENCODE)
+                        != (h->frames.current[i]->i_frame>>PARAM_FIELD_ENCODE) + h->sps->vui.i_num_reorder_frames;
 
     /* This function must handle b-pyramid and clear frames for open-gop */
     if( h->param.i_bframe_pyramid != X264_B_PYRAMID_STRICT && !b_hasdelayframe && h->frames.i_poc_last_open_gop == -1 )
@@ -2516,7 +2650,7 @@ static inline void reference_hierarchy_reset( x264_t *h )
             || ( h->frames.reference[ref]->i_poc < h->frames.i_poc_last_open_gop
             && h->sh.i_type != SLICE_TYPE_B ) )
         {
-            int diff = h->i_frame_num - h->frames.reference[ref]->i_frame_num;
+            int diff = x264_diff_pic_num( h, h->fdec, h->frames.reference[ref] );
             h->sh.mmco[h->sh.i_mmco_command_count].i_difference_of_pic_nums = diff;
             h->sh.mmco[h->sh.i_mmco_command_count++].i_poc = h->frames.reference[ref]->i_poc;
             x264_frame_push_unused( h, x264_frame_shift( &h->frames.reference[ref] ) );
@@ -2527,7 +2661,7 @@ static inline void reference_hierarchy_reset( x264_t *h )
 
     /* Prepare room in the dpb for the delayed display time of the later b-frame's */
     if( h->param.i_bframe_pyramid )
-        h->sh.i_mmco_remove_from_end = X264_MAX( ref + 2 - h->frames.i_max_dpb, 0 );
+        h->sh.i_mmco_remove_from_end = X264_MAX( (ref>>PARAM_FIELD_ENCODE) + 2 - h->frames.i_max_dpb, 0 ) << PARAM_FIELD_ENCODE;
 }
 
 static inline void slice_init( x264_t *h, int i_nal_type, int i_global_qp )
@@ -2575,8 +2709,6 @@ static inline void slice_init( x264_t *h, int i_nal_type, int i_global_qp )
         h->b_sh_backup = 1;
         h->sh_backup = h->sh;
     }
-
-    h->fdec->i_frame_num = h->sh.i_frame_num;
 
     if( h->sps->i_poc_type == 0 )
     {
@@ -3244,6 +3376,7 @@ int x264_encoder_invalidate_reference( x264_t *h, int64_t pts )
  *       P      4   2*6
  *       B      5   2*4
  *       B      6   2*5
+ *
  ****************************************************************************/
 int     x264_encoder_encode( x264_t *h,
                              x264_nal_t **pp_nal, int *pi_nal,
@@ -3321,13 +3454,16 @@ int     x264_encoder_encode( x264_t *h,
         {
 #if HAVE_INTERLACED
             int b_interlaced = fenc->param ? fenc->param->b_interlaced : h->param.b_interlaced;
+            int b_field_encode = fenc->param ? fenc->param->b_field_encode : h->param.b_field_encode;
 #else
             int b_interlaced = 0;
+            int b_field_encode = 0;
 #endif
-            if( b_interlaced )
+            if( b_interlaced || b_field_encode )
             {
                 int b_tff = fenc->param ? fenc->param->b_tff : h->param.b_tff;
-                fenc->i_pic_struct = b_tff ? PIC_STRUCT_TOP_BOTTOM : PIC_STRUCT_BOTTOM_TOP;
+                fenc->i_pic_struct = b_interlaced ? b_tff ? PIC_STRUCT_TOP_BOTTOM : PIC_STRUCT_BOTTOM_TOP
+                                     : (fenc->i_frame ^ !b_tff) & 1 ? PIC_STRUCT_BOTTOM : PIC_STRUCT_TOP;
             }
             else
                 fenc->i_pic_struct = PIC_STRUCT_PROGRESSIVE;
@@ -3434,7 +3570,9 @@ int     x264_encoder_encode( x264_t *h,
     h->b_ref_reorder[0] =
     h->b_ref_reorder[1] = 0;
     h->fdec->i_poc =
-    h->fenc->i_poc = 2 * ( h->fenc->i_frame - X264_MAX( h->frames.i_last_idr, 0 ) );
+    h->fenc->i_poc = (2-PARAM_FIELD_ENCODE) * ( h->fenc->i_frame - X264_MAX( h->frames.i_last_idr, 0 ) );
+    h->fdec->i_frame = h->fenc->i_frame;
+    h->fdec->i_frame_num = h->i_frame_num;
 
     /* ------------------- Setup frame context ----------------------------- */
     /* 5: Init data dependent of frame type */
@@ -3452,7 +3590,11 @@ int     x264_encoder_encode( x264_t *h,
         i_nal_type    = NAL_SLICE;
         i_nal_ref_idc = NAL_PRIORITY_HIGH; /* Not completely true but for now it is (as all I/P are kept as ref)*/
         h->sh.i_type = SLICE_TYPE_I;
-        reference_hierarchy_reset( h );
+        if( !(h->fenc->i_coded & PARAM_FIELD_ENCODE) ) // 1st field
+        {
+            reference_hierarchy_reset( h );
+            h->frames.i_poc_last_open_gop = -1;
+        }
         if( h->param.b_open_gop )
             h->frames.i_poc_last_open_gop = h->fenc->b_keyframe ? h->fenc->i_poc : -1;
     }
@@ -3469,7 +3611,8 @@ int     x264_encoder_encode( x264_t *h,
         i_nal_type    = NAL_SLICE;
         i_nal_ref_idc = h->param.i_bframe_pyramid == X264_B_PYRAMID_STRICT ? NAL_PRIORITY_LOW : NAL_PRIORITY_HIGH;
         h->sh.i_type = SLICE_TYPE_B;
-        reference_hierarchy_reset( h );
+        if( !PARAM_FIELD_ENCODE || !(h->fenc->i_coded & 1) ) // 1st field
+            reference_hierarchy_reset( h );
     }
     else    /* B frame */
     {
@@ -3479,7 +3622,6 @@ int     x264_encoder_encode( x264_t *h,
     }
 
     h->fdec->i_type = h->fenc->i_type;
-    h->fdec->i_frame = h->fenc->i_frame;
     h->fenc->b_kept_as_ref =
     h->fdec->b_kept_as_ref = i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE && h->param.i_keyint_max > 1;
 
@@ -3785,7 +3927,11 @@ int     x264_encoder_encode( x264_t *h,
     weighted_pred_init( h );
 
     if( i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE )
-        h->i_frame_num++;
+    {
+        int second_field = h->fenc->i_frame & 1;
+        if( !PARAM_FIELD_ENCODE || second_field )
+            h->i_frame_num++;
+    }
 
     /* Write frame */
     h->i_threadslice_start = 0;

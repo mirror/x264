@@ -867,6 +867,9 @@ static int slicetype_frame_cost( x264_t *h, x264_mb_analysis_t *a,
         }
         if( do_search[1] ) fenc->lowres_mvs[1][p1-b-1][0][0] = 0;
 
+        if( b != p0 )
+            printf("\n do search %i %i %i \n", do_search[0], do_search[1], fenc->lowres_mvs[0][b-p0-1][0][0] );
+
         if( p1 != p0 )
             dist_scale_factor = ( ((b-p0) << 8) + ((p1-p0) >> 1) ) / (p1-p0);
 
@@ -1102,6 +1105,8 @@ static void macroblock_tree( x264_t *h, x264_mb_analysis_t *a, x264_frame_t **fr
     float average_duration = total_duration / (num_frames + 1);
 
     int i = num_frames;
+
+    printf("\n MBTREE num_frames %i \n", num_frames );
 
     if( b_intra )
         slicetype_frame_cost( h, a, frames, 0, 0, 0 );
@@ -1528,6 +1533,9 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
         return;
     }
 
+    if( PARAM_FIELD_ENCODE && frames[0]->i_frame ^ 1 )
+        frames[1]->i_type = X264_TYPE_P;
+
 #if HAVE_OPENCL
     x264_opencl_slicetype_prep( h, frames, num_frames, a.i_lambda );
 #endif
@@ -1745,7 +1753,7 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
 
 void x264_slicetype_decide( x264_t *h )
 {
-    x264_frame_t *frames[X264_BFRAME_MAX+2];
+    x264_frame_t *frames[X264_BFRAME_MAX+3];
     x264_frame_t *frm;
     int bframes;
     int brefs;
@@ -1760,7 +1768,8 @@ void x264_slicetype_decide( x264_t *h )
         if( h->param.b_vfr_input )
         {
             if( lookahead_size-- > 1 )
-                h->lookahead->next.list[i]->i_duration = 2 * (h->lookahead->next.list[i+1]->i_pts - h->lookahead->next.list[i]->i_pts);
+                h->lookahead->next.list[i]->i_duration = (2-PARAM_FIELD_ENCODE)
+                                                       * (h->lookahead->next.list[i+1]->i_pts - h->lookahead->next.list[i]->i_pts);
             else
                 h->lookahead->next.list[i]->i_duration = h->i_prev_duration;
         }
@@ -1801,6 +1810,14 @@ void x264_slicetype_decide( x264_t *h )
     {
         frm = h->lookahead->next.list[bframes];
 
+        /* Any non-scenecut field following an I-field must be a P-field */
+        if( PARAM_FIELD_ENCODE && !IS_X264_TYPE_I( frm->i_type ) && h->param.i_keyint_max > 1 &&
+            frm->i_frame == h->lookahead->i_last_keyframe+1 )
+        {
+            frm->i_type = X264_TYPE_P;
+            frm->b_ref_opp_field = 1;
+        }
+
         if( frm->i_forced_type != X264_TYPE_AUTO && frm->i_type != frm->i_forced_type &&
             !(frm->i_forced_type == X264_TYPE_KEYFRAME && IS_X264_TYPE_I( frm->i_type )) )
         {
@@ -1818,7 +1835,7 @@ void x264_slicetype_decide( x264_t *h )
         /* pyramid with multiple B-refs needs a big enough dpb that the preceding P-frame stays available.
            smaller dpb could be supported by smart enough use of mmco, but it's easier just to forbid it. */
         else if( frm->i_type == X264_TYPE_BREF && h->param.i_bframe_pyramid == X264_B_PYRAMID_NORMAL &&
-            brefs && h->param.i_frame_reference <= (brefs+3) )
+            brefs && (h->param.i_frame_reference>>PARAM_FIELD_ENCODE) <= (brefs+3) )
         {
             frm->i_type = X264_TYPE_B;
             x264_log( h, X264_LOG_WARNING, "B-ref at frame %d incompatible with B-pyramid %s and %d reference frames\n",
@@ -1861,16 +1878,18 @@ void x264_slicetype_decide( x264_t *h )
             frm->b_keyframe = 1;
             if( bframes > 0 )
             {
-                bframes--;
+                bframes -= 1+PARAM_FIELD_ENCODE;
                 h->lookahead->next.list[bframes]->i_type = X264_TYPE_P;
+                if( PARAM_FIELD_ENCODE )
+                    h->lookahead->next.list[bframes+1]->i_type = X264_TYPE_P;
             }
         }
 
         if( bframes == h->param.i_bframe ||
-            !h->lookahead->next.list[bframes+1] )
+            !h->lookahead->next.list[bframes+1+PARAM_FIELD_ENCODE] )
         {
             if( IS_X264_TYPE_B( frm->i_type ) )
-                x264_log( h, X264_LOG_WARNING, "specified frame type is not compatible with max B-frames\n" );
+                x264_log( h, X264_LOG_WARNING, "specified frame type is not compatible with max B-frames, frame %i\n", frm->i_frame );
             if( frm->i_type == X264_TYPE_AUTO
                 || IS_X264_TYPE_B( frm->i_type ) )
                 frm->i_type = X264_TYPE_P;
@@ -1887,7 +1906,15 @@ void x264_slicetype_decide( x264_t *h )
 
     if( bframes )
         h->lookahead->next.list[bframes-1]->b_last_minigop_bframe = 1;
-    h->lookahead->next.list[bframes]->i_bframes = bframes;
+
+    if( PARAM_FIELD_ENCODE )
+    {
+        h->lookahead->next.list[bframes+0]->i_bframes = 0;
+        if( lookahead_size > 1 )
+            h->lookahead->next.list[bframes+1]->i_bframes = bframes;
+    }
+    else
+        h->lookahead->next.list[bframes]->i_bframes = bframes;
 
     /* insert a bref into the sequence */
     if( h->param.i_bframe_pyramid && bframes > 1 && !brefs )
@@ -1901,16 +1928,33 @@ void x264_slicetype_decide( x264_t *h )
     {
         x264_mb_analysis_t a;
         int p0, p1, b;
-        p1 = b = bframes + 1;
+        p1 = b = bframes + 1 + PARAM_FIELD_ENCODE;
 
         lowres_context_init( h, &a );
 
-        frames[0] = h->lookahead->last_nonb;
-        memcpy( &frames[1], h->lookahead->next.list, (bframes+1) * sizeof(x264_frame_t*) );
-        if( IS_X264_TYPE_I( h->lookahead->next.list[bframes]->i_type ) )
-            p0 = bframes + 1;
-        else // P
-            p0 = 0;
+        if( PARAM_FIELD_ENCODE )
+        {
+            frames[0] = h->lookahead->last_nonb;
+            frames[1] = h->lookahead->penultimate_nonb;
+            memcpy( &frames[2], h->lookahead->next.list, (bframes+1) * sizeof(x264_frame_t*) );
+            if( IS_X264_TYPE_I( h->lookahead->next.list[bframes]->i_type ) )
+                p0 = bframes + 1 + PARAM_FIELD_ENCODE;
+            else if( frames[1] && IS_X264_TYPE_I( frames[1]->i_type ) ) // P-field following an I-field
+                p0 = 1;
+            else // P
+                p0 = 0;
+        }
+        else
+        {
+            frames[0] = h->lookahead->last_nonb;
+            memcpy( &frames[1], h->lookahead->next.list, (bframes+1) * sizeof(x264_frame_t*) );
+            if( IS_X264_TYPE_I( h->lookahead->next.list[bframes]->i_type ) )
+                p0 = bframes + 1;
+            else // P
+                p0 = 0;
+        }
+
+        printf("\n SD %i %i %i \n", p0, p1, b );
 
         slicetype_frame_cost( h, &a, frames, p0, p1, b );
 
@@ -1948,7 +1992,7 @@ void x264_slicetype_decide( x264_t *h )
     int i_coded = h->lookahead->next.list[0]->i_frame;
     if( bframes )
     {
-        int idx_list[] = { brefs+1, 1 };
+        int idx_list[2] = { brefs+1+PARAM_FIELD_ENCODE, 1+PARAM_FIELD_ENCODE };
         for( int i = 0; i < bframes; i++ )
         {
             int idx = idx_list[h->lookahead->next.list[i]->i_type == X264_TYPE_BREF]++;
@@ -1957,6 +2001,11 @@ void x264_slicetype_decide( x264_t *h )
         }
         frames[0] = h->lookahead->next.list[bframes];
         frames[0]->i_reordered_pts = h->lookahead->next.list[0]->i_pts;
+        if( PARAM_FIELD_ENCODE )
+        {
+            frames[1] = h->lookahead->next.list[bframes+1];
+            frames[1]->i_reordered_pts = h->lookahead->next.list[1]->i_pts;
+        }
         memcpy( h->lookahead->next.list, frames, (bframes+1) * sizeof(x264_frame_t*) );
     }
 
@@ -1978,22 +2027,34 @@ int x264_rc_analyse_slice( x264_t *h )
 {
     int p0 = 0, p1, b;
     int cost;
+    x264_frame_t **frames;
     x264_emms();
 
     if( IS_X264_TYPE_I(h->fenc->i_type) )
         p1 = b = 0;
     else if( h->fenc->i_type == X264_TYPE_P )
-        p1 = b = h->fenc->i_bframes + 1;
+    {
+        p1 = b = h->fenc->i_bframes + 1+PARAM_FIELD_ENCODE;
+        if( PARAM_FIELD_ENCODE && h->fenc->b_ref_opp_field )
+        {
+            p1--;
+            b--;
+        }
+        frames = &h->fenc - b;
+    }
     else //B
     {
         p1 = (h->fref_nearest[1]->i_poc - h->fref_nearest[0]->i_poc)/2;
         b  = (h->fenc->i_poc - h->fref_nearest[0]->i_poc)/2;
     }
     /* We don't need to assign p0/p1 since we are not performing any real analysis here. */
-    x264_frame_t **frames = &h->fenc - b;
+    frames = &h->fenc - b;
+
+    printf("\n num %i ref %i p1 %i b %i \n", frames[p1]->i_frame, h->fenc->b_ref_opp_field, p1, b );
 
     /* cost should have been already calculated by x264_slicetype_decide */
     cost = frames[b]->i_cost_est[b-p0][p1-b];
+    printf("\n b-p0 %i p1-b %i \n", b-p0, p1-b );
     assert( cost >= 0 );
 
     if( h->param.rc.b_mb_tree && !h->param.rc.b_stat_read )

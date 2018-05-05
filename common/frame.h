@@ -137,6 +137,7 @@ typedef struct x264_frame
     float   f_weighted_cost_delta[X264_BFRAME_MAX+2];
     uint32_t i_pixel_sum[3];
     uint64_t i_pixel_ssd[3];
+    int     b_ref_opp_field; /* set to one if field references field of opposite parity */
 
     /* hrd */
     x264_hrd_t hrd_timing;

@@ -52,8 +52,8 @@ static NOINLINE void mb_mc_0xywh( x264_t *h, int x, int y, int width, int height
     {
         int v_shift = CHROMA_V_SHIFT;
         // Chroma in 4:2:0 is offset if MCing from a field of opposite parity
-        if( v_shift & MB_INTERLACED & i_ref )
-            mvy += (h->mb.i_mb_y & 1)*4 - 2;
+        if( v_shift & MB_INTERLACED )
+            mvy += h->mb.i_mvy_offset[0][i_ref];
 
         int offset = (4*FDEC_STRIDE>>v_shift)*y + 2*x;
         height = 4*height >> v_shift;
@@ -90,8 +90,8 @@ static NOINLINE void mb_mc_1xywh( x264_t *h, int x, int y, int width, int height
     else if( CHROMA_FORMAT )
     {
         int v_shift = CHROMA_V_SHIFT;
-        if( v_shift & MB_INTERLACED & i_ref )
-            mvy += (h->mb.i_mb_y & 1)*4 - 2;
+        if( v_shift & MB_INTERLACED )
+            mvy += h->mb.i_mvy_offset[1][i_ref];
 
         int offset = (4*FDEC_STRIDE>>v_shift)*y + 2*x;
         h->mc.mc_chroma( &h->mb.pic.p_fdec[1][offset],
@@ -135,10 +135,11 @@ static NOINLINE void mb_mc_01xywh( x264_t *h, int x, int y, int width, int heigh
     else if( CHROMA_FORMAT )
     {
         int v_shift = CHROMA_V_SHIFT;
-        if( v_shift & MB_INTERLACED & i_ref0 )
-            mvy0 += (h->mb.i_mb_y & 1)*4 - 2;
-        if( v_shift & MB_INTERLACED & i_ref1 )
-            mvy1 += (h->mb.i_mb_y & 1)*4 - 2;
+        if( v_shift & MB_INTERLACED )
+        {
+            mvy0 += h->mb.i_mvy_offset[0][i_ref0];
+            mvy1 += h->mb.i_mvy_offset[1][i_ref1];
+        }
 
         h->mc.mc_chroma( tmp0, tmp0+8, 16, h->mb.pic.p_fref[0][i_ref0][4], h->mb.pic.i_stride[1],
                          mvx0, 2*mvy0>>v_shift, 2*width, 4*height>>v_shift );
@@ -253,7 +254,7 @@ int x264_macroblock_cache_allocate( x264_t *h )
     h->mb.i_b8_stride = h->mb.i_mb_width * 2;
     h->mb.i_b4_stride = h->mb.i_mb_width * 4;
 
-    h->mb.b_interlaced = PARAM_INTERLACED;
+    h->mb.b_interlaced = PARAM_INTERLACED || PARAM_FIELD_ENCODE;
 
     PREALLOC_INIT
 
@@ -279,6 +280,7 @@ int x264_macroblock_cache_allocate( x264_t *h )
 
     for( int i = 0; i < 2; i++ )
     {
+        // FIXME this is probably wrong
         int i_refs = X264_MIN(X264_REF_MAX, (i ? 1 + !!h->param.i_bframe_pyramid : h->param.i_frame_reference) ) << PARAM_INTERLACED;
         if( h->param.analyse.i_weighted_pred == X264_WEIGHTP_SMART )
             i_refs = X264_MIN(X264_REF_MAX, i_refs + 1 + (BIT_DEPTH == 8)); //smart weights add two duplicate frames, one in >8-bit
@@ -330,6 +332,7 @@ int x264_macroblock_cache_allocate( x264_t *h )
 
     for( int i = 0; i < 2; i++ )
     {
+        // FIXME this is probably wrong
         int i_refs = X264_MIN(X264_REF_MAX, (i ? 1 + !!h->param.i_bframe_pyramid : h->param.i_frame_reference) ) << PARAM_INTERLACED;
         if( h->param.analyse.i_weighted_pred == X264_WEIGHTP_SMART )
             i_refs = X264_MIN(X264_REF_MAX, i_refs + 1 + (BIT_DEPTH == 8)); //smart weights add two duplicate frames, one in >8-bit
@@ -484,6 +487,21 @@ void x264_macroblock_slice_init( x264_t *h )
             int delta = curpoc - refpoc;
 
             h->fdec->inv_ref_poc[field] = (256 + delta/2) / delta;
+        }
+
+    int cur_bottom = (h->fdec->i_frame & 1) ^ !h->param.b_tff;
+    for( int i = 0; i < h->i_ref[0]; i++ )
+    {
+        int ref_bottom = (h->fref[0][i]->i_frame & 1) ^ !h->param.b_tff;
+        h->mb.i_mvy_offset[0][i] = SLICE_MBAFF ? i&1 ? (h->mb.i_mb_y & 1)*4 - 2 : 0
+                                   : cur_bottom && !ref_bottom ? +2 : !cur_bottom && ref_bottom ? -2 : 0;
+    }
+    if( h->sh.i_type == SLICE_TYPE_B )
+        for( int i = 0; i < h->i_ref[1]; i++ )
+        {
+            int ref_bottom = (h->fref[1][i]->i_frame & 1) ^ !h->param.b_tff;
+            h->mb.i_mvy_offset[1][i] = SLICE_MBAFF ? i&1 ? (h->mb.i_mb_y & 1)*4 - 2 : 0
+                                       : cur_bottom && !ref_bottom ? +2 : !cur_bottom && ref_bottom ? -2 : 0;
         }
 
     h->mb.i_neighbour4[6] =
@@ -1309,8 +1327,8 @@ static ALWAYS_INLINE void macroblock_cache_load( x264_t *h, int mb_x, int mb_y, 
     /* load skip */
     if( h->sh.i_type == SLICE_TYPE_B )
     {
-        h->mb.bipred_weight = h->mb.bipred_weight_buf[MB_INTERLACED][MB_INTERLACED&(mb_y&1)];
-        h->mb.dist_scale_factor = h->mb.dist_scale_factor_buf[MB_INTERLACED][MB_INTERLACED&(mb_y&1)];
+        h->mb.bipred_weight = h->mb.bipred_weight_buf[MB_MBAFF_FIELD][MB_MBAFF_FIELD&(mb_y&1)];
+        h->mb.dist_scale_factor = h->mb.dist_scale_factor_buf[MB_MBAFF_FIELD][MB_MBAFF_FIELD&(mb_y&1)];
         if( h->param.b_cabac )
         {
             uint8_t skipbp;

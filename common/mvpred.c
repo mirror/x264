@@ -187,8 +187,8 @@ static int mb_predict_mv_direct16x16_temporal( x264_t *h )
     int mb_xy = h->mb.i_mb_xy;
     int type_col[2] = { h->fref[1][0]->mb_type[mb_xy], h->fref[1][0]->mb_type[mb_xy] };
     int partition_col[2] = { h->fref[1][0]->mb_partition[mb_xy], h->fref[1][0]->mb_partition[mb_xy] };
-    int preshift = MB_INTERLACED;
-    int postshift = MB_INTERLACED;
+    int preshift = MB_MBAFF_FIELD;
+    int postshift = MB_MBAFF_FIELD;
     int offset = 1;
     int yshift = 1;
     h->mb.i_partition = partition_col[0];
@@ -257,7 +257,7 @@ static int mb_predict_mv_direct16x16_temporal( x264_t *h )
 
         int i_part_8x8 = i_mb_8x8 + x8 + (ypart>>1) * h->mb.i_b8_stride;
         int i_ref1_ref = h->fref[1][0]->ref[0][i_part_8x8];
-        int i_ref = (map_col_to_list0(i_ref1_ref>>preshift) << postshift) + (offset&i_ref1_ref&MB_INTERLACED);
+        int i_ref = (map_col_to_list0(i_ref1_ref>>preshift) << postshift) + (offset&i_ref1_ref&MB_MBAFF_FIELD);
 
         if( i_ref >= 0 )
         {

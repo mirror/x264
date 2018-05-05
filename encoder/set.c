@@ -148,7 +148,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     /* extra slot with pyramid so that we don't have to override the
      * order of forgetting old pictures */
     sps->vui.i_max_dec_frame_buffering =
-    sps->i_num_ref_frames = X264_MIN(X264_REF_MAX, X264_MAX4(param->i_frame_reference, 1 + sps->vui.i_num_reorder_frames,
+    sps->i_num_ref_frames = X264_MIN(X264_REF_MAX >> 1, X264_MAX4(param->i_frame_reference>>param->b_field_encode, 1 + sps->vui.i_num_reorder_frames,
                             param->i_bframe_pyramid ? 4 : 1, param->i_dpb_size));
     sps->i_num_ref_frames -= param->i_bframe_pyramid == X264_B_PYRAMID_STRICT;
     if( param->i_keyint_max == 1 )
@@ -170,7 +170,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     while( (1 << sps->i_log2_max_frame_num) <= max_frame_num )
         sps->i_log2_max_frame_num++;
 
-    sps->i_poc_type = param->i_bframe || param->b_interlaced || param->i_avcintra_class ? 0 : 2;
+    sps->i_poc_type = param->i_bframe || param->b_interlaced || param->b_field_encode || param->i_avcintra_class ? 0 : 2;
     if( sps->i_poc_type == 0 )
     {
         int max_delta_poc = (param->i_bframe + 2) * (!!param->i_bframe_pyramid + 1) * 2;
@@ -182,6 +182,10 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     sps->b_vui = 1;
 
     sps->b_gaps_in_frame_num_value_allowed = 0;
+    sps->b_frame_mbs_only = !(param->b_interlaced || param->b_fake_interlaced || param->b_field_encode);
+    sps->b_half_height = param->b_interlaced || param->b_fake_interlaced;
+    if( sps->b_half_height )
+        sps->i_mb_height = ( sps->i_mb_height + 1 ) & ~1;
     sps->b_mb_adaptive_frame_field = param->b_interlaced;
     sps->b_direct8x8_inference = 1;
 
@@ -221,7 +225,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     if( sps->vui.b_timing_info_present )
     {
         sps->vui.i_num_units_in_tick = param->i_timebase_num;
-        sps->vui.i_time_scale = param->i_timebase_den * 2;
+        sps->vui.i_time_scale = param->i_timebase_den * (2-param->b_field_encode);
         sps->vui.b_fixed_frame_rate = !param->b_vfr_input;
     }
 
@@ -250,7 +254,7 @@ void x264_sps_init_reconfigurable( x264_sps_t *sps, x264_param_t *param )
     sps->crop.i_left   = param->crop_rect.i_left;
     sps->crop.i_top    = param->crop_rect.i_top;
     sps->crop.i_right  = param->crop_rect.i_right + sps->i_mb_width*16 - param->i_width;
-    sps->crop.i_bottom = param->crop_rect.i_bottom + sps->i_mb_height*16 - param->i_height;
+    sps->crop.i_bottom = (param->crop_rect.i_bottom + sps->i_mb_height*16 - param->i_height) >> sps->b_half_height;
     sps->b_crop = sps->crop.i_left  || sps->crop.i_top ||
                   sps->crop.i_right || sps->crop.i_bottom;
 
@@ -353,7 +357,7 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
     bs_write_ue( s, sps->i_num_ref_frames );
     bs_write1( s, sps->b_gaps_in_frame_num_value_allowed );
     bs_write_ue( s, sps->i_mb_width - 1 );
-    bs_write_ue( s, (sps->i_mb_height >> !sps->b_frame_mbs_only) - 1);
+    bs_write_ue( s, (sps->i_mb_height >> sps->b_half_height) - 1);
     bs_write1( s, sps->b_frame_mbs_only );
     if( !sps->b_frame_mbs_only )
         bs_write1( s, sps->b_mb_adaptive_frame_field );
@@ -830,8 +834,7 @@ int x264_validate_levels( x264_t *h, int verbose )
         l++;
 
     if( l->frame_size < mbs
-        || l->frame_size*8 < h->sps->i_mb_width * h->sps->i_mb_width
-        || l->frame_size*8 < h->sps->i_mb_height * h->sps->i_mb_height )
+        || l->frame_size*8 < h->sps->i_mb_width * h->sps->i_mb_width )
         ERROR( "frame MB size (%dx%d) > level limit (%d)\n",
                h->sps->i_mb_width, h->sps->i_mb_height, l->frame_size );
     if( dpb > l->dpb )
@@ -847,6 +850,7 @@ int x264_validate_levels( x264_t *h, int verbose )
     CHECK( "MV range", l->mv_range, h->param.analyse.i_mv_range );
     CHECK( "interlaced", !l->frame_only, h->param.b_interlaced );
     CHECK( "fake interlaced", !l->frame_only, h->param.b_fake_interlaced );
+    CHECK( "field encoding", !l->frame_only, h->param.b_field_encode );
 
     if( h->param.i_fps_den > 0 )
         CHECK( "MB rate", l->mbps, (int64_t)mbs * h->param.i_fps_num / h->param.i_fps_den );
