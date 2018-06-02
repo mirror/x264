@@ -351,7 +351,7 @@ static void print_version_info( void )
 #endif
 }
 
-int main( int argc, char **argv )
+static int main_internal( int argc, char **argv )
 {
     x264_param_t param;
     cli_opt_t opt = {0};
@@ -401,6 +401,11 @@ int main( int argc, char **argv )
 #endif
 
     return ret;
+}
+
+int main( int argc, char **argv )
+{
+    return x264_stack_align( main_internal, argc, argv );
 }
 
 static char const *strtable_lookup( const char * const table[], int idx )

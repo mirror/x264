@@ -67,7 +67,7 @@ static void lookahead_update_last_nonb( x264_t *h, x264_frame_t *new_nonb )
 #if HAVE_THREAD
 static void lookahead_slicetype_decide( x264_t *h )
 {
-    x264_stack_align( x264_slicetype_decide, h );
+    x264_slicetype_decide( h );
 
     lookahead_update_last_nonb( h, h->lookahead->next.list[0] );
     int shift_frames = h->lookahead->next.list[0]->i_bframes + 1;
@@ -82,12 +82,12 @@ static void lookahead_slicetype_decide( x264_t *h )
 
     /* For MB-tree and VBV lookahead, we have to perform propagation analysis on I-frames too. */
     if( h->lookahead->b_analyse_keyframe && IS_X264_TYPE_I( h->lookahead->last_nonb->i_type ) )
-        x264_stack_align( x264_slicetype_analyse, h, shift_frames );
+        x264_slicetype_analyse( h, shift_frames );
 
     x264_pthread_mutex_unlock( &h->lookahead->ofbuf.mutex );
 }
 
-static void *lookahead_thread( x264_t *h )
+static void *lookahead_thread_internal( x264_t *h )
 {
     while( !h->lookahead->b_exit_thread )
     {
@@ -120,6 +120,11 @@ static void *lookahead_thread( x264_t *h )
     x264_pthread_cond_broadcast( &h->lookahead->ofbuf.cv_fill );
     x264_pthread_mutex_unlock( &h->lookahead->ofbuf.mutex );
     return NULL;
+}
+
+static void *lookahead_thread( x264_t *h )
+{
+    return (void*)x264_stack_align( lookahead_thread_internal, h );
 }
 #endif
 
@@ -230,14 +235,14 @@ void x264_lookahead_get_frames( x264_t *h )
         if( h->frames.current[0] || !h->lookahead->next.i_size )
             return;
 
-        x264_stack_align( x264_slicetype_decide, h );
+        x264_slicetype_decide( h );
         lookahead_update_last_nonb( h, h->lookahead->next.list[0] );
         int shift_frames = h->lookahead->next.list[0]->i_bframes + 1;
         lookahead_shift( &h->lookahead->ofbuf, &h->lookahead->next, shift_frames );
 
         /* For MB-tree and VBV lookahead, we have to perform propagation analysis on I-frames too. */
         if( h->lookahead->b_analyse_keyframe && IS_X264_TYPE_I( h->lookahead->last_nonb->i_type ) )
-            x264_stack_align( x264_slicetype_analyse, h, shift_frames );
+            x264_slicetype_analyse( h, shift_frames );
 
         lookahead_encoder_shift( h );
     }

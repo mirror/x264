@@ -2913,7 +2913,7 @@ static int check_all_flags( void )
     return ret;
 }
 
-int main(int argc, char *argv[])
+static int main_internal( int argc, char **argv )
 {
 #ifdef _WIN32
     /* Disable the Windows Error Reporting dialog */
@@ -2973,3 +2973,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+int main( int argc, char **argv )
+{
+    return x264_stack_align( main_internal, argc, argv );
+}

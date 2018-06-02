@@ -64,23 +64,42 @@ cglobal cpu_xgetbv
 %endif
     ret
 
+;-----------------------------------------------------------------------------
+; void cpu_emms( void )
+;-----------------------------------------------------------------------------
+cglobal cpu_emms
+    emms
+    ret
+
+;-----------------------------------------------------------------------------
+; void cpu_sfence( void )
+;-----------------------------------------------------------------------------
+cglobal cpu_sfence
+    sfence
+    ret
+
 %if ARCH_X86_64
 
 ;-----------------------------------------------------------------------------
-; void stack_align( void (*func)(void*), void *arg );
+; intptr_t stack_align( void (*func)(void*), ... ); (up to 5 args)
 ;-----------------------------------------------------------------------------
 cglobal stack_align
-    push rbp
-    mov  rbp, rsp
+    mov      rax, r0mp
+    mov       r0, r1mp
+    mov       r1, r2mp
+    mov       r2, r3mp
+    mov       r3, r4mp
+    mov       r4, r5mp
+    push     rbp
+    mov      rbp, rsp
 %if WIN64
-    sub  rsp, 32 ; shadow space
+    sub      rsp, 40 ; shadow space + r4
 %endif
-    and  rsp, ~(STACK_ALIGNMENT-1)
-    mov  rax, r0
-    mov   r0, r1
-    mov   r1, r2
-    mov   r2, r3
-    call rax
+    and      rsp, ~(STACK_ALIGNMENT-1)
+%if WIN64
+    mov [rsp+32], r4
+%endif
+    call     rax
     leave
     ret
 
@@ -113,33 +132,22 @@ cglobal cpu_cpuid_test
     ret
 
 cglobal stack_align
-    push ebp
-    mov  ebp, esp
-    sub  esp, 12
-    and  esp, ~(STACK_ALIGNMENT-1)
-    mov  ecx, [ebp+8]
-    mov  edx, [ebp+12]
-    mov  [esp], edx
-    mov  edx, [ebp+16]
-    mov  [esp+4], edx
-    mov  edx, [ebp+20]
-    mov  [esp+8], edx
-    call ecx
+    push      ebp
+    mov       ebp, esp
+    sub       esp, 20
+    and       esp, ~(STACK_ALIGNMENT-1)
+    mov        r0, [ebp+12]
+    mov        r1, [ebp+16]
+    mov        r2, [ebp+20]
+    mov  [esp+ 0], r0
+    mov  [esp+ 4], r1
+    mov  [esp+ 8], r2
+    mov        r0, [ebp+24]
+    mov        r1, [ebp+28]
+    mov  [esp+12], r0
+    mov  [esp+16], r1
+    call [ebp+ 8]
     leave
     ret
 
 %endif
-
-;-----------------------------------------------------------------------------
-; void cpu_emms( void )
-;-----------------------------------------------------------------------------
-cglobal cpu_emms
-    emms
-    ret
-
-;-----------------------------------------------------------------------------
-; void cpu_sfence( void )
-;-----------------------------------------------------------------------------
-cglobal cpu_sfence
-    sfence
-    ret

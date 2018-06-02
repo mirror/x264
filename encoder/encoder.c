@@ -1564,7 +1564,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     if( h->param.b_cabac )
         x264_cabac_init( h );
     else
-        x264_stack_align( x264_cavlc_init, h );
+        x264_cavlc_init( h );
 
     mbcmp_init( h );
     chroma_dsp_init( h );
@@ -3087,7 +3087,7 @@ static void *slices_write( x264_t *h )
             }
         }
         h->sh.i_last_mb = X264_MIN( h->sh.i_last_mb, last_thread_mb );
-        if( x264_stack_align( slice_write, h ) )
+        if( slice_write( h ) )
             goto fail;
         h->sh.i_first_mb = h->sh.i_last_mb + 1;
         // if i_first_mb is not the last mb in a row then go to the next mb in MBAFF order
@@ -3122,7 +3122,7 @@ static int threaded_slices_write( x264_t *h )
         t->sh.i_last_mb  =   t->i_threadslice_end * h->mb.i_mb_width - 1;
     }
 
-    x264_stack_align( x264_analyse_weight_frame, h, h->mb.i_mb_height*16 + 16 );
+    x264_analyse_weight_frame( h, h->mb.i_mb_height*16 + 16 );
 
     x264_threads_distribute_ratecontrol( h );
 
@@ -3300,7 +3300,7 @@ int     x264_encoder_encode( x264_t *h,
                 return -1;
         }
         else
-            x264_stack_align( x264_adaptive_quant_frame, h, fenc, pic_in->prop.quant_offsets );
+            x264_adaptive_quant_frame( h, fenc, pic_in->prop.quant_offsets );
 
         if( pic_in->prop.quant_offsets_free )
             pic_in->prop.quant_offsets_free( pic_in->prop.quant_offsets );

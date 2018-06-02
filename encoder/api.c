@@ -73,7 +73,7 @@ typedef struct x264_api_t
     int  (*encoder_invalidate_reference)( x264_t *, int64_t pts );
 } x264_api_t;
 
-x264_t *x264_encoder_open( x264_param_t *param )
+static x264_api_t *encoder_open( x264_param_t *param )
 {
     x264_api_t *api = calloc( 1, sizeof( x264_api_t ) );
     if( !api )
@@ -118,15 +118,20 @@ x264_t *x264_encoder_open( x264_param_t *param )
         return NULL;
     }
 
+    return api;
+}
+
+x264_t *x264_encoder_open( x264_param_t *param )
+{
     /* x264_t is opaque */
-    return (x264_t *)api;
+    return (x264_t *)x264_stack_align( encoder_open, param );
 }
 
 void x264_encoder_close( x264_t *h )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    api->encoder_close( api->x264 );
+    x264_stack_align( api->encoder_close, api->x264 );
     free( api );
 }
 
@@ -134,61 +139,61 @@ void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    api->nal_encode( api->x264, dst, nal );
+    x264_stack_align( api->nal_encode, api->x264, dst, nal );
 }
 
 int x264_encoder_reconfig( x264_t *h, x264_param_t *param)
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    return api->encoder_reconfig( api->x264, param );
+    return x264_stack_align( api->encoder_reconfig, api->x264, param );
 }
 
 void x264_encoder_parameters( x264_t *h, x264_param_t *param )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    api->encoder_parameters( api->x264, param );
+    x264_stack_align( api->encoder_parameters, api->x264, param );
 }
 
 int x264_encoder_headers( x264_t *h, x264_nal_t **pp_nal, int *pi_nal )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    return api->encoder_headers( api->x264, pp_nal, pi_nal );
+    return x264_stack_align( api->encoder_headers, api->x264, pp_nal, pi_nal );
 }
 
 int x264_encoder_encode( x264_t *h, x264_nal_t **pp_nal, int *pi_nal, x264_picture_t *pic_in, x264_picture_t *pic_out )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    return api->encoder_encode( api->x264, pp_nal, pi_nal, pic_in, pic_out );
+    return x264_stack_align( api->encoder_encode, api->x264, pp_nal, pi_nal, pic_in, pic_out );
 }
 
 int x264_encoder_delayed_frames( x264_t *h )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    return api->encoder_delayed_frames( api->x264 );
+    return x264_stack_align( api->encoder_delayed_frames, api->x264 );
 }
 
 int x264_encoder_maximum_delayed_frames( x264_t *h )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    return api->encoder_maximum_delayed_frames( api->x264 );
+    return x264_stack_align( api->encoder_maximum_delayed_frames, api->x264 );
 }
 
 void x264_encoder_intra_refresh( x264_t *h )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    api->encoder_intra_refresh( api->x264 );
+    x264_stack_align( api->encoder_intra_refresh, api->x264 );
 }
 
 int x264_encoder_invalidate_reference( x264_t *h, int64_t pts )
 {
     x264_api_t *api = (x264_api_t *)h;
 
-    return api->encoder_invalidate_reference( api->x264, pts );
+    return x264_stack_align( api->encoder_invalidate_reference, api->x264, pts );
 }
