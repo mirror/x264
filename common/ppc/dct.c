@@ -354,6 +354,67 @@ void x264_add8x8_idct_dc_altivec( uint8_t *p_dst, int16_t dct[4] )
     vec_vsx_st( dcvsum8_7, 0, p_dst + 4*FDEC_STRIDE + 3*FDEC_STRIDE );
 }
 
+#define LOAD16                                  \
+    dstv0 = vec_ld( 0, p_dst );                 \
+    dstv1 = vec_ld( 0, p_dst + 1*FDEC_STRIDE ); \
+    dstv2 = vec_ld( 0, p_dst + 2*FDEC_STRIDE ); \
+    dstv3 = vec_ld( 0, p_dst + 3*FDEC_STRIDE );
+
+#define SUM16                                                 \
+        dcvsum0 = vec_adds( dcv0, vec_u8_to_s16_h( dstv0 ) ); \
+        dcvsum4 = vec_adds( dcv1, vec_u8_to_s16_l( dstv0 ) ); \
+        dcvsum1 = vec_adds( dcv0, vec_u8_to_s16_h( dstv1 ) ); \
+        dcvsum5 = vec_adds( dcv1, vec_u8_to_s16_l( dstv1 ) ); \
+        dcvsum2 = vec_adds( dcv0, vec_u8_to_s16_h( dstv2 ) ); \
+        dcvsum6 = vec_adds( dcv1, vec_u8_to_s16_l( dstv2 ) ); \
+        dcvsum3 = vec_adds( dcv0, vec_u8_to_s16_h( dstv3 ) ); \
+        dcvsum7 = vec_adds( dcv1, vec_u8_to_s16_l( dstv3 ) ); \
+        dcvsum8_0 = vec_packsu( dcvsum0, dcvsum4 );           \
+        dcvsum8_1 = vec_packsu( dcvsum1, dcvsum5 );           \
+        dcvsum8_2 = vec_packsu( dcvsum2, dcvsum6 );           \
+        dcvsum8_3 = vec_packsu( dcvsum3, dcvsum7 );
+
+#define STORE16                                    \
+    vec_st( dcvsum8_0, 0, p_dst );                 \
+    vec_st( dcvsum8_1, 0, p_dst + 1*FDEC_STRIDE ); \
+    vec_st( dcvsum8_2, 0, p_dst + 2*FDEC_STRIDE ); \
+    vec_st( dcvsum8_3, 0, p_dst + 3*FDEC_STRIDE );
+
+void x264_add16x16_idct_dc_altivec( uint8_t *p_dst, int16_t dct[16] )
+{
+    vec_s16_t dcv0, dcv1;
+    vec_s16_t v32 = vec_sl( vec_splat_s16( 8 ), vec_splat_u16( 2 ) );
+    vec_u16_t v6 = vec_splat_u16( 6 );
+    vec_u8_t dstv0, dstv1, dstv2, dstv3;
+    vec_s16_t dcvsum0, dcvsum1, dcvsum2, dcvsum3, dcvsum4, dcvsum5, dcvsum6, dcvsum7;
+    vec_u8_t dcvsum8_0, dcvsum8_1, dcvsum8_2, dcvsum8_3;
+    LOAD_ZERO;
+
+    for( int i = 0; i < 2; i++ )
+    {
+        vec_s16_t dctv = vec_ld( 0, dct );
+
+        dctv = vec_sra( vec_add( dctv, v32 ), v6 );
+        dcv1 = (vec_s16_t)vec_mergeh( dctv, dctv );
+        dcv0 = (vec_s16_t)vec_mergeh( (vec_s32_t)dcv1, (vec_s32_t)dcv1 );
+        dcv1 = (vec_s16_t)vec_mergel( (vec_s32_t)dcv1, (vec_s32_t)dcv1 );
+        LOAD16;
+        SUM16;
+        STORE16;
+
+        p_dst += 4*FDEC_STRIDE;
+        dcv1 = (vec_s16_t)vec_mergel( dctv, dctv );
+        dcv0 = (vec_s16_t)vec_mergeh( (vec_s32_t)dcv1, (vec_s32_t)dcv1 );
+        dcv1 = (vec_s16_t)vec_mergel( (vec_s32_t)dcv1, (vec_s32_t)dcv1 );
+        LOAD16;
+        SUM16;
+        STORE16;
+
+        dct += 8;
+        p_dst += 4*FDEC_STRIDE;
+    }
+}
+
 #define IDCT_1D_ALTIVEC(s0, s1, s2, s3,  d0, d1, d2, d3) \
 {                                                        \
     /*        a0  = SRC(0) + SRC(2); */                  \
