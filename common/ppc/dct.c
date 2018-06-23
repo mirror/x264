@@ -641,7 +641,7 @@ void x264_zigzag_interleave_8x8_cavlc_altivec( int16_t *dst, int16_t *src, uint8
 {
     vec_s16_t tmpv[8];
     vec_s16_t merge[2];
-    vec_s16_t permv[2];
+    vec_s16_t permv[3];
     vec_s16_t orv[4];
     vec_s16_t src0v = vec_ld( 0*16, src );
     vec_s16_t src1v = vec_ld( 1*16, src );
