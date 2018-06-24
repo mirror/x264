@@ -396,7 +396,7 @@ NL="
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
              LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
-             MSA MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R BITDEPTH8 BITDEPTH10"
+             MSA MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R CLOCK_GETTIME BITDEPTH8 BITDEPTH10"
 
 # parse options
 
@@ -1073,6 +1073,13 @@ fi
 
 if cc_check 'string.h' '' 'strtok_r(0, 0, 0);' ; then
     define HAVE_STRTOK_R
+fi
+
+if cc_check 'time.h' '' 'clock_gettime(CLOCK_MONOTONIC, 0);' ; then
+    define HAVE_CLOCK_GETTIME
+elif cc_check 'time.h' '-lrt' 'clock_gettime(CLOCK_MONOTONIC, 0);' ; then
+    define HAVE_CLOCK_GETTIME
+    LDFLAGS="$LDFLAGS -lrt"
 fi
 
 if [ "$SYS" != "WINDOWS" ] && cpp_check "sys/mman.h unistd.h" "" "defined(MAP_PRIVATE)"; then

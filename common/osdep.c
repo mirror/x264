@@ -51,6 +51,10 @@ int64_t x264_mdate( void )
     struct timeb tb;
     ftime( &tb );
     return ((int64_t)tb.time * 1000 + (int64_t)tb.millitm) * 1000;
+#elif HAVE_CLOCK_GETTIME
+    struct timespec ts;
+    clock_gettime( CLOCK_MONOTONIC, &ts );
+    return (int64_t)ts.tv_sec * 1000000 + (int64_t)ts.tv_nsec / 1000;
 #else
     struct timeval tv_date;
     gettimeofday( &tv_date, NULL );
