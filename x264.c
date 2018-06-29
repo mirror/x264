@@ -554,7 +554,8 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --profile <string>      Force the limits of an H.264 profile\n"
         "                                  Overrides all settings.\n" );
     H2(
-#if X264_CHROMA_FORMAT <= X264_CSP_I420
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
+#if HAVE_BITDEPTH8
         "                                  - baseline:\n"
         "                                    --no-8x8dct --bframes 0 --no-cabac\n"
         "                                    --cqm flat --weightp 0\n"
@@ -565,11 +566,14 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                    No lossless.\n"
         "                                  - high:\n"
         "                                    No lossless.\n"
+#endif
+#if HAVE_BITDEPTH10
         "                                  - high10:\n"
         "                                    No lossless.\n"
         "                                    Support for bit depth 8-10.\n"
 #endif
-#if X264_CHROMA_FORMAT <= X264_CSP_I422
+#endif
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
         "                                  - high422:\n"
         "                                    No lossless.\n"
         "                                    Support for bit depth 8-10.\n"
@@ -580,14 +584,18 @@ static void help( x264_param_t *defaults, int longhelp )
         "                                    Support for 4:2:0/4:2:2/4:4:4 chroma subsampling.\n" );
         else H0(
         "                                  - "
-#if X264_CHROMA_FORMAT <= X264_CSP_I420
-        "baseline,main,high,high10,"
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I420
+#if HAVE_BITDEPTH8
+        "baseline,main,high,"
 #endif
-#if X264_CHROMA_FORMAT <= X264_CSP_I422
+#if HAVE_BITDEPTH10
+        "high10,"
+#endif
+#endif
+#if !X264_CHROMA_FORMAT || X264_CHROMA_FORMAT == X264_CSP_I422
         "high422,"
 #endif
-        "high444\n"
-               );
+        "high444\n" );
     H0( "      --preset <string>       Use a preset to select encoding settings [medium]\n"
         "                                  Overridden by user settings.\n" );
     H2( "                                  - ultrafast:\n"
