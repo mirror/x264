@@ -137,11 +137,11 @@ static void pix_diff( uint8_t *p1, uint8_t *p2, vec_s16_t *diff, int i )
 
 void x264_sub8x8_dct_dc_altivec( int16_t dct[4], uint8_t *pix1, uint8_t *pix2 )
 {
-    vec_s16_t diff[2];
+    vec_s16_t diff[2], tmp;
     vec_s32_t sum[2];
     vec_s32_t zero32 = vec_splat_s32(0);
-    vec_u8_t mask = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                      0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F };
+    vec_u8_t mask = { 0x00, 0x01, 0x00, 0x01, 0x04, 0x05, 0x04, 0x05,
+                      0x02, 0x03, 0x02, 0x03, 0x06, 0x07, 0x06, 0x07 };
 
     pix_diff( &pix1[0], &pix2[0], diff, 0 );
     pix_diff( &pix1[4*FENC_STRIDE], &pix2[4*FDEC_STRIDE], diff, 1 );
@@ -152,20 +152,19 @@ void x264_sub8x8_dct_dc_altivec( int16_t dct[4], uint8_t *pix1, uint8_t *pix2 )
     sum[0] = vec_sum4s( diff[0], zero32 );
     diff[0] = vec_packs( sum[0], zero32 );
 
-    diff[1] = vec_vsx_ld( 0, dct );
-    diff[0] = vec_perm( diff[0], diff[1], mask );
+    diff[0] = vec_perm( diff[0], diff[0], mask ); // 0 0 2 2 1 1 3 3
+    tmp = xxpermdi( diff[0], diff[0], 2 );        // 1 1 3 3 0 0 2 2
+    diff[1] = vec_add( diff[0], tmp );            // 0+1 0+1 2+3 2+3
+    diff[0] = vec_sub( diff[0], tmp );            // 0-1 0-1 2-3 2-3
+    tmp = vec_mergeh( diff[1], diff[0] );         // 0+1 0-1 0+1 0-1 2+3 2-3 2+3 2-3
+    diff[0] = xxpermdi( tmp, tmp, 2 );            // 2+3 2-3 2+3 2-3
+    diff[1] = vec_add( tmp, diff[0] );            // 0+1+2+3 0-1+2+3
+    diff[0] = vec_sub( tmp, diff[0] );            // 0+1-2-3 0-1-2+3
+    diff[0] = vec_mergeh( diff[1], diff[0] );
 
-    vec_vsx_st( diff[0], 0, dct );
-
-    /* 2x2 DC transform */
-    int d0 = dct[0] + dct[1];
-    int d1 = dct[2] + dct[3];
-    int d2 = dct[0] - dct[1];
-    int d3 = dct[2] - dct[3];
-    dct[0] = d0 + d1;
-    dct[1] = d0 - d1;
-    dct[2] = d2 + d3;
-    dct[3] = d2 - d3;
+    diff[1] = vec_ld( 0, dct );
+    diff[0] = xxpermdi( diff[0], diff[1], 0 );
+    vec_st( diff[0], 0, dct );
 }
 
 /* DCT8_1D unrolled by 8 in Altivec */
