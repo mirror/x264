@@ -34,6 +34,17 @@
 
 typedef void *hnd_t;
 
+extern const char * const x264_avcintra_class_names[];
+extern const char * const x264_cqm_names[];
+extern const char * const x264_log_level_names[];
+extern const char * const x264_partition_names[];
+extern const char * const x264_pulldown_names[];
+extern const char * const x264_range_names[];
+extern const char * const x264_output_csp_names[];
+extern const char * const x264_valid_profile_names[];
+extern const char * const x264_demuxer_names[];
+extern const char * const x264_muxer_names[];
+
 static inline uint64_t gcd( uint64_t a, uint64_t b )
 {
     while( 1 )
@@ -62,6 +73,7 @@ static inline char *get_filename_extension( char *filename )
 
 void x264_cli_log( const char *name, int i_level, const char *fmt, ... );
 void x264_cli_printf( int i_level, const char *fmt, ... );
+int x264_cli_autocomplete( const char *prev, const char *cur );
 
 #ifdef _WIN32
 void x264_cli_set_console_title( const char *title );

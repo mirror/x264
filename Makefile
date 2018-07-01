@@ -27,8 +27,8 @@ SRCS_X = common/mc.c common/predict.c common/pixel.c common/macroblock.c \
 
 SRCS_8 =
 
-SRCCLI = x264.c input/input.c input/timecode.c input/raw.c input/y4m.c \
-         output/raw.c output/matroska.c output/matroska_ebml.c \
+SRCCLI = x264.c autocomplete.c input/input.c input/timecode.c input/raw.c \
+         input/y4m.c output/raw.c output/matroska.c output/matroska_ebml.c \
          output/flv.c output/flv_bytestream.c filters/filters.c \
          filters/video/video.c filters/video/source.c filters/video/internal.c \
          filters/video/resize.c filters/video/fix_vfr_pts.c \
