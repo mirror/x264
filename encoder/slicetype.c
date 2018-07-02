@@ -1277,10 +1277,10 @@ static void vbv_lookahead( x264_t *h, x264_mb_analysis_t *a, x264_frame_t **fram
     frames[next_nonb]->i_planned_type[idx] = X264_TYPE_AUTO;
 }
 
-static int slicetype_path_cost( x264_t *h, x264_mb_analysis_t *a, x264_frame_t **frames, char *path, int threshold )
+static uint64_t slicetype_path_cost( x264_t *h, x264_mb_analysis_t *a, x264_frame_t **frames, char *path, uint64_t threshold )
 {
+    uint64_t cost = 0;
     int loc = 1;
-    int cost = 0;
     int cur_nonb = 0;
     path--; /* Since the 1st path element is really the second frame */
     while( path[loc] )
@@ -1326,7 +1326,7 @@ static void slicetype_path( x264_t *h, x264_mb_analysis_t *a, x264_frame_t **fra
 {
     char paths[2][X264_LOOKAHEAD_MAX+1];
     int num_paths = X264_MIN( h->param.i_bframe+1, length );
-    int best_cost = COST_MAX;
+    uint64_t best_cost = COST_MAX64;
     int best_possible = 0;
     int idx = 0;
 
@@ -1357,9 +1357,9 @@ static void slicetype_path( x264_t *h, x264_mb_analysis_t *a, x264_frame_t **fra
         if( possible || !best_possible )
         {
             if( possible && !best_possible )
-                best_cost = COST_MAX;
+                best_cost = COST_MAX64;
             /* Calculate the actual cost of the current path */
-            int cost = slicetype_path_cost( h, a, frames, paths[idx], best_cost );
+            uint64_t cost = slicetype_path_cost( h, a, frames, paths[idx], best_cost );
             if( cost < best_cost )
             {
                 best_cost = cost;
@@ -1602,9 +1602,9 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
                 int bframes = j - last_nonb - 1;
                 memset( path, 'B', bframes );
                 strcpy( path+bframes, "PP" );
-                int cost_p = slicetype_path_cost( h, &a, frames+last_nonb, path, COST_MAX );
+                uint64_t cost_p = slicetype_path_cost( h, &a, frames+last_nonb, path, COST_MAX64 );
                 strcpy( path+bframes, "BP" );
-                int cost_b = slicetype_path_cost( h, &a, frames+last_nonb, path, cost_p );
+                uint64_t cost_b = slicetype_path_cost( h, &a, frames+last_nonb, path, cost_p );
 
                 if( cost_b < cost_p )
                     frames[j]->i_type = X264_TYPE_B;
