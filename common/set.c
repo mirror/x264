@@ -301,7 +301,7 @@ void x264_cqm_delete( x264_t *h )
 }
 
 static int cqm_parse_jmlist( x264_t *h, const char *buf, const char *name,
-                                  uint8_t *cqm, const uint8_t *jvt, int length )
+                             uint8_t *cqm, const uint8_t *jvt, int length )
 {
     int i;
 

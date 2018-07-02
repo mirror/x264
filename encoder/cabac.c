@@ -33,7 +33,7 @@
 #endif
 
 static inline void cabac_mb_type_intra( x264_t *h, x264_cabac_t *cb, int i_mb_type,
-                    int ctx0, int ctx1, int ctx2, int ctx3, int ctx4, int ctx5 )
+                                        int ctx0, int ctx1, int ctx2, int ctx3, int ctx4, int ctx5 )
 {
     if( i_mb_type == I_4x4 || i_mb_type == I_8x8 )
     {
