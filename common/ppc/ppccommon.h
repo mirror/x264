@@ -305,6 +305,10 @@ p2 += i2;
     } while( 0 )
 #endif
 
+#ifndef __POWER9_VECTOR__
+#define vec_absd( a, b ) vec_sub( vec_max( a, b ), vec_min( a, b ) )
+#endif
+
 // vec_xxpermdi is quite useful but some version of clang do not expose it
 #if !HAVE_VSX || (defined(__clang__) && __clang_major__ < 6)
 static const vec_u8_t xxpermdi0_perm = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,

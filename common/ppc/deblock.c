@@ -141,11 +141,7 @@ static inline void write16x4( uint8_t *dst, int dst_stride,
 // out: o = |x-y| < a
 static inline vec_u8_t diff_lt_altivec( register vec_u8_t x, register vec_u8_t y, register vec_u8_t a )
 {
-    register vec_u8_t diff = vec_subs(x, y);
-    register vec_u8_t diffneg = vec_subs(y, x);
-    register vec_u8_t o = vec_or(diff, diffneg); /* |x-y| */
-    o = (vec_u8_t)vec_cmplt(o, a);
-    return o;
+    return (vec_u8_t)vec_cmplt(vec_absd(x, y), a);
 }
 
 static inline vec_u8_t h264_deblock_mask( register vec_u8_t p0, register vec_u8_t p1, register vec_u8_t q0,
