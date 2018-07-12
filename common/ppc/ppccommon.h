@@ -304,3 +304,34 @@ p2 += i2;
         vec_st(vec_perm(_e, _v, _m), off, _dst);           \
     } while( 0 )
 #endif
+
+// vec_xxpermdi is quite useful but some version of clang do not expose it
+#if !HAVE_VSX || (defined(__clang__) && __clang_major__ < 6)
+static const vec_u8_t xxpermdi0_perm = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                         0x06, 0x07, 0x10, 0x11, 0x12, 0x13,
+                                         0x14, 0x15, 0x16, 0x17 };
+static const vec_u8_t xxpermdi1_perm = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                         0x06, 0x07, 0x18, 0x19, 0x1A, 0x1B,
+                                         0x1C, 0x1D, 0x1E, 0x1F };
+static const vec_u8_t xxpermdi2_perm = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                                         0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13,
+                                         0x14, 0x15, 0x16, 0x17 };
+static const vec_u8_t xxpermdi3_perm = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
+                                         0x0E, 0x0F, 0x18, 0x19, 0x1A, 0x1B,
+                                         0x1C, 0x1D, 0x1E, 0x1F };
+#define xxpermdi(a, b, c) vec_perm(a, b, xxpermdi##c##_perm)
+#elif (defined(__GNUC__) && (__GNUC__ > 6 || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3))) || \
+      (defined(__clang__) && __clang_major__ >= 7)
+#define xxpermdi(a, b, c) vec_xxpermdi(a, b, c)
+#endif
+
+// vec_xxpermdi has its endianness bias exposed in early gcc and clang
+#ifdef WORDS_BIGENDIAN
+#ifndef xxpermdi
+#define xxpermdi(a, b, c) vec_xxpermdi(a, b, c)
+#endif
+#else
+#ifndef xxpermdi
+#define xxpermdi(a, b, c) vec_xxpermdi(b, a, ((c >> 1) | (c & 1) << 1) ^ 3)
+#endif
+#endif
