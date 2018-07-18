@@ -71,7 +71,9 @@ void x264_cavlc_init( x264_t *h )
             vlc->i_next = i_next;
         }
 
-    for( int i = 1; i < (1<<16); i++ )
+    x264_run_before[0] = 0;
+    x264_run_before[1] = 0;
+    for( uint32_t i = 2; i < (1<<16); i++ )
     {
         x264_run_level_t runlevel;
         ALIGNED_ARRAY_16( dctcoef, dct, [16] );
