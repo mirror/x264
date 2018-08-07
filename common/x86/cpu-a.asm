@@ -83,7 +83,7 @@ cglobal cpu_sfence
 ;-----------------------------------------------------------------------------
 ; intptr_t stack_align( void (*func)(void*), ... ); (up to 5 args)
 ;-----------------------------------------------------------------------------
-cglobal stack_align
+cvisible stack_align
     mov      rax, r0mp
     mov       r0, r1mp
     mov       r1, r2mp
@@ -131,7 +131,7 @@ cglobal cpu_cpuid_test
     popfd
     ret
 
-cglobal stack_align
+cvisible stack_align
     push      ebp
     mov       ebp, esp
     sub       esp, 20
