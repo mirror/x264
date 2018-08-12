@@ -2866,7 +2866,7 @@ cglobal intra_satd_x3_8x8c, 0,6
     ; output the predicted samples
     mov       r3d, eax
     shr       r3d, 16
-%ifdef PIC
+%if ARCH_X86_64
     lea        r2, [%2_lut]
     movzx     r2d, byte [r2+r3]
 %else
@@ -5103,7 +5103,7 @@ cglobal pixel_ssim_end4, 2,3
     je .skip ; faster only if this is the common case; remove branch if we use ssim on a macroblock level
     neg       r2
 
-%ifdef PIC
+%if ARCH_X86_64
     lea       r3, [mask_ff + 16]
     %xdefine %%mask r3
 %else
@@ -5553,7 +5553,7 @@ ads_mvs_ssse3:
     add       r5, r6
     xor      r0d, r0d ; nmv
     mov     [r5], r0d
-%ifdef PIC
+%if ARCH_X86_64
     lea       r1, [$$]
     %define GLOBAL +r1-$$
 %else

@@ -1331,7 +1331,7 @@ cglobal pixel_avg2_w16_cache64_ssse3
     sub    r4, r2
     shl    r6, 4         ;jump = (offset + align*2)*48
 %define avg_w16_addr avg_w16_align1_1_ssse3-(avg_w16_align2_2_ssse3-avg_w16_align1_1_ssse3)
-%ifdef PIC
+%if ARCH_X86_64
     lea    r7, [avg_w16_addr]
     add    r6, r7
 %else
@@ -2020,7 +2020,7 @@ cglobal mc_chroma
 %if cpuflag(cache64)
     mov       t0d, r3d
     and       t0d, 7
-%ifdef PIC
+%if ARCH_X86_64
     lea        t1, [ch_shuf_adj]
     movddup   xm5, [t1 + t0*4]
 %else
