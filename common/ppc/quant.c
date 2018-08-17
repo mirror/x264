@@ -70,7 +70,7 @@ int x264_quant_4x4_altivec( int16_t dct[16], uint16_t mf[16], uint16_t bias[16] 
 {
     LOAD_ZERO;
     vector bool short mskA;
-    vec_u32_t i_qbitsv;
+    vec_u32_t i_qbitsv = vec_splats( (uint32_t)16 );
     vec_u16_t coefvA;
     vec_u32_t multEvenvA, multOddvA;
     vec_u16_t mfvA;
@@ -85,10 +85,6 @@ int x264_quant_4x4_altivec( int16_t dct[16], uint16_t mf[16], uint16_t bias[16] 
     vec_u16_t biasvB;
 
     vec_s16_t temp1v, temp2v, tmpv;
-
-    vec_u32_u qbits_u;
-    qbits_u.s[0]=16;
-    i_qbitsv = vec_splat(qbits_u.v, 0);
 
     QUANT_16_U( 0, 16 );
     return vec_any_ne(nz, zero_s16v);
@@ -180,6 +176,7 @@ int x264_quant_2x2_dc_altivec( int16_t dct[4], int mf, int bias )
     vec_u32_t multEvenvA, multOddvA;
     vec_s16_t one = vec_splat_s16(1);
     vec_s16_t nz = zero_s16v;
+    static const vec_s16_t mask2 = CV(-1, -1, -1, -1,  0, 0, 0, 0);
 
     vec_s16_t temp1v, temp2v;
 
@@ -190,7 +187,6 @@ int x264_quant_2x2_dc_altivec( int16_t dct[4], int mf, int bias )
     i_qbitsv = vec_splats( (uint32_t) 16 );
     biasv = vec_splats( (uint16_t)bias );
 
-    static const vec_s16_t mask2 = CV(-1, -1, -1, -1,  0, 0, 0, 0);
     QUANT_4_U_DC(0);
     return vec_any_ne(vec_and(nz, mask2), zero_s16v);
 }
@@ -215,9 +211,7 @@ int x264_quant_8x8_altivec( int16_t dct[64], uint16_t mf[64], uint16_t bias[64] 
 
     vec_s16_t temp1v, temp2v, tmpv;
 
-    vec_u32_u qbits_u;
-    qbits_u.s[0]=16;
-    i_qbitsv = vec_splat(qbits_u.v, 0);
+    i_qbitsv = vec_splats( (uint32_t)16 );
 
     for( int i = 0; i < 4; i++ )
         QUANT_16_U( i*2*16, i*2*16+16 );
@@ -233,8 +227,6 @@ int x264_quant_8x8_altivec( int16_t dct[64], uint16_t mf[64], uint16_t bias[64] 
                                                                      \
     multEvenvA = vec_mule(dctv, mfv);                                \
     multOddvA = vec_mulo(dctv, mfv);                                 \
-    dctv = (vec_s16_t) vec_packs(vec_mergeh(multEvenvA, multOddvA),  \
-                                 vec_mergel(multEvenvA, multOddvA)); \
     dctv = (vec_s16_t) vec_packs( multEvenvA, multOddvA );           \
     tmpv = xxpermdi( dctv, dctv, 2 );                                \
     dctv = vec_mergeh( dctv, tmpv );                                 \
