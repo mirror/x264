@@ -26,6 +26,8 @@
 #ifndef X264_PPC_QUANT_H
 #define X264_PPC_QUANT_H
 
+#define x264_quant_4x4x4_altivec x264_template(quant_4x4x4_altivec)
+int x264_quant_4x4x4_altivec( int16_t dct[4][16], uint16_t mf[16], uint16_t bias[16] );
 #define x264_quant_4x4_altivec x264_template(quant_4x4_altivec)
 int x264_quant_4x4_altivec( int16_t dct[16], uint16_t mf[16], uint16_t bias[16] );
 #define x264_quant_8x8_altivec x264_template(quant_8x8_altivec)
