@@ -1108,20 +1108,11 @@ static void pixel_sad_x4_8x8_altivec( uint8_t *fenc,
     sum2v = vec_sums( sum2v, zero_s32v );
     sum3v = vec_sums( sum3v, zero_s32v );
 
-    sum0v = vec_splat( sum0v, 3 );
-    sum1v = vec_splat( sum1v, 3 );
-    sum2v = vec_splat( sum2v, 3 );
-    sum3v = vec_splat( sum3v, 3 );
+    vec_s32_t s01 = vec_mergel( sum0v, sum1v );
+    vec_s32_t s23 = vec_mergel( sum2v, sum3v );
+    vec_s32_t s = xxpermdi( s01, s23, 3 );
 
-    vec_ste( sum0v, 0, &sum0);
-    vec_ste( sum1v, 0, &sum1);
-    vec_ste( sum2v, 0, &sum2);
-    vec_ste( sum3v, 0, &sum3);
-
-    scores[0] = sum0;
-    scores[1] = sum1;
-    scores[2] = sum2;
-    scores[3] = sum3;
+    vec_vsx_st( s, 0, scores );
 }
 
 static void pixel_sad_x3_8x8_altivec( uint8_t *fenc, uint8_t *pix0,
