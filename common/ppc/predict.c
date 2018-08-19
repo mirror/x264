@@ -58,8 +58,6 @@ static void predict_8x8c_p_altivec( uint8_t *src )
     vec_s16_t induc_v  = (vec_s16_t) CV(0, 1, 2, 3, 4, 5, 6, 7);
     vec_s16_t add_i0_b_0v = vec_mladd(induc_v, b_v, i00_v);
 
-    PREP_STORE8;
-
     for( int i = 0; i < 8; ++i )
     {
         vec_s16_t shift_0_v = vec_sra(add_i0_b_0v, val5_v);
@@ -67,7 +65,6 @@ static void predict_8x8c_p_altivec( uint8_t *src )
         VEC_STORE8(com_sat_v, &src[0]);
         src += FDEC_STRIDE;
         add_i0_b_0v = vec_adds(add_i0_b_0v, c_v);
-
     }
 }
 

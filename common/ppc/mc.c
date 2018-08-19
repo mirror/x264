@@ -51,7 +51,6 @@ static inline void pixel_avg2_w8_altivec( uint8_t *dst,  intptr_t i_dst,
                                           uint8_t *src2, int i_height )
 {
     vec_u8_t src1v, src2v;
-    PREP_STORE8;
 
     for( int y = 0; y < i_height; y++ )
     {
@@ -525,7 +524,6 @@ static void mc_chroma_8xh_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
     srcp = &src[i_src_stride];
 
     LOAD_ZERO;
-    PREP_STORE8;
     vec_u16_t   coeff0v, coeff1v, coeff2v, coeff3v;
     vec_u8_t    src0v_8, src1v_8, src2v_8, src3v_8;
     vec_u8_t    dstuv, dstvv;
@@ -1098,7 +1096,6 @@ static void mc_weight_w8_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
                                   const x264_weight_t *weight, int i_height )
 {
     LOAD_ZERO;
-    PREP_STORE8;
     vec_u8_t srcv;
     vec_s16_t weightv;
     vec_s16_t scalev, offsetv, denomv, roundv;

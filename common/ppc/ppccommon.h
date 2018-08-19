@@ -146,19 +146,10 @@ typedef union {
 #define vec_s32_to_u16(v) vec_packsu( v, zero_s32v )
 
 /***********************************************************************
- * PREP_STORE##n: declares required vectors to store n bytes to a
- *                potentially unaligned address
  * VEC_STORE##n:  stores n bytes from vector v to address p
  **********************************************************************/
-#define PREP_STORE8                                                    \
-    vec_u8_t _tmp3v;                                                   \
-    vec_u8_t mask = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,  \
-                      0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F } \
-
-#define VEC_STORE8( v, p )           \
-    _tmp3v = vec_vsx_ld( 0, p );     \
-    v = vec_perm( v, _tmp3v, mask ); \
-    vec_vsx_st( v, 0, p )
+#define VEC_STORE8( v, p ) \
+    vec_vsx_st( vec_xxpermdi( v, vec_vsx_ld( 0, p ), 1 ), 0, p )
 
 /***********************************************************************
  * VEC_TRANSPOSE_8
