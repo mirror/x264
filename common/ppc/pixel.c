@@ -204,6 +204,36 @@ static int pixel_satd_4x8_altivec( uint8_t *pix1, intptr_t i_pix1,
     return i_satd >> 1;
 }
 
+static ALWAYS_INLINE vec_s32_t add_abs_8( vec_s16_t a, vec_s16_t b,
+                                          vec_s16_t c, vec_s16_t d,
+                                          vec_s16_t e, vec_s16_t f,
+                                          vec_s16_t g, vec_s16_t h )
+{
+    vec_s16_t t0 = vec_abs( a );
+    vec_s16_t t1 = vec_abs( b );
+    vec_s16_t t2 = vec_abs( c );
+    vec_s16_t t3 = vec_abs( d );
+
+    vec_s16_t s0 = vec_adds( t0, t1 );
+    vec_s16_t s1 = vec_adds( t2, t3 );
+
+    vec_s32_t s01 = vec_sum4s( s0, vec_splat_s32( 0 ) );
+    vec_s32_t s23 = vec_sum4s( s1, vec_splat_s32( 0 ) );
+
+    vec_s16_t t4 = vec_abs( e );
+    vec_s16_t t5 = vec_abs( f );
+    vec_s16_t t6 = vec_abs( g );
+    vec_s16_t t7 = vec_abs( h );
+
+    vec_s16_t s2 = vec_adds( t4, t5 );
+    vec_s16_t s3 = vec_adds( t6, t7 );
+
+    vec_s32_t s0145 = vec_sum4s( s2, s01 );
+    vec_s32_t s2367 = vec_sum4s( s3, s23 );
+
+    return vec_add( s0145, s2367 );
+}
+
 /***********************************************************************
  * SATD 8x4
  **********************************************************************/
@@ -237,14 +267,8 @@ static int pixel_satd_8x4_altivec( uint8_t *pix1, intptr_t i_pix1,
     VEC_HADAMAR( diff4v, diff5v, diff6v, diff7v,
                  temp4v, temp5v, temp6v, temp7v );
 
-    VEC_ADD_ABS( temp0v, zero_s32v, satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+    satdv = add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                       temp4v, temp5v, temp6v, temp7v );
 
     satdv = vec_sum2s( satdv, zero_s32v );
     satdv = vec_splat( satdv, 1 );
@@ -292,29 +316,8 @@ static int pixel_satd_8x8_altivec( uint8_t *pix1, intptr_t i_pix1,
     VEC_HADAMAR( diff4v, diff5v, diff6v, diff7v,
                  temp4v, temp5v, temp6v, temp7v );
 
-    vec_s16_t t0 = vec_abs( temp0v );
-    vec_s16_t t1 = vec_abs( temp1v );
-    vec_s16_t t2 = vec_abs( temp2v );
-    vec_s16_t t3 = vec_abs( temp3v );
-
-    vec_s16_t s0 = vec_adds( t0, t1 );
-    vec_s16_t s1 = vec_adds( t2, t3 );
-
-    vec_s32_t s01 = vec_sum4s( s0, zero_s32v );
-    vec_s32_t s23 = vec_sum4s( s1, zero_s32v );
-
-    vec_s16_t t4 = vec_abs( temp4v );
-    vec_s16_t t5 = vec_abs( temp5v );
-    vec_s16_t t6 = vec_abs( temp6v );
-    vec_s16_t t7 = vec_abs( temp7v );
-
-    vec_s16_t s2 = vec_adds( t4, t5 );
-    vec_s16_t s3 = vec_adds( t6, t7 );
-
-    vec_s32_t s0145 = vec_sum4s( s2, s01 );
-    vec_s32_t s2367 = vec_sum4s( s3, s23 );
-
-    satdv = vec_add( s0145, s2367 );
+    satdv = add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                       temp4v, temp5v, temp6v, temp7v );
 
     satdv = vec_sums( satdv, zero_s32v );
     satdv = vec_splat( satdv, 3 );
@@ -358,14 +361,9 @@ static int pixel_satd_8x16_altivec( uint8_t *pix1, intptr_t i_pix1,
                  temp0v, temp1v, temp2v, temp3v );
     VEC_HADAMAR( diff4v, diff5v, diff6v, diff7v,
                  temp4v, temp5v, temp6v, temp7v );
-    VEC_ADD_ABS( temp0v, zero_s32v, satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+
+    satdv = add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                       temp4v, temp5v, temp6v, temp7v );
 
     VEC_DIFF_H( pix1, i_pix1, pix2, i_pix2, 8, diff0v );
     VEC_DIFF_H( pix1, i_pix1, pix2, i_pix2, 8, diff1v );
@@ -387,14 +385,9 @@ static int pixel_satd_8x16_altivec( uint8_t *pix1, intptr_t i_pix1,
                  temp0v, temp1v, temp2v, temp3v );
     VEC_HADAMAR( diff4v, diff5v, diff6v, diff7v,
                  temp4v, temp5v, temp6v, temp7v );
-    VEC_ADD_ABS( temp0v, satdv,     satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+
+    satdv = vec_add( satdv, add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                                       temp4v, temp5v, temp6v, temp7v ) );
 
     satdv = vec_sums( satdv, zero_s32v );
     satdv = vec_splat( satdv, 3 );
@@ -445,14 +438,8 @@ static int pixel_satd_16x8_altivec( uint8_t *pix1, intptr_t i_pix1,
     VEC_HADAMAR( diffh4v, diffh5v, diffh6v, diffh7v,
                  temp4v, temp5v, temp6v, temp7v );
 
-    VEC_ADD_ABS( temp0v, zero_s32v, satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+    satdv = add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                       temp4v, temp5v, temp6v, temp7v );
 
     VEC_HADAMAR( diffl0v, diffl1v, diffl2v, diffl3v,
                  temp0v, temp1v, temp2v, temp3v );
@@ -469,14 +456,8 @@ static int pixel_satd_16x8_altivec( uint8_t *pix1, intptr_t i_pix1,
     VEC_HADAMAR( diffl4v, diffl5v, diffl6v, diffl7v,
                  temp4v, temp5v, temp6v, temp7v );
 
-    VEC_ADD_ABS( temp0v, satdv,     satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+    satdv = vec_add( satdv, add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                                       temp4v, temp5v, temp6v, temp7v ) );
 
     satdv = vec_sums( satdv, zero_s32v );
     satdv = vec_splat( satdv, 3 );
@@ -523,14 +504,10 @@ static int pixel_satd_16x16_altivec( uint8_t *pix1, intptr_t i_pix1,
                  temp0v, temp1v, temp2v, temp3v );
     VEC_HADAMAR( diffh4v, diffh5v, diffh6v, diffh7v,
                  temp4v, temp5v, temp6v, temp7v );
-    VEC_ADD_ABS( temp0v, zero_s32v, satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+
+    satdv = add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                       temp4v, temp5v, temp6v, temp7v );
+
     VEC_HADAMAR( diffl0v, diffl1v, diffl2v, diffl3v,
                  temp0v, temp1v, temp2v, temp3v );
     VEC_HADAMAR( diffl4v, diffl5v, diffl6v, diffl7v,
@@ -543,14 +520,9 @@ static int pixel_satd_16x16_altivec( uint8_t *pix1, intptr_t i_pix1,
                  temp0v, temp1v, temp2v, temp3v );
     VEC_HADAMAR( diffl4v, diffl5v, diffl6v, diffl7v,
                  temp4v, temp5v, temp6v, temp7v );
-    VEC_ADD_ABS( temp0v, satdv,     satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+
+    satdv = vec_add( satdv, add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                                       temp4v, temp5v, temp6v, temp7v ) );
 
     VEC_DIFF_HL( pix1, i_pix1, pix2, i_pix2, diffh0v, diffl0v );
     VEC_DIFF_HL( pix1, i_pix1, pix2, i_pix2, diffh1v, diffl1v );
@@ -572,14 +544,10 @@ static int pixel_satd_16x16_altivec( uint8_t *pix1, intptr_t i_pix1,
                  temp0v, temp1v, temp2v, temp3v );
     VEC_HADAMAR( diffh4v, diffh5v, diffh6v, diffh7v,
                  temp4v, temp5v, temp6v, temp7v );
-    VEC_ADD_ABS( temp0v, satdv,     satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+
+    satdv = vec_add( satdv, add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                                       temp4v, temp5v, temp6v, temp7v ) );
+
     VEC_HADAMAR( diffl0v, diffl1v, diffl2v, diffl3v,
                  temp0v, temp1v, temp2v, temp3v );
     VEC_HADAMAR( diffl4v, diffl5v, diffl6v, diffl7v,
@@ -592,14 +560,9 @@ static int pixel_satd_16x16_altivec( uint8_t *pix1, intptr_t i_pix1,
                  temp0v, temp1v, temp2v, temp3v );
     VEC_HADAMAR( diffl4v, diffl5v, diffl6v, diffl7v,
                  temp4v, temp5v, temp6v, temp7v );
-    VEC_ADD_ABS( temp0v, satdv,     satdv );
-    VEC_ADD_ABS( temp1v, satdv,     satdv );
-    VEC_ADD_ABS( temp2v, satdv,     satdv );
-    VEC_ADD_ABS( temp3v, satdv,     satdv );
-    VEC_ADD_ABS( temp4v, satdv,     satdv );
-    VEC_ADD_ABS( temp5v, satdv,     satdv );
-    VEC_ADD_ABS( temp6v, satdv,     satdv );
-    VEC_ADD_ABS( temp7v, satdv,     satdv );
+
+    satdv = vec_add( satdv, add_abs_8( temp0v, temp1v, temp2v, temp3v,
+                                       temp4v, temp5v, temp6v, temp7v ) );
 
     satdv = vec_sums( satdv, zero_s32v );
     satdv = vec_splat( satdv, 3 );
