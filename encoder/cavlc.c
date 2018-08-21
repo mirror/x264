@@ -292,7 +292,7 @@ static ALWAYS_INLINE void cavlc_macroblock_luma_residual( x264_t *h, int plane_c
 #if RDO_SKIP_BS
 static ALWAYS_INLINE void cavlc_partition_luma_residual( x264_t *h, int i8, int p )
 {
-    if( h->mb.b_transform_8x8 && h->mb.cache.non_zero_count[x264_scan8[i8*4]] )
+    if( h->mb.b_transform_8x8 && h->mb.cache.non_zero_count[x264_scan8[i8*4+p*16]] )
         h->zigzagf.interleave_8x8_cavlc( h->dct.luma4x4[i8*4+p*16], h->dct.luma8x8[i8+p*4],
                                          &h->mb.cache.non_zero_count[x264_scan8[i8*4+p*16]] );
 
