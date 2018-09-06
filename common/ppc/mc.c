@@ -38,8 +38,16 @@ static inline void pixel_avg2_w4_altivec( uint8_t *dst,  intptr_t i_dst,
 {
     for( int y = 0; y < i_height; y++ )
     {
+#ifndef __POWER9_VECTOR__
         for( int x = 0; x < 4; x++ )
             dst[x] = ( src1[x] + src2[x] + 1 ) >> 1;
+#else
+        vec_u8_t s1 = vec_vsx_ld( 0, src1 );
+        vec_u8_t s2 = vec_vsx_ld( 0, src2 );
+        vec_u8_t avg = vec_avg( s1, s2 );
+
+        vec_xst_len( avg, dst, 4 );
+#endif
         dst  += i_dst;
         src1 += i_src1;
         src2 += i_src1;
@@ -94,6 +102,12 @@ static inline void pixel_avg2_w20_altivec( uint8_t *dst,  intptr_t i_dst,
 }
 
 /* mc_copy: plain c */
+
+#ifndef __POWER9_VECTOR__
+#define tiny_copy( d, s, l ) memcpy( d, s, l )
+#else
+#define tiny_copy( d, s, l ) vec_xst_len( vec_vsx_ld( 0, s ), d, l )
+#endif
 
 #define MC_COPY( name, a )                                \
 static void name( uint8_t *dst, intptr_t i_dst,           \
@@ -415,6 +429,14 @@ static void mc_chroma_2xh( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stride,
 #define VSLD(a,b,n) vec_sld(b,a,16-n)
 #endif
 
+#ifndef __POWER9_VECTOR__
+#define STORE4_ALIGNED(d, s) vec_ste( (vec_u32_t)s, 0, (uint32_t*) d )
+#define STORE2_UNALIGNED(d, s) vec_ste( vec_splat( (vec_u16_t)s, 0 ), 0, (uint16_t*)d )
+#else
+#define STORE4_ALIGNED(d, s) vec_xst_len( (vec_u8_t)s, d, 4 )
+#define STORE2_UNALIGNED(d, s) vec_xst_len( (vec_u8_t)s, d, 2 )
+#endif
+
 static void mc_chroma_4xh_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_stride,
                                    uint8_t *src, intptr_t i_src_stride,
                                    int mvx, int mvy, int i_height )
@@ -475,8 +497,8 @@ static void mc_chroma_4xh_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
 
         dstuv = (vec_u8_t)vec_perm( dstv16, dstv16, perm0v );
         dstvv = (vec_u8_t)vec_perm( dstv16, dstv16, perm1v );
-        vec_ste( (vec_u32_t)dstuv, 0, (uint32_t*) dstu );
-        vec_ste( (vec_u32_t)dstvv, 0, (uint32_t*) dstv );
+        STORE4_ALIGNED( dstu, dstuv );
+        STORE4_ALIGNED( dstv, dstvv );
 
         srcp += i_src_stride;
         dstu += i_dst_stride;
@@ -497,8 +519,8 @@ static void mc_chroma_4xh_altivec( uint8_t *dstu, uint8_t *dstv, intptr_t i_dst_
 
         dstuv = (vec_u8_t)vec_perm( dstv16, dstv16, perm0v );
         dstvv = (vec_u8_t)vec_perm( dstv16, dstv16, perm1v );
-        vec_ste( (vec_u32_t)dstuv, 0, (uint32_t*) dstu );
-        vec_ste( (vec_u32_t)dstvv, 0, (uint32_t*) dstv );
+        STORE4_ALIGNED( dstu, dstuv );
+        STORE4_ALIGNED( dstv, dstvv );
 
         srcp += i_src_stride;
         dstu += i_dst_stride;
@@ -959,18 +981,14 @@ static void frame_init_lowres_core_altivec( uint8_t *src0, uint8_t *dst0, uint8_
             hv = vec_perm(avgleftv, avgrightv, inverse_bridge_shuffle_1);
 #endif
 
-            vec_ste((vec_u32_t)lv,16*x,(uint32_t*)dst0);
-            vec_ste((vec_u32_t)lv,16*x+4,(uint32_t*)dst0);
-            vec_ste((vec_u32_t)hv,16*x,(uint32_t*)dsth);
-            vec_ste((vec_u32_t)hv,16*x+4,(uint32_t*)dsth);
+            VEC_STORE8( lv, dst0 + 16 * x );
+            VEC_STORE8( hv, dsth + 16 * x );
 
             lv = vec_sld(lv, lv, 8);
             hv = vec_sld(hv, hv, 8);
 
-            vec_ste((vec_u32_t)lv,16*x,(uint32_t*)dstv);
-            vec_ste((vec_u32_t)lv,16*x+4,(uint32_t*)dstv);
-            vec_ste((vec_u32_t)hv,16*x,(uint32_t*)dstc);
-            vec_ste((vec_u32_t)hv,16*x+4,(uint32_t*)dstc);
+            VEC_STORE8( lv, dstv + 16 * x );
+            VEC_STORE8( hv, dstc + 16 * x );
         }
 
         src0 += src_stride*2;
@@ -1009,7 +1027,7 @@ static void mc_weight_w2_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
             weightv = vec_add( weightv, offsetv );
 
             srcv = vec_packsu( weightv, zero_s16v );
-            vec_ste( vec_splat( (vec_u16_t)srcv, 0 ), 0, (uint16_t*)dst );
+            STORE2_UNALIGNED( dst, srcv );
         }
     }
     else
@@ -1022,7 +1040,7 @@ static void mc_weight_w2_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
             weightv = vec_mladd( weightv, scalev, offsetv );
 
             srcv = vec_packsu( weightv, zero_s16v );
-            vec_ste( vec_splat( (vec_u16_t)srcv, 0 ), 0, (uint16_t*)dst );
+            STORE2_UNALIGNED( dst, srcv );
         }
     }
 }
