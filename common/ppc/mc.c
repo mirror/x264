@@ -802,20 +802,13 @@ void x264_hpel_filter_altivec( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint
 
     vec_u16_t twov, fourv, fivev, sixv;
     vec_s16_t sixteenv, thirtytwov;
-    vec_u16_u temp_u;
 
-    temp_u.s[0]=2;
-    twov = vec_splat( temp_u.v, 0 );
-    temp_u.s[0]=4;
-    fourv = vec_splat( temp_u.v, 0 );
-    temp_u.s[0]=5;
-    fivev = vec_splat( temp_u.v, 0 );
-    temp_u.s[0]=6;
-    sixv = vec_splat( temp_u.v, 0 );
-    temp_u.s[0]=16;
-    sixteenv = (vec_s16_t)vec_splat( temp_u.v, 0 );
-    temp_u.s[0]=32;
-    thirtytwov = (vec_s16_t)vec_splat( temp_u.v, 0 );
+    twov = vec_splats( (uint16_t)2 );
+    fourv = vec_splats( (uint16_t)4 );
+    fivev = vec_splats( (uint16_t)5 );
+    sixv = vec_splats( (uint16_t)6 );
+    sixteenv = vec_splats( (int16_t)16 );
+    thirtytwov = vec_splats( (int16_t)32 );
 
     for( int y = 0; y < i_height; y++ )
     {
@@ -995,23 +988,16 @@ static void mc_weight_w2_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
     vec_u8_t srcv;
     vec_s16_t weightv;
     vec_s16_t scalev, offsetv, denomv, roundv;
-    vec_s16_u loadv;
 
     int denom = weight->i_denom;
 
-    loadv.s[0] = weight->i_scale;
-    scalev = vec_splat( loadv.v, 0 );
-
-    loadv.s[0] = weight->i_offset;
-    offsetv = vec_splat( loadv.v, 0 );
+    scalev = vec_splats( (int16_t)weight->i_scale );
+    offsetv = vec_splats( (int16_t)weight->i_offset );
 
     if( denom >= 1 )
     {
-        loadv.s[0] = denom;
-        denomv = vec_splat( loadv.v, 0 );
-
-        loadv.s[0] = 1<<(denom - 1);
-        roundv = vec_splat( loadv.v, 0 );
+        denomv = vec_splats( (int16_t)denom );
+        roundv = vec_splats( (int16_t)(1 << (denom - 1)) );
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
@@ -1047,23 +1033,16 @@ static void mc_weight_w4_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
     vec_u8_t srcv;
     vec_s16_t weightv;
     vec_s16_t scalev, offsetv, denomv, roundv;
-    vec_s16_u loadv;
 
     int denom = weight->i_denom;
 
-    loadv.s[0] = weight->i_scale;
-    scalev = vec_splat( loadv.v, 0 );
-
-    loadv.s[0] = weight->i_offset;
-    offsetv = vec_splat( loadv.v, 0 );
+    scalev = vec_splats( (int16_t)weight->i_scale );
+    offsetv = vec_splats( (int16_t)weight->i_offset );
 
     if( denom >= 1 )
     {
-        loadv.s[0] = denom;
-        denomv = vec_splat( loadv.v, 0 );
-
-        loadv.s[0] = 1<<(denom - 1);
-        roundv = vec_splat( loadv.v, 0 );
+        denomv = vec_splats( (int16_t)denom );
+        roundv = vec_splats( (int16_t)(1 << (denom - 1)) );
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
@@ -1099,23 +1078,16 @@ static void mc_weight_w8_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, in
     vec_u8_t srcv;
     vec_s16_t weightv;
     vec_s16_t scalev, offsetv, denomv, roundv;
-    vec_s16_u loadv;
 
     int denom = weight->i_denom;
 
-    loadv.s[0] = weight->i_scale;
-    scalev = vec_splat( loadv.v, 0 );
-
-    loadv.s[0] = weight->i_offset;
-    offsetv = vec_splat( loadv.v, 0 );
+    scalev = vec_splats( (int16_t)weight->i_scale );
+    offsetv = vec_splats( (int16_t)weight->i_offset );
 
     if( denom >= 1 )
     {
-        loadv.s[0] = denom;
-        denomv = vec_splat( loadv.v, 0 );
-
-        loadv.s[0] = 1<<(denom - 1);
-        roundv = vec_splat( loadv.v, 0 );
+        denomv = vec_splats( (int16_t)denom );
+        roundv = vec_splats( (int16_t)(1 << (denom - 1)) );
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
@@ -1151,23 +1123,16 @@ static void mc_weight_w16_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, i
     vec_u8_t srcv;
     vec_s16_t weight_lv, weight_hv;
     vec_s16_t scalev, offsetv, denomv, roundv;
-    vec_s16_u loadv;
 
     int denom = weight->i_denom;
 
-    loadv.s[0] = weight->i_scale;
-    scalev = vec_splat( loadv.v, 0 );
-
-    loadv.s[0] = weight->i_offset;
-    offsetv = vec_splat( loadv.v, 0 );
+    scalev = vec_splats( (int16_t)weight->i_scale );
+    offsetv = vec_splats( (int16_t)weight->i_offset );
 
     if( denom >= 1 )
     {
-        loadv.s[0] = denom;
-        denomv = vec_splat( loadv.v, 0 );
-
-        loadv.s[0] = 1<<(denom - 1);
-        roundv = vec_splat( loadv.v, 0 );
+        denomv = vec_splats( (int16_t)denom );
+        roundv = vec_splats( (int16_t)(1 << (denom - 1)) );
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
@@ -1209,15 +1174,11 @@ static void mc_weight_w20_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, i
     vec_u8_t srcv, srcv2;
     vec_s16_t weight_lv, weight_hv, weight_3v;
     vec_s16_t scalev, offsetv, denomv, roundv;
-    vec_s16_u loadv;
 
     int denom = weight->i_denom;
 
-    loadv.s[0] = weight->i_scale;
-    scalev = vec_splat( loadv.v, 0 );
-
-    loadv.s[0] = weight->i_offset;
-    offsetv = vec_splat( loadv.v, 0 );
+    scalev = vec_splats( (int16_t)weight->i_scale );
+    offsetv = vec_splats( (int16_t)weight->i_offset );
 
     if( denom >= 1 )
     {
@@ -1229,11 +1190,8 @@ static void mc_weight_w20_altivec( uint8_t *dst, intptr_t i_dst, uint8_t *src, i
             { round, round, round, round, 0, 0, 0, 0 },
         };
 
-        loadv.s[0] = denom;
-        denomv = vec_splat( loadv.v, 0 );
-
-        loadv.s[0] = round;
-        roundv = vec_splat( loadv.v, 0 );
+        denomv = vec_splats( (int16_t)denom );
+        roundv = vec_splats( (int16_t)(1 << (denom - 1)) );
 
         for( int y = 0; y < i_height; y++, dst += i_dst, src += i_src )
         {
