@@ -243,7 +243,28 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
 
     sps->b_avcintra = !!param->i_avcintra_class;
     sps->i_cqm_preset = param->i_cqm_preset;
+}
 
+void x264_sps_init_reconfigurable( x264_sps_t *sps, x264_param_t *param )
+{
+    sps->crop.i_left   = param->crop_rect.i_left;
+    sps->crop.i_top    = param->crop_rect.i_top;
+    sps->crop.i_right  = param->crop_rect.i_right + sps->i_mb_width*16 - param->i_width;
+    sps->crop.i_bottom = (param->crop_rect.i_bottom + sps->i_mb_height*16 - param->i_height) >> !sps->b_frame_mbs_only;
+    sps->b_crop = sps->crop.i_left  || sps->crop.i_top ||
+                  sps->crop.i_right || sps->crop.i_bottom;
+
+    sps->vui.b_aspect_ratio_info_present = 0;
+    if( param->vui.i_sar_width > 0 && param->vui.i_sar_height > 0 )
+    {
+        sps->vui.b_aspect_ratio_info_present = 1;
+        sps->vui.i_sar_width = param->vui.i_sar_width;
+        sps->vui.i_sar_height= param->vui.i_sar_height;
+    }
+}
+
+void x264_sps_init_scaling_list( x264_sps_t *sps, x264_param_t *param )
+{
     switch( sps->i_cqm_preset )
     {
     case X264_CQM_FLAT:
@@ -277,24 +298,6 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
                 if( sps->scaling_list[i][j] == 0 )
                     sps->scaling_list[i] = x264_cqm_jvt[i];
         break;
-    }
-}
-
-void x264_sps_init_reconfigurable( x264_sps_t *sps, x264_param_t *param )
-{
-    sps->crop.i_left   = param->crop_rect.i_left;
-    sps->crop.i_top    = param->crop_rect.i_top;
-    sps->crop.i_right  = param->crop_rect.i_right + sps->i_mb_width*16 - param->i_width;
-    sps->crop.i_bottom = (param->crop_rect.i_bottom + sps->i_mb_height*16 - param->i_height) >> !sps->b_frame_mbs_only;
-    sps->b_crop = sps->crop.i_left  || sps->crop.i_top ||
-                  sps->crop.i_right || sps->crop.i_bottom;
-
-    sps->vui.b_aspect_ratio_info_present = 0;
-    if( param->vui.i_sar_width > 0 && param->vui.i_sar_height > 0 )
-    {
-        sps->vui.b_aspect_ratio_info_present = 1;
-        sps->vui.i_sar_width = param->vui.i_sar_width;
-        sps->vui.i_sar_height= param->vui.i_sar_height;
     }
 }
 

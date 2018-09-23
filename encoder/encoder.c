@@ -1508,6 +1508,7 @@ x264_t *x264_encoder_open( x264_param_t *param )
     set_aspect_ratio( h, &h->param, 1 );
 
     x264_sps_init( h->sps, h->param.i_sps_id, &h->param );
+    x264_sps_init_scaling_list( h->sps, &h->param );
     x264_pps_init( h->pps, h->param.i_sps_id, &h->param, h->sps );
 
     x264_validate_levels( h, 1 );

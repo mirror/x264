@@ -31,6 +31,8 @@
 void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param );
 #define x264_sps_init_reconfigurable x264_template(sps_init_reconfigurable)
 void x264_sps_init_reconfigurable( x264_sps_t *sps, x264_param_t *param );
+#define x264_sps_init_scaling_list x264_template(sps_init_scaling_list)
+void x264_sps_init_scaling_list( x264_sps_t *sps, x264_param_t *param );
 #define x264_sps_write x264_template(sps_write)
 void x264_sps_write( bs_t *s, x264_sps_t *sps );
 #define x264_pps_init x264_template(pps_init)
