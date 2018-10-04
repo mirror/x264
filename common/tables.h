@@ -63,6 +63,9 @@ extern const uint8_t x264_cqm_avci100_720p_8iy[64];
 extern const uint8_t x264_cqm_avci100_1080_4ic[16];
 extern const uint8_t x264_cqm_avci100_1080i_8iy[64];
 extern const uint8_t x264_cqm_avci100_1080p_8iy[64];
+extern const uint8_t x264_cqm_avci300_2160p_4iy[16];
+extern const uint8_t x264_cqm_avci300_2160p_4ic[16];
+extern const uint8_t x264_cqm_avci300_2160p_8iy[64];
 
 extern const uint8_t x264_decimate_table4[16];
 extern const uint8_t x264_decimate_table8[64];

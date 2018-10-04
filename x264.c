@@ -140,7 +140,7 @@ static cli_output_t cli_output;
 /* video filter operation struct */
 static cli_vid_filter_t filter;
 
-const char * const x264_avcintra_class_names[] = { "50", "100", "200", 0 };
+const char * const x264_avcintra_class_names[] = { "50", "100", "200", "300", "480", 0 };
 const char * const x264_cqm_names[] = { "flat", "jvt", 0 };
 const char * const x264_log_level_names[] = { "none", "error", "warning", "info", "debug", 0 };
 const char * const x264_partition_names[] = { "p8x8", "p4x4", "b8x8", "i8x8", "i4x4", "none", "all", 0 };
