@@ -250,7 +250,7 @@ void x264_sps_init_reconfigurable( x264_sps_t *sps, x264_param_t *param )
     sps->crop.i_left   = param->crop_rect.i_left;
     sps->crop.i_top    = param->crop_rect.i_top;
     sps->crop.i_right  = param->crop_rect.i_right + sps->i_mb_width*16 - param->i_width;
-    sps->crop.i_bottom = (param->crop_rect.i_bottom + sps->i_mb_height*16 - param->i_height) >> !sps->b_frame_mbs_only;
+    sps->crop.i_bottom = param->crop_rect.i_bottom + sps->i_mb_height*16 - param->i_height;
     sps->b_crop = sps->crop.i_left  || sps->crop.i_top ||
                   sps->crop.i_right || sps->crop.i_bottom;
 
@@ -363,7 +363,7 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
     if( sps->b_crop )
     {
         int h_shift = sps->i_chroma_format_idc == CHROMA_420 || sps->i_chroma_format_idc == CHROMA_422;
-        int v_shift = sps->i_chroma_format_idc == CHROMA_420;
+        int v_shift = (sps->i_chroma_format_idc == CHROMA_420) + !sps->b_frame_mbs_only;
         bs_write_ue( s, sps->crop.i_left   >> h_shift );
         bs_write_ue( s, sps->crop.i_right  >> h_shift );
         bs_write_ue( s, sps->crop.i_top    >> v_shift );

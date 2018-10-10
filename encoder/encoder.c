@@ -508,7 +508,7 @@ static int validate_parameters( x264_t *h, int b_open )
     }
 
     int w_mod = 1;
-    int h_mod = 1 << PARAM_INTERLACED;
+    int h_mod = 1 << (PARAM_INTERLACED || h->param.b_fake_interlaced);
     if( i_csp == X264_CSP_I400 )
     {
         h->param.analyse.i_chroma_qp_offset = 0;
