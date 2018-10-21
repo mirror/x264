@@ -562,22 +562,17 @@ static int param_apply_preset( x264_param_t *param, const char *preset )
 
 static int param_apply_tune( x264_param_t *param, const char *tune )
 {
-    char *tmp = x264_malloc( strlen( tune ) + 1 );
-    if( !tmp )
-        return -1;
-    tmp = strcpy( tmp, tune );
-    char *s = strtok( tmp, ",./-+" );
     int psy_tuning_used = 0;
-    while( s )
+    for( int len; tune += strspn( tune, ",./-+" ), (len = strcspn( tune, ",./-+" )); tune += len )
     {
-        if( !strncasecmp( s, "film", 4 ) )
+        if( len == 4 && !strncasecmp( tune, "film", 4 ) )
         {
             if( psy_tuning_used++ ) goto psy_failure;
             param->i_deblocking_filter_alphac0 = -1;
             param->i_deblocking_filter_beta = -1;
             param->analyse.f_psy_trellis = 0.15;
         }
-        else if( !strncasecmp( s, "animation", 9 ) )
+        else if( len == 9 && !strncasecmp( tune, "animation", 9 ) )
         {
             if( psy_tuning_used++ ) goto psy_failure;
             param->i_frame_reference = param->i_frame_reference > 1 ? param->i_frame_reference*2 : 1;
@@ -587,7 +582,7 @@ static int param_apply_tune( x264_param_t *param, const char *tune )
             param->rc.f_aq_strength = 0.6;
             param->i_bframe += 2;
         }
-        else if( !strncasecmp( s, "grain", 5 ) )
+        else if( len == 5 && !strncasecmp( tune, "grain", 5 ) )
         {
             if( psy_tuning_used++ ) goto psy_failure;
             param->i_deblocking_filter_alphac0 = -2;
@@ -601,7 +596,7 @@ static int param_apply_tune( x264_param_t *param, const char *tune )
             param->analyse.i_luma_deadzone[1] = 6;
             param->rc.f_qcompress = 0.8;
         }
-        else if( !strncasecmp( s, "stillimage", 10 ) )
+        else if( len == 10 && !strncasecmp( tune, "stillimage", 10 ) )
         {
             if( psy_tuning_used++ ) goto psy_failure;
             param->i_deblocking_filter_alphac0 = -3;
@@ -610,26 +605,26 @@ static int param_apply_tune( x264_param_t *param, const char *tune )
             param->analyse.f_psy_trellis = 0.7;
             param->rc.f_aq_strength = 1.2;
         }
-        else if( !strncasecmp( s, "psnr", 4 ) )
+        else if( len == 4 && !strncasecmp( tune, "psnr", 4 ) )
         {
             if( psy_tuning_used++ ) goto psy_failure;
             param->rc.i_aq_mode = X264_AQ_NONE;
             param->analyse.b_psy = 0;
         }
-        else if( !strncasecmp( s, "ssim", 4 ) )
+        else if( len == 4 && !strncasecmp( tune, "ssim", 4 ) )
         {
             if( psy_tuning_used++ ) goto psy_failure;
             param->rc.i_aq_mode = X264_AQ_AUTOVARIANCE;
             param->analyse.b_psy = 0;
         }
-        else if( !strncasecmp( s, "fastdecode", 10 ) )
+        else if( len == 10 && !strncasecmp( tune, "fastdecode", 10 ) )
         {
             param->b_deblocking_filter = 0;
             param->b_cabac = 0;
             param->analyse.b_weighted_bipred = 0;
             param->analyse.i_weighted_pred = X264_WEIGHTP_NONE;
         }
-        else if( !strncasecmp( s, "zerolatency", 11 ) )
+        else if( len == 11 && !strncasecmp( tune, "zerolatency", 11 ) )
         {
             param->rc.i_lookahead = 0;
             param->i_sync_lookahead = 0;
@@ -638,7 +633,7 @@ static int param_apply_tune( x264_param_t *param, const char *tune )
             param->b_vfr_input = 0;
             param->rc.b_mb_tree = 0;
         }
-        else if( !strncasecmp( s, "touhou", 6 ) )
+        else if( len == 6 && !strncasecmp( tune, "touhou", 6 ) )
         {
             if( psy_tuning_used++ ) goto psy_failure;
             param->i_frame_reference = param->i_frame_reference > 1 ? param->i_frame_reference*2 : 1;
@@ -651,18 +646,12 @@ static int param_apply_tune( x264_param_t *param, const char *tune )
         }
         else
         {
-            x264_log_internal( X264_LOG_ERROR, "invalid tune '%s'\n", s );
-            x264_free( tmp );
+            x264_log_internal( X264_LOG_ERROR, "invalid tune '%.*s'\n", len, tune );
             return -1;
-        }
-        if( 0 )
-        {
     psy_failure:
-            x264_log_internal( X264_LOG_WARNING, "only 1 psy tuning can be used: ignoring tune %s\n", s );
+            x264_log_internal( X264_LOG_WARNING, "only 1 psy tuning can be used: ignoring tune %.*s\n", len, tune );
         }
-        s = strtok( NULL, ",./-+" );
     }
-    x264_free( tmp );
     return 0;
 }
 
