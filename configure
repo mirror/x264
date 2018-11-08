@@ -1067,7 +1067,7 @@ if [ "$thread" = "posix" ]; then
 fi
 [ "$thread" != "no" ] && define HAVE_THREAD
 
-if cc_check 'math.h' '' 'log2f(2);' ; then
+if cc_check 'math.h' '' 'volatile float x = 2; return log2f(x);' ; then
     define HAVE_LOG2F
 fi
 
