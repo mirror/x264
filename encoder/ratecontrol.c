@@ -771,9 +771,9 @@ int x264_ratecontrol_new( x264_t *h )
     rc->last_non_b_pict_type = -1;
     rc->cbr_decay = 1.0;
 
-    if( h->param.rc.i_rc_method == X264_RC_CRF && h->param.rc.b_stat_read )
+    if( h->param.rc.i_rc_method != X264_RC_ABR && h->param.rc.b_stat_read )
     {
-        x264_log( h, X264_LOG_ERROR, "constant rate-factor is incompatible with 2pass.\n" );
+        x264_log( h, X264_LOG_ERROR, "CRF/CQP is incompatible with 2pass.\n" );
         return -1;
     }
 
@@ -941,6 +941,7 @@ int x264_ratecontrol_new( x264_t *h )
             CMP_OPT_FIRST_PASS( "intra_refresh", h->param.b_intra_refresh );
             CMP_OPT_FIRST_PASS( "open_gop", h->param.b_open_gop );
             CMP_OPT_FIRST_PASS( "bluray_compat", h->param.b_bluray_compat );
+            CMP_OPT_FIRST_PASS( "mbtree", h->param.rc.b_mb_tree );
 
             if( (p = strstr( opts, "interlaced=" )) )
             {
