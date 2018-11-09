@@ -1328,9 +1328,10 @@ fail:
 
 static x264_zone_t *get_zone( x264_t *h, int frame_num )
 {
-    for( int i = h->rc->i_zones - 1; i >= 0; i-- )
+    x264_ratecontrol_t *rc = h->rc;
+    for( int i = rc->i_zones - 1; i >= 0; i-- )
     {
-        x264_zone_t *z = &h->rc->zones[i];
+        x264_zone_t *z = &rc->zones[i];
         if( frame_num >= z->i_start && frame_num <= z->i_end )
             return z;
     }
@@ -1433,7 +1434,7 @@ void x264_ratecontrol_start( x264_t *h, int i_force_qp, int overhead )
     {
         int frame = h->fenc->i_frame;
         assert( frame >= 0 && frame < rc->num_entries );
-        rce = h->rc->rce = &h->rc->entry[frame];
+        rce = rc->rce = &rc->entry[frame];
 
         if( h->sh.i_type == SLICE_TYPE_B
             && h->param.analyse.i_direct_mv_pred == X264_DIRECT_PRED_AUTO )
@@ -1694,7 +1695,7 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
             b1 = bits_so_far + predict_row_size_to_end( h, y, rc->qpm ) + size_of_other_slices;
         }
 
-        h->rc->frame_size_estimated = b1 - size_of_other_slices;
+        rc->frame_size_estimated = b1 - size_of_other_slices;
 
         /* If the current row was large enough to cause a large QP jump, try re-encoding it. */
         if( rc->qpm > qp_max && prev_row_qp < qp_max && can_reencode_row )
@@ -1710,7 +1711,7 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
     }
     else
     {
-        h->rc->frame_size_estimated = bits_so_far;
+        rc->frame_size_estimated = bits_so_far;
 
         /* Last-ditch attempt: if the last row of the frame underflowed the VBV,
          * try again. */
@@ -2212,7 +2213,7 @@ static void update_vbv_plan( x264_t *h, int overhead )
     rcc->buffer_fill = h->thread[0]->rc->buffer_fill_final_min / h->sps->vui.i_time_scale;
     if( h->i_thread_frames > 1 )
     {
-        int j = h->rc - h->thread[0]->rc;
+        int j = rcc - h->thread[0]->rc;
         for( int i = 1; i < h->i_thread_frames; i++ )
         {
             x264_t *t = h->thread[ (j+i)%h->i_thread_frames ];
@@ -2446,7 +2447,7 @@ static float rate_estimate_qscale( x264_t *h )
         /* Limit planned size by MinCR */
         if( rcc->b_vbv )
             rcc->frame_size_planned = X264_MIN( rcc->frame_size_planned, rcc->frame_size_maximum );
-        h->rc->frame_size_estimated = rcc->frame_size_planned;
+        rcc->frame_size_estimated = rcc->frame_size_planned;
 
         /* For row SATDs */
         if( rcc->b_vbv )
@@ -2459,7 +2460,7 @@ static float rate_estimate_qscale( x264_t *h )
         double predicted_bits = total_bits;
         if( h->i_thread_frames > 1 )
         {
-            int j = h->rc - h->thread[0]->rc;
+            int j = rcc - h->thread[0]->rc;
             for( int i = 1; i < h->i_thread_frames; i++ )
             {
                 x264_t *t = h->thread[(j+i) % h->i_thread_frames];
@@ -2628,7 +2629,7 @@ static float rate_estimate_qscale( x264_t *h )
         /* Limit planned size by MinCR */
         if( rcc->b_vbv )
             rcc->frame_size_planned = X264_MIN( rcc->frame_size_planned, rcc->frame_size_maximum );
-        h->rc->frame_size_estimated = rcc->frame_size_planned;
+        rcc->frame_size_estimated = rcc->frame_size_planned;
         return q;
     }
 }
