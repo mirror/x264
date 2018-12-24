@@ -821,6 +821,8 @@ static int validate_parameters( x264_t *h, int b_open )
         if( h->param.i_avcintra_flavor == X264_AVCINTRA_FLAVOR_SONY )
         {
             h->param.i_slice_count = 8;
+            if( h->param.b_sliced_threads )
+                h->param.i_threads = h->param.i_slice_count;
             /* Sony XAVC unlike AVC-Intra doesn't seem to have a QP floor */
         }
         else
