@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc.h: arm motion compensation
  *****************************************************************************
- * Copyright (C) 2009-2018 x264 project
+ * Copyright (C) 2009-2019 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * avs.c: avisynth input
  *****************************************************************************
- * Copyright (C) 2009-2018 x264 project
+ * Copyright (C) 2009-2019 x264 project
  *
  * Authors: Steven Walters <kemuri9@gmail.com>
  *          Anton Mitrofanov <BugMaster@narod.ru>

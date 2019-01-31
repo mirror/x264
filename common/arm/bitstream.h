@@ -1,7 +1,7 @@
 /*****************************************************************************
  * bitstream.h: arm bitstream functions
  *****************************************************************************
- * Copyright (C) 2017-2018 x264 project
+ * Copyright (C) 2017-2019 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *

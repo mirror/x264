@@ -1,7 +1,7 @@
 /*****************************************************************************
  * lavf.c: libavformat input
  *****************************************************************************
- * Copyright (C) 2009-2018 x264 project
+ * Copyright (C) 2009-2019 x264 project
  *
  * Authors: Mike Gurlitz <mike.gurlitz@gmail.com>
  *          Steven Walters <kemuri9@gmail.com>

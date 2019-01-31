@@ -1,7 +1,7 @@
 /*****************************************************************************
  * matroska_ebml.c: matroska muxer utilities
  *****************************************************************************
- * Copyright (C) 2005-2018 x264 project
+ * Copyright (C) 2005-2019 x264 project
  *
  * Authors: Mike Matsnev <mike@haali.su>
  *

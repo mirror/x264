@@ -1,7 +1,7 @@
 /****************************************************************************
  * dct-a.S: aarch64 transform and zigzag
  *****************************************************************************
- * Copyright (C) 2009-2018 x264 project
+ * Copyright (C) 2009-2019 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *          Janne Grunau <janne-x264@jannau.net>

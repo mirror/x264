@@ -1,7 +1,7 @@
 /*****************************************************************************
  * flv_bytestream.h: flv muxer utilities
  *****************************************************************************
- * Copyright (C) 2009-2018 x264 project
+ * Copyright (C) 2009-2019 x264 project
  *
  * Authors: Kieran Kunhya <kieran@kunhya.com>
  *

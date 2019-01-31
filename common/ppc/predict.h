@@ -1,7 +1,7 @@
 /*****************************************************************************
  * predict.h: ppc intra prediction
  *****************************************************************************
- * Copyright (C) 2007-2018 x264 project
+ * Copyright (C) 2007-2019 x264 project
  *
  * Authors: Guillaume Poirier <gpoirier@mplayerhq.hu>
  *

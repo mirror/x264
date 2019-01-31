@@ -1,7 +1,7 @@
 /*****************************************************************************
  * deblock.h: x86 deblocking
  *****************************************************************************
- * Copyright (C) 2017-2018 x264 project
+ * Copyright (C) 2017-2019 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *

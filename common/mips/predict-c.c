@@ -1,7 +1,7 @@
 /*****************************************************************************
  * predict-c.c: msa intra prediction
  *****************************************************************************
- * Copyright (C) 2015-2018 x264 project
+ * Copyright (C) 2015-2019 x264 project
  *
  * Authors: Mandar Sahastrabuddhe <mandar.sahastrabuddhe@imgtec.com>
  *
