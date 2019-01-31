@@ -734,7 +734,7 @@ case $host_cpu in
         ARCH="X86_64"
         AS="${AS-nasm}"
         AS_EXT=".asm"
-        ASFLAGS="$ASFLAGS -DARCH_X86_64=1 -DPIC -I\$(SRCPATH)/common/x86/"
+        ASFLAGS="$ASFLAGS -DARCH_X86_64=1 -I\$(SRCPATH)/common/x86/"
         stack_alignment=16
         [ $compiler = GNU ] && CFLAGS="-m64 $CFLAGS" && LDFLAGS="-m64 $LDFLAGS"
         if [ "$SYS" = MACOSX ]; then
