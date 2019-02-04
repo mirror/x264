@@ -154,8 +154,8 @@ struct x264_ratecontrol_t
     } mbtree;
 
     /* MBRC stuff */
-    float frame_size_estimated; /* Access to this variable must be atomic: double is
-                                 * not atomic on all arches we care about */
+    volatile float frame_size_estimated; /* Access to this variable must be atomic: double is
+                                          * not atomic on all arches we care about */
     double frame_size_maximum;  /* Maximum frame size due to MinCR */
     double frame_size_planned;
     double slice_size_planned;
@@ -1714,7 +1714,7 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
         /* Last-ditch attempt: if the last row of the frame underflowed the VBV,
          * try again. */
         if( rc->qpm < qp_max && can_reencode_row
-            && (h->rc->frame_size_estimated + size_of_other_slices > X264_MIN( rc->frame_size_maximum, rc->buffer_fill )) )
+            && (bits_so_far + size_of_other_slices > X264_MIN( rc->frame_size_maximum, rc->buffer_fill )) )
         {
             rc->qpm = qp_max;
             rc->qpa_rc = rc->qpa_rc_prev;
