@@ -34,7 +34,7 @@ typedef struct
 
 struct x264_threadpool_t
 {
-    int            exit;
+    volatile int   exit;
     int            threads;
     x264_pthread_t *thread_handle;
     void           (*init_func)(void *);
