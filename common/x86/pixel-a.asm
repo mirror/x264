@@ -131,6 +131,7 @@ transd_shuf2: SHUFFLE_MASK_W 1, 9, 3, 11, 5, 13, 7, 15
 
 sw_f0:     dq 0xfff0, 0
 pd_f0:     times 4 dd 0xffff0000
+pd_2:      times 4 dd 2
 
 pw_76543210: dw 0, 1, 2, 3, 4, 5, 6, 7
 
@@ -2223,7 +2224,7 @@ cglobal pixel_sa8d_satd_16x16, 4,8-(mmsize/32),16,SIZEOF_PIXEL*mmsize
 ;-----------------------------------------------------------------------------
 ; void intra_sa8d_x3_8x8( uint8_t *fenc, uint8_t edge[36], int *res )
 ;-----------------------------------------------------------------------------
-cglobal intra_sa8d_x3_8x8, 3,3,14
+cglobal intra_sa8d_x3_8x8, 3,3,13
     ; 8x8 hadamard
     pxor        m8, m8
     movq        m0, [r0+0*FENC_STRIDE]
@@ -2245,77 +2246,80 @@ cglobal intra_sa8d_x3_8x8, 3,3,14
 
     HADAMARD8_2D 0, 1, 2, 3, 4, 5, 6, 7, 8
 
-    ABSW2       m8,  m9,  m2, m3, m2, m3
-    ABSW2       m10, m11, m4, m5, m4, m5
-    paddusw     m8,  m10
-    paddusw     m9,  m11
-    ABSW2       m10, m11, m6, m7, m6, m7
-    ABSW        m13, m1,  m1
-    paddusw     m10, m11
-    paddusw     m8,  m9
-    paddusw     m13, m10
-    paddusw     m13, m8
+    ABSW2       m8, m9, m2, m3, m2, m3
+    ABSW2      m10, m11, m4, m5, m4, m5
+    paddw       m8, m10
+    paddw       m9, m11
+    ABSW2      m10, m11, m6, m7, m6, m7
+    ABSW       m12, m1, m1
+    paddw      m10, m11
+    paddw       m8, m9
+    paddw      m12, m10
+    paddw      m12, m8
 
     ; 1D hadamard of edges
-    movq        m8,  [r1+7]
-    movq        m9,  [r1+16]
-    pxor        m10, m10
-    punpcklbw   m8,  m10
-    punpcklbw   m9,  m10
+    movq        m8, [r1+7]
+    movq        m9, [r1+16]
+    pxor       m10, m10
+    punpcklbw   m8, m10
+    punpcklbw   m9, m10
     HSUMSUB2 pmullw, m8, m9, m10, m11, m11, q1032, [pw_ppppmmmm]
     HSUMSUB2 pmullw, m8, m9, m10, m11, m11, q2301, [pw_ppmmppmm]
-    pshuflw     m10, m8,  q2301
-    pshuflw     m11, m9,  q2301
-    pshufhw     m10, m10, q2301
-    pshufhw     m11, m11, q2301
-    pmullw      m8,  [pw_pmpmpmpm]
-    pmullw      m11, [pw_pmpmpmpm]
-    paddw       m8,  m10
-    paddw       m9,  m11
+    pshuflw    m10, m8, q2301
+    pshuflw    m11, m9, q2301
+    pshufhw    m10, m10, q2301
+    pshufhw    m11, m11, q2301
+    pmullw      m8, [pw_pmpmpmpm]
+    pmullw     m11, [pw_pmpmpmpm]
+    paddw       m8, m10
+    paddw       m9, m11
 
     ; differences
-    paddw       m10, m8, m9
-    paddw       m10, [pw_8]
-    pand        m10, [sw_f0]
-    psllw       m10, 2 ; dc
-
-    psllw       m8,  3 ; left edge
-    psubw       m8,  m0
-    psubw       m10, m0
-    ABSW2       m8, m10, m8, m10, m11, m12 ; 1x8 sum
-    paddusw     m8,  m13
-    paddusw     m13, m10
-    punpcklwd   m0,  m1
-    punpcklwd   m2,  m3
-    punpcklwd   m4,  m5
-    punpcklwd   m6,  m7
-    punpckldq   m0,  m2
-    punpckldq   m4,  m6
-    punpcklqdq  m0,  m4 ; transpose
-    psllw       m9,  3 ; top edge
-    psrldq      m2,  m13, 2 ; 8x7 sum
-    psubw       m0,  m9  ; 8x1 sum
-    ABSW        m0,  m0,  m9
-    paddusw     m2,  m0
+    paddw      m10, m8, m9
+    paddw      m10, [pw_8]
+    pand       m10, [sw_f0]
+    psllw       m8, 3 ; left edge
+    psllw      m10, 2 ; dc
+    psubw       m8, m0
+    psubw      m10, m0
+    punpcklwd   m0, m1
+    punpcklwd   m2, m3
+    punpcklwd   m4, m5
+    punpcklwd   m6, m7
+    ABSW       m10, m10, m1
+    paddw      m10, m12
+    punpckldq   m0, m2
+    punpckldq   m4, m6
+    punpcklqdq  m0, m4 ; transpose
+    psllw       m9, 3 ; top edge
+    psrldq      m2, m10, 2 ; 8x7 sum
+    psubw       m0, m9  ; 8x1 sum
+    ABSW2       m8, m0, m8, m0, m1, m3 ; 1x8 sum
+    paddw       m8, m12
+    paddusw     m2, m0
 
     ; 3x HADDW
-    movdqa      m7,  [pw_1]
-    pmaddwd     m2,  m7
-    pmaddwd     m8,  m7
-    pmaddwd     m13, m7
-    punpckhdq   m3,  m2, m8
-    punpckldq   m2,  m8
-    pshufd      m5,  m13, q3311
-    paddd       m2,  m3
-    paddd       m5,  m13
-    punpckhqdq  m0,  m2, m5
-    punpcklqdq  m2,  m5
-    pavgw       m0,  m2
-    pxor        m1,  m1
-    pavgw       m0,  m1
-    movq      [r2], m0 ; i8x8_v, i8x8_h
-    psrldq      m0, 8
-    movd    [r2+8], m0 ; i8x8_dc
+    mova        m7, [pd_f0]
+    pandn       m0, m7, m10
+    psrld      m10, 16
+    pandn       m1, m7, m8
+    psrld       m8, 16
+    pandn       m7, m2
+    psrld       m2, 16
+    paddd       m0, m10
+    paddd       m1, m8
+    paddd       m2, m7
+    pshufd      m3, m0, q2301
+    punpckhdq   m4, m2, m1
+    punpckldq   m2, m1
+    paddd       m3, m0
+    paddd       m2, m4
+    punpckhqdq  m0, m2, m3
+    punpcklqdq  m2, m3
+    paddd       m0, [pd_2]
+    paddd       m0, m2
+    psrld       m0, 2
+    mova      [r2], m0
     RET
 %endif ; ARCH_X86_64
 %endmacro ; INTRA_SA8D_SSE2

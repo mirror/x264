@@ -596,13 +596,13 @@ static int check_pixel( int cpu_ref, int cpu_new )
 #define TEST_INTRA_X3( name, i8x8, ... ) \
     if( pixel_asm.name && pixel_asm.name != pixel_ref.name ) \
     { \
-        ALIGNED_16( int res_c[3] ); \
-        ALIGNED_16( int res_asm[3] ); \
+        ALIGNED_16( int res_c[4] ); \
+        ALIGNED_16( int res_asm[4] ); \
         set_func_name( #name ); \
         used_asm = 1; \
         call_c( pixel_c.name, pbuf1+48, i8x8 ? edge : pbuf3+48, res_c ); \
         call_a( pixel_asm.name, pbuf1+48, i8x8 ? edge : pbuf3+48, res_asm ); \
-        if( memcmp(res_c, res_asm, sizeof(res_c)) ) \
+        if( memcmp(res_c, res_asm, 3 * sizeof(*res_c)) ) \
         { \
             ok = 0; \
             fprintf( stderr, #name": %d,%d,%d != %d,%d,%d [FAILED]\n", \
