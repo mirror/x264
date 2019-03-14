@@ -10,3 +10,13 @@ build-debian:
     script:
         - ./configure
         - make
+
+build-debian-aarch64:
+    stage: build
+    image: registry.videolan.org:5000/dav1d-debian-unstable-aarch64:20181122182457
+    tags:
+        - aarch64
+        - debian
+    script:
+        - ./configure
+        - make
