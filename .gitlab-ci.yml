@@ -1,0 +1,11 @@
+stages:
+    - build
+    
+build-debian:
+    image: registry.videolan.org:5000/dav1d-debian-unstable:20190215130514
+    stage: build
+    tags:
+        - debian
+        - amd64
+    script:
+        - make
