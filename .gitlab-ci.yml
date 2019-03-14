@@ -10,6 +10,7 @@ build-debian:
     script:
         - ./configure
         - make
+        - make install
 
 build-debian-aarch64:
     stage: build
@@ -20,3 +21,4 @@ build-debian-aarch64:
     script:
         - ./configure
         - make
+        - make install
