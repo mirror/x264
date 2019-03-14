@@ -27,6 +27,7 @@
 #include "input/input.h"
 
 #if HAVE_LAVF
+#undef DECLARE_ALIGNED
 #include <libavformat/avformat.h>
 #include <libavutil/pixdesc.h>
 #endif
