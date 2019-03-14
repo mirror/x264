@@ -8,4 +8,5 @@ build-debian:
         - debian
         - amd64
     script:
+        - ./configure
         - make
