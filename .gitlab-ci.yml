@@ -1,5 +1,6 @@
 stages:
     - build
+    - test
     
 build-debian:
     image: registry.videolan.org:5000/dav1d-debian-unstable:20190215130514
@@ -20,3 +21,25 @@ build-debian-aarch64:
     script:
         - ./configure
         - make
+
+test-debian-checkasm:
+    image: registry.videolan.org:5000/dav1d-debian-unstable:20190215130514
+    stage: test
+    tags:
+        - debian
+        - amd64
+    script:
+        - make x264 checkasm
+        - ./checkasm8
+        - ./checkasm10
+        
+test-debian-aarch64-checkasm:
+    stage: test
+    image: registry.videolan.org:5000/dav1d-debian-unstable-aarch64:20181122182457
+    tags:
+        - aarch64
+        - debian
+    script:
+        - make x264 checkasm
+        - ./checkasm8
+        - ./checkasm10
