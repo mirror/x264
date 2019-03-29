@@ -151,9 +151,9 @@ cc_check() {
     done
     echo "int main (void) { $3 return 0; }" >> conftest.c
     if [ $compiler_style = MS ]; then
-        cc_cmd="$CC conftest.c $(cc_cflags $CFLAGS $CHECK_CFLAGS $2) -link $(cl_ldflags $2 $LDFLAGSCLI $LDFLAGS)"
+        cc_cmd="$CC conftest.c $(cc_cflags $CFLAGS $CFLAGSCLI $CHECK_CFLAGS $2) -link $(cl_ldflags $2 $LDFLAGSCLI $LDFLAGS)"
     else
-        cc_cmd="$CC conftest.c $CFLAGS $CHECK_CFLAGS $2 $LDFLAGSCLI $LDFLAGS -o conftest"
+        cc_cmd="$CC conftest.c $CFLAGS $CFLAGSCLI $CHECK_CFLAGS $2 $LDFLAGSCLI $LDFLAGS -o conftest"
     fi
     if $cc_cmd >conftest.log 2>&1; then
         res=$?
@@ -380,6 +380,8 @@ opencl="yes"
 vsx="auto"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
+CFLAGSSO="$CFLAGSSO -DX264_API_EXPORTS"
+CFLAGSCLI="$CFLAGSCLI"
 LDFLAGS="$LDFLAGS"
 LDFLAGSCLI="$LDFLAGSCLI"
 ASFLAGS="$ASFLAGS -I. -I\$(SRCPATH)"
@@ -1007,6 +1009,7 @@ if [ "$cli_libx264" = "system" -a "$shared" != "yes" ] ; then
     [ "$static" = "yes" ] && die "Option --system-libx264 can not be used together with --enable-static"
     if pkg_check x264 ; then
         X264_LIBS="$($PKGCONFIG --libs x264)"
+        X264_CFLAGS="$($PKGCONFIG --cflags x264)"
         X264_INCLUDE_DIR="${X264_INCLUDE_DIR-$($PKGCONFIG --variable=includedir x264)}"
         configure_system_override "$X264_INCLUDE_DIR" || die "Detection of system libx264 configuration failed"
     else
@@ -1308,6 +1311,10 @@ if cc_check '' -Wmaybe-uninitialized ; then
     CFLAGS="-Wno-maybe-uninitialized $CFLAGS"
 fi
 
+if [ $compiler = GNU ] && cc_check '' -fvisibility=hidden ; then
+    CFLAGS="$CFLAGS -fvisibility=hidden"
+fi
+
 if [ $compiler = ICC -o $compiler = ICL ] ; then
     if cc_check 'extras/intel_dispatcher.h' '' 'x264_intel_dispatcher_override();' ; then
         define HAVE_INTEL_DISPATCHER
@@ -1368,9 +1375,11 @@ ${SRCPATH}/version.sh >> x264_config.h
 if [ "$cli_libx264" = "system" ] ; then
     if [ "$shared" = "yes" ]; then
         CLI_LIBX264='$(SONAME)'
+        CFLAGSCLI="$CFLAGSCLI -DX264_API_IMPORTS"
     else
         CLI_LIBX264=
         LDFLAGSCLI="$X264_LIBS $LDFLAGSCLI"
+        CFLAGSCLI="$CFLAGSCLI $X264_CFLAGS"
         cc_check 'stdint.h x264.h' '' 'x264_encoder_open(0);' || die "System libx264 can't be used for compilation of this version"
     fi
 else
@@ -1409,7 +1418,11 @@ else # gcc/icc
     LIBX264=libx264.a
     [ -n "$RC" ] && RCFLAGS="$RCFLAGS -I. -o "
 fi
-[ $compiler != GNU ] && CFLAGS="$(cc_cflags $CFLAGS)"
+if [ $compiler != GNU ]; then
+    CFLAGS="$(cc_cflags $CFLAGS)"
+    CFLAGSSO="$(cc_cflags $CFLAGSSO)"
+    CFLAGSCLI="$(cc_cflags $CFLAGSCLI)"
+fi
 if [ $compiler = ICC -o $compiler = ICL ]; then
     # icc does not define __SSE__ until SSE2 optimization and icl never defines it or _M_IX86_FP
     [ \( $ARCH = X86_64 -o $ARCH = X86 \) -a $asm = yes ] && ! cpp_check "" "" "defined(__SSE__)" && define __SSE__
@@ -1448,13 +1461,17 @@ SYS_ARCH=$ARCH
 SYS=$SYS
 CC=$CC
 CFLAGS=$CFLAGS
+CFLAGSSO=$CFLAGSSO
+CFLAGSCLI=$CFLAGSCLI
 COMPILER=$compiler
 COMPILER_STYLE=$compiler_style
 DEPMM=$DEPMM
 DEPMT=$DEPMT
 LD=$LD
 LDFLAGS=$LDFLAGS
+LDFLAGSCLI=$LDFLAGSCLI
 LIBX264=$LIBX264
+CLI_LIBX264=$CLI_LIBX264
 AR=$AR
 RANLIB=$RANLIB
 STRIP=$STRIP
@@ -1490,14 +1507,7 @@ if [ "$shared" = "yes" ]; then
         echo "SONAME=libx264-$API.dll" >> config.mak
         if [ $compiler_style = MS ]; then
             echo 'IMPLIBNAME=libx264.dll.lib' >> config.mak
-            # GNU ld on windows defaults to exporting all global functions if there are no explicit __declspec(dllexport) declarations
-            # MSVC link does not act similarly, so it is required to make an export definition out of x264.h and use it at link time
-            echo "SOFLAGS=-dll -def:x264.def -implib:\$(IMPLIBNAME) $SOFLAGS" >> config.mak
-            echo "EXPORTS" > x264.def
-            # export API functions
-            grep "^\(int\|void\|x264_t\).*x264" ${SRCPATH}/x264.h | sed -e "s/.*\(x264.*\)(.*/\1/;s/open/open_$API/g" >> x264.def
-            # export API variables/data. must be flagged with the DATA keyword
-            grep "extern.*x264" ${SRCPATH}/x264.h | sed -e "s/.*\(x264\w*\)\W.*/\1 DATA/;" >> x264.def
+            echo "SOFLAGS=-dll -implib:\$(IMPLIBNAME) $SOFLAGS" >> config.mak
         else
             echo 'IMPLIBNAME=libx264.dll.a' >> config.mak
             echo "SOFLAGS=-shared -Wl,--out-implib,\$(IMPLIBNAME) $SOFLAGS" >> config.mak
@@ -1524,9 +1534,6 @@ if [ "$static" = "yes" ]; then
     echo 'install: install-lib-static' >> config.mak
 fi
 
-echo "LDFLAGSCLI = $LDFLAGSCLI" >> config.mak
-echo "CLI_LIBX264 = $CLI_LIBX264" >> config.mak
-
 cat > x264.pc << EOF
 prefix=$prefix
 exec_prefix=$exec_prefix
@@ -1538,7 +1545,7 @@ Description: H.264 (MPEG4 AVC) encoder library
 Version: $(grep POINTVER < x264_config.h | sed -e 's/.* "//; s/".*//; s/ .*//')
 Libs: -L$libdir -lx264 $([ "$shared" = "yes" ] || echo $libpthread $libm $libdl)
 Libs.private: $([ "$shared" = "yes" ] && echo $libpthread $libm $libdl)
-Cflags: -I$includedir
+Cflags: -I$includedir $([ "$shared" = "yes" ] && echo "-DX264_API_IMPORTS")
 EOF
 
 filters="crop select_every"

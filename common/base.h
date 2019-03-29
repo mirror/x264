@@ -47,7 +47,6 @@
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
-#include "x264.h"
 
 /****************************************************************************
  * Macros
@@ -256,23 +255,23 @@ static ALWAYS_INLINE uint16_t x264_cabac_mvd_sum( uint8_t *mvdleft, uint8_t *mvd
 /****************************************************************************
  * General functions
  ****************************************************************************/
-void x264_reduce_fraction( uint32_t *n, uint32_t *d );
-void x264_reduce_fraction64( uint64_t *n, uint64_t *d );
+X264_API void x264_reduce_fraction( uint32_t *n, uint32_t *d );
+X264_API void x264_reduce_fraction64( uint64_t *n, uint64_t *d );
 
-void x264_log_default( void *p_unused, int i_level, const char *psz_fmt, va_list arg );
-void x264_log_internal( int i_level, const char *psz_fmt, ... );
+X264_API void x264_log_default( void *p_unused, int i_level, const char *psz_fmt, va_list arg );
+X264_API void x264_log_internal( int i_level, const char *psz_fmt, ... );
 
 /* x264_malloc : will do or emulate a memalign
  * you have to use x264_free for buffers allocated with x264_malloc */
-void *x264_malloc( int );
-void  x264_free( void * );
+X264_API void *x264_malloc( int );
+X264_API void  x264_free( void * );
 
 /* x264_slurp_file: malloc space for the whole file and read it */
-char *x264_slurp_file( const char *filename );
+X264_API char *x264_slurp_file( const char *filename );
 
 /* x264_param2string: return a (malloced) string containing most of
  * the encoding options */
-char *x264_param2string( x264_param_t *p, int b_res );
+X264_API char *x264_param2string( x264_param_t *p, int b_res );
 
 /****************************************************************************
  * Macros

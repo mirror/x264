@@ -43,6 +43,8 @@
 #include <math.h>
 #endif
 
+#include "x264.h"
+
 #if !HAVE_LOG2F
 #define log2f(x) (logf(x)/0.693147180559945f)
 #define log2(x) (log(x)/0.693147180559945)
@@ -55,8 +57,8 @@
 #define strtok_r strtok_s
 #define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
 #if _MSC_VER < 1900
-int x264_snprintf( char *s, size_t n, const char *fmt, ... );
-int x264_vsnprintf( char *s, size_t n, const char *fmt, va_list arg );
+X264_API int x264_snprintf( char *s, size_t n, const char *fmt, ... );
+X264_API int x264_vsnprintf( char *s, size_t n, const char *fmt, va_list arg );
 #define snprintf  x264_snprintf
 #define vsnprintf x264_vsnprintf
 #endif
@@ -79,11 +81,11 @@ int x264_vsnprintf( char *s, size_t n, const char *fmt, va_list arg );
 #ifdef _WIN32
 #define utf8_to_utf16( utf8, utf16 )\
     MultiByteToWideChar( CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, utf16, sizeof(utf16)/sizeof(wchar_t) )
-FILE *x264_fopen( const char *filename, const char *mode );
-int x264_rename( const char *oldname, const char *newname );
+X264_API FILE *x264_fopen( const char *filename, const char *mode );
+X264_API int x264_rename( const char *oldname, const char *newname );
 #define x264_struct_stat struct _stati64
 #define x264_fstat _fstati64
-int x264_stat( const char *path, x264_struct_stat *buf );
+X264_API int x264_stat( const char *path, x264_struct_stat *buf );
 #else
 #define x264_fopen       fopen
 #define x264_rename      rename
@@ -93,11 +95,11 @@ int x264_stat( const char *path, x264_struct_stat *buf );
 #endif
 
 /* mdate: return the current date in microsecond */
-int64_t x264_mdate( void );
+X264_API int64_t x264_mdate( void );
 
 #if defined(_WIN32) && !HAVE_WINRT
-int x264_vfprintf( FILE *stream, const char *format, va_list arg );
-int x264_is_pipe( const char *path );
+X264_API int x264_vfprintf( FILE *stream, const char *format, va_list arg );
+X264_API int x264_is_pipe( const char *path );
 #else
 #define x264_vfprintf vfprintf
 #define x264_is_pipe(x) 0
@@ -253,7 +255,7 @@ static inline int x264_pthread_create( x264_pthread_t *t, void *a, void *(*f)(vo
 #endif
 
 #if HAVE_WIN32THREAD || PTW32_STATIC_LIB
-int x264_threading_init( void );
+X264_API int x264_threading_init( void );
 #else
 #define x264_threading_init() 0
 #endif

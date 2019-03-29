@@ -266,6 +266,9 @@ checkasm10$(EXE): $(GENERATED) .depend $(OBJCHK) $(OBJCHK_10) $(LIBX264)
 example$(EXE): $(GENERATED) .depend $(OBJEXAMPLE) $(LIBX264)
 	$(LD)$@ $(OBJEXAMPLE) $(LIBX264) $(LDFLAGS)
 
+$(OBJS) $(OBJSO): CFLAGS += $(CFLAGSSO)
+$(OBJCLI): CFLAGS += $(CFLAGSCLI)
+
 $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK) $(OBJCHK_8) $(OBJCHK_10) $(OBJEXAMPLE): .depend
 
 %.o: %.c

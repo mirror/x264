@@ -261,13 +261,14 @@ void          x264_threadslice_cond_broadcast( x264_t *h, int pass );
 void          x264_threadslice_cond_wait( x264_t *h, int pass );
 
 #define x264_frame_push x264_template(frame_push)
-void          x264_frame_push( x264_frame_t **list, x264_frame_t *frame );
+X264_API void          x264_frame_push( x264_frame_t **list, x264_frame_t *frame );
 #define x264_frame_pop x264_template(frame_pop)
-x264_frame_t *x264_frame_pop( x264_frame_t **list );
+X264_API x264_frame_t *x264_frame_pop( x264_frame_t **list );
 #define x264_frame_unshift x264_template(frame_unshift)
-void          x264_frame_unshift( x264_frame_t **list, x264_frame_t *frame );
+X264_API void          x264_frame_unshift( x264_frame_t **list, x264_frame_t *frame );
 #define x264_frame_shift x264_template(frame_shift)
-x264_frame_t *x264_frame_shift( x264_frame_t **list );
+X264_API x264_frame_t *x264_frame_shift( x264_frame_t **list );
+
 #define x264_frame_push_unused x264_template(frame_push_unused)
 void          x264_frame_push_unused( x264_t *h, x264_frame_t *frame );
 #define x264_frame_push_blank_unused x264_template(frame_push_blank_unused)
