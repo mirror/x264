@@ -2914,7 +2914,7 @@ static int check_all_flags( void )
     return ret;
 }
 
-static int main_internal( int argc, char **argv )
+REALIGN_STACK int main( int argc, char **argv )
 {
 #ifdef _WIN32
     /* Disable the Windows Error Reporting dialog */
@@ -2972,9 +2972,4 @@ static int main_internal( int argc, char **argv )
     if( do_bench )
         print_bench();
     return 0;
-}
-
-int main( int argc, char **argv )
-{
-    return x264_stack_align( main_internal, argc, argv );
 }

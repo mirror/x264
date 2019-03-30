@@ -373,7 +373,7 @@ static void print_version_info( void )
 #endif
 }
 
-static int main_internal( int argc, char **argv )
+REALIGN_STACK int main( int argc, char **argv )
 {
     if( argc == 4 && !strcmp( argv[1], "--autocomplete" ) )
         return x264_cli_autocomplete( argv[2], argv[3] );
@@ -426,11 +426,6 @@ static int main_internal( int argc, char **argv )
 #endif
 
     return ret;
-}
-
-int main( int argc, char **argv )
-{
-    return x264_stack_align( main_internal, argc, argv );
 }
 
 static char const *strtable_lookup( const char * const table[], int idx )

@@ -163,6 +163,12 @@ int x264_is_pipe( const char *path );
 #define ALIGNED_ARRAY_64 ALIGNED_ARRAY_16
 #endif
 
+#if STACK_ALIGNMENT > 16 || (ARCH_X86 && STACK_ALIGNMENT > 4)
+#define REALIGN_STACK __attribute__((force_align_arg_pointer))
+#else
+#define REALIGN_STACK
+#endif
+
 #if defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 0)
 #define UNUSED __attribute__((unused))
 #define ALWAYS_INLINE __attribute__((always_inline)) inline

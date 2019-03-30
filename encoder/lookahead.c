@@ -87,7 +87,7 @@ static void lookahead_slicetype_decide( x264_t *h )
     x264_pthread_mutex_unlock( &h->lookahead->ofbuf.mutex );
 }
 
-static void *lookahead_thread_internal( x264_t *h )
+REALIGN_STACK static void *lookahead_thread( x264_t *h )
 {
     while( !h->lookahead->b_exit_thread )
     {
@@ -122,10 +122,6 @@ static void *lookahead_thread_internal( x264_t *h )
     return NULL;
 }
 
-static void *lookahead_thread( x264_t *h )
-{
-    return (void*)x264_stack_align( lookahead_thread_internal, h );
-}
 #endif
 
 int x264_lookahead_init( x264_t *h, int i_slicetype_length )

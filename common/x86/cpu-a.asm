@@ -78,33 +78,7 @@ cglobal cpu_sfence
     sfence
     ret
 
-%if ARCH_X86_64
-
-;-----------------------------------------------------------------------------
-; intptr_t stack_align( void (*func)(void*), ... ); (up to 5 args)
-;-----------------------------------------------------------------------------
-cvisible stack_align
-    mov      rax, r0mp
-    mov       r0, r1mp
-    mov       r1, r2mp
-    mov       r2, r3mp
-    mov       r3, r4mp
-    mov       r4, r5mp
-    push     rbp
-    mov      rbp, rsp
-%if WIN64
-    sub      rsp, 40 ; shadow space + r4
-%endif
-    and      rsp, ~(STACK_ALIGNMENT-1)
-%if WIN64
-    mov [rsp+32], r4
-%endif
-    call     rax
-    leave
-    ret
-
-%else
-
+%if ARCH_X86_64 == 0
 ;-----------------------------------------------------------------------------
 ; int cpu_cpuid_test( void )
 ; return 0 if unsupported
@@ -130,24 +104,4 @@ cglobal cpu_cpuid_test
     pop     ebx
     popfd
     ret
-
-cvisible stack_align
-    push      ebp
-    mov       ebp, esp
-    sub       esp, 20
-    and       esp, ~(STACK_ALIGNMENT-1)
-    mov        r0, [ebp+12]
-    mov        r1, [ebp+16]
-    mov        r2, [ebp+20]
-    mov  [esp+ 0], r0
-    mov  [esp+ 4], r1
-    mov  [esp+ 8], r2
-    mov        r0, [ebp+24]
-    mov        r1, [ebp+28]
-    mov  [esp+12], r0
-    mov  [esp+16], r1
-    call [ebp+ 8]
-    leave
-    ret
-
 %endif
