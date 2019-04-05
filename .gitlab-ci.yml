@@ -1,0 +1,201 @@
+stages:
+    - build
+    - test
+    - release
+
+.variables-debian-amd64: &variables-debian-amd64
+    _TRIPLET: ""
+    _PLATFORMSUFFIX: ""
+    _PATH: "debian-x86_64"
+    _WRAPPER: ""
+
+.variables-debian-aarch64: &variables-debian-aarch64
+    _TRIPLET: ""
+    _PLATFORMSUFFIX: ""
+    _PATH: "debian-aarch64"
+    _WRAPPER: ""
+
+.variables-win32: &variables-win32
+    _TRIPLET: "i686-w64-mingw32"
+    _PLATFORMSUFFIX: ".exe"
+    _PATH: "win32"
+    _WRAPPER: "wine"
+
+.variables-win64: &variables-win64
+    _TRIPLET: "x86_64-w64-mingw32"
+    _PLATFORMSUFFIX: ".exe"
+    _PATH: "win64"
+    _WRAPPER: "wine64"
+
+.variables-macos: &variables-macos
+    _TRIPLET: "x86_64-apple-darwin17"
+    _PLATFORMSUFFIX: ""
+    _PATH: "macos-x86_64"
+    _WRAPPER: ""
+
+.build:
+    stage: build
+    script: |
+        set -x
+        curl -L -- https://download.videolan.org/videolan/x264/av.tar.gz > av.tar.gz && tar xfzv av.tar.gz
+        cd av
+        ./bootstrap
+        make -j$(getconf _NPROCESSORS_ONLN)
+        cd ..
+        export PKG_CONFIG_PATH=`/bin/ls -d $PWD/av/*/lib/pkgconfig`
+        ./configure --enable-pic --enable-strip --extra-ldflags="-static"
+        make -j$(getconf _NPROCESSORS_ONLN) x264 checkasm
+    artifacts:
+        name: "$CI_PROJECT_PATH_SLUG-$CI_JOB_NAME-$CI_COMMIT_SHORT_SHA"
+        paths:
+            - x264${_PLATFORMSUFFIX}
+            - checkasm8${_PLATFORMSUFFIX}
+            - checkasm10${_PLATFORMSUFFIX}
+        expire_in: 1 week
+
+build-debian-amd64:
+    extends: .build
+    image: registry.videolan.org/x264-debian-unstable:20190404162201
+    tags:
+        - docker
+        - amd64
+    variables: *variables-debian-amd64
+
+build-debian-aarch64:
+    extends: .build
+    image: registry.videolan.org/x264-debian-unstable-aarch64:20190405100031
+    tags:
+        - docker
+        - aarch64
+    variables: *variables-debian-aarch64
+
+.build-win:
+    extends: build-debian-amd64
+    script: |
+        set -x
+        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/${_PATH}/last/vlc-contrib-${_TRIPLET}-`date +%Y%m%d`.tar.bz2 || curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/${_PATH}/last/vlc-contrib-${_TRIPLET}-`date --date=yesterday +%Y%m%d`.tar.bz2
+        bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
+        tar xvf vlc-contrib-${_TRIPLET}-latest.tar
+        sed -i "s#@@CONTRIB_PREFIX@@#`pwd`/${_TRIPLET}#g" ${_TRIPLET}/lib/pkgconfig/*.pc
+        export PKG_CONFIG_LIBDIR=`pwd`/${_TRIPLET}/lib/pkgconfig
+        ./configure --host=${_TRIPLET} --cross-prefix=${_TRIPLET}- --enable-pic --enable-strip
+        make -j$(getconf _NPROCESSORS_ONLN) x264 checkasm
+
+build-win32:
+    extends: .build-win
+    variables: *variables-win32
+
+build-win64:
+    extends: .build-win
+    variables: *variables-win64
+
+build-macos:
+    extends: .build
+    tags:
+        - macos
+    script: |
+        set -x
+        export PATH="$HOME/local/bin/:/usr/local/bin/:$PATH"
+        curl -O https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2
+        bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
+        tar xvf vlc-contrib-${_TRIPLET}-latest.tar
+        sed -i.bak "s#@@CONTRIB_PREFIX@@#`pwd`/${_TRIPLET}#g" ${_TRIPLET}/lib/pkgconfig/*.pc
+        export PKG_CONFIG_LIBDIR=`pwd`/${_TRIPLET}/lib/pkgconfig
+        ./configure --enable-strip
+        make -j$(getconf _NPROCESSORS_ONLN) x264 checkasm
+    variables: *variables-macos
+
+.test: &test
+    stage: test
+    script: |
+        set -x
+        ${_WRAPPER} ./checkasm8${_PLATFORMSUFFIX}
+        ${_WRAPPER} ./checkasm10${_PLATFORMSUFFIX}
+    artifacts:
+        expire_in: 10 minutes
+
+test-debian-amd64:
+    <<: *test
+    extends: build-debian-amd64
+    dependencies:
+        - build-debian-amd64
+    variables: *variables-debian-amd64
+
+test-debian-aarch64:
+    <<: *test
+    extends: build-debian-aarch64
+    dependencies:
+        - build-debian-aarch64
+    variables: *variables-debian-aarch64
+
+test-win32:
+    <<: *test
+    extends: build-win32
+    dependencies:
+        - build-win32
+    variables: *variables-win32
+
+test-win64:
+    <<: *test
+    extends: build-win64
+    dependencies:
+        - build-win64
+    variables: *variables-win64
+
+test-macos:
+    <<: *test
+    extends: build-macos
+    dependencies:
+        - build-macos
+    variables: *variables-macos
+
+.release: &release
+    stage: release
+    script: |
+        set -x
+        _VERSION=$(./version.sh | grep _VERSION -| cut -d\  -f4-| sed 's, ,-,g' | sed 's,",,')
+        mv x264${_PLATFORMSUFFIX} x264-${_VERSION}${_PLATFORMSUFFIX}
+    when: manual
+    only:
+        - master@videolan/x264
+        - stable@videolan/x264
+    artifacts:
+        name: "$CI_PROJECT_PATH_SLUG-$CI_JOB_NAME-$CI_COMMIT_SHORT_SHA"
+        paths:
+            - x264-*${_PLATFORMSUFFIX}
+        expire_in: '10 minutes'
+
+release-debian-amd64:
+    <<: *release
+    extends: build-debian-amd64
+    dependencies:
+        - build-debian-amd64
+    variables: *variables-debian-amd64
+
+release-debian-aarch64:
+    <<: *release
+    extends: build-debian-aarch64
+    dependencies:
+        - build-debian-aarch64
+    variables: *variables-debian-aarch64
+
+release-win32:
+    <<: *release
+    extends: build-win32
+    dependencies:
+        - build-win32
+    variables: *variables-win32
+
+release-win64:
+    <<: *release
+    extends: build-win64
+    dependencies:
+        - build-win64
+    variables: *variables-win64
+
+release-macos:
+    <<: *release
+    extends: build-macos
+    dependencies:
+        - build-macos
+    variables: *variables-macos
