@@ -145,7 +145,7 @@ static int init_costs( x264_t *h, float *logs, int qp )
     if( h->cost_mv[qp] )
         return 0;
 
-    int mv_range = h->param.analyse.i_mv_range;
+    int mv_range = h->param.analyse.i_mv_range << PARAM_INTERLACED;
     int lambda = x264_lambda_tab[qp];
     /* factor of 4 from qpel, 2 from sign, and 2 because mv can be opposite from mvp */
     CHECKED_MALLOC( h->cost_mv[qp], (4*4*mv_range + 1) * sizeof(uint16_t) );
@@ -178,7 +178,7 @@ fail:
 
 int x264_analyse_init_costs( x264_t *h )
 {
-    int mv_range = h->param.analyse.i_mv_range;
+    int mv_range = h->param.analyse.i_mv_range << PARAM_INTERLACED;
     float *logs = x264_malloc( (2*4*mv_range+1) * sizeof(float) );
     if( !logs )
         return -1;
@@ -203,7 +203,7 @@ fail:
 
 void x264_analyse_free_costs( x264_t *h )
 {
-    int mv_range = h->param.analyse.i_mv_range;
+    int mv_range = h->param.analyse.i_mv_range << PARAM_INTERLACED;
     for( int i = 0; i < QP_MAX+1; i++ )
     {
         if( h->cost_mv[i] )
