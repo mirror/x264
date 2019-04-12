@@ -1578,13 +1578,14 @@ static int check_mc( int cpu_ref, int cpu_new )
             intptr_t src_stride = plane_specs[i].src_stride;
             intptr_t dst_stride = ALIGN( w, 16 );
             intptr_t offv = dst_stride*h + 16;
+            pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
 
             for( int pw = 3; pw <= 4; pw++ )
             {
                 memset( pbuf3, 0, 0x1000 );
                 memset( pbuf4, 0, 0x1000 );
-                call_c( mc_c.plane_copy_deinterleave_rgb, pbuf3, dst_stride, pbuf3+offv, dst_stride, pbuf3+2*offv, dst_stride, pbuf1, src_stride, pw, w, h );
-                call_a( mc_a.plane_copy_deinterleave_rgb, pbuf4, dst_stride, pbuf4+offv, dst_stride, pbuf4+2*offv, dst_stride, pbuf1, src_stride, pw, w, h );
+                call_c( mc_c.plane_copy_deinterleave_rgb, pbuf3, dst_stride, pbuf3+offv, dst_stride, pbuf3+2*offv, dst_stride, src1, src_stride, pw, w, h );
+                call_a( mc_a.plane_copy_deinterleave_rgb, pbuf4, dst_stride, pbuf4+offv, dst_stride, pbuf4+2*offv, dst_stride, src1, src_stride, pw, w, h );
                 for( int y = 0; y < h; y++ )
                     if( memcmp( pbuf3+y*dst_stride+0*offv, pbuf4+y*dst_stride+0*offv, w ) ||
                         memcmp( pbuf3+y*dst_stride+1*offv, pbuf4+y*dst_stride+1*offv, w ) ||
