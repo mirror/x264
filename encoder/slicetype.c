@@ -405,8 +405,7 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
                  * because scale has a much wider range than offset (because of denom), so
                  * it should almost never need to be clamped. */
                 cur_offset = x264_clip3( cur_offset, -128, 127 );
-                cur_scale = (1 << mindenom) * (fenc_mean[plane] - cur_offset) / ref_mean[plane] + 0.5f;
-                cur_scale = x264_clip3( cur_scale, 0, 127 );
+                cur_scale = x264_clip3f( (1 << mindenom) * (fenc_mean[plane] - cur_offset) / ref_mean[plane] + 0.5f, 0, 127 );
             }
             int start_offset = x264_clip3( cur_offset - offset_dist, -128, 127 );
             int end_offset   = x264_clip3( cur_offset + offset_dist, -128, 127 );
