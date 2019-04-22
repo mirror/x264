@@ -1374,7 +1374,11 @@ ${SRCPATH}/version.sh >> x264_config.h
 
 if [ "$cli_libx264" = "system" ] ; then
     if [ "$shared" = "yes" ]; then
-        CLI_LIBX264='$(SONAME)'
+        if [ "$SYS" = "WINDOWS" -o "$SYS" = "CYGWIN" ]; then
+            CLI_LIBX264='$(IMPLIBNAME)'
+        else
+            CLI_LIBX264='$(SONAME)'
+        fi
         CFLAGSCLI="$CFLAGSCLI -DX264_API_IMPORTS"
     else
         CLI_LIBX264=

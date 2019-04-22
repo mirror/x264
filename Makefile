@@ -246,6 +246,8 @@ $(LIBX264): $(GENERATED) .depend $(OBJS) $(OBJASM)
 $(SONAME): $(GENERATED) .depend $(OBJS) $(OBJASM) $(OBJSO)
 	$(LD)$@ $(OBJS) $(OBJASM) $(OBJSO) $(SOFLAGS) $(LDFLAGS)
 
+$(IMPLIBNAME): $(SONAME)
+
 ifneq ($(EXE),)
 .PHONY: x264 checkasm8 checkasm10 example
 x264: x264$(EXE)
