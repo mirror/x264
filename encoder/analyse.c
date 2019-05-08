@@ -783,10 +783,11 @@ static void mb_analyse_intra( x264_t *h, x264_mb_analysis_t *a, int i_satd_inter
             {
                 if( !h->mb.b_lossless && predict_mode[5] >= 0 )
                 {
-                    ALIGNED_ARRAY_16( int32_t, satd,[9] );
+                    ALIGNED_ARRAY_16( int32_t, satd,[4] );
                     h->pixf.intra_mbcmp_x3_8x8( p_src_by, edge, satd );
                     int favor_vertical = satd[I_PRED_4x4_H] > satd[I_PRED_4x4_V];
-                    satd[i_pred_mode] -= 3 * lambda;
+                    if( i_pred_mode < 3 )
+                        satd[i_pred_mode] -= 3 * lambda;
                     for( int i = 2; i >= 0; i-- )
                     {
                         int cost = satd[i];
@@ -901,10 +902,11 @@ static void mb_analyse_intra( x264_t *h, x264_mb_analysis_t *a, int i_satd_inter
             {
                 if( !h->mb.b_lossless && predict_mode[5] >= 0 )
                 {
-                    ALIGNED_ARRAY_16( int32_t, satd,[9] );
+                    ALIGNED_ARRAY_16( int32_t, satd,[4] );
                     h->pixf.intra_mbcmp_x3_4x4( p_src_by, p_dst_by, satd );
                     int favor_vertical = satd[I_PRED_4x4_H] > satd[I_PRED_4x4_V];
-                    satd[i_pred_mode] -= 3 * lambda;
+                    if( i_pred_mode < 3 )
+                        satd[i_pred_mode] -= 3 * lambda;
                     i_best = satd[I_PRED_4x4_DC]; a->i_predict4x4[idx] = I_PRED_4x4_DC;
                     COPY2_IF_LT( i_best, satd[I_PRED_4x4_H], a->i_predict4x4[idx], I_PRED_4x4_H );
                     COPY2_IF_LT( i_best, satd[I_PRED_4x4_V], a->i_predict4x4[idx], I_PRED_4x4_V );
