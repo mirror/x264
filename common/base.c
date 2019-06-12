@@ -1013,6 +1013,21 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         p->vui.i_chroma_loc = atoi(value);
         b_error = ( p->vui.i_chroma_loc < 0 || p->vui.i_chroma_loc > 5 );
     }
+    OPT("mastering-display")
+    {
+        if( strcasecmp( value, "undef" ) )
+        {
+            b_error |= sscanf( value, "G(%d,%d)B(%d,%d)R(%d,%d)WP(%d,%d)L(%"SCNd64",%"SCNd64")",
+                               &p->mastering_display.i_green_x, &p->mastering_display.i_green_y,
+                               &p->mastering_display.i_blue_x, &p->mastering_display.i_blue_y,
+                               &p->mastering_display.i_red_x, &p->mastering_display.i_red_y,
+                               &p->mastering_display.i_white_x, &p->mastering_display.i_white_y,
+                               &p->mastering_display.i_display_max, &p->mastering_display.i_display_min ) != 10;
+            p->mastering_display.b_mastering_display = !b_error;
+        }
+        else
+            p->mastering_display.b_mastering_display = 0;
+    }
     OPT("alternative-transfer")
         b_error |= parse_enum( value, x264_transfer_names, &p->i_alternative_transfer );
     OPT("fps")
@@ -1389,7 +1404,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
  ****************************************************************************/
 char *x264_param2string( x264_param_t *p, int b_res )
 {
-    int len = 1000;
+    int len = 2000;
     char *buf, *s;
     if( p->rc.psz_zones )
         len += strlen(p->rc.psz_zones);
@@ -1498,6 +1513,13 @@ char *x264_param2string( x264_param_t *p, int b_res )
     if( p->crop_rect.i_left | p->crop_rect.i_top | p->crop_rect.i_right | p->crop_rect.i_bottom )
         s += sprintf( s, " crop_rect=%d,%d,%d,%d", p->crop_rect.i_left, p->crop_rect.i_top,
                                                    p->crop_rect.i_right, p->crop_rect.i_bottom );
+    if( p->mastering_display.b_mastering_display )
+        s += sprintf( s, " mastering-display=G(%d,%d)B(%d,%d)R(%d,%d)WP(%d,%d)L(%"PRId64",%"PRId64")",
+                      p->mastering_display.i_green_x, p->mastering_display.i_green_y,
+                      p->mastering_display.i_blue_x, p->mastering_display.i_blue_y,
+                      p->mastering_display.i_red_x, p->mastering_display.i_red_y,
+                      p->mastering_display.i_white_x, p->mastering_display.i_white_y,
+                      p->mastering_display.i_display_max, p->mastering_display.i_display_min );
     if( p->i_frame_packing >= 0 )
         s += sprintf( s, " frame-packing=%d", p->i_frame_packing );
 

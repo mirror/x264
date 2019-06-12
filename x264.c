@@ -874,6 +874,8 @@ static void help( x264_param_t *defaults, int longhelp )
                                        strtable_lookup( x264_colmatrix_names, defaults->vui.i_colmatrix ) );
     H2( "      --chromaloc <integer>   Specify chroma sample location (0 to 5) [%d]\n",
                                        defaults->vui.i_chroma_loc );
+    H2( "      --mastering-display <string> Specify 'G(x,y)B(x,y)R(x,y)WP(x,y)L(max,min)'\n"
+        "                              for primaries, white point, and display brightness\n" );
     H2( "      --alternative-transfer <string> Specify an alternative transfer\n"
         "                              characteristics [\"%s\"]\n"
         "                                  - same values as --transfer\n",
@@ -1160,6 +1162,7 @@ static struct option long_options[] =
     { "pulldown",    required_argument, NULL, OPT_PULLDOWN },
     { "fake-interlaced",   no_argument, NULL, 0 },
     { "frame-packing",     required_argument, NULL, 0 },
+    { "mastering-display", required_argument, NULL, 0 },
     { "alternative-transfer", required_argument, NULL, 0 },
     { "vf",          required_argument, NULL, OPT_VIDEO_FILTER },
     { "video-filter", required_argument, NULL, OPT_VIDEO_FILTER },
