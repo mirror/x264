@@ -223,6 +223,7 @@ static int picture_alloc( x264_picture_t *pic, int i_csp, int i_width, int i_hei
 
     static const x264_csp_tab_t csp_tab[] =
     {
+        [X264_CSP_I400] = { 1, { 256*1 },               { 256*1 }               },
         [X264_CSP_I420] = { 3, { 256*1, 256/2, 256/2 }, { 256*1, 256/2, 256/2 } },
         [X264_CSP_YV12] = { 3, { 256*1, 256/2, 256/2 }, { 256*1, 256/2, 256/2 } },
         [X264_CSP_NV12] = { 2, { 256*1, 256*1 },        { 256*1, 256/2 },       },
