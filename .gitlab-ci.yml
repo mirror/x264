@@ -28,7 +28,7 @@ stages:
     _WRAPPER: "wine64"
 
 .variables-macos: &variables-macos
-    _TRIPLET: "x86_64-apple-darwin17"
+    _TRIPLET: "x86_64-apple-darwin18"
     _PLATFORMSUFFIX: ""
     _PATH: "macos-x86_64"
     _WRAPPER: ""
@@ -95,7 +95,6 @@ build-macos:
         - macos
     script: |
         set -x
-        export PATH="$HOME/local/bin/:/usr/local/bin/:$PATH"
         curl -O https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2
         bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
         tar xvf vlc-contrib-${_TRIPLET}-latest.tar
