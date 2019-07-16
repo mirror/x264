@@ -63,7 +63,7 @@ build-debian-amd64:
 
 build-debian-aarch64:
     extends: .build
-    image: registry.videolan.org/x264-debian-unstable-aarch64:20190405100031
+    image: registry.videolan.org/x264-debian-unstable-aarch64:20190716192245
     tags:
         - docker
         - aarch64
