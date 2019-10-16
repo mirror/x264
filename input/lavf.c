@@ -44,6 +44,7 @@ typedef struct
     int next_frame;
     int vfr_input;
     cli_pic_t *first_pic;
+    int a;
 } lavf_hnd_t;
 
 /* handle the deprecated jpeg pixel formats */
