@@ -380,7 +380,7 @@ opencl="yes"
 vsx="auto"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
-CFLAGSSO="$CFLAGSSO -DX264_API_EXPORTS"
+CFLAGSSO="$CFLAGSSO"
 CFLAGSCLI="$CFLAGSCLI"
 LDFLAGS="$LDFLAGS"
 LDFLAGSCLI="$LDFLAGSCLI"
@@ -1371,6 +1371,10 @@ cat > x264_config.h << EOF
 EOF
 
 ${SRCPATH}/version.sh >> x264_config.h
+
+if [ "$shared" = "yes" ]; then
+    CFLAGSSO="$CFLAGSSO -DX264_API_EXPORTS"
+fi
 
 if [ "$cli_libx264" = "system" ] ; then
     if [ "$shared" = "yes" ]; then
