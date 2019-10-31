@@ -667,13 +667,13 @@ void x264_macroblock_deblock( x264_t *h )
 #if HAVE_MMX
 #include "x86/deblock.h"
 #endif
-#if ARCH_PPC
+#if HAVE_ALTIVEC
 #include "ppc/deblock.h"
 #endif
 #if HAVE_ARMV6
 #include "arm/deblock.h"
 #endif
-#if ARCH_AARCH64
+#if HAVE_AARCH64
 #include "aarch64/deblock.h"
 #endif
 #if HAVE_MSA
@@ -782,7 +782,7 @@ void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
     }
 #endif // HAVE_ALTIVEC
 
-#if HAVE_ARMV6 || ARCH_AARCH64
+#if HAVE_ARMV6 || HAVE_AARCH64
     if( cpu&X264_CPU_NEON )
     {
         pf->deblock_luma[1] = x264_deblock_v_luma_neon;
