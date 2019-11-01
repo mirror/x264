@@ -402,7 +402,11 @@ uint32_t x264_cpu_detect( void )
 
 uint32_t x264_cpu_detect( void )
 {
+#if HAVE_NEON
     return X264_CPU_ARMV8 | X264_CPU_NEON;
+#else
+    return X264_CPU_ARMV8;
+#endif
 }
 
 #elif HAVE_MSA
