@@ -175,7 +175,7 @@ static void print_bench(void)
             if( k < j )
                 continue;
             printf( "%s_%s%s: %"PRId64"\n", benchs[i].name,
-#if HAVE_MMX
+#if ARCH_X86 || ARCH_X86_64
                     b->cpu&X264_CPU_AVX512 ? "avx512" :
                     b->cpu&X264_CPU_AVX2 ? "avx2" :
                     b->cpu&X264_CPU_BMI2 ? "bmi2" :
@@ -206,7 +206,7 @@ static void print_bench(void)
                     b->cpu&X264_CPU_MSA ? "msa" :
 #endif
                     "c",
-#if HAVE_MMX
+#if ARCH_X86 || ARCH_X86_64
                     b->cpu&X264_CPU_CACHELINE_32 ? "_c32" :
                     b->cpu&X264_CPU_SLOW_ATOM && b->cpu&X264_CPU_CACHELINE_64 ? "_c64_atom" :
                     b->cpu&X264_CPU_CACHELINE_64 ? "_c64" :
@@ -229,7 +229,7 @@ static void print_bench(void)
 static void (*simd_warmup_func)( void ) = NULL;
 #define simd_warmup() do { if( simd_warmup_func ) simd_warmup_func(); } while( 0 )
 
-#if ARCH_X86 || ARCH_X86_64
+#if HAVE_MMX
 int x264_stack_pagealign( int (*func)(), int align );
 void x264_checkasm_warmup_avx( void );
 void x264_checkasm_warmup_avx512( void );
@@ -241,11 +241,11 @@ intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
 #define x264_stack_pagealign( func, align ) func()
 #endif
 
-#if ARCH_AARCH64
+#if HAVE_AARCH64
 intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
 #endif
 
-#if ARCH_ARM
+#if HAVE_ARMV6
 intptr_t x264_checkasm_call_neon( intptr_t (*func)(), int *ok, ... );
 intptr_t x264_checkasm_call_noneon( intptr_t (*func)(), int *ok, ... );
 intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checkasm_call_noneon;
@@ -253,7 +253,7 @@ intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checka
 
 #define call_c1(func,...) func(__VA_ARGS__)
 
-#if ARCH_X86_64
+#if HAVE_MMX && ARCH_X86_64
 /* Evil hack: detect incorrect assumptions that 32-bit ints are zero-extended to 64-bit.
  * This is done by clobbering the stack with junk around the stack pointer and calling the
  * assembly function through x264_checkasm_call with added dummy arguments which forces all
@@ -269,19 +269,19 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
     x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
     simd_warmup(); \
     x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_AARCH64 && !defined(__APPLE__)
+#elif HAVE_AARCH64 && !defined(__APPLE__)
 void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 #define call_a1(func,...) ({ \
     uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
     x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+8 */ \
     x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_X86 || ARCH_ARM
+#elif HAVE_MMX || HAVE_ARMV6
 #define call_a1(func,...) x264_checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
 #else
 #define call_a1 call_c1
 #endif
 
-#if ARCH_ARM
+#if HAVE_ARMV6
 #define call_a1_64(func,...) ((uint64_t (*)(intptr_t(*)(), int*, ...))x264_checkasm_call)( (intptr_t(*)())func, &ok, __VA_ARGS__ )
 #else
 #define call_a1_64 call_a1
@@ -2601,7 +2601,7 @@ static void run_cabac_terminal_##cpu( x264_t *h, uint8_t *dst )\
 DECL_CABAC(c)
 #if HAVE_MMX
 DECL_CABAC(asm)
-#elif defined(ARCH_AARCH64)
+#elif HAVE_AARCH64
 DECL_CABAC(asm)
 #else
 #define run_cabac_decision_asm run_cabac_decision_c
@@ -2807,7 +2807,7 @@ static int check_all_flags( void )
     int ret = 0;
     int cpu0 = 0, cpu1 = 0;
     uint32_t cpu_detect = x264_cpu_detect();
-#if ARCH_X86 || ARCH_X86_64
+#if HAVE_MMX
     if( cpu_detect & X264_CPU_AVX512 )
         simd_warmup_func = x264_checkasm_warmup_avx512;
     else if( cpu_detect & X264_CPU_AVX )
@@ -2815,7 +2815,7 @@ static int check_all_flags( void )
 #endif
     simd_warmup();
 
-#if HAVE_MMX
+#if ARCH_X86 || ARCH_X86_64
     if( cpu_detect & X264_CPU_MMX2 )
     {
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_MMX | X264_CPU_MMX2, "MMX" );

@@ -45,7 +45,7 @@
 
 const x264_cpu_name_t x264_cpu_names[] =
 {
-#if HAVE_MMX
+#if ARCH_X86 || ARCH_X86_64
 //  {"MMX",         X264_CPU_MMX},  // we don't support asm on mmx1 cpus anymore
 #define MMX2 X264_CPU_MMX|X264_CPU_MMX2
     {"MMX2",        MMX2},
@@ -97,7 +97,7 @@ const x264_cpu_name_t x264_cpu_names[] =
     {"", 0},
 };
 
-#if (ARCH_PPC && SYS_LINUX) || (ARCH_ARM && !HAVE_NEON)
+#if (HAVE_ALTIVEC && SYS_LINUX) || (HAVE_ARMV6 && !HAVE_NEON)
 #include <signal.h>
 #include <setjmp.h>
 static sigjmp_buf jmpbuf;
@@ -298,7 +298,7 @@ uint32_t x264_cpu_detect( void )
     return cpu;
 }
 
-#elif ARCH_PPC && HAVE_ALTIVEC
+#elif HAVE_ALTIVEC
 
 #if SYS_MACOSX || SYS_OPENBSD || SYS_FREEBSD
 #include <sys/sysctl.h>
@@ -355,7 +355,7 @@ uint32_t x264_cpu_detect( void )
 }
 #endif
 
-#elif ARCH_ARM
+#elif HAVE_ARMV6
 
 void x264_cpu_neon_test( void );
 int x264_cpu_fast_neon_mrc_test( void );
@@ -363,7 +363,6 @@ int x264_cpu_fast_neon_mrc_test( void );
 uint32_t x264_cpu_detect( void )
 {
     int flags = 0;
-#if HAVE_ARMV6
     flags |= X264_CPU_ARMV6;
 
     // don't do this hack if compiled with -mfpu=neon
@@ -396,26 +395,25 @@ uint32_t x264_cpu_detect( void )
     flags |= x264_cpu_fast_neon_mrc_test() ? X264_CPU_FAST_NEON_MRC : 0;
 #endif
     // TODO: write dual issue test? currently it's A8 (dual issue) vs. A9 (fast mrc)
-#endif
     return flags;
 }
 
-#elif ARCH_AARCH64
+#elif HAVE_AARCH64
 
 uint32_t x264_cpu_detect( void )
 {
+#if HAVE_NEON
     return X264_CPU_ARMV8 | X264_CPU_NEON;
+#else
+    return X264_CPU_ARMV8;
+#endif
 }
 
-#elif ARCH_MIPS
+#elif HAVE_MSA
 
 uint32_t x264_cpu_detect( void )
 {
-    uint32_t flags = 0;
-#if HAVE_MSA
-    flags |= X264_CPU_MSA;
-#endif
-    return flags;
+    return X264_CPU_MSA;
 }
 
 #else
