@@ -332,7 +332,7 @@ static int close_file( hnd_t handle, int64_t largest_pts, int64_t second_largest
     if( x264_is_regular_file( c->fp ) && total_duration > 0 )
     {
         double framerate;
-        uint64_t filesize = ftell( c->fp );
+        int64_t filesize = ftell( c->fp );
 
         if( p_flv->i_framerate_pos )
         {
@@ -342,7 +342,7 @@ static int close_file( hnd_t handle, int64_t largest_pts, int64_t second_largest
 
         CHECK( rewrite_amf_double( c->fp, p_flv->i_duration_pos, total_duration ) );
         CHECK( rewrite_amf_double( c->fp, p_flv->i_filesize_pos, filesize ) );
-        CHECK( rewrite_amf_double( c->fp, p_flv->i_bitrate_pos, filesize * 8 / ( total_duration * 1000 ) ) );
+        CHECK( rewrite_amf_double( c->fp, p_flv->i_bitrate_pos, filesize * 8.0 / ( total_duration * 1000 ) ) );
     }
     ret = 0;
 

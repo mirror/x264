@@ -483,6 +483,10 @@ static int init( hnd_t *handle, cli_vid_filter_t *filter, video_info_t *info, x2
     int src_pix_fmt_inv = convert_csp_to_pix_fmt( info->csp ^ X264_CSP_HIGH_DEPTH );
     int dst_pix_fmt_inv = convert_csp_to_pix_fmt( h->dst_csp ^ X264_CSP_HIGH_DEPTH );
 
+    FAIL_IF_ERROR( h->dst.width <= 0 || h->dst.height <= 0 ||
+                   h->dst.width > MAX_RESOLUTION || h->dst.height > MAX_RESOLUTION,
+                   "invalid width x height (%dx%d)\n", h->dst.width, h->dst.height );
+
     /* confirm swscale can support this conversion */
     FAIL_IF_ERROR( src_pix_fmt == AV_PIX_FMT_NONE && src_pix_fmt_inv != AV_PIX_FMT_NONE,
                    "input colorspace %s with bit depth %d is not supported\n", av_get_pix_fmt_name( src_pix_fmt_inv ),

@@ -263,7 +263,7 @@ X264_API void x264_log_internal( int i_level, const char *psz_fmt, ... );
 
 /* x264_malloc : will do or emulate a memalign
  * you have to use x264_free for buffers allocated with x264_malloc */
-X264_API void *x264_malloc( int );
+X264_API void *x264_malloc( int64_t );
 X264_API void  x264_free( void * );
 
 /* x264_slurp_file: malloc space for the whole file and read it */
@@ -296,12 +296,12 @@ do {\
 
 #define PREALLOC_INIT\
     int    prealloc_idx = 0;\
-    size_t prealloc_size = 0;\
+    int64_t prealloc_size = 0;\
     uint8_t **preallocs[PREALLOC_BUF_SIZE];
 
 #define PREALLOC( var, size )\
 do {\
-    var = (void*)prealloc_size;\
+    var = (void*)(intptr_t)prealloc_size;\
     preallocs[prealloc_idx++] = (uint8_t**)&var;\
     prealloc_size += ALIGN(size, NATIVE_ALIGN);\
 } while( 0 )
