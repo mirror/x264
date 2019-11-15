@@ -99,7 +99,7 @@ void x264_log_internal( int i_level, const char *psz_fmt, ... )
 /****************************************************************************
  * x264_malloc:
  ****************************************************************************/
-void *x264_malloc( int i_size )
+void *x264_malloc( size_t i_size )
 {
     uint8_t *align_buf = NULL;
 #if HAVE_MALLOC_H
@@ -109,7 +109,8 @@ void *x264_malloc( int i_size )
     /* Attempt to allocate huge pages to reduce TLB misses. */
     if( i_size >= HUGE_PAGE_THRESHOLD )
     {
-        align_buf = memalign( HUGE_PAGE_SIZE, i_size );
+        if( i_size < (SIZE_MAX - (HUGE_PAGE_SIZE - HUGE_PAGE_THRESHOLD)) )
+            align_buf = memalign( HUGE_PAGE_SIZE, i_size );
         if( align_buf )
         {
             /* Round up to the next huge page boundary if we are close enough. */
@@ -123,7 +124,9 @@ void *x264_malloc( int i_size )
 #endif
         align_buf = memalign( NATIVE_ALIGN, i_size );
 #else
-    uint8_t *buf = malloc( i_size + (NATIVE_ALIGN-1) + sizeof(void **) );
+    uint8_t *buf = NULL;
+    if( i_size < (SIZE_MAX - (NATIVE_ALIGN - 1) - sizeof(void **)) )
+        buf = malloc( i_size + (NATIVE_ALIGN-1) + sizeof(void **) );
     if( buf )
     {
         align_buf = buf + (NATIVE_ALIGN-1) + sizeof(void **);
