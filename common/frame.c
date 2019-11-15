@@ -162,7 +162,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
 
     for( int p = 0; p < luma_plane_count; p++ )
     {
-        int luma_plane_size = align_plane_size( frame->i_stride[p] * (frame->i_lines[p] + 2*i_padv), disalign );
+        int64_t luma_plane_size = align_plane_size( frame->i_stride[p] * (frame->i_lines[p] + 2*i_padv), disalign );
         if( h->param.analyse.i_subpel_refine && b_fdec )
             luma_plane_size *= 4;
 
@@ -205,7 +205,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     {
         if( h->frames.b_have_lowres )
         {
-            int luma_plane_size = align_plane_size( frame->i_stride_lowres * (frame->i_lines[0]/2 + 2*PADV), disalign );
+            int64_t luma_plane_size = align_plane_size( frame->i_stride_lowres * (frame->i_lines[0]/2 + 2*PADV), disalign );
 
             PREALLOC( frame->buffer_lowres, (4 * luma_plane_size + padh_align) * sizeof(pixel) );
 
@@ -244,7 +244,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
 
     for( int p = 0; p < luma_plane_count; p++ )
     {
-        int luma_plane_size = align_plane_size( frame->i_stride[p] * (frame->i_lines[p] + 2*i_padv), disalign );
+        int64_t luma_plane_size = align_plane_size( frame->i_stride[p] * (frame->i_lines[p] + 2*i_padv), disalign );
         if( h->param.analyse.i_subpel_refine && b_fdec )
         {
             for( int i = 0; i < 4; i++ )
@@ -274,7 +274,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     {
         if( h->frames.b_have_lowres )
         {
-            int luma_plane_size = align_plane_size( frame->i_stride_lowres * (frame->i_lines[0]/2 + 2*PADV), disalign );
+            int64_t luma_plane_size = align_plane_size( frame->i_stride_lowres * (frame->i_lines[0]/2 + 2*PADV), disalign );
             for( int i = 0; i < 4; i++ )
                 frame->lowres[i] = frame->buffer_lowres + frame->i_stride_lowres * PADV + PADH + padh_align + i * luma_plane_size;
 

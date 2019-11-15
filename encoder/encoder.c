@@ -370,6 +370,8 @@ static int bitstream_check_buffer_internal( x264_t *h, int size, int b_cabac, in
     if( (b_cabac && (h->cabac.p_end - h->cabac.p < size)) ||
         (h->out.bs.p_end - h->out.bs.p < size) )
     {
+        if( size > INT_MAX - h->out.i_bitstream )
+            return -1;
         int buf_size = h->out.i_bitstream + size;
         uint8_t *buf = x264_malloc( buf_size );
         if( !buf )
@@ -470,7 +472,9 @@ static int validate_parameters( x264_t *h, int b_open )
     }
 #endif
 
-    if( h->param.i_width <= 0 || h->param.i_height <= 0 )
+#define MAX_RESOLUTION 16384
+    if( h->param.i_width <= 0 || h->param.i_height <= 0 ||
+        h->param.i_width > MAX_RESOLUTION || h->param.i_height > MAX_RESOLUTION )
     {
         x264_log( h, X264_LOG_ERROR, "invalid width x height (%dx%d)\n",
                   h->param.i_width, h->param.i_height );
@@ -862,8 +866,8 @@ static int validate_parameters( x264_t *h, int b_open )
     h->param.rc.f_rf_constant_max = x264_clip3f( h->param.rc.f_rf_constant_max, -QP_BD_OFFSET, 51 );
     h->param.rc.i_qp_constant = x264_clip3( h->param.rc.i_qp_constant, -1, QP_MAX );
     h->param.analyse.i_subpel_refine = x264_clip3( h->param.analyse.i_subpel_refine, 0, 11 );
-    h->param.rc.f_ip_factor = X264_MAX( h->param.rc.f_ip_factor, 0.01f );
-    h->param.rc.f_pb_factor = X264_MAX( h->param.rc.f_pb_factor, 0.01f );
+    h->param.rc.f_ip_factor = x264_clip3f( h->param.rc.f_ip_factor, 0.01, 10.0 );
+    h->param.rc.f_pb_factor = x264_clip3f( h->param.rc.f_pb_factor, 0.01, 10.0 );
     if( h->param.rc.i_rc_method == X264_RC_CRF )
     {
         h->param.rc.i_qp_constant = h->param.rc.f_rf_constant + QP_BD_OFFSET;
@@ -1647,9 +1651,13 @@ x264_t *x264_encoder_open( x264_param_t *param )
     }
 
     h->out.i_nal = 0;
-    h->out.i_bitstream = X264_MAX( 1000000, h->param.i_width * h->param.i_height * 4
-        * ( h->param.rc.i_rc_method == X264_RC_ABR ? pow( 0.95, h->param.rc.i_qp_min )
-          : pow( 0.95, h->param.rc.i_qp_constant ) * X264_MAX( 1, h->param.rc.f_ip_factor )));
+    h->out.i_bitstream = x264_clip3f(
+        h->param.i_width * h->param.i_height * 4
+        * ( h->param.rc.i_rc_method == X264_RC_ABR
+            ? pow( 0.95, h->param.rc.i_qp_min )
+            : pow( 0.95, h->param.rc.i_qp_constant ) * X264_MAX( 1, h->param.rc.f_ip_factor ) ),
+        1000000, INT_MAX/3
+    );
 
     h->nal_buffer_size = h->out.i_bitstream * 3/2 + 4 + 64; /* +4 for startcode, +64 for nal_escape assembly padding */
     CHECKED_MALLOC( h->nal_buffer, h->nal_buffer_size );
@@ -1940,11 +1948,13 @@ static int nal_end( x264_t *h )
 }
 
 static int check_encapsulated_buffer( x264_t *h, x264_t *h0, int start,
-                                      int previous_nal_size, int necessary_size )
+                                      int64_t previous_nal_size, int64_t necessary_size )
 {
     if( h0->nal_buffer_size < necessary_size )
     {
         necessary_size *= 2;
+        if( necessary_size > INT_MAX )
+            return -1;
         uint8_t *buf = x264_malloc( necessary_size );
         if( !buf )
             return -1;
@@ -1966,12 +1976,14 @@ static int check_encapsulated_buffer( x264_t *h, x264_t *h0, int start,
 static int encoder_encapsulate_nals( x264_t *h, int start )
 {
     x264_t *h0 = h->thread[0];
-    int nal_size = 0, previous_nal_size = 0;
+    int64_t nal_size = 0, previous_nal_size = 0;
 
     if( h->param.nalu_process )
     {
         for( int i = start; i < h->out.i_nal; i++ )
             nal_size += h->out.nal[i].i_payload;
+        if( nal_size > INT_MAX )
+            return -1;
         return nal_size;
     }
 
@@ -1982,7 +1994,7 @@ static int encoder_encapsulate_nals( x264_t *h, int start )
         nal_size += h->out.nal[i].i_payload;
 
     /* Worst-case NAL unit escaping: reallocate the buffer if it's too small. */
-    int necessary_size = previous_nal_size + nal_size * 3/2 + h->out.i_nal * 4 + 4 + 64;
+    int64_t necessary_size = previous_nal_size + nal_size * 3/2 + h->out.i_nal * 4 + 4 + 64;
     for( int i = start; i < h->out.i_nal; i++ )
         necessary_size += h->out.nal[i].i_padding;
     if( check_encapsulated_buffer( h, h0, start, previous_nal_size, necessary_size ) )
@@ -3879,7 +3891,7 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
      * We don't know the size of the last slice until encapsulation so we add filler to the encapsulated NAL */
     if( h->param.i_avcintra_class )
     {
-        if( check_encapsulated_buffer( h, h->thread[0], h->out.i_nal, frame_size, frame_size + filler ) < 0 )
+        if( check_encapsulated_buffer( h, h->thread[0], h->out.i_nal, frame_size, (int64_t)frame_size + filler ) < 0 )
             return -1;
 
         x264_nal_t *nal = &h->out.nal[h->out.i_nal-1];

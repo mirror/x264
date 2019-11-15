@@ -32,6 +32,8 @@
 /* In microseconds */
 #define UPDATE_INTERVAL 250000
 
+#define MAX_RESOLUTION 16384
+
 typedef void *hnd_t;
 
 extern const char * const x264_avcintra_class_names[];
