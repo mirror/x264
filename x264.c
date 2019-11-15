@@ -1667,6 +1667,10 @@ generic_option:
                   info.height, info.interlaced ? 'i' : 'p', info.sar_width, info.sar_height,
                   info.fps_num, info.fps_den, info.vfr ? 'v' : 'c' );
 
+    FAIL_IF_ERROR( info.width <= 0 || info.height <= 0 ||
+                   info.width > MAX_RESOLUTION || info.height > MAX_RESOLUTION,
+                   "invalid width x height (%dx%d)\n", info.width, info.height );
+
     if( tcfile_name )
     {
         FAIL_IF_ERROR( b_user_fps, "--fps + --tcfile-in is incompatible.\n" );

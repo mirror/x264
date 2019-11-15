@@ -99,13 +99,18 @@ void x264_log_internal( int i_level, const char *psz_fmt, ... )
 /****************************************************************************
  * x264_malloc:
  ****************************************************************************/
-void *x264_malloc( int i_size )
+void *x264_malloc( int64_t i_size )
 {
+#define HUGE_PAGE_SIZE 2*1024*1024
+#define HUGE_PAGE_THRESHOLD HUGE_PAGE_SIZE*7/8 /* FIXME: Is this optimal? */
+    if( i_size < 0 || i_size > (SIZE_MAX - HUGE_PAGE_SIZE) /*|| i_size > (SIZE_MAX - NATIVE_ALIGN - sizeof(void **))*/ )
+    {
+        x264_log_internal( X264_LOG_ERROR, "invalid size of malloc: %"PRId64"\n", i_size );
+        return NULL;
+    }
     uint8_t *align_buf = NULL;
 #if HAVE_MALLOC_H
 #if HAVE_THP
-#define HUGE_PAGE_SIZE 2*1024*1024
-#define HUGE_PAGE_THRESHOLD HUGE_PAGE_SIZE*7/8 /* FIXME: Is this optimal? */
     /* Attempt to allocate huge pages to reduce TLB misses. */
     if( i_size >= HUGE_PAGE_THRESHOLD )
     {
@@ -118,8 +123,6 @@ void *x264_malloc( int i_size )
         }
     }
     else
-#undef HUGE_PAGE_SIZE
-#undef HUGE_PAGE_THRESHOLD
 #endif
         align_buf = memalign( NATIVE_ALIGN, i_size );
 #else
@@ -132,8 +135,10 @@ void *x264_malloc( int i_size )
     }
 #endif
     if( !align_buf )
-        x264_log_internal( X264_LOG_ERROR, "malloc of size %d failed\n", i_size );
+        x264_log_internal( X264_LOG_ERROR, "malloc of size %"PRId64" failed\n", i_size );
     return align_buf;
+#undef HUGE_PAGE_SIZE
+#undef HUGE_PAGE_THRESHOLD
 }
 
 /****************************************************************************
@@ -242,12 +247,12 @@ REALIGN_STACK int x264_picture_alloc( x264_picture_t *pic, int i_csp, int i_widt
     pic->img.i_csp = i_csp;
     pic->img.i_plane = csp_tab[csp].planes;
     int depth_factor = i_csp & X264_CSP_HIGH_DEPTH ? 2 : 1;
-    int plane_offset[3] = {0};
-    int frame_size = 0;
+    int64_t plane_offset[3] = {0};
+    int64_t frame_size = 0;
     for( int i = 0; i < pic->img.i_plane; i++ )
     {
         int stride = (((int64_t)i_width * csp_tab[csp].width_fix8[i]) >> 8) * depth_factor;
-        int plane_size = (((int64_t)i_height * csp_tab[csp].height_fix8[i]) >> 8) * stride;
+        int64_t plane_size = (((int64_t)i_height * csp_tab[csp].height_fix8[i]) >> 8) * stride;
         pic->img.i_stride[i] = stride;
         plane_offset[i] = frame_size;
         frame_size += plane_size;
