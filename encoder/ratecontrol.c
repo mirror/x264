@@ -713,8 +713,9 @@ void x264_ratecontrol_init_reconfigurable( x264_t *h, int b_init )
         rc->vbv_max_rate = vbv_max_bitrate;
         rc->buffer_size = vbv_buffer_size;
         rc->single_frame_vbv = rc->buffer_rate * 1.1 > rc->buffer_size;
-        rc->cbr_decay = 1.0 - rc->buffer_rate / rc->buffer_size
-                      * 0.5 * X264_MAX(0, 1.5 - rc->buffer_rate * rc->fps / rc->bitrate);
+        if( rc->b_abr && h->param.rc.i_rc_method == X264_RC_ABR )
+            rc->cbr_decay = 1.0 - rc->buffer_rate / rc->buffer_size
+                          * 0.5 * X264_MAX(0, 1.5 - rc->buffer_rate * rc->fps / rc->bitrate);
         if( h->param.rc.i_rc_method == X264_RC_CRF && h->param.rc.f_rf_constant_max )
         {
             rc->rate_factor_max_increment = h->param.rc.f_rf_constant_max - h->param.rc.f_rf_constant;
