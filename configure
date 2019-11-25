@@ -128,7 +128,7 @@ cl_ldflags() {
 }
 
 cc_check() {
-    if [ -z "$3" ]; then
+    if [ -z "$3$4" ]; then
         if [ -z "$1$2" ]; then
             log_check "whether $CC works"
         elif [ -z "$1" ]; then
@@ -138,7 +138,11 @@ cc_check() {
         fi
     elif [ -z "$1" ]; then
         if [ -z "$2" ]; then
-            log_check "whether $CC supports $3"
+            if [ -z "$3" ]; then
+                log_check "whether $CC supports $4"
+            else
+                log_check "whether $CC supports $3"
+            fi
         else
             log_check "whether $CC supports $3 with $2"
         fi
@@ -149,6 +153,9 @@ cc_check() {
     for arg in $1; do
         echo "#include <$arg>" >> conftest.c
     done
+    if [ -n "$4" ]; then
+        echo "$4" >> conftest.c
+    fi
     echo "int main (void) { $3 return 0; }" >> conftest.c
     if [ $compiler_style = MS ]; then
         cc_cmd="$CC conftest.c $(cc_cflags $CFLAGS $CFLAGSCLI $CHECK_CFLAGS $2) -link $(cl_ldflags $2 $LDFLAGSCLI $LDFLAGS)"
@@ -613,6 +620,15 @@ if [ $compiler = GNU ]; then
     if cc_check '' -Werror=unknown-warning-option ; then
         CHECK_CFLAGS="$CHECK_CFLAGS -Werror=unknown-warning-option"
     fi
+    if cc_check '' -Werror=unknown-attributes ; then
+        CHECK_CFLAGS="$CHECK_CFLAGS -Werror=unknown-attributes"
+    fi
+    if cc_check '' -Werror=attributes ; then
+        CHECK_CFLAGS="$CHECK_CFLAGS -Werror=attributes"
+    fi
+    if cc_check '' -Werror=ignored-attributes ; then
+        CHECK_CFLAGS="$CHECK_CFLAGS -Werror=ignored-attributes"
+    fi
 fi
 
 libm=""
@@ -888,34 +904,36 @@ if [ $shared = yes -a \( $ARCH = "X86_64" -o $ARCH = "PPC" -o $ARCH = "ALPHA" -o
     pic="yes"
 fi
 
-if [ $compiler = GNU -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
-    if cc_check '' -mpreferred-stack-boundary=6 ; then
-        CFLAGS="$CFLAGS -mpreferred-stack-boundary=6"
-        stack_alignment=64
-    elif cc_check '' -mstack-alignment=64 ; then
-        CFLAGS="$CFLAGS -mstack-alignment=64"
-        stack_alignment=64
-    elif [ $stack_alignment -lt 16 ] ; then
-        if cc_check '' -mpreferred-stack-boundary=4 ; then
-            CFLAGS="$CFLAGS -mpreferred-stack-boundary=4"
-            stack_alignment=16
-        elif cc_check '' -mstack-alignment=16 ; then
-            CFLAGS="$CFLAGS -mstack-alignment=16"
-            stack_alignment=16
+if cc_check '' '' '' '__attribute__((force_align_arg_pointer))' ; then
+    if [ $compiler = GNU -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
+        if cc_check '' -mpreferred-stack-boundary=6 ; then
+            CFLAGS="$CFLAGS -mpreferred-stack-boundary=6"
+            stack_alignment=64
+        elif cc_check '' -mstack-alignment=64 ; then
+            CFLAGS="$CFLAGS -mstack-alignment=64"
+            stack_alignment=64
+        elif [ $stack_alignment -lt 16 ] ; then
+            if cc_check '' -mpreferred-stack-boundary=4 ; then
+                CFLAGS="$CFLAGS -mpreferred-stack-boundary=4"
+                stack_alignment=16
+            elif cc_check '' -mstack-alignment=16 ; then
+                CFLAGS="$CFLAGS -mstack-alignment=16"
+                stack_alignment=16
+            fi
         fi
-    fi
-elif [ $compiler = ICC -a $ARCH = X86 ]; then
-    # icc on linux has various degrees of mod16 stack support
-    if [ $SYS = LINUX ]; then
-        # >= 12 defaults to a mod16 stack
-        if cpp_check "" "" "__INTEL_COMPILER >= 1200" ; then
-            stack_alignment=16
-        # 11 <= x < 12 is capable of keeping a mod16 stack, but defaults to not doing so.
-        elif cpp_check "" "" "__INTEL_COMPILER >= 1100" ; then
-            CFLAGS="$CFLAGS -falign-stack=assume-16-byte"
-            stack_alignment=16
+    elif [ $compiler = ICC -a $ARCH = X86 ]; then
+        # icc on linux has various degrees of mod16 stack support
+        if [ $SYS = LINUX ]; then
+            # >= 12 defaults to a mod16 stack
+            if cpp_check "" "" "__INTEL_COMPILER >= 1200" ; then
+                stack_alignment=16
+            # 11 <= x < 12 is capable of keeping a mod16 stack, but defaults to not doing so.
+            elif cpp_check "" "" "__INTEL_COMPILER >= 1100" ; then
+                CFLAGS="$CFLAGS -falign-stack=assume-16-byte"
+                stack_alignment=16
+            fi
+            # < 11 is completely incapable of keeping a mod16 stack
         fi
-        # < 11 is completely incapable of keeping a mod16 stack
     fi
 fi
 
