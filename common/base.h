@@ -303,6 +303,8 @@ do {\
 do {\
     var = (void*)(intptr_t)prealloc_size;\
     preallocs[prealloc_idx++] = (uint8_t**)&var;\
+    if( prealloc_size > INT_MAX - ALIGN(size, NATIVE_ALIGN) )\
+        goto fail;\
     prealloc_size += ALIGN(size, NATIVE_ALIGN);\
 } while( 0 )
 
