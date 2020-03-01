@@ -297,12 +297,21 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
     float ref_mean[3];
     for( int plane = 0; plane <= 2*!b_lookahead; plane++ )
     {
-        int zero_bias = !ref->i_pixel_ssd[plane];
-        float fenc_var = fenc->i_pixel_ssd[plane] + zero_bias;
-        float ref_var  =  ref->i_pixel_ssd[plane] + zero_bias;
-        guess_scale[plane] = sqrtf( fenc_var / ref_var );
-        fenc_mean[plane] = (float)(fenc->i_pixel_sum[plane] + zero_bias) / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
-        ref_mean[plane]  = (float)( ref->i_pixel_sum[plane] + zero_bias) / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
+        if( !plane || CHROMA_FORMAT )
+        {
+            int zero_bias = !ref->i_pixel_ssd[plane];
+            float fenc_var = fenc->i_pixel_ssd[plane] + zero_bias;
+            float ref_var  =  ref->i_pixel_ssd[plane] + zero_bias;
+            guess_scale[plane] = sqrtf( fenc_var / ref_var );
+            fenc_mean[plane] = (float)(fenc->i_pixel_sum[plane] + zero_bias) / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
+            ref_mean[plane]  = (float)( ref->i_pixel_sum[plane] + zero_bias) / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
+        }
+        else
+        {
+            guess_scale[plane] = 1;
+            fenc_mean[plane] = 0;
+            ref_mean[plane]  = 0;
+        }
     }
 
     int chroma_denom = 7;
