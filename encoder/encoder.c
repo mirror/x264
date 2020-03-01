@@ -3958,8 +3958,6 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
 
     for( int i = 0; i < X264_MBTYPE_MAX; i++ )
         h->stat.i_mb_count[h->sh.i_type][i] += h->stat.frame.i_mb_count[i];
-    for( int i = 0; i < X264_PARTTYPE_MAX; i++ )
-        h->stat.i_mb_partition[h->sh.i_type][i] += h->stat.frame.i_mb_partition[i];
     for( int i = 0; i < 2; i++ )
         h->stat.i_mb_count_8x8dct[i] += h->stat.frame.i_mb_count_8x8dct[i];
     for( int i = 0; i < 6; i++ )
@@ -3968,9 +3966,13 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
         for( int j = 0; j < 13; j++ )
             h->stat.i_mb_pred_mode[i][j] += h->stat.frame.i_mb_pred_mode[i][j];
     if( h->sh.i_type != SLICE_TYPE_I )
+    {
+        for( int i = 0; i < X264_PARTTYPE_MAX; i++ )
+            h->stat.i_mb_partition[h->sh.i_type][i] += h->stat.frame.i_mb_partition[i];
         for( int i_list = 0; i_list < 2; i_list++ )
             for( int i = 0; i < X264_REF_MAX*2; i++ )
                 h->stat.i_mb_count_ref[h->sh.i_type][i_list][i] += h->stat.frame.i_mb_count_ref[i_list][i];
+    }
     for( int i = 0; i < 3; i++ )
         h->stat.i_mb_field[i] += h->stat.frame.i_mb_field[i];
     if( h->sh.i_type == SLICE_TYPE_P && h->param.analyse.i_weighted_pred >= X264_WEIGHTP_SIMPLE )
