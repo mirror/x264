@@ -310,7 +310,7 @@ do {\
 do {\
     CHECKED_MALLOC( ptr, prealloc_size );\
     while( prealloc_idx-- )\
-        *preallocs[prealloc_idx] += (intptr_t)ptr;\
+        *preallocs[prealloc_idx] = (uint8_t*)((intptr_t)(*preallocs[prealloc_idx]) + (intptr_t)ptr);\
 } while( 0 )
 
 #endif

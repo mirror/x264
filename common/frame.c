@@ -250,7 +250,8 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
             for( int i = 0; i < 4; i++ )
             {
                 frame->filtered[p][i] = frame->buffer[p] + i*luma_plane_size + frame->i_stride[p] * i_padv + PADH + padh_align;
-                frame->filtered_fld[p][i] = frame->buffer_fld[p] + i*luma_plane_size + frame->i_stride[p] * i_padv + PADH + padh_align;
+                if( PARAM_INTERLACED )
+                    frame->filtered_fld[p][i] = frame->buffer_fld[p] + i*luma_plane_size + frame->i_stride[p] * i_padv + PADH + padh_align;
             }
             frame->plane[p] = frame->filtered[p][0];
             frame->plane_fld[p] = frame->filtered_fld[p][0];
@@ -258,7 +259,8 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
         else
         {
             frame->filtered[p][0] = frame->plane[p] = frame->buffer[p] + frame->i_stride[p] * i_padv + PADH + padh_align;
-            frame->filtered_fld[p][0] = frame->plane_fld[p] = frame->buffer_fld[p] + frame->i_stride[p] * i_padv + PADH + padh_align;
+            if( PARAM_INTERLACED )
+                frame->filtered_fld[p][0] = frame->plane_fld[p] = frame->buffer_fld[p] + frame->i_stride[p] * i_padv + PADH + padh_align;
         }
     }
 

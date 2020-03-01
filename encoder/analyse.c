@@ -1090,8 +1090,8 @@ static void intra_rd_refine( x264_t *h, x264_mb_analysis_t *a )
         for( int idx = 0; idx < 16; idx++ )
         {
             pixel *dst[3] = {h->mb.pic.p_fdec[0] + block_idx_xy_fdec[idx],
-                             h->mb.pic.p_fdec[1] + block_idx_xy_fdec[idx],
-                             h->mb.pic.p_fdec[2] + block_idx_xy_fdec[idx]};
+                             CHROMA_FORMAT ? h->mb.pic.p_fdec[1] + block_idx_xy_fdec[idx] : NULL,
+                             CHROMA_FORMAT ? h->mb.pic.p_fdec[2] + block_idx_xy_fdec[idx] : NULL};
             i_best = COST_MAX64;
 
             const int8_t *predict_mode = predict_4x4_mode_available( a->b_avoid_topright, h->mb.i_neighbour4[idx], idx );
@@ -1145,8 +1145,8 @@ static void intra_rd_refine( x264_t *h, x264_mb_analysis_t *a )
             int y = idx>>1;
             int s8 = X264_SCAN8_0 + 2*x + 16*y;
             pixel *dst[3] = {h->mb.pic.p_fdec[0] + 8*x + 8*y*FDEC_STRIDE,
-                             h->mb.pic.p_fdec[1] + 8*x + 8*y*FDEC_STRIDE,
-                             h->mb.pic.p_fdec[2] + 8*x + 8*y*FDEC_STRIDE};
+                             CHROMA_FORMAT ? h->mb.pic.p_fdec[1] + 8*x + 8*y*FDEC_STRIDE : NULL,
+                             CHROMA_FORMAT ? h->mb.pic.p_fdec[2] + 8*x + 8*y*FDEC_STRIDE : NULL};
             int cbp_luma_new = 0;
             int i_thresh = a->b_early_terminate ? a->i_satd_i8x8_dir[idx][a->i_predict8x8[idx]] * 11/8 : COST_MAX;
 
@@ -1207,30 +1207,40 @@ static void intra_rd_refine( x264_t *h, x264_mb_analysis_t *a )
     (m)->i_stride[1] = h->mb.pic.i_stride[1]; \
     (m)->i_stride[2] = h->mb.pic.i_stride[2]; \
     (m)->p_fenc[0] = &(src)[0][(xoff)+(yoff)*FENC_STRIDE]; \
-    (m)->p_fenc[1] = &(src)[1][((xoff)>>CHROMA_H_SHIFT)+((yoff)>>CHROMA_V_SHIFT)*FENC_STRIDE]; \
-    (m)->p_fenc[2] = &(src)[2][((xoff)>>CHROMA_H_SHIFT)+((yoff)>>CHROMA_V_SHIFT)*FENC_STRIDE]; \
+    if( CHROMA_FORMAT ) \
+    { \
+        (m)->p_fenc[1] = &(src)[1][((xoff)>>CHROMA_H_SHIFT)+((yoff)>>CHROMA_V_SHIFT)*FENC_STRIDE]; \
+        (m)->p_fenc[2] = &(src)[2][((xoff)>>CHROMA_H_SHIFT)+((yoff)>>CHROMA_V_SHIFT)*FENC_STRIDE]; \
+    } \
 }
 
 #define LOAD_HPELS(m, src, list, ref, xoff, yoff) \
 { \
     (m)->p_fref_w = (m)->p_fref[0] = &(src)[0][(xoff)+(yoff)*(m)->i_stride[0]]; \
-    (m)->p_fref[1] = &(src)[1][(xoff)+(yoff)*(m)->i_stride[0]]; \
-    (m)->p_fref[2] = &(src)[2][(xoff)+(yoff)*(m)->i_stride[0]]; \
-    (m)->p_fref[3] = &(src)[3][(xoff)+(yoff)*(m)->i_stride[0]]; \
+    if( h->param.analyse.i_subpel_refine ) \
+    { \
+        (m)->p_fref[1] = &(src)[1][(xoff)+(yoff)*(m)->i_stride[0]]; \
+        (m)->p_fref[2] = &(src)[2][(xoff)+(yoff)*(m)->i_stride[0]]; \
+        (m)->p_fref[3] = &(src)[3][(xoff)+(yoff)*(m)->i_stride[0]]; \
+    } \
     if( CHROMA444 ) \
     { \
         (m)->p_fref[ 4] = &(src)[ 4][(xoff)+(yoff)*(m)->i_stride[1]]; \
-        (m)->p_fref[ 5] = &(src)[ 5][(xoff)+(yoff)*(m)->i_stride[1]]; \
-        (m)->p_fref[ 6] = &(src)[ 6][(xoff)+(yoff)*(m)->i_stride[1]]; \
-        (m)->p_fref[ 7] = &(src)[ 7][(xoff)+(yoff)*(m)->i_stride[1]]; \
         (m)->p_fref[ 8] = &(src)[ 8][(xoff)+(yoff)*(m)->i_stride[2]]; \
-        (m)->p_fref[ 9] = &(src)[ 9][(xoff)+(yoff)*(m)->i_stride[2]]; \
-        (m)->p_fref[10] = &(src)[10][(xoff)+(yoff)*(m)->i_stride[2]]; \
-        (m)->p_fref[11] = &(src)[11][(xoff)+(yoff)*(m)->i_stride[2]]; \
+        if( h->param.analyse.i_subpel_refine ) \
+        { \
+            (m)->p_fref[ 5] = &(src)[ 5][(xoff)+(yoff)*(m)->i_stride[1]]; \
+            (m)->p_fref[ 6] = &(src)[ 6][(xoff)+(yoff)*(m)->i_stride[1]]; \
+            (m)->p_fref[ 7] = &(src)[ 7][(xoff)+(yoff)*(m)->i_stride[1]]; \
+            (m)->p_fref[ 9] = &(src)[ 9][(xoff)+(yoff)*(m)->i_stride[2]]; \
+            (m)->p_fref[10] = &(src)[10][(xoff)+(yoff)*(m)->i_stride[2]]; \
+            (m)->p_fref[11] = &(src)[11][(xoff)+(yoff)*(m)->i_stride[2]]; \
+        } \
     } \
-    else \
+    else if( CHROMA_FORMAT ) \
         (m)->p_fref[4] = &(src)[4][(xoff)+((yoff)>>CHROMA_V_SHIFT)*(m)->i_stride[1]]; \
-    (m)->integral = &h->mb.pic.p_integral[list][ref][(xoff)+(yoff)*(m)->i_stride[0]]; \
+    if( h->param.analyse.i_me_method >= X264_ME_ESA ) \
+        (m)->integral = &h->mb.pic.p_integral[list][ref][(xoff)+(yoff)*(m)->i_stride[0]]; \
     (m)->weight = x264_weight_none; \
     (m)->i_ref = ref; \
 }

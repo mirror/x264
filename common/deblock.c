@@ -399,12 +399,13 @@ void x264_frame_deblock_row( x264_t *h, int mb_y )
         uint8_t (*bs)[8][4] = h->deblock_strength[mb_y&1][h->param.b_sliced_threads?mb_xy:mb_x];
 
         pixel *pixy = h->fdec->plane[0] + 16*mb_y*stridey  + 16*mb_x;
-        pixel *pixuv = h->fdec->plane[1] + chroma_height*mb_y*strideuv + 16*mb_x;
+        pixel *pixuv = CHROMA_FORMAT ? h->fdec->plane[1] + chroma_height*mb_y*strideuv + 16*mb_x : NULL;
 
         if( mb_y & MB_INTERLACED )
         {
             pixy -= 15*stridey;
-            pixuv -= (chroma_height-1)*strideuv;
+            if( CHROMA_FORMAT )
+                pixuv -= (chroma_height-1)*strideuv;
         }
 
         int stride2y  = stridey << MB_INTERLACED;
