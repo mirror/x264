@@ -49,8 +49,8 @@ typedef struct
     int i_cost4x8[4]; /* cost per 8x8 partition */
     int i_cost16x8;
     int i_cost8x16;
-    /* [ref][0] is 16x16 mv, [ref][1..4] are 8x8 mv from partition [0..3] */
-    ALIGNED_4( int16_t mvc[32][5][2] );
+    /* [ref][0] is 16x16 mv, [ref][1..4] are 8x8 mv from partition [0..3], [ref][5] is for alignment */
+    ALIGNED_8( int16_t mvc[32][6][2] );
 } x264_mb_analysis_list_t;
 
 typedef struct
@@ -1256,7 +1256,7 @@ static void mb_analyse_inter_p16x16( x264_t *h, x264_mb_analysis_t *a )
 {
     x264_me_t m;
     int i_mvc;
-    ALIGNED_4( int16_t mvc[8][2] );
+    ALIGNED_ARRAY_8( int16_t, mvc,[8],[2] );
     int i_halfpel_thresh = INT_MAX;
     int *p_halfpel_thresh = (a->b_early_terminate && h->mb.pic.i_fref[0]>1) ? &i_halfpel_thresh : NULL;
 
@@ -1481,7 +1481,7 @@ static void mb_analyse_inter_p16x8( x264_t *h, x264_mb_analysis_t *a, int i_best
 {
     x264_me_t m;
     pixel **p_fenc = h->mb.pic.p_fenc;
-    ALIGNED_4( int16_t mvc[3][2] );
+    ALIGNED_ARRAY_8( int16_t, mvc,[3],[2] );
 
     /* XXX Needed for x264_mb_predict_mv */
     h->mb.i_partition = D_16x8;
@@ -1547,7 +1547,7 @@ static void mb_analyse_inter_p8x16( x264_t *h, x264_mb_analysis_t *a, int i_best
 {
     x264_me_t m;
     pixel **p_fenc = h->mb.pic.p_fenc;
-    ALIGNED_4( int16_t mvc[3][2] );
+    ALIGNED_ARRAY_8( int16_t, mvc,[3],[2] );
 
     /* XXX Needed for x264_mb_predict_mv */
     h->mb.i_partition = D_8x16;
@@ -1894,7 +1894,7 @@ static void mb_analyse_inter_b16x16( x264_t *h, x264_mb_analysis_t *a )
     pixel *src0, *src1;
     intptr_t stride0 = 16, stride1 = 16;
     int i_ref, i_mvc;
-    ALIGNED_4( int16_t mvc[9][2] );
+    ALIGNED_ARRAY_8( int16_t, mvc,[9],[2] );
     int try_skip = a->b_try_skip;
     int list1_skipped = 0;
     int i_halfpel_thresh[2] = {INT_MAX, INT_MAX};
@@ -2360,7 +2360,7 @@ static void mb_analyse_inter_b8x8( x264_t *h, x264_mb_analysis_t *a )
 static void mb_analyse_inter_b16x8( x264_t *h, x264_mb_analysis_t *a, int i_best_satd )
 {
     ALIGNED_ARRAY_32( pixel, pix,[2],[16*8] );
-    ALIGNED_4( int16_t mvc[3][2] );
+    ALIGNED_ARRAY_8( int16_t, mvc,[3],[2] );
 
     h->mb.i_partition = D_16x8;
     a->i_cost16x8bi = 0;
@@ -2454,7 +2454,7 @@ static void mb_analyse_inter_b16x8( x264_t *h, x264_mb_analysis_t *a, int i_best
 static void mb_analyse_inter_b8x16( x264_t *h, x264_mb_analysis_t *a, int i_best_satd )
 {
     ALIGNED_ARRAY_16( pixel, pix,[2],[8*16] );
-    ALIGNED_4( int16_t mvc[3][2] );
+    ALIGNED_ARRAY_8( int16_t, mvc,[3],[2] );
 
     h->mb.i_partition = D_8x16;
     a->i_cost8x16bi = 0;

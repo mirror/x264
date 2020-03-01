@@ -658,7 +658,7 @@ static void slicetype_mb_cost( x264_t *h, x264_mb_analysis_t *a,
         {
             int i_mvc = 0;
             int16_t (*fenc_mv)[2] = fenc_mvs[l];
-            ALIGNED_4( int16_t mvc[4][2] );
+            ALIGNED_ARRAY_8( int16_t, mvc,[4],[2] );
 
             /* Reverse-order MV prediction. */
             M32( mvc[0] ) = 0;

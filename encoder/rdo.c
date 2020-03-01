@@ -705,8 +705,12 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
     }
 
 #if HAVE_MMX && ARCH_X86_64 && !defined( __MACH__ )
+    uint64_t level_state0;
+    memcpy( &level_state0, cabac_state, sizeof(uint64_t) );
+    uint16_t level_state1;
+    memcpy( &level_state1, cabac_state+8, sizeof(uint16_t) );
 #define TRELLIS_ARGS unquant_mf, zigzag, lambda2, last_nnz, orig_coefs, quant_coefs, dct,\
-                     cabac_state_sig, cabac_state_last, M64(cabac_state), M16(cabac_state+8)
+                     cabac_state_sig, cabac_state_last, level_state0, level_state1
     if( num_coefs == 16 && !dc )
         if( b_chroma || !h->mb.i_psy_trellis )
             return h->quantf.trellis_cabac_4x4( TRELLIS_ARGS, b_ac );

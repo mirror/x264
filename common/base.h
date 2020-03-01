@@ -61,11 +61,11 @@
  * Mn: load or store n bits, aligned, native-endian
  * CPn: copy n bits, aligned, native-endian
  * we don't use memcpy for CPn because memcpy's args aren't assumed to be aligned */
-typedef union { uint16_t i; uint8_t  c[2]; } MAY_ALIAS x264_union16_t;
-typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union32_t;
-typedef union { uint64_t i; uint32_t a[2]; uint16_t b[4]; uint8_t c[8]; } MAY_ALIAS x264_union64_t;
+typedef union { uint16_t i; uint8_t  b[2]; } MAY_ALIAS x264_union16_t;
+typedef union { uint32_t i; uint16_t w[2]; uint8_t  b[4]; } MAY_ALIAS x264_union32_t;
+typedef union { uint64_t i; uint32_t d[2]; uint16_t w[4]; uint8_t b[8]; } MAY_ALIAS x264_union64_t;
 typedef struct { uint64_t i[2]; } x264_uint128_t;
-typedef union { x264_uint128_t i; uint64_t a[2]; uint32_t b[4]; uint16_t c[8]; uint8_t d[16]; } MAY_ALIAS x264_union128_t;
+typedef union { x264_uint128_t i; uint64_t q[2]; uint32_t d[4]; uint16_t w[8]; uint8_t b[16]; } MAY_ALIAS x264_union128_t;
 #define M16(src) (((x264_union16_t*)(src))->i)
 #define M32(src) (((x264_union32_t*)(src))->i)
 #define M64(src) (((x264_union64_t*)(src))->i)

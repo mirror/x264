@@ -739,28 +739,32 @@ PLANE_INTERLEAVE(avx)
 #define MC_CLIP_ADD(s,x)\
 do\
 {\
-    int temp;\
+    int temp_s = s;\
+    int temp_x = x;\
     asm("movd       %0, %%xmm0     \n"\
-        "movd       %2, %%xmm1     \n"\
+        "movd       %1, %%xmm1     \n"\
         "paddsw %%xmm1, %%xmm0     \n"\
-        "movd   %%xmm0, %1         \n"\
-        :"+m"(s), "=&r"(temp)\
-        :"m"(x)\
+        "movd   %%xmm0, %0         \n"\
+        :"+&r"(temp_s)\
+        :"r"(temp_x)\
     );\
-    s = temp;\
+    s = temp_s;\
 } while( 0 )
 
 #undef MC_CLIP_ADD2
 #define MC_CLIP_ADD2(s,x)\
 do\
 {\
+    x264_union32_t temp = { .w={ (s)[0], (s)[1] } };\
     asm("movd       %0, %%xmm0     \n"\
         "movd       %1, %%xmm1     \n"\
         "paddsw %%xmm1, %%xmm0     \n"\
         "movd   %%xmm0, %0         \n"\
-        :"+m"(M32(s))\
+        :"+&r"(temp)\
         :"m"(M32(x))\
     );\
+    (s)[0] = temp.w[0];\
+    (s)[1] = temp.w[1];\
 } while( 0 )
 #endif
 
