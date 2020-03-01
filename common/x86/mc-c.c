@@ -537,7 +537,7 @@ static void weight_cache_mmx2( x264_t *h, x264_weight_t *w )
         return;
     }
     w->weightfn = h->mc.weight;
-    den1 = 1 << (w->i_denom - 1) | w->i_offset << w->i_denom;
+    den1 = w->i_offset << w->i_denom | (w->i_denom ? 1 << (w->i_denom - 1) : 0);
     for( i = 0; i < 8; i++ )
     {
         w->cachea[i] = w->i_scale;
