@@ -74,7 +74,7 @@
 #   define FUNC @
 #endif
 
-#if SYS_LINUX
+#if SYS_LINUX || SYS_OPENBSD
 #define HAVE_SECTION_DATA_REL_RO 1
 #else
 #define HAVE_SECTION_DATA_REL_RO 0
