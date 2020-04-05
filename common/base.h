@@ -53,7 +53,7 @@
  ****************************************************************************/
 #define XCHG(type,a,b) do { type t = a; a = b; b = t; } while( 0 )
 #define FIX8(f) ((int)(f*(1<<8)+.5))
-#define ARRAY_ELEMS(a) ((sizeof(a))/(sizeof(a[0])))
+#define ARRAY_ELEMS(a) ((int)((sizeof(a))/(sizeof(a[0]))))
 #define ALIGN(x,a) (((x)+((a)-1))&~((a)-1))
 #define IS_DISPOSABLE(type) ( type == X264_TYPE_B )
 
@@ -303,7 +303,7 @@ do {\
 do {\
     var = (void*)(intptr_t)prealloc_size;\
     preallocs[prealloc_idx++] = (uint8_t**)&var;\
-    prealloc_size += ALIGN(size, NATIVE_ALIGN);\
+    prealloc_size += ALIGN((int64_t)(size), NATIVE_ALIGN);\
 } while( 0 )
 
 #define PREALLOC_END( ptr )\

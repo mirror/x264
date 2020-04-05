@@ -720,10 +720,10 @@ lowres_intra_mb:
         pixel *src = &fenc->lowres[0][i_pel_offset];
         const int intra_penalty = 5 * a->i_lambda;
         int satds[3];
-        int pixoff = 4 / sizeof(pixel);
+        int pixoff = 4 / SIZEOF_PIXEL;
 
         /* Avoid store forwarding stalls by writing larger chunks */
-        memcpy( pix-FDEC_STRIDE, src-i_stride, 16 * sizeof(pixel) );
+        memcpy( pix-FDEC_STRIDE, src-i_stride, 16 * SIZEOF_PIXEL );
         for( int i = -1; i < 8; i++ )
             M32( &pix[i*FDEC_STRIDE-pixoff] ) = M32( &src[i*i_stride-pixoff] );
 

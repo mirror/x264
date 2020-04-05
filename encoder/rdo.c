@@ -374,8 +374,8 @@ static uint64_t rd_cost_chroma( x264_t *h, int i_lambda2, int i_mode, int b_dct 
  * Trellis RD quantization
  ****************************************************************************/
 
-#define TRELLIS_SCORE_MAX -1LL // negative marks the node as invalid
-#define TRELLIS_SCORE_BIAS 1LL<<60; // bias so that all valid scores are positive, even after negative contributions from psy
+#define TRELLIS_SCORE_MAX  (~0ULL) // marks the node as invalid
+#define TRELLIS_SCORE_BIAS (1ULL<<60) // bias so that all valid scores are positive, even after negative contributions from psy
 #define CABAC_SIZE_BITS 8
 #define LAMBDA_BITS 4
 

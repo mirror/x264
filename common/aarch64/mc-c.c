@@ -272,7 +272,7 @@ PLANE_INTERLEAVE(neon)
 PROPAGATE_LIST(neon)
 #endif // !HIGH_BIT_DEPTH
 
-void x264_mc_init_aarch64( int cpu, x264_mc_functions_t *pf )
+void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
 {
 #if !HIGH_BIT_DEPTH
     if( cpu&X264_CPU_ARMV8 )

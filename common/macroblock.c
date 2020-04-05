@@ -260,7 +260,7 @@ int x264_macroblock_cache_allocate( x264_t *h )
     PREALLOC( h->mb.qp, i_mb_count * sizeof(int8_t) );
     PREALLOC( h->mb.cbp, i_mb_count * sizeof(int16_t) );
     PREALLOC( h->mb.mb_transform_size, i_mb_count * sizeof(int8_t) );
-    PREALLOC( h->mb.slice_table, i_mb_count * sizeof(uint32_t) );
+    PREALLOC( h->mb.slice_table, i_mb_count * sizeof(int32_t) );
 
     /* 0 -> 3 top(4), 4 -> 6 : left(3) */
     PREALLOC( h->mb.intra4x4_pred_mode, i_mb_count * 8 * sizeof(int8_t) );
@@ -321,12 +321,12 @@ int x264_macroblock_cache_allocate( x264_t *h )
         }
 
         for( int i = 0; i < numweightbuf; i++ )
-            PREALLOC( h->mb.p_weight_buf[i], luma_plane_size * sizeof(pixel) );
+            PREALLOC( h->mb.p_weight_buf[i], luma_plane_size * SIZEOF_PIXEL );
     }
 
     PREALLOC_END( h->mb.base );
 
-    memset( h->mb.slice_table, -1, i_mb_count * sizeof(uint32_t) );
+    memset( h->mb.slice_table, -1, i_mb_count * sizeof(int32_t) );
 
     for( int i = 0; i < 2; i++ )
     {
@@ -357,7 +357,7 @@ int x264_macroblock_thread_allocate( x264_t *h, int b_lookahead )
         for( int i = 0; i < (PARAM_INTERLACED ? 5 : 2); i++ )
             for( int j = 0; j < (CHROMA444 ? 3 : 2); j++ )
             {
-                CHECKED_MALLOC( h->intra_border_backup[i][j], (h->sps->i_mb_width*16+32) * sizeof(pixel) );
+                CHECKED_MALLOC( h->intra_border_backup[i][j], (h->sps->i_mb_width*16+32) * SIZEOF_PIXEL );
                 h->intra_border_backup[i][j] += 16;
             }
         for( int i = 0; i <= PARAM_INTERLACED; i++ )
@@ -586,15 +586,15 @@ static ALWAYS_INLINE void macroblock_load_pic_pointers( x264_t *h, int mb_x, int
     if( b_chroma )
     {
         h->mc.load_deinterleave_chroma_fenc( h->mb.pic.p_fenc[1], h->mb.pic.p_fenc_plane[1], i_stride2, height );
-        memcpy( h->mb.pic.p_fdec[1]-FDEC_STRIDE, intra_fdec, 8*sizeof(pixel) );
-        memcpy( h->mb.pic.p_fdec[2]-FDEC_STRIDE, intra_fdec+8, 8*sizeof(pixel) );
+        memcpy( h->mb.pic.p_fdec[1]-FDEC_STRIDE, intra_fdec, 8*SIZEOF_PIXEL );
+        memcpy( h->mb.pic.p_fdec[2]-FDEC_STRIDE, intra_fdec+8, 8*SIZEOF_PIXEL );
         h->mb.pic.p_fdec[1][-FDEC_STRIDE-1] = intra_fdec[-1-8];
         h->mb.pic.p_fdec[2][-FDEC_STRIDE-1] = intra_fdec[-1];
     }
     else
     {
         h->mc.copy[PIXEL_16x16]( h->mb.pic.p_fenc[i], FENC_STRIDE, h->mb.pic.p_fenc_plane[i], i_stride2, 16 );
-        memcpy( h->mb.pic.p_fdec[i]-FDEC_STRIDE, intra_fdec, 24*sizeof(pixel) );
+        memcpy( h->mb.pic.p_fdec[i]-FDEC_STRIDE, intra_fdec, 24*SIZEOF_PIXEL );
         h->mb.pic.p_fdec[i][-FDEC_STRIDE-1] = intra_fdec[-1];
     }
     if( b_mbaff || h->mb.b_reencode_mb )
@@ -1642,17 +1642,17 @@ static ALWAYS_INLINE void macroblock_backup_intra( x264_t *h, int mb_x, int mb_y
      * bottom row of each field. We also store samples needed for the next
      * mbpair in intra_border_backup[2]. */
     int backup_dst = !b_mbaff ? (mb_y&1) : (mb_y&1) ? 1 : MB_INTERLACED ? 0 : 2;
-    memcpy( &h->intra_border_backup[backup_dst][0][mb_x*16  ], h->mb.pic.p_fdec[0]+FDEC_STRIDE*15, 16*sizeof(pixel) );
+    memcpy( &h->intra_border_backup[backup_dst][0][mb_x*16  ], h->mb.pic.p_fdec[0]+FDEC_STRIDE*15, 16*SIZEOF_PIXEL );
     if( CHROMA444 )
     {
-        memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16  ], h->mb.pic.p_fdec[1]+FDEC_STRIDE*15, 16*sizeof(pixel) );
-        memcpy( &h->intra_border_backup[backup_dst][2][mb_x*16  ], h->mb.pic.p_fdec[2]+FDEC_STRIDE*15, 16*sizeof(pixel) );
+        memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16  ], h->mb.pic.p_fdec[1]+FDEC_STRIDE*15, 16*SIZEOF_PIXEL );
+        memcpy( &h->intra_border_backup[backup_dst][2][mb_x*16  ], h->mb.pic.p_fdec[2]+FDEC_STRIDE*15, 16*SIZEOF_PIXEL );
     }
     else if( CHROMA_FORMAT )
     {
         int backup_src = (15>>CHROMA_V_SHIFT) * FDEC_STRIDE;
-        memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16  ], h->mb.pic.p_fdec[1]+backup_src, 8*sizeof(pixel) );
-        memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16+8], h->mb.pic.p_fdec[2]+backup_src, 8*sizeof(pixel) );
+        memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16  ], h->mb.pic.p_fdec[1]+backup_src, 8*SIZEOF_PIXEL );
+        memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16+8], h->mb.pic.p_fdec[2]+backup_src, 8*SIZEOF_PIXEL );
     }
     if( b_mbaff )
     {
@@ -1660,18 +1660,18 @@ static ALWAYS_INLINE void macroblock_backup_intra( x264_t *h, int mb_x, int mb_y
         {
             int backup_src = (MB_INTERLACED ? 7 : 14) * FDEC_STRIDE;
             backup_dst = MB_INTERLACED ? 2 : 0;
-            memcpy( &h->intra_border_backup[backup_dst][0][mb_x*16  ], h->mb.pic.p_fdec[0]+backup_src, 16*sizeof(pixel) );
+            memcpy( &h->intra_border_backup[backup_dst][0][mb_x*16  ], h->mb.pic.p_fdec[0]+backup_src, 16*SIZEOF_PIXEL );
             if( CHROMA444 )
             {
-                memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16  ], h->mb.pic.p_fdec[1]+backup_src, 16*sizeof(pixel) );
-                memcpy( &h->intra_border_backup[backup_dst][2][mb_x*16  ], h->mb.pic.p_fdec[2]+backup_src, 16*sizeof(pixel) );
+                memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16  ], h->mb.pic.p_fdec[1]+backup_src, 16*SIZEOF_PIXEL );
+                memcpy( &h->intra_border_backup[backup_dst][2][mb_x*16  ], h->mb.pic.p_fdec[2]+backup_src, 16*SIZEOF_PIXEL );
             }
             else if( CHROMA_FORMAT )
             {
                 if( CHROMA_FORMAT == CHROMA_420 )
                     backup_src = (MB_INTERLACED ? 3 : 6) * FDEC_STRIDE;
-                memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16  ], h->mb.pic.p_fdec[1]+backup_src,  8*sizeof(pixel) );
-                memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16+8], h->mb.pic.p_fdec[2]+backup_src,  8*sizeof(pixel) );
+                memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16  ], h->mb.pic.p_fdec[1]+backup_src,  8*SIZEOF_PIXEL );
+                memcpy( &h->intra_border_backup[backup_dst][1][mb_x*16+8], h->mb.pic.p_fdec[2]+backup_src,  8*SIZEOF_PIXEL );
             }
         }
     }

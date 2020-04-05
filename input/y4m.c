@@ -216,7 +216,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         int64_t init_pos = ftell( h->fh );
 
         /* Find out the length of the frame header */
-        int len = 1;
+        size_t len = 1;
         while( len <= MAX_FRAME_HEADER && fgetc( h->fh ) != '\n' )
             len++;
         FAIL_IF_ERROR( len > MAX_FRAME_HEADER || len < sizeof(Y4M_FRAME_MAGIC), "bad frame header length\n" );
@@ -277,7 +277,7 @@ static int read_frame_internal( cli_pic_t *pic, y4m_hnd_t *h, int bit_depth_uc )
             if( i )
                 pic->img.plane[i] = pic->img.plane[i-1] + pixel_depth * h->plane_size[i-1];
         }
-        else if( fread( pic->img.plane[i], pixel_depth, h->plane_size[i], h->fh ) != h->plane_size[i] )
+        else if( fread( pic->img.plane[i], pixel_depth, h->plane_size[i], h->fh ) != (uint64_t)h->plane_size[i] )
             return -1;
 
         if( bit_depth_uc )

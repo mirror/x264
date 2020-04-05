@@ -408,7 +408,7 @@ level_run(16)
 #define INIT_TRELLIS(...)
 #endif
 
-void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
+void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
 {
     pf->quant_8x8 = quant_8x8;
     pf->quant_4x4 = quant_4x4;

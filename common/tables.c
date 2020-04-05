@@ -2535,5 +2535,5 @@ const vlc_t x264_run_before_init[7][16] =
     },
 };
 
-/* psy_trellis_init() has the largest size requirement of 16*FDEC_STRIDE*sizeof(pixel) */
+/* psy_trellis_init() has the largest size requirement of 16*FDEC_STRIDE*SIZEOF_PIXEL */
 ALIGNED_64( uint8_t x264_zero[1024] ) = { 0 };

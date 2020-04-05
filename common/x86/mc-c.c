@@ -791,7 +791,7 @@ static void mbtree_propagate_list_avx512( x264_t *h, uint16_t *ref_costs, int16_
 }
 #endif
 
-void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
+void x264_mc_init_mmx( uint32_t cpu, x264_mc_functions_t *pf )
 {
     if( !(cpu&X264_CPU_MMX) )
         return;

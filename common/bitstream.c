@@ -103,7 +103,7 @@ void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal )
     x264_emms();
 }
 
-void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf )
+void x264_bitstream_init( uint32_t cpu, x264_bitstream_function_t *pf )
 {
     memset( pf, 0, sizeof(*pf) );
 

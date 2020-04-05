@@ -681,7 +681,7 @@ void x264_macroblock_deblock( x264_t *h )
 #include "mips/deblock.h"
 #endif
 
-void x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff )
+void x264_deblock_init( uint32_t cpu, x264_deblock_function_t *pf, int b_mbaff )
 {
     pf->deblock_luma[1] = deblock_v_luma_c;
     pf->deblock_luma[0] = deblock_h_luma_c;

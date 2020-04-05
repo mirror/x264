@@ -133,7 +133,7 @@ static cl_program opencl_cache_load( x264_t *h, const char *dev_name, const char
     fseek( fp, 0, SEEK_END );
     int64_t file_size = ftell( fp );
     fseek( fp, 0, SEEK_SET );
-    if( file_size < 0 || file_size > SIZE_MAX )
+    if( file_size < 0 || (uint64_t)file_size > SIZE_MAX )
         goto fail;
     size_t size = file_size;
     CHECKED_MALLOC( binary, size );

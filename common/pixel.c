@@ -804,7 +804,7 @@ static int x264_pixel_ads1( int enc_dc[1], uint16_t *sums, int delta,
 /****************************************************************************
  * x264_pixel_init:
  ****************************************************************************/
-void x264_pixel_init( int cpu, x264_pixel_function_t *pixf )
+void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
 {
     memset( pixf, 0, sizeof(*pixf) );
 

@@ -794,7 +794,7 @@ int x264_sei_avcintra_vanc_write( x264_t *h, bs_t *s, int len )
 {
     uint8_t data[6000];
     const char *msg = "VANC";
-    if( len > sizeof(data) )
+    if( len < 0 || (unsigned)len > sizeof(data) )
     {
         x264_log( h, X264_LOG_ERROR, "AVC-Intra SEI is too large (%d)\n", len );
         return -1;
