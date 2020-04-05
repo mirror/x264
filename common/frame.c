@@ -77,7 +77,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
 #endif
 
     /* ensure frame alignment after PADH is added */
-    int padh_align = X264_MAX( align - PADH * sizeof(pixel), 0 ) / sizeof(pixel);
+    int padh_align = X264_MAX( align - PADH * (int)sizeof(pixel), 0 ) / sizeof(pixel);
 
     CHECKED_MALLOCZERO( frame, sizeof(x264_frame_t) );
     PREALLOC_INIT
