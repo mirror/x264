@@ -1,7 +1,7 @@
 /*****************************************************************************
  * cpu.c: cpu detection
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -362,7 +362,7 @@ int x264_cpu_fast_neon_mrc_test( void );
 
 uint32_t x264_cpu_detect( void )
 {
-    int flags = 0;
+    uint32_t flags = 0;
     flags |= X264_CPU_ARMV6;
 
     // don't do this hack if compiled with -mfpu=neon
@@ -449,7 +449,7 @@ int x264_cpu_num_processors( void )
     return CPU_COUNT(&p_aff);
 #else
     int np = 0;
-    for( unsigned int bit = 0; bit < 8 * sizeof(p_aff); bit++ )
+    for( size_t bit = 0; bit < 8 * sizeof(p_aff); bit++ )
         np += (((uint8_t *)&p_aff)[bit / 8] >> (bit % 8)) & 1;
     return np;
 #endif

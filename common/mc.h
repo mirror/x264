@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc.h: motion compensation
  *****************************************************************************
- * Copyright (C) 2004-2019 x264 project
+ * Copyright (C) 2004-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *
@@ -53,7 +53,7 @@ static void mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, int16_t
     unsigned width = h->mb.i_mb_width;\
     unsigned height = h->mb.i_mb_height;\
 \
-    for( unsigned i = 0; i < len; current += 32 )\
+    for( int i = 0; i < len; current += 32 )\
     {\
         int end = X264_MIN( i+8, len );\
         for( ; i < end; i++, current += 2 )\
@@ -107,7 +107,7 @@ void x264_plane_copy_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 #define PLANE_COPY(align, cpu)\
 static void plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
 {\
-    int c_w = (align) / sizeof(pixel) - 1;\
+    int c_w = (align) / SIZEOF_PIXEL - 1;\
     if( w < 256 ) /* tiny resolutions don't want non-temporal hints. dunno the exact threshold. */\
         x264_plane_copy_c( dst, i_dst, src, i_src, w, h );\
     else if( !(w&c_w) )\
@@ -126,7 +126,7 @@ static void plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i
                 x264_plane_copy_core_##cpu( dst+i_dst, i_dst, src+i_src, i_src, (w+c_w)&~c_w, h );\
         }\
         /* use plain memcpy on the last line (in memory order) to avoid overreading src. */\
-        memcpy( dst, src, w*sizeof(pixel) );\
+        memcpy( dst, src, w*SIZEOF_PIXEL );\
     }\
 }
 
@@ -136,7 +136,7 @@ void x264_plane_copy_swap_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h 
 #define PLANE_COPY_SWAP(align, cpu)\
 static void plane_copy_swap_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
 {\
-    int c_w = (align>>1) / sizeof(pixel) - 1;\
+    int c_w = (align>>1) / SIZEOF_PIXEL - 1;\
     if( !(w&c_w) )\
         x264_plane_copy_swap_core_##cpu( dst, i_dst, src, i_src, w, h );\
     else if( w > c_w )\
@@ -173,7 +173,7 @@ void x264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, 
 static void plane_copy_deinterleave_yuyv_##cpu( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,\
                                                 pixel *src, intptr_t i_src, int w, int h )\
 {\
-    int c_w = (align>>1) / sizeof(pixel) - 1;\
+    int c_w = (align>>1) / SIZEOF_PIXEL - 1;\
     if( !(w&c_w) )\
         x264_plane_copy_deinterleave_##cpu( dsta, i_dsta, dstb, i_dstb, src, i_src, w, h );\
     else if( w > c_w )\
@@ -207,7 +207,7 @@ static void plane_copy_interleave_##cpu( pixel *dst,  intptr_t i_dst,\
                                          pixel *srcu, intptr_t i_srcu,\
                                          pixel *srcv, intptr_t i_srcv, int w, int h )\
 {\
-    int c_w = 16 / sizeof(pixel) - 1;\
+    int c_w = 16 / SIZEOF_PIXEL - 1;\
     if( !(w&c_w) )\
         x264_plane_copy_interleave_core_##cpu( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
     else if( w > c_w && (i_srcu ^ i_srcv) >= 0 ) /* only works correctly for strides with identical signs */\
@@ -340,6 +340,6 @@ typedef struct
 } x264_mc_functions_t;
 
 #define x264_mc_init x264_template(mc_init)
-void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent );
+void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent );
 
 #endif

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * encoder.c: top-level encoder functions
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -94,23 +94,23 @@ static void frame_dump( x264_t *h )
         threadpool_wait_all( h );
 
     /* Write the frame in display order */
-    int frame_size = FRAME_SIZE( h->param.i_height * h->param.i_width * sizeof(pixel) );
+    int frame_size = FRAME_SIZE( h->param.i_height * h->param.i_width * SIZEOF_PIXEL );
     if( !fseek( f, (int64_t)h->fdec->i_frame * frame_size, SEEK_SET ) )
     {
         for( int p = 0; p < (CHROMA444 ? 3 : 1); p++ )
             for( int y = 0; y < h->param.i_height; y++ )
-                fwrite( &h->fdec->plane[p][y*h->fdec->i_stride[p]], sizeof(pixel), h->param.i_width, f );
+                fwrite( &h->fdec->plane[p][y*h->fdec->i_stride[p]], SIZEOF_PIXEL, h->param.i_width, f );
         if( CHROMA_FORMAT == CHROMA_420 || CHROMA_FORMAT == CHROMA_422 )
         {
             int cw = h->param.i_width>>1;
             int ch = h->param.i_height>>CHROMA_V_SHIFT;
-            pixel *planeu = x264_malloc( 2 * (cw*ch*sizeof(pixel) + 32) );
+            pixel *planeu = x264_malloc( 2 * (cw*ch*SIZEOF_PIXEL + 32) );
             if( planeu )
             {
-                pixel *planev = planeu + cw*ch + 32/sizeof(pixel);
+                pixel *planev = planeu + cw*ch + 32/SIZEOF_PIXEL;
                 h->mc.plane_copy_deinterleave( planeu, cw, planev, cw, h->fdec->plane[1], h->fdec->i_stride[1], cw, ch );
-                fwrite( planeu, 1, cw*ch*sizeof(pixel), f );
-                fwrite( planev, 1, cw*ch*sizeof(pixel), f );
+                fwrite( planeu, 1, cw*ch*SIZEOF_PIXEL, f );
+                fwrite( planev, 1, cw*ch*SIZEOF_PIXEL, f );
                 x264_free( planeu );
             }
         }
@@ -439,7 +439,7 @@ static int validate_parameters( x264_t *h, int b_open )
 #if HAVE_MMX
     if( b_open )
     {
-        int cpuflags = x264_cpu_detect();
+        uint32_t cpuflags = x264_cpu_detect();
         int fail = 0;
 #ifdef __SSE__
         if( !(cpuflags & X264_CPU_SSE) )
@@ -539,21 +539,21 @@ static int validate_parameters( x264_t *h, int b_open )
         return -1;
     }
 
-    if( h->param.crop_rect.i_left   >= h->param.i_width ||
-        h->param.crop_rect.i_right  >= h->param.i_width ||
-        h->param.crop_rect.i_top    >= h->param.i_height ||
-        h->param.crop_rect.i_bottom >= h->param.i_height ||
+    if( h->param.crop_rect.i_left   < 0 || h->param.crop_rect.i_left   >= h->param.i_width ||
+        h->param.crop_rect.i_right  < 0 || h->param.crop_rect.i_right  >= h->param.i_width ||
+        h->param.crop_rect.i_top    < 0 || h->param.crop_rect.i_top    >= h->param.i_height ||
+        h->param.crop_rect.i_bottom < 0 || h->param.crop_rect.i_bottom >= h->param.i_height ||
         h->param.crop_rect.i_left + h->param.crop_rect.i_right  >= h->param.i_width ||
         h->param.crop_rect.i_top  + h->param.crop_rect.i_bottom >= h->param.i_height )
     {
-        x264_log( h, X264_LOG_ERROR, "invalid crop-rect %u,%u,%u,%u\n", h->param.crop_rect.i_left,
+        x264_log( h, X264_LOG_ERROR, "invalid crop-rect %d,%d,%d,%d\n", h->param.crop_rect.i_left,
                   h->param.crop_rect.i_top, h->param.crop_rect.i_right,  h->param.crop_rect.i_bottom );
         return -1;
     }
     if( h->param.crop_rect.i_left % w_mod || h->param.crop_rect.i_right  % w_mod ||
         h->param.crop_rect.i_top  % h_mod || h->param.crop_rect.i_bottom % h_mod )
     {
-        x264_log( h, X264_LOG_ERROR, "crop-rect %u,%u,%u,%u not divisible by %dx%d\n", h->param.crop_rect.i_left,
+        x264_log( h, X264_LOG_ERROR, "crop-rect %d,%d,%d,%d not divisible by %dx%d\n", h->param.crop_rect.i_left,
                   h->param.crop_rect.i_top, h->param.crop_rect.i_right,  h->param.crop_rect.i_bottom, w_mod, h_mod );
         return -1;
     }
@@ -2390,7 +2390,7 @@ static void fdec_filter_row( x264_t *h, int mb_y, int pass )
             for( int i = minpix_y>>(CHROMA_V_SHIFT && p); i < maxpix_y>>(CHROMA_V_SHIFT && p); i++ )
                 memcpy( h->fdec->plane_fld[p] + i*h->fdec->i_stride[p],
                         h->fdec->plane[p]     + i*h->fdec->i_stride[p],
-                        h->mb.i_mb_width*16*sizeof(pixel) );
+                        h->mb.i_mb_width*16*SIZEOF_PIXEL );
 
     if( h->fdec->b_kept_as_ref && (!h->param.b_sliced_threads || pass == 1) )
         x264_frame_expand_border( h, h->fdec, min_y );
@@ -3191,7 +3191,7 @@ static int threaded_slices_write( x264_t *h )
             nal_check_buffer( h );
         }
         /* All entries in stat.frame are ints except for ssd/ssim. */
-        for( int j = 0; j < (offsetof(x264_t,stat.frame.i_ssd) - offsetof(x264_t,stat.frame.i_mv_bits)) / sizeof(int); j++ )
+        for( size_t j = 0; j < (offsetof(x264_t,stat.frame.i_ssd) - offsetof(x264_t,stat.frame.i_mv_bits)) / sizeof(int); j++ )
             ((int*)&h->stat.frame)[j] += ((int*)&t->stat.frame)[j];
         for( int j = 0; j < 3; j++ )
             h->stat.frame.i_ssd[j] += t->stat.frame.i_ssd[j];
@@ -3871,7 +3871,7 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
     pic_out->img.i_plane = h->fdec->i_plane;
     for( int i = 0; i < pic_out->img.i_plane; i++ )
     {
-        pic_out->img.i_stride[i] = h->fdec->i_stride[i] * sizeof(pixel);
+        pic_out->img.i_stride[i] = h->fdec->i_stride[i] * SIZEOF_PIXEL;
         pic_out->img.plane[i] = (uint8_t*)h->fdec->plane[i];
     }
 
@@ -3958,8 +3958,6 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
 
     for( int i = 0; i < X264_MBTYPE_MAX; i++ )
         h->stat.i_mb_count[h->sh.i_type][i] += h->stat.frame.i_mb_count[i];
-    for( int i = 0; i < X264_PARTTYPE_MAX; i++ )
-        h->stat.i_mb_partition[h->sh.i_type][i] += h->stat.frame.i_mb_partition[i];
     for( int i = 0; i < 2; i++ )
         h->stat.i_mb_count_8x8dct[i] += h->stat.frame.i_mb_count_8x8dct[i];
     for( int i = 0; i < 6; i++ )
@@ -3968,9 +3966,13 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
         for( int j = 0; j < 13; j++ )
             h->stat.i_mb_pred_mode[i][j] += h->stat.frame.i_mb_pred_mode[i][j];
     if( h->sh.i_type != SLICE_TYPE_I )
+    {
+        for( int i = 0; i < X264_PARTTYPE_MAX; i++ )
+            h->stat.i_mb_partition[h->sh.i_type][i] += h->stat.frame.i_mb_partition[i];
         for( int i_list = 0; i_list < 2; i_list++ )
             for( int i = 0; i < X264_REF_MAX*2; i++ )
                 h->stat.i_mb_count_ref[h->sh.i_type][i_list][i] += h->stat.frame.i_mb_count_ref[i_list][i];
+    }
     for( int i = 0; i < 3; i++ )
         h->stat.i_mb_field[i] += h->stat.frame.i_mb_field[i];
     if( h->sh.i_type == SLICE_TYPE_P && h->param.analyse.i_weighted_pred >= X264_WEIGHTP_SIMPLE )

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * me.h: motion estimation
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -52,7 +52,7 @@ typedef struct
     /* output */
     int cost_mv;        /* lambda * nbits for the chosen mv */
     int cost;           /* satd + lambda * nbits */
-    ALIGNED_4( int16_t mv[2] );
+    ALIGNED_8( int16_t mv[2] );
 } ALIGNED_64( x264_me_t );
 
 #define x264_me_search_ref x264_template(me_search_ref)

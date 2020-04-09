@@ -73,7 +73,7 @@ build-debian-aarch64:
     extends: build-debian-amd64
     script: |
         set -x
-        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/${_PATH}/last/vlc-contrib-${_TRIPLET}-`date +%Y%m%d`.tar.bz2 || curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/${_PATH}/last/vlc-contrib-${_TRIPLET}-`date --date=yesterday +%Y%m%d`.tar.bz2
+        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2 || curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/${_PATH}/last/vlc-contrib-${_TRIPLET}-`date +%Y%m%d`.tar.bz2
         bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
         tar xvf vlc-contrib-${_TRIPLET}-latest.tar
         sed -i "s#@@CONTRIB_PREFIX@@#`pwd`/${_TRIPLET}#g" ${_TRIPLET}/lib/pkgconfig/*.pc

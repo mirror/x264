@@ -1,7 +1,7 @@
 /*****************************************************************************
  * rdo.c: rate-distortion optimization
  *****************************************************************************
- * Copyright (C) 2005-2019 x264 project
+ * Copyright (C) 2005-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Fiona Glaser <fiona@x264.com>
@@ -374,8 +374,8 @@ static uint64_t rd_cost_chroma( x264_t *h, int i_lambda2, int i_mode, int b_dct 
  * Trellis RD quantization
  ****************************************************************************/
 
-#define TRELLIS_SCORE_MAX -1LL // negative marks the node as invalid
-#define TRELLIS_SCORE_BIAS 1LL<<60; // bias so that all valid scores are positive, even after negative contributions from psy
+#define TRELLIS_SCORE_MAX  (~0ULL) // marks the node as invalid
+#define TRELLIS_SCORE_BIAS (1ULL<<60) // bias so that all valid scores are positive, even after negative contributions from psy
 #define CABAC_SIZE_BITS 8
 #define LAMBDA_BITS 4
 
@@ -705,8 +705,12 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
     }
 
 #if HAVE_MMX && ARCH_X86_64 && !defined( __MACH__ )
+    uint64_t level_state0;
+    memcpy( &level_state0, cabac_state, sizeof(uint64_t) );
+    uint16_t level_state1;
+    memcpy( &level_state1, cabac_state+8, sizeof(uint16_t) );
 #define TRELLIS_ARGS unquant_mf, zigzag, lambda2, last_nnz, orig_coefs, quant_coefs, dct,\
-                     cabac_state_sig, cabac_state_last, M64(cabac_state), M16(cabac_state+8)
+                     cabac_state_sig, cabac_state_last, level_state0, level_state1
     if( num_coefs == 16 && !dc )
         if( b_chroma || !h->mb.i_psy_trellis )
             return h->quantf.trellis_cabac_4x4( TRELLIS_ARGS, b_ac );

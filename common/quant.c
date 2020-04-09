@@ -1,7 +1,7 @@
 /*****************************************************************************
  * quant.c: quantization and level-run
  *****************************************************************************
- * Copyright (C) 2005-2019 x264 project
+ * Copyright (C) 2005-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Fiona Glaser <fiona@x264.com>
@@ -408,7 +408,7 @@ level_run(16)
 #define INIT_TRELLIS(...)
 #endif
 
-void x264_quant_init( x264_t *h, int cpu, x264_quant_function_t *pf )
+void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
 {
     pf->quant_8x8 = quant_8x8;
     pf->quant_4x4 = quant_4x4;

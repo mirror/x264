@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc.h: x86 motion compensation
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -28,6 +28,6 @@
 #define X264_X86_MC_H
 
 #define x264_mc_init_mmx x264_template(mc_init_mmx)
-void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf );
+void x264_mc_init_mmx( uint32_t cpu, x264_mc_functions_t *pf );
 
 #endif

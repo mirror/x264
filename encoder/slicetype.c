@@ -1,7 +1,7 @@
 /*****************************************************************************
  * slicetype.c: lookahead analysis
  *****************************************************************************
- * Copyright (C) 2005-2019 x264 project
+ * Copyright (C) 2005-2020 x264 project
  *
  * Authors: Fiona Glaser <fiona@x264.com>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -297,12 +297,21 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
     float ref_mean[3];
     for( int plane = 0; plane <= 2*!b_lookahead; plane++ )
     {
-        int zero_bias = !ref->i_pixel_ssd[plane];
-        float fenc_var = fenc->i_pixel_ssd[plane] + zero_bias;
-        float ref_var  =  ref->i_pixel_ssd[plane] + zero_bias;
-        guess_scale[plane] = sqrtf( fenc_var / ref_var );
-        fenc_mean[plane] = (float)(fenc->i_pixel_sum[plane] + zero_bias) / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
-        ref_mean[plane]  = (float)( ref->i_pixel_sum[plane] + zero_bias) / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
+        if( !plane || CHROMA_FORMAT )
+        {
+            int zero_bias = !ref->i_pixel_ssd[plane];
+            float fenc_var = fenc->i_pixel_ssd[plane] + zero_bias;
+            float ref_var  =  ref->i_pixel_ssd[plane] + zero_bias;
+            guess_scale[plane] = sqrtf( fenc_var / ref_var );
+            fenc_mean[plane] = (float)(fenc->i_pixel_sum[plane] + zero_bias) / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
+            ref_mean[plane]  = (float)( ref->i_pixel_sum[plane] + zero_bias) / (fenc->i_lines[!!plane] * fenc->i_width[!!plane]) / (1 << (BIT_DEPTH - 8));
+        }
+        else
+        {
+            guess_scale[plane] = 1;
+            fenc_mean[plane] = 0;
+            ref_mean[plane]  = 0;
+        }
     }
 
     int chroma_denom = 7;
@@ -519,8 +528,8 @@ static void slicetype_mb_cost( x264_t *h, x264_mb_analysis_t *a,
     const int i_stride = fenc->i_stride_lowres;
     const int i_pel_offset = 8 * (i_mb_x + i_mb_y * i_stride);
     const int i_bipred_weight = h->param.analyse.b_weighted_bipred ? 64 - (dist_scale_factor>>2) : 32;
-    int16_t (*fenc_mvs[2])[2] = { &fenc->lowres_mvs[0][b-p0-1][i_mb_xy], &fenc->lowres_mvs[1][p1-b-1][i_mb_xy] };
-    int (*fenc_costs[2]) = { &fenc->lowres_mv_costs[0][b-p0-1][i_mb_xy], &fenc->lowres_mv_costs[1][p1-b-1][i_mb_xy] };
+    int16_t (*fenc_mvs[2])[2] = { b != p0 ? &fenc->lowres_mvs[0][b-p0-1][i_mb_xy] : NULL, b != p1 ? &fenc->lowres_mvs[1][p1-b-1][i_mb_xy] : NULL };
+    int (*fenc_costs[2]) = { b != p0 ? &fenc->lowres_mv_costs[0][b-p0-1][i_mb_xy] : NULL, b != p1 ? &fenc->lowres_mv_costs[1][p1-b-1][i_mb_xy] : NULL };
     int b_frame_score_mb = (i_mb_x > 0 && i_mb_x < h->mb.i_mb_width - 1 &&
                             i_mb_y > 0 && i_mb_y < h->mb.i_mb_height - 1) ||
                             h->mb.i_mb_width <= 2 || h->mb.i_mb_height <= 2;
@@ -649,7 +658,7 @@ static void slicetype_mb_cost( x264_t *h, x264_mb_analysis_t *a,
         {
             int i_mvc = 0;
             int16_t (*fenc_mv)[2] = fenc_mvs[l];
-            ALIGNED_4( int16_t mvc[4][2] );
+            ALIGNED_ARRAY_8( int16_t, mvc,[4],[2] );
 
             /* Reverse-order MV prediction. */
             M32( mvc[0] ) = 0;
@@ -711,10 +720,10 @@ lowres_intra_mb:
         pixel *src = &fenc->lowres[0][i_pel_offset];
         const int intra_penalty = 5 * a->i_lambda;
         int satds[3];
-        int pixoff = 4 / sizeof(pixel);
+        int pixoff = 4 / SIZEOF_PIXEL;
 
         /* Avoid store forwarding stalls by writing larger chunks */
-        memcpy( pix-FDEC_STRIDE, src-i_stride, 16 * sizeof(pixel) );
+        memcpy( pix-FDEC_STRIDE, src-i_stride, 16 * SIZEOF_PIXEL );
         for( int i = -1; i < 8; i++ )
             M32( &pix[i*FDEC_STRIDE-pixoff] ) = M32( &src[i*i_stride-pixoff] );
 
@@ -1045,7 +1054,7 @@ static void macroblock_tree_propagate( x264_t *h, x264_frame_t **frames, float a
     uint16_t *ref_costs[2] = {frames[p0]->i_propagate_cost,frames[p1]->i_propagate_cost};
     int dist_scale_factor = ( ((b-p0) << 8) + ((p1-p0) >> 1) ) / (p1-p0);
     int i_bipred_weight = h->param.analyse.b_weighted_bipred ? 64 - (dist_scale_factor>>2) : 32;
-    int16_t (*mvs[2])[2] = { frames[b]->lowres_mvs[0][b-p0-1], frames[b]->lowres_mvs[1][p1-b-1] };
+    int16_t (*mvs[2])[2] = { b != p0 ? frames[b]->lowres_mvs[0][b-p0-1] : NULL, b != p1 ? frames[b]->lowres_mvs[1][p1-b-1] : NULL };
     int bipred_weights[2] = {i_bipred_weight, 64 - i_bipred_weight};
     int16_t *buf = h->scratch_buffer;
     uint16_t *propagate_cost = frames[b]->i_propagate_cost;

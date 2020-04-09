@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc-c.c: aarch64 motion compensation
  *****************************************************************************
- * Copyright (C) 2009-2019 x264 project
+ * Copyright (C) 2009-2020 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *          Janne Grunau <janne-x264@jannau.net>
@@ -272,7 +272,7 @@ PLANE_INTERLEAVE(neon)
 PROPAGATE_LIST(neon)
 #endif // !HIGH_BIT_DEPTH
 
-void x264_mc_init_aarch64( int cpu, x264_mc_functions_t *pf )
+void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
 {
 #if !HIGH_BIT_DEPTH
     if( cpu&X264_CPU_ARMV8 )

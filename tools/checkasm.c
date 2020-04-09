@@ -1,7 +1,7 @@
 /*****************************************************************************
  * checkasm.c: assembly check tool
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -110,7 +110,7 @@ static inline uint32_t read_time(void)
     return a;
 }
 
-static bench_t* get_bench( const char *name, int cpu )
+static bench_t* get_bench( const char *name, uint32_t cpu )
 {
     int i, j;
     for( i = 0; benchs[i].name && strcmp(name, benchs[i].name); i++ )
@@ -323,7 +323,7 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 #define call_a64(func,...) ({ call_a2(func,__VA_ARGS__); call_a1_64(func,__VA_ARGS__); })
 
 
-static int check_pixel( int cpu_ref, int cpu_new )
+static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
 {
     x264_pixel_function_t pixel_c;
     x264_pixel_function_t pixel_ref;
@@ -619,8 +619,8 @@ static int check_pixel( int cpu_ref, int cpu_new )
         ALIGNED_ARRAY_64( uint16_t, bitcosts,[17] ); \
         for( int i=0; i<17; i++ ) \
             bitcosts[i] = 9*(i!=8); \
-        memcpy( pbuf3, pbuf2, 20*FDEC_STRIDE*sizeof(pixel) ); \
-        memcpy( pbuf4, pbuf2, 20*FDEC_STRIDE*sizeof(pixel) ); \
+        memcpy( pbuf3, pbuf2, 20*FDEC_STRIDE*SIZEOF_PIXEL ); \
+        memcpy( pbuf4, pbuf2, 20*FDEC_STRIDE*SIZEOF_PIXEL ); \
         for( int i=0; i<32; i++ ) \
         { \
             pixel *fenc = pbuf1+48+i*12; \
@@ -643,7 +643,7 @@ static int check_pixel( int cpu_ref, int cpu_new )
                 fprintf( stderr, #name": %d,%d != %d,%d [FAILED]\n", res_c>>16, res_c&0xffff, res_a>>16, res_a&0xffff ); \
                 break; \
             } \
-            if( memcmp(fdec1, fdec2, 4*FDEC_STRIDE*sizeof(pixel)) ) \
+            if( memcmp(fdec1, fdec2, 4*FDEC_STRIDE*SIZEOF_PIXEL) ) \
             { \
                 ok = 0; \
                 fprintf( stderr, #name" [FAILED]\n" ); \
@@ -700,7 +700,7 @@ static int check_pixel( int cpu_ref, int cpu_new )
                 break; \
             } \
             for( int j=0; j<8; j++ ) \
-                if( memcmp(fdec1+j*FDEC_STRIDE, fdec2+j*FDEC_STRIDE, 8*sizeof(pixel)) ) \
+                if( memcmp(fdec1+j*FDEC_STRIDE, fdec2+j*FDEC_STRIDE, 8*SIZEOF_PIXEL) ) \
                     ok = 0; \
             if( !ok ) \
             { \
@@ -724,7 +724,7 @@ static int check_pixel( int cpu_ref, int cpu_new )
         } \
     }
 
-    memcpy( pbuf3, pbuf2, 20*FDEC_STRIDE*sizeof(pixel) );
+    memcpy( pbuf3, pbuf2, 20*FDEC_STRIDE*SIZEOF_PIXEL );
     ok = 1; used_asm = 0;
     TEST_INTRA_X3( intra_satd_x3_16x16, 0 );
     TEST_INTRA_X3( intra_satd_x3_8x16c, 0 );
@@ -834,7 +834,7 @@ static int check_pixel( int cpu_ref, int cpu_new )
     return ret;
 }
 
-static int check_dct( int cpu_ref, int cpu_new )
+static int check_dct( uint32_t cpu_ref, uint32_t cpu_new )
 {
     x264_dct_function_t dct_c;
     x264_dct_function_t dct_ref;
@@ -956,13 +956,13 @@ static int check_dct( int cpu_ref, int cpu_new )
     { \
         set_func_name( #name ); \
         used_asm = 1; \
-        memcpy( pbuf3, pbuf1, 32*32 * sizeof(pixel) ); \
-        memcpy( pbuf4, pbuf1, 32*32 * sizeof(pixel) ); \
+        memcpy( pbuf3, pbuf1, 32*32 * SIZEOF_PIXEL ); \
+        memcpy( pbuf4, pbuf1, 32*32 * SIZEOF_PIXEL ); \
         memcpy( dct1, src, 256 * sizeof(dctcoef) ); \
         memcpy( dct2, src, 256 * sizeof(dctcoef) ); \
         call_c1( dct_c.name, pbuf3, (void*)dct1 ); \
         call_a1( dct_asm.name, pbuf4, (void*)dct2 ); \
-        if( memcmp( pbuf3, pbuf4, 32*32 * sizeof(pixel) ) ) \
+        if( memcmp( pbuf3, pbuf4, 32*32 * SIZEOF_PIXEL ) ) \
         { \
             ok = 0; \
             fprintf( stderr, #name " [FAILED]\n" ); \
@@ -1082,11 +1082,11 @@ static int check_dct( int cpu_ref, int cpu_new )
         int nz_a, nz_c; \
         set_func_name( "zigzag_"#name"_%s", interlace?"field":"frame" ); \
         used_asm = 1; \
-        memcpy( pbuf3, pbuf1, 16*FDEC_STRIDE * sizeof(pixel) ); \
-        memcpy( pbuf4, pbuf1, 16*FDEC_STRIDE * sizeof(pixel) ); \
+        memcpy( pbuf3, pbuf1, 16*FDEC_STRIDE * SIZEOF_PIXEL ); \
+        memcpy( pbuf4, pbuf1, 16*FDEC_STRIDE * SIZEOF_PIXEL ); \
         nz_c = call_c1( zigzag_c[interlace].name, t1, pbuf2, pbuf3 ); \
         nz_a = call_a1( zigzag_asm[interlace].name, t2, pbuf2, pbuf4 ); \
-        if( memcmp( t1, t2, size*sizeof(dctcoef) ) || memcmp( pbuf3, pbuf4, 16*FDEC_STRIDE*sizeof(pixel) ) || nz_c != nz_a ) \
+        if( memcmp( t1, t2, size*sizeof(dctcoef) ) || memcmp( pbuf3, pbuf4, 16*FDEC_STRIDE*SIZEOF_PIXEL ) || nz_c != nz_a ) \
         { \
             ok = 0; \
             fprintf( stderr, #name " [FAILED]\n" ); \
@@ -1104,16 +1104,16 @@ static int check_dct( int cpu_ref, int cpu_new )
         used_asm = 1; \
         for( int i = 0; i < 2; i++ ) \
         { \
-            memcpy( pbuf3, pbuf2, 16*FDEC_STRIDE * sizeof(pixel) ); \
-            memcpy( pbuf4, pbuf2, 16*FDEC_STRIDE * sizeof(pixel) ); \
+            memcpy( pbuf3, pbuf2, 16*FDEC_STRIDE * SIZEOF_PIXEL ); \
+            memcpy( pbuf4, pbuf2, 16*FDEC_STRIDE * SIZEOF_PIXEL ); \
             for( int j = 0; j < 4; j++ ) \
             { \
-                memcpy( pbuf3 + j*FDEC_STRIDE, (i?pbuf1:pbuf2) + j*FENC_STRIDE, 4 * sizeof(pixel) ); \
-                memcpy( pbuf4 + j*FDEC_STRIDE, (i?pbuf1:pbuf2) + j*FENC_STRIDE, 4 * sizeof(pixel) ); \
+                memcpy( pbuf3 + j*FDEC_STRIDE, (i?pbuf1:pbuf2) + j*FENC_STRIDE, 4 * SIZEOF_PIXEL ); \
+                memcpy( pbuf4 + j*FDEC_STRIDE, (i?pbuf1:pbuf2) + j*FENC_STRIDE, 4 * SIZEOF_PIXEL ); \
             } \
             nz_c = call_c1( zigzag_c[interlace].name, t1, pbuf2, pbuf3, &dc_c ); \
             nz_a = call_a1( zigzag_asm[interlace].name, t2, pbuf2, pbuf4, &dc_a ); \
-            if( memcmp( t1+1, t2+1, 15*sizeof(dctcoef) ) || memcmp( pbuf3, pbuf4, 16*FDEC_STRIDE * sizeof(pixel) ) || nz_c != nz_a || dc_c != dc_a ) \
+            if( memcmp( t1+1, t2+1, 15*sizeof(dctcoef) ) || memcmp( pbuf3, pbuf4, 16*FDEC_STRIDE * SIZEOF_PIXEL ) || nz_c != nz_a || dc_c != dc_a ) \
             { \
                 ok = 0; \
                 fprintf( stderr, #name " [FAILED]\n" ); \
@@ -1168,7 +1168,7 @@ static int check_dct( int cpu_ref, int cpu_new )
     return ret;
 }
 
-static int check_mc( int cpu_ref, int cpu_new )
+static int check_mc( uint32_t cpu_ref, uint32_t cpu_new )
 {
     x264_mc_functions_t mc_c;
     x264_mc_functions_t mc_ref;
@@ -1198,7 +1198,7 @@ static int check_mc( int cpu_ref, int cpu_new )
                 pbuf3[i] = pbuf4[i] = 0xCD; \
             call_c( mc_c.mc_luma, dst1, (intptr_t)32, src2, (intptr_t)64, dx, dy, w, h, weight ); \
             call_a( mc_a.mc_luma, dst2, (intptr_t)32, src2, (intptr_t)64, dx, dy, w, h, weight ); \
-            if( memcmp( pbuf3, pbuf4, 1024 * sizeof(pixel) ) ) \
+            if( memcmp( pbuf3, pbuf4, 1024 * SIZEOF_PIXEL ) ) \
             { \
                 fprintf( stderr, "mc_luma[mv(%d,%d) %2dx%-2d]     [FAILED]\n", dx, dy, w, h ); \
                 ok = 0; \
@@ -1208,7 +1208,7 @@ static int check_mc( int cpu_ref, int cpu_new )
         { \
             pixel *ref = dst2; \
             intptr_t ref_stride = 32; \
-            int w_checked = ( ( sizeof(pixel) == 2 && (w == 12 || w == 20)) ? w-2 : w ); \
+            int w_checked = ( ( SIZEOF_PIXEL == 2 && (w == 12 || w == 20)) ? w-2 : w ); \
             const x264_weight_t *weight = x264_weight_none; \
             set_func_name( "get_ref_%dx%d", w_checked, h ); \
             used_asm = 1; \
@@ -1217,7 +1217,7 @@ static int check_mc( int cpu_ref, int cpu_new )
             call_c( mc_c.mc_luma, dst1, (intptr_t)32, src2, (intptr_t)64, dx, dy, w, h, weight ); \
             ref = (pixel*)call_a( mc_a.get_ref, ref, &ref_stride, src2, (intptr_t)64, dx, dy, w, h, weight ); \
             for( int i = 0; i < h; i++ ) \
-                if( memcmp( dst1+i*32, ref+i*ref_stride, w_checked * sizeof(pixel) ) ) \
+                if( memcmp( dst1+i*32, ref+i*ref_stride, w_checked * SIZEOF_PIXEL ) ) \
                 { \
                     fprintf( stderr, "get_ref[mv(%d,%d) %2dx%-2d]     [FAILED]\n", dx, dy, w_checked, h ); \
                     ok = 0; \
@@ -1241,7 +1241,7 @@ static int check_mc( int cpu_ref, int cpu_new )
                     dst2[i+j*16+8] = dst1[i+j*16+8]; \
                     dst2[i+j*16  ] = dst1[i+j*16  ]; \
                 } \
-            if( memcmp( pbuf3, pbuf4, 1024 * sizeof(pixel) ) ) \
+            if( memcmp( pbuf3, pbuf4, 1024 * SIZEOF_PIXEL ) ) \
             { \
                 fprintf( stderr, "mc_chroma[mv(%d,%d) %2dx%-2d]     [FAILED]\n", dx, dy, w, h ); \
                 ok = 0; \
@@ -1285,15 +1285,15 @@ static int check_mc( int cpu_ref, int cpu_new )
 { \
     for( int i = 0; i < 12; i++ ) \
     { \
-        memcpy( pbuf3, pbuf1+320, 320 * sizeof(pixel) ); \
-        memcpy( pbuf4, pbuf1+320, 320 * sizeof(pixel) ); \
+        memcpy( pbuf3, pbuf1+320, 320 * SIZEOF_PIXEL ); \
+        memcpy( pbuf4, pbuf1+320, 320 * SIZEOF_PIXEL ); \
         if( mc_a.name[i] != mc_ref.name[i] ) \
         { \
             set_func_name( "%s_%s", #name, pixel_names[i] ); \
             used_asm = 1; \
             call_c1( mc_c.name[i], pbuf3, (intptr_t)16, pbuf2+1, (intptr_t)16, pbuf1+18, (intptr_t)16, weight ); \
             call_a1( mc_a.name[i], pbuf4, (intptr_t)16, pbuf2+1, (intptr_t)16, pbuf1+18, (intptr_t)16, weight ); \
-            if( memcmp( pbuf3, pbuf4, 320 * sizeof(pixel) ) ) \
+            if( memcmp( pbuf3, pbuf4, 320 * SIZEOF_PIXEL ) ) \
             { \
                 ok = 0; \
                 fprintf( stderr, #name "[%d]: [FAILED]\n", i ); \
@@ -1316,8 +1316,8 @@ static int check_mc( int cpu_ref, int cpu_new )
         ALIGNED_16( pixel buffC[640] ); \
         ALIGNED_16( pixel buffA[640] ); \
         int j = X264_MAX( i*4, 2 ); \
-        memset( buffC, 0, 640 * sizeof(pixel) ); \
-        memset( buffA, 0, 640 * sizeof(pixel) ); \
+        memset( buffC, 0, 640 * SIZEOF_PIXEL ); \
+        memset( buffA, 0, 640 * SIZEOF_PIXEL ); \
         x264_t ha; \
         ha.mc = mc_a; \
         /* w12 is the same as w16 in some cases */ \
@@ -1331,7 +1331,7 @@ static int check_mc( int cpu_ref, int cpu_new )
             mc_a.weight_cache(&ha, &weight); \
             call_a1( weight.weightfn[i], buffA, (intptr_t)32, pbuf2+align_off, (intptr_t)32, &weight, 16 ); \
             for( int k = 0; k < 16; k++ ) \
-                if( memcmp( &buffC[k*32], &buffA[k*32], j * sizeof(pixel) ) ) \
+                if( memcmp( &buffC[k*32], &buffA[k*32], j * SIZEOF_PIXEL ) ) \
                 { \
                     ok = 0; \
                     fprintf( stderr, #name "[%d]: [FAILED] s:%d o:%d d%d\n", i, s, o, d ); \
@@ -1440,7 +1440,7 @@ static int check_mc( int cpu_ref, int cpu_new )
     {
         set_func_name( "plane_copy" );
         used_asm = 1;
-        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(plane_specs); i++ )
         {
             int w = plane_specs[i].w;
             int h = plane_specs[i].h;
@@ -1448,12 +1448,12 @@ static int check_mc( int cpu_ref, int cpu_new )
             intptr_t dst_stride = (w + 127) & ~63;
             assert( dst_stride * h <= 0x1000 );
             pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
-            memset( pbuf3, 0, 0x1000*sizeof(pixel) );
-            memset( pbuf4, 0, 0x1000*sizeof(pixel) );
+            memset( pbuf3, 0, 0x1000*SIZEOF_PIXEL );
+            memset( pbuf4, 0, 0x1000*SIZEOF_PIXEL );
             call_c( mc_c.plane_copy, pbuf3, dst_stride, src1, src_stride, w, h );
             call_a( mc_a.plane_copy, pbuf4, dst_stride, src1, src_stride, w, h );
             for( int y = 0; y < h; y++ )
-                if( memcmp( pbuf3+y*dst_stride, pbuf4+y*dst_stride, w*sizeof(pixel) ) )
+                if( memcmp( pbuf3+y*dst_stride, pbuf4+y*dst_stride, w*SIZEOF_PIXEL ) )
                 {
                     ok = 0;
                     fprintf( stderr, "plane_copy FAILED: w=%d h=%d stride=%d\n", w, h, (int)src_stride );
@@ -1466,7 +1466,7 @@ static int check_mc( int cpu_ref, int cpu_new )
     {
         set_func_name( "plane_copy_swap" );
         used_asm = 1;
-        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(plane_specs); i++ )
         {
             int w = (plane_specs[i].w + 1) >> 1;
             int h = plane_specs[i].h;
@@ -1474,12 +1474,12 @@ static int check_mc( int cpu_ref, int cpu_new )
             intptr_t dst_stride = (2*w + 127) & ~63;
             assert( dst_stride * h <= 0x1000 );
             pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
-            memset( pbuf3, 0, 0x1000*sizeof(pixel) );
-            memset( pbuf4, 0, 0x1000*sizeof(pixel) );
+            memset( pbuf3, 0, 0x1000*SIZEOF_PIXEL );
+            memset( pbuf4, 0, 0x1000*SIZEOF_PIXEL );
             call_c( mc_c.plane_copy_swap, pbuf3, dst_stride, src1, src_stride, w, h );
             call_a( mc_a.plane_copy_swap, pbuf4, dst_stride, src1, src_stride, w, h );
             for( int y = 0; y < h; y++ )
-                if( memcmp( pbuf3+y*dst_stride, pbuf4+y*dst_stride, 2*w*sizeof(pixel) ) )
+                if( memcmp( pbuf3+y*dst_stride, pbuf4+y*dst_stride, 2*w*SIZEOF_PIXEL ) )
                 {
                     ok = 0;
                     fprintf( stderr, "plane_copy_swap FAILED: w=%d h=%d stride=%d\n", w, h, (int)src_stride );
@@ -1492,7 +1492,7 @@ static int check_mc( int cpu_ref, int cpu_new )
     {
         set_func_name( "plane_copy_interleave" );
         used_asm = 1;
-        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(plane_specs); i++ )
         {
             int w = (plane_specs[i].w + 1) >> 1;
             int h = plane_specs[i].h;
@@ -1500,12 +1500,12 @@ static int check_mc( int cpu_ref, int cpu_new )
             intptr_t dst_stride = (2*w + 127) & ~63;
             assert( dst_stride * h <= 0x1000 );
             pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
-            memset( pbuf3, 0, 0x1000*sizeof(pixel) );
-            memset( pbuf4, 0, 0x1000*sizeof(pixel) );
+            memset( pbuf3, 0, 0x1000*SIZEOF_PIXEL );
+            memset( pbuf4, 0, 0x1000*SIZEOF_PIXEL );
             call_c( mc_c.plane_copy_interleave, pbuf3, dst_stride, src1, src_stride, src1+1024, src_stride+16, w, h );
             call_a( mc_a.plane_copy_interleave, pbuf4, dst_stride, src1, src_stride, src1+1024, src_stride+16, w, h );
             for( int y = 0; y < h; y++ )
-                if( memcmp( pbuf3+y*dst_stride, pbuf4+y*dst_stride, 2*w*sizeof(pixel) ) )
+                if( memcmp( pbuf3+y*dst_stride, pbuf4+y*dst_stride, 2*w*SIZEOF_PIXEL ) )
                 {
                     ok = 0;
                     fprintf( stderr, "plane_copy_interleave FAILED: w=%d h=%d stride=%d\n", w, h, (int)src_stride );
@@ -1518,7 +1518,7 @@ static int check_mc( int cpu_ref, int cpu_new )
     {
         set_func_name( "plane_copy_deinterleave" );
         used_asm = 1;
-        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(plane_specs); i++ )
         {
             int w = (plane_specs[i].w + 1) >> 1;
             int h = plane_specs[i].h;
@@ -1544,11 +1544,11 @@ static int check_mc( int cpu_ref, int cpu_new )
     {
         set_func_name( "plane_copy_deinterleave_yuyv" );
         used_asm = 1;
-        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(plane_specs); i++ )
         {
             int w = (plane_specs[i].w + 1) >> 1;
             int h = plane_specs[i].h;
-            intptr_t dst_stride = ALIGN( w, 32/sizeof(pixel) );
+            intptr_t dst_stride = ALIGN( w, 32/SIZEOF_PIXEL );
             intptr_t src_stride = (plane_specs[i].src_stride + 1) >> 1;
             intptr_t offv = dst_stride*h;
             pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
@@ -1558,8 +1558,8 @@ static int check_mc( int cpu_ref, int cpu_new )
             call_c1( mc_c.plane_copy_deinterleave_yuyv, pbuf3, dst_stride, pbuf3+offv, dst_stride, src1, src_stride, w, h );
             call_a1( mc_a.plane_copy_deinterleave_yuyv, pbuf4, dst_stride, pbuf4+offv, dst_stride, src1, src_stride, w, h );
             for( int y = 0; y < h; y++ )
-                if( memcmp( pbuf3+y*dst_stride,      pbuf4+y*dst_stride,      w*sizeof(pixel) ) ||
-                    memcmp( pbuf3+y*dst_stride+offv, pbuf4+y*dst_stride+offv, w*sizeof(pixel) ) )
+                if( memcmp( pbuf3+y*dst_stride,      pbuf4+y*dst_stride,      w*SIZEOF_PIXEL ) ||
+                    memcmp( pbuf3+y*dst_stride+offv, pbuf4+y*dst_stride+offv, w*SIZEOF_PIXEL ) )
                 {
                     fprintf( stderr, "plane_copy_deinterleave_yuyv FAILED: w=%d h=%d stride=%d\n", w, h, (int)src_stride );
                     break;
@@ -1571,7 +1571,7 @@ static int check_mc( int cpu_ref, int cpu_new )
     {
         set_func_name( "plane_copy_deinterleave_rgb" );
         used_asm = 1;
-        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(plane_specs); i++ )
         {
             int w = (plane_specs[i].w + 2) >> 2;
             int h = plane_specs[i].h;
@@ -1604,12 +1604,12 @@ static int check_mc( int cpu_ref, int cpu_new )
     {
         set_func_name( "plane_copy_deinterleave_v210" );
         ok = 1; used_asm = 1;
-        for( int i = 0; i < sizeof(plane_specs)/sizeof(*plane_specs); i++ )
+        for( int i = 0; i < ARRAY_ELEMS(plane_specs); i++ )
         {
             int w = (plane_specs[i].w + 1) >> 1;
             int h = plane_specs[i].h;
             intptr_t dst_stride = ALIGN( w, 32 );
-            intptr_t src_stride = (w + 47) / 48 * 128 / sizeof(uint32_t);
+            intptr_t src_stride = (w + 47) / 48 * 128 / (int)sizeof(uint32_t);
             intptr_t offv = dst_stride*h + 32;
             memset( pbuf3, 0, 0x1000 );
             memset( pbuf4, 0, 0x1000 );
@@ -1635,14 +1635,14 @@ static int check_mc( int cpu_ref, int cpu_new )
         void *tmp = pbuf3+49*64;
         set_func_name( "hpel_filter" );
         ok = 1; used_asm = 1;
-        memset( pbuf3, 0, 4096 * sizeof(pixel) );
-        memset( pbuf4, 0, 4096 * sizeof(pixel) );
+        memset( pbuf3, 0, 4096 * SIZEOF_PIXEL );
+        memset( pbuf4, 0, 4096 * SIZEOF_PIXEL );
         call_c( mc_c.hpel_filter, dstc[0], dstc[1], dstc[2], srchpel, (intptr_t)64, 48, 10, tmp );
         call_a( mc_a.hpel_filter, dsta[0], dsta[1], dsta[2], srchpel, (intptr_t)64, 48, 10, tmp );
         for( int i = 0; i < 3; i++ )
             for( int j = 0; j < 10; j++ )
                 //FIXME ideally the first pixels would match too, but they aren't actually used
-                if( memcmp( dstc[i]+j*64+2, dsta[i]+j*64+2, 43 * sizeof(pixel) ) )
+                if( memcmp( dstc[i]+j*64+2, dsta[i]+j*64+2, 43 * SIZEOF_PIXEL ) )
                 {
                     ok = 0;
                     fprintf( stderr, "hpel filter differs at plane %c line %d\n", "hvc"[i], j );
@@ -1672,7 +1672,7 @@ static int check_mc( int cpu_ref, int cpu_new )
             for( int i = 0; i < 8; i++ )
             {
                 for( int j = 0; j < 4; j++ )
-                    if( memcmp( dstc[j]+i*stride_lowres, dsta[j]+i*stride_lowres, w * sizeof(pixel) ) )
+                    if( memcmp( dstc[j]+i*stride_lowres, dsta[j]+i*stride_lowres, w * SIZEOF_PIXEL ) )
                     {
                         ok = 0;
                         fprintf( stderr, "frame_init_lowres differs at plane %d line %d\n", j, i );
@@ -1863,7 +1863,7 @@ static int check_mc( int cpu_ref, int cpu_new )
         ok = 1; used_asm = 1;
         for( size_t size = 16; size < 512; size += 16 )
         {
-            for( int i = 0; i < size; i++ )
+            for( size_t i = 0; i < size; i++ )
                 buf1[i] = rand();
             memset( buf4-1, 0xAA, size + 2 );
             call_c( mc_c.memcpy_aligned, buf3, buf1, size );
@@ -1900,7 +1900,7 @@ static int check_mc( int cpu_ref, int cpu_new )
     return ret;
 }
 
-static int check_deblock( int cpu_ref, int cpu_new )
+static int check_deblock( uint32_t cpu_ref, uint32_t cpu_new )
 {
     x264_deblock_function_t db_c;
     x264_deblock_function_t db_ref;
@@ -1932,14 +1932,14 @@ static int check_deblock( int cpu_ref, int cpu_new )
         for( int j = 0; j < 1024; j++ ) \
             /* two distributions of random to excersize different failure modes */ \
             pbuf3[j] = rand() & (i&1 ? 0xf : PIXEL_MAX ); \
-        memcpy( pbuf4, pbuf3, 1024 * sizeof(pixel) ); \
+        memcpy( pbuf4, pbuf3, 1024 * SIZEOF_PIXEL ); \
         if( db_a.name != db_ref.name ) \
         { \
             set_func_name( #name ); \
             used_asm = 1; \
             call_c1( db_c.name, pbuf3+off, (intptr_t)32, alphas[i], betas[i], ##__VA_ARGS__ ); \
             call_a1( db_a.name, pbuf4+off, (intptr_t)32, alphas[i], betas[i], ##__VA_ARGS__ ); \
-            if( memcmp( pbuf3, pbuf4, 1024 * sizeof(pixel) ) ) \
+            if( memcmp( pbuf3, pbuf4, 1024 * SIZEOF_PIXEL ) ) \
             { \
                 ok = 0; \
                 fprintf( stderr, #name "(a=%d, b=%d): [FAILED]\n", alphas[i], betas[i] ); \
@@ -2013,7 +2013,7 @@ static int check_deblock( int cpu_ref, int cpu_new )
     return ret;
 }
 
-static int check_quant( int cpu_ref, int cpu_new )
+static int check_quant( uint32_t cpu_ref, uint32_t cpu_new )
 {
     x264_quant_function_t qf_c;
     x264_quant_function_t qf_ref;
@@ -2426,7 +2426,7 @@ static int check_quant( int cpu_ref, int cpu_new )
     return ret;
 }
 
-static int check_intra( int cpu_ref, int cpu_new )
+static int check_intra( uint32_t cpu_ref, uint32_t cpu_new )
 {
     int ret = 0, ok = 1, used_asm = 0;
     ALIGNED_ARRAY_32( pixel, edge,[36] );
@@ -2460,7 +2460,7 @@ static int check_intra( int cpu_ref, int cpu_new )
     x264_predict_8x8_init( cpu_new, ip_a.predict_8x8, &ip_a.predict_8x8_filter );
     x264_predict_4x4_init( cpu_new, ip_a.predict_4x4 );
 
-    memcpy( fdec, pbuf1, 32*20 * sizeof(pixel) );\
+    memcpy( fdec, pbuf1, 32*20 * SIZEOF_PIXEL );\
 
     ip_c.predict_8x8_filter( fdec+48, edge, ALL_NEIGHBORS, ALL_NEIGHBORS );
 
@@ -2469,13 +2469,13 @@ static int check_intra( int cpu_ref, int cpu_new )
     {\
         set_func_name( "intra_%s_%s", #name, intra_##name##_names[dir] );\
         used_asm = 1;\
-        memcpy( pbuf3, fdec, FDEC_STRIDE*20 * sizeof(pixel) );\
-        memcpy( pbuf4, fdec, FDEC_STRIDE*20 * sizeof(pixel) );\
-        for( int a = 0; a < (do_bench ? 64/sizeof(pixel) : 1); a += align )\
+        memcpy( pbuf3, fdec, FDEC_STRIDE*20 * SIZEOF_PIXEL );\
+        memcpy( pbuf4, fdec, FDEC_STRIDE*20 * SIZEOF_PIXEL );\
+        for( int a = 0; a < (do_bench ? 64/SIZEOF_PIXEL : 1); a += align )\
         {\
             call_c##bench( ip_c.name[dir], pbuf3+48+a, ##__VA_ARGS__ );\
             call_a##bench( ip_a.name[dir], pbuf4+48+a, ##__VA_ARGS__ );\
-            if( memcmp( pbuf3, pbuf4, FDEC_STRIDE*20 * sizeof(pixel) ) )\
+            if( memcmp( pbuf3, pbuf4, FDEC_STRIDE*20 * SIZEOF_PIXEL ) )\
             {\
                 fprintf( stderr, #name "[%d] :  [FAILED]\n", dir );\
                 ok = 0;\
@@ -2527,13 +2527,13 @@ static int check_intra( int cpu_ref, int cpu_new )
             if( !(i&7) || ((i&MB_TOPRIGHT) && !(i&MB_TOP)) )
                 continue;
             int neighbor = (i&24)>>1;
-            memset( edge,  0, 36*sizeof(pixel) );
-            memset( edge2, 0, 36*sizeof(pixel) );
+            memset( edge,  0, 36*SIZEOF_PIXEL );
+            memset( edge2, 0, 36*SIZEOF_PIXEL );
             call_c( ip_c.predict_8x8_filter, pbuf1+48, edge,  neighbor, i&7 );
             call_a( ip_a.predict_8x8_filter, pbuf1+48, edge2, neighbor, i&7 );
             if( !(neighbor&MB_TOPLEFT) )
                 edge[15] = edge2[15] = 0;
-            if( memcmp( edge+7, edge2+7, (i&MB_TOPRIGHT ? 26 : i&MB_TOP ? 17 : 8) * sizeof(pixel) ) )
+            if( memcmp( edge+7, edge2+7, (i&MB_TOPRIGHT ? 26 : i&MB_TOP ? 17 : 8) * SIZEOF_PIXEL ) )
             {
                 fprintf( stderr, "predict_8x8_filter :  [FAILED] %d %d\n", (i&24)>>1, i&7);
                 ok = 0;
@@ -2611,7 +2611,7 @@ DECL_CABAC(asm)
 
 extern const uint8_t x264_count_cat_m1[14];
 
-static int check_cabac( int cpu_ref, int cpu_new )
+static int check_cabac( uint32_t cpu_ref, uint32_t cpu_new )
 {
     int ret = 0, ok = 1, used_asm = 0;
     x264_t h;
@@ -2726,7 +2726,7 @@ name##fail:
     return ret;
 }
 
-static int check_bitstream( int cpu_ref, int cpu_new )
+static int check_bitstream( uint32_t cpu_ref, uint32_t cpu_new )
 {
     x264_bitstream_function_t bs_c;
     x264_bitstream_function_t bs_ref;
@@ -2776,7 +2776,7 @@ static int check_bitstream( int cpu_ref, int cpu_new )
     return ret;
 }
 
-static int check_all_funcs( int cpu_ref, int cpu_new )
+static int check_all_funcs( uint32_t cpu_ref, uint32_t cpu_new )
 {
     return check_pixel( cpu_ref, cpu_new )
          + check_dct( cpu_ref, cpu_new )
@@ -2788,7 +2788,7 @@ static int check_all_funcs( int cpu_ref, int cpu_new )
          + check_bitstream( cpu_ref, cpu_new );
 }
 
-static int add_flags( int *cpu_ref, int *cpu_new, int flags, const char *name )
+static int add_flags( uint32_t *cpu_ref, uint32_t *cpu_new, uint32_t flags, const char *name )
 {
     *cpu_ref = *cpu_new;
     *cpu_new |= flags;
@@ -2805,7 +2805,7 @@ static int add_flags( int *cpu_ref, int *cpu_new, int flags, const char *name )
 static int check_all_flags( void )
 {
     int ret = 0;
-    int cpu0 = 0, cpu1 = 0;
+    uint32_t cpu0 = 0, cpu1 = 0;
     uint32_t cpu_detect = x264_cpu_detect();
 #if HAVE_MMX
     if( cpu_detect & X264_CPU_AVX512 )
@@ -2941,8 +2941,8 @@ REALIGN_STACK int main( int argc, char **argv )
     fprintf( stderr, "x264: using random seed %u\n", seed );
     srand( seed );
 
-    buf1 = x264_malloc( 0x1e00 + 0x2000*sizeof(pixel) );
-    pbuf1 = x264_malloc( 0x1e00*sizeof(pixel) );
+    buf1 = x264_malloc( 0x1e00 + 0x2000*SIZEOF_PIXEL );
+    pbuf1 = x264_malloc( 0x1e00*SIZEOF_PIXEL );
     if( !buf1 || !pbuf1 )
     {
         fprintf( stderr, "malloc failed, unable to initiate tests!\n" );
@@ -2951,7 +2951,7 @@ REALIGN_STACK int main( int argc, char **argv )
 #define INIT_POINTER_OFFSETS\
     buf2 = buf1 + 0xf00;\
     buf3 = buf2 + 0xf00;\
-    buf4 = buf3 + 0x1000*sizeof(pixel);\
+    buf4 = buf3 + 0x1000*SIZEOF_PIXEL;\
     pbuf2 = pbuf1 + 0xf00;\
     pbuf3 = (pixel*)buf3;\
     pbuf4 = (pixel*)buf4;
@@ -2961,7 +2961,7 @@ REALIGN_STACK int main( int argc, char **argv )
         buf1[i] = rand() & 0xFF;
         pbuf1[i] = rand() & PIXEL_MAX;
     }
-    memset( buf1+0x1e00, 0, 0x2000*sizeof(pixel) );
+    memset( buf1+0x1e00, 0, 0x2000*SIZEOF_PIXEL );
 
     if( x264_stack_pagealign( check_all_flags, 0 ) )
     {

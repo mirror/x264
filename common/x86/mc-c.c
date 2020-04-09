@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc-c.c: x86 motion compensation
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -537,7 +537,7 @@ static void weight_cache_mmx2( x264_t *h, x264_weight_t *w )
         return;
     }
     w->weightfn = h->mc.weight;
-    den1 = 1 << (w->i_denom - 1) | w->i_offset << w->i_denom;
+    den1 = w->i_offset << w->i_denom | (w->i_denom ? 1 << (w->i_denom - 1) : 0);
     for( i = 0; i < 8; i++ )
     {
         w->cachea[i] = w->i_scale;
@@ -739,28 +739,32 @@ PLANE_INTERLEAVE(avx)
 #define MC_CLIP_ADD(s,x)\
 do\
 {\
-    int temp;\
+    int temp_s = s;\
+    int temp_x = x;\
     asm("movd       %0, %%xmm0     \n"\
-        "movd       %2, %%xmm1     \n"\
+        "movd       %1, %%xmm1     \n"\
         "paddsw %%xmm1, %%xmm0     \n"\
-        "movd   %%xmm0, %1         \n"\
-        :"+m"(s), "=&r"(temp)\
-        :"m"(x)\
+        "movd   %%xmm0, %0         \n"\
+        :"+&r"(temp_s)\
+        :"r"(temp_x)\
     );\
-    s = temp;\
+    s = temp_s;\
 } while( 0 )
 
 #undef MC_CLIP_ADD2
 #define MC_CLIP_ADD2(s,x)\
 do\
 {\
+    x264_union32_t temp = { .w={ (s)[0], (s)[1] } };\
     asm("movd       %0, %%xmm0     \n"\
         "movd       %1, %%xmm1     \n"\
         "paddsw %%xmm1, %%xmm0     \n"\
         "movd   %%xmm0, %0         \n"\
-        :"+m"(M32(s))\
+        :"+&r"(temp)\
         :"m"(M32(x))\
     );\
+    (s)[0] = temp.w[0];\
+    (s)[1] = temp.w[1];\
 } while( 0 )
 #endif
 
@@ -787,7 +791,7 @@ static void mbtree_propagate_list_avx512( x264_t *h, uint16_t *ref_costs, int16_
 }
 #endif
 
-void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
+void x264_mc_init_mmx( uint32_t cpu, x264_mc_functions_t *pf )
 {
     if( !(cpu&X264_CPU_MMX) )
         return;

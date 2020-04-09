@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc-c.c: msa motion compensation
  *****************************************************************************
- * Copyright (C) 2015-2019 x264 project
+ * Copyright (C) 2015-2020 x264 project
  *
  * Authors: Neha Rana <neha.rana@imgtec.com>
  *
@@ -3650,7 +3650,7 @@ static weight_fn_t mc_weight_wtab_msa[6] =
 };
 #endif // !HIGH_BIT_DEPTH
 
-void x264_mc_init_mips( int32_t cpu, x264_mc_functions_t *pf  )
+void x264_mc_init_mips( uint32_t cpu, x264_mc_functions_t *pf  )
 {
 #if !HIGH_BIT_DEPTH
     if( cpu & X264_CPU_MSA )

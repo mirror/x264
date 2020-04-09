@@ -1,7 +1,7 @@
 /*****************************************************************************
  * dct.c: transform and zigzag
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -472,7 +472,7 @@ static void add16x16_idct_dc( pixel *p_dst, dctcoef dct[16] )
 /****************************************************************************
  * x264_dct_init:
  ****************************************************************************/
-void x264_dct_init( int cpu, x264_dct_function_t *dctf )
+void x264_dct_init( uint32_t cpu, x264_dct_function_t *dctf )
 {
     dctf->sub4x4_dct    = sub4x4_dct;
     dctf->add4x4_idct   = add4x4_idct;
@@ -901,7 +901,7 @@ static void zigzag_interleave_8x8_cavlc( dctcoef *dst, dctcoef *src, uint8_t *nn
     }
 }
 
-void x264_zigzag_init( int cpu, x264_zigzag_function_t *pf_progressive, x264_zigzag_function_t *pf_interlaced )
+void x264_zigzag_init( uint32_t cpu, x264_zigzag_function_t *pf_progressive, x264_zigzag_function_t *pf_interlaced )
 {
     pf_interlaced->scan_8x8   = zigzag_scan_8x8_field;
     pf_progressive->scan_8x8  = zigzag_scan_8x8_frame;

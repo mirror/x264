@@ -1,7 +1,7 @@
 /*****************************************************************************
  * base.c: misc common functions (bit depth independent)
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -103,7 +103,7 @@ void *x264_malloc( int64_t i_size )
 {
 #define HUGE_PAGE_SIZE 2*1024*1024
 #define HUGE_PAGE_THRESHOLD HUGE_PAGE_SIZE*7/8 /* FIXME: Is this optimal? */
-    if( i_size < 0 || i_size > (SIZE_MAX - HUGE_PAGE_SIZE) /*|| i_size > (SIZE_MAX - NATIVE_ALIGN - sizeof(void **))*/ )
+    if( i_size < 0 || (uint64_t)i_size > (SIZE_MAX - HUGE_PAGE_SIZE) /*|| (uint64_t)i_size > (SIZE_MAX - NATIVE_ALIGN - sizeof(void **))*/ )
     {
         x264_log_internal( X264_LOG_ERROR, "invalid size of malloc: %"PRId64"\n", i_size );
         return NULL;
@@ -180,7 +180,7 @@ char *x264_slurp_file( const char *filename )
     if( !buf )
         goto error;
 
-    b_error |= fread( buf, 1, i_size, fh ) != i_size;
+    b_error |= fread( buf, 1, i_size, fh ) != (uint64_t)i_size;
     fclose( fh );
     if( b_error )
     {
@@ -428,7 +428,7 @@ static int param_apply_preset( x264_param_t *param, const char *preset )
 {
     char *end;
     int i = strtol( preset, &end, 10 );
-    if( *end == 0 && i >= 0 && i < sizeof(x264_preset_names)/sizeof(*x264_preset_names)-1 )
+    if( *end == 0 && i >= 0 && i < ARRAY_ELEMS(x264_preset_names)-1 )
         preset = x264_preset_names[i];
 
     if( !strcasecmp( preset, "ultrafast" ) )
@@ -1259,7 +1259,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT("zones")
         p->rc.psz_zones = strdup(value);
     OPT("crop-rect")
-        b_error |= sscanf( value, "%u,%u,%u,%u", &p->crop_rect.i_left, &p->crop_rect.i_top,
+        b_error |= sscanf( value, "%d,%d,%d,%d", &p->crop_rect.i_left, &p->crop_rect.i_top,
                                                  &p->crop_rect.i_right, &p->crop_rect.i_bottom ) != 4;
     OPT("psnr")
         p->analyse.b_psnr = atobool(value);
@@ -1425,7 +1425,7 @@ char *x264_param2string( x264_param_t *p, int b_res )
     if( p->rc.i_vbv_buffer_size )
         s += sprintf( s, " nal_hrd=%s filler=%d", x264_nal_hrd_names[p->i_nal_hrd], p->rc.b_filler );
     if( p->crop_rect.i_left | p->crop_rect.i_top | p->crop_rect.i_right | p->crop_rect.i_bottom )
-        s += sprintf( s, " crop_rect=%u,%u,%u,%u", p->crop_rect.i_left, p->crop_rect.i_top,
+        s += sprintf( s, " crop_rect=%d,%d,%d,%d", p->crop_rect.i_left, p->crop_rect.i_top,
                                                    p->crop_rect.i_right, p->crop_rect.i_bottom );
     if( p->i_frame_packing >= 0 )
         s += sprintf( s, " frame-packing=%d", p->i_frame_packing );

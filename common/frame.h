@@ -1,7 +1,7 @@
 /*****************************************************************************
  * frame.h: frame handling
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -246,7 +246,7 @@ void          x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b
 void          x264_frame_init_lowres( x264_t *h, x264_frame_t *frame );
 
 #define x264_deblock_init x264_template(deblock_init)
-void          x264_deblock_init( int cpu, x264_deblock_function_t *pf, int b_mbaff );
+void          x264_deblock_init( uint32_t cpu, x264_deblock_function_t *pf, int b_mbaff );
 
 #define x264_frame_cond_broadcast x264_template(frame_cond_broadcast)
 void          x264_frame_cond_broadcast( x264_frame_t *frame, int i_lines_completed );

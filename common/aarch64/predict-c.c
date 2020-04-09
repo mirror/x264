@@ -1,7 +1,7 @@
 /*****************************************************************************
  * predict.c: aarch64 intra prediction
  *****************************************************************************
- * Copyright (C) 2009-2019 x264 project
+ * Copyright (C) 2009-2020 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *          Janne Grunau <janne-x264@jannau.net>
@@ -28,7 +28,7 @@
 #include "predict.h"
 #include "pixel.h"
 
-void x264_predict_4x4_init_aarch64( int cpu, x264_predict_t pf[12] )
+void x264_predict_4x4_init_aarch64( uint32_t cpu, x264_predict_t pf[12] )
 {
 #if !HIGH_BIT_DEPTH
     if( cpu&X264_CPU_ARMV8 )
@@ -47,7 +47,7 @@ void x264_predict_4x4_init_aarch64( int cpu, x264_predict_t pf[12] )
 #endif // !HIGH_BIT_DEPTH
 }
 
-void x264_predict_8x8c_init_aarch64( int cpu, x264_predict_t pf[7] )
+void x264_predict_8x8c_init_aarch64( uint32_t cpu, x264_predict_t pf[7] )
 {
 #if !HIGH_BIT_DEPTH
     if( cpu&X264_CPU_ARMV8 )
@@ -67,7 +67,7 @@ void x264_predict_8x8c_init_aarch64( int cpu, x264_predict_t pf[7] )
 }
 
 
-void x264_predict_8x16c_init_aarch64( int cpu, x264_predict_t pf[7] )
+void x264_predict_8x16c_init_aarch64( uint32_t cpu, x264_predict_t pf[7] )
 {
     if( !(cpu&X264_CPU_NEON) )
         return;
@@ -82,7 +82,7 @@ void x264_predict_8x16c_init_aarch64( int cpu, x264_predict_t pf[7] )
 #endif // !HIGH_BIT_DEPTH
 }
 
-void x264_predict_8x8_init_aarch64( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
+void x264_predict_8x8_init_aarch64( uint32_t cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
 {
     if( !(cpu&X264_CPU_NEON) )
         return;
@@ -100,7 +100,7 @@ void x264_predict_8x8_init_aarch64( int cpu, x264_predict8x8_t pf[12], x264_pred
 #endif // !HIGH_BIT_DEPTH
 }
 
-void x264_predict_16x16_init_aarch64( int cpu, x264_predict_t pf[7] )
+void x264_predict_16x16_init_aarch64( uint32_t cpu, x264_predict_t pf[7] )
 {
     if( !(cpu&X264_CPU_NEON) )
         return;

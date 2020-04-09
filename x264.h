@@ -1,7 +1,7 @@
 /*****************************************************************************
  * x264.h: x264 public header
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 159
+#define X264_BUILD 160
 
 #ifdef _WIN32
 #   define X264_DLL_IMPORT __declspec(dllimport)
@@ -136,57 +136,57 @@ typedef struct x264_nal_t
 /* CPU flags */
 
 /* x86 */
-#define X264_CPU_MMX                (1<<0)
-#define X264_CPU_MMX2               (1<<1)  /* MMX2 aka MMXEXT aka ISSE */
+#define X264_CPU_MMX                (1U<<0)
+#define X264_CPU_MMX2               (1U<<1)  /* MMX2 aka MMXEXT aka ISSE */
 #define X264_CPU_MMXEXT             X264_CPU_MMX2
-#define X264_CPU_SSE                (1<<2)
-#define X264_CPU_SSE2               (1<<3)
-#define X264_CPU_LZCNT              (1<<4)
-#define X264_CPU_SSE3               (1<<5)
-#define X264_CPU_SSSE3              (1<<6)
-#define X264_CPU_SSE4               (1<<7)  /* SSE4.1 */
-#define X264_CPU_SSE42              (1<<8)  /* SSE4.2 */
-#define X264_CPU_AVX                (1<<9)  /* Requires OS support even if YMM registers aren't used */
-#define X264_CPU_XOP                (1<<10) /* AMD XOP */
-#define X264_CPU_FMA4               (1<<11) /* AMD FMA4 */
-#define X264_CPU_FMA3               (1<<12)
-#define X264_CPU_BMI1               (1<<13)
-#define X264_CPU_BMI2               (1<<14)
-#define X264_CPU_AVX2               (1<<15)
-#define X264_CPU_AVX512             (1<<16) /* AVX-512 {F, CD, BW, DQ, VL}, requires OS support */
+#define X264_CPU_SSE                (1U<<2)
+#define X264_CPU_SSE2               (1U<<3)
+#define X264_CPU_LZCNT              (1U<<4)
+#define X264_CPU_SSE3               (1U<<5)
+#define X264_CPU_SSSE3              (1U<<6)
+#define X264_CPU_SSE4               (1U<<7)  /* SSE4.1 */
+#define X264_CPU_SSE42              (1U<<8)  /* SSE4.2 */
+#define X264_CPU_AVX                (1U<<9)  /* Requires OS support even if YMM registers aren't used */
+#define X264_CPU_XOP                (1U<<10) /* AMD XOP */
+#define X264_CPU_FMA4               (1U<<11) /* AMD FMA4 */
+#define X264_CPU_FMA3               (1U<<12)
+#define X264_CPU_BMI1               (1U<<13)
+#define X264_CPU_BMI2               (1U<<14)
+#define X264_CPU_AVX2               (1U<<15)
+#define X264_CPU_AVX512             (1U<<16) /* AVX-512 {F, CD, BW, DQ, VL}, requires OS support */
 /* x86 modifiers */
-#define X264_CPU_CACHELINE_32       (1<<17) /* avoid memory loads that span the border between two cachelines */
-#define X264_CPU_CACHELINE_64       (1<<18) /* 32/64 is the size of a cacheline in bytes */
-#define X264_CPU_SSE2_IS_SLOW       (1<<19) /* avoid most SSE2 functions on Athlon64 */
-#define X264_CPU_SSE2_IS_FAST       (1<<20) /* a few functions are only faster on Core2 and Phenom */
-#define X264_CPU_SLOW_SHUFFLE       (1<<21) /* The Conroe has a slow shuffle unit (relative to overall SSE performance) */
-#define X264_CPU_STACK_MOD4         (1<<22) /* if stack is only mod4 and not mod16 */
-#define X264_CPU_SLOW_ATOM          (1<<23) /* The Atom is terrible: slow SSE unaligned loads, slow
-                                             * SIMD multiplies, slow SIMD variable shifts, slow pshufb,
-                                             * cacheline split penalties -- gather everything here that
-                                             * isn't shared by other CPUs to avoid making half a dozen
-                                             * new SLOW flags. */
-#define X264_CPU_SLOW_PSHUFB        (1<<24) /* such as on the Intel Atom */
-#define X264_CPU_SLOW_PALIGNR       (1<<25) /* such as on the AMD Bobcat */
+#define X264_CPU_CACHELINE_32       (1U<<17) /* avoid memory loads that span the border between two cachelines */
+#define X264_CPU_CACHELINE_64       (1U<<18) /* 32/64 is the size of a cacheline in bytes */
+#define X264_CPU_SSE2_IS_SLOW       (1U<<19) /* avoid most SSE2 functions on Athlon64 */
+#define X264_CPU_SSE2_IS_FAST       (1U<<20) /* a few functions are only faster on Core2 and Phenom */
+#define X264_CPU_SLOW_SHUFFLE       (1U<<21) /* The Conroe has a slow shuffle unit (relative to overall SSE performance) */
+#define X264_CPU_STACK_MOD4         (1U<<22) /* if stack is only mod4 and not mod16 */
+#define X264_CPU_SLOW_ATOM          (1U<<23) /* The Atom is terrible: slow SSE unaligned loads, slow
+                                              * SIMD multiplies, slow SIMD variable shifts, slow pshufb,
+                                              * cacheline split penalties -- gather everything here that
+                                              * isn't shared by other CPUs to avoid making half a dozen
+                                              * new SLOW flags. */
+#define X264_CPU_SLOW_PSHUFB        (1U<<24) /* such as on the Intel Atom */
+#define X264_CPU_SLOW_PALIGNR       (1U<<25) /* such as on the AMD Bobcat */
 
 /* PowerPC */
-#define X264_CPU_ALTIVEC         0x0000001
+#define X264_CPU_ALTIVEC         0x0000001U
 
 /* ARM and AArch64 */
-#define X264_CPU_ARMV6           0x0000001
-#define X264_CPU_NEON            0x0000002  /* ARM NEON */
-#define X264_CPU_FAST_NEON_MRC   0x0000004  /* Transfer from NEON to ARM register is fast (Cortex-A9) */
-#define X264_CPU_ARMV8           0x0000008
+#define X264_CPU_ARMV6           0x0000001U
+#define X264_CPU_NEON            0x0000002U  /* ARM NEON */
+#define X264_CPU_FAST_NEON_MRC   0x0000004U  /* Transfer from NEON to ARM register is fast (Cortex-A9) */
+#define X264_CPU_ARMV8           0x0000008U
 
 /* MIPS */
-#define X264_CPU_MSA             0x0000001  /* MIPS MSA */
+#define X264_CPU_MSA             0x0000001U  /* MIPS MSA */
 
 /* Analyse flags */
-#define X264_ANALYSE_I4x4       0x0001  /* Analyse i4x4 */
-#define X264_ANALYSE_I8x8       0x0002  /* Analyse i8x8 (requires 8x8 transform) */
-#define X264_ANALYSE_PSUB16x16  0x0010  /* Analyse p16x8, p8x16 and p8x8 */
-#define X264_ANALYSE_PSUB8x8    0x0020  /* Analyse p8x4, p4x8, p4x4 */
-#define X264_ANALYSE_BSUB16x16  0x0100  /* Analyse b16x8, b8x16 and b8x8 */
+#define X264_ANALYSE_I4x4       0x0001U  /* Analyse i4x4 */
+#define X264_ANALYSE_I8x8       0x0002U  /* Analyse i8x8 (requires 8x8 transform) */
+#define X264_ANALYSE_PSUB16x16  0x0010U  /* Analyse p16x8, p8x16 and p8x8 */
+#define X264_ANALYSE_PSUB8x8    0x0020U  /* Analyse p8x4, p4x8, p4x4 */
+#define X264_ANALYSE_BSUB16x16  0x0100U  /* Analyse b16x8, b8x16 and b8x8 */
 
 #define X264_DIRECT_PRED_NONE        0
 #define X264_DIRECT_PRED_SPATIAL     1
@@ -304,7 +304,7 @@ typedef struct x264_zone_t
 typedef struct x264_param_t
 {
     /* CPU flags */
-    unsigned int cpu;
+    uint32_t    cpu;
     int         i_threads;           /* encode multiple frames in parallel */
     int         i_lookahead_threads; /* multiple threads for lookahead analysis */
     int         b_sliced_threads;  /* Whether to use slice-based threading. */
@@ -476,10 +476,10 @@ typedef struct x264_param_t
        non-mod16 video resolutions. */
     struct
     {
-        unsigned int i_left;
-        unsigned int i_top;
-        unsigned int i_right;
-        unsigned int i_bottom;
+        int i_left;
+        int i_top;
+        int i_right;
+        int i_bottom;
     } crop_rect;
 
     /* frame packing arrangement flag */
@@ -594,11 +594,11 @@ X264_API void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
 typedef struct x264_level_t
 {
     uint8_t  level_idc;
-    uint32_t mbps;        /* max macroblock processing rate (macroblocks/sec) */
-    uint32_t frame_size;  /* max frame size (macroblocks) */
-    uint32_t dpb;         /* max decoded picture buffer (mbs) */
-    uint32_t bitrate;     /* max bitrate (kbit/sec) */
-    uint32_t cpb;         /* max vbv buffer (kbit) */
+    int32_t  mbps;        /* max macroblock processing rate (macroblocks/sec) */
+    int32_t  frame_size;  /* max frame size (macroblocks) */
+    int32_t  dpb;         /* max decoded picture buffer (mbs) */
+    int32_t  bitrate;     /* max bitrate (kbit/sec) */
+    int32_t  cpb;         /* max vbv buffer (kbit) */
     uint16_t mv_range;    /* max vertical mv component range (pixels) */
     uint8_t  mvs_per_2mb; /* max mvs per 2 consecutive mbs. */
     uint8_t  slice_rate;  /* ?? */
@@ -802,7 +802,7 @@ typedef struct x264_image_properties_t
     void (*mb_info_free)( void* );
 
     /* The macroblock is constant and remains unchanged from the previous frame. */
-    #define X264_MBINFO_CONSTANT   (1<<0)
+    #define X264_MBINFO_CONSTANT   (1U<<0)
     /* More flags may be added in the future. */
 
     /* Out: SSIM of the the frame luma (if x264_param_t.b_ssim is set) */

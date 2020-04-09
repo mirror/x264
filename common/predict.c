@@ -1,7 +1,7 @@
 /*****************************************************************************
  * predict.c: intra prediction
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -883,7 +883,7 @@ static void predict_8x8_hu_c( pixel *src, pixel edge[36] )
 /****************************************************************************
  * Exported functions:
  ****************************************************************************/
-void x264_predict_16x16_init( int cpu, x264_predict_t pf[7] )
+void x264_predict_16x16_init( uint32_t cpu, x264_predict_t pf[7] )
 {
     pf[I_PRED_16x16_V ]     = x264_predict_16x16_v_c;
     pf[I_PRED_16x16_H ]     = x264_predict_16x16_h_c;
@@ -926,7 +926,7 @@ void x264_predict_16x16_init( int cpu, x264_predict_t pf[7] )
 #endif
 }
 
-void x264_predict_8x8c_init( int cpu, x264_predict_t pf[7] )
+void x264_predict_8x8c_init( uint32_t cpu, x264_predict_t pf[7] )
 {
     pf[I_PRED_CHROMA_V ]     = x264_predict_8x8c_v_c;
     pf[I_PRED_CHROMA_H ]     = x264_predict_8x8c_h_c;
@@ -963,7 +963,7 @@ void x264_predict_8x8c_init( int cpu, x264_predict_t pf[7] )
 #endif
 }
 
-void x264_predict_8x16c_init( int cpu, x264_predict_t pf[7] )
+void x264_predict_8x16c_init( uint32_t cpu, x264_predict_t pf[7] )
 {
     pf[I_PRED_CHROMA_V ]     = x264_predict_8x16c_v_c;
     pf[I_PRED_CHROMA_H ]     = x264_predict_8x16c_h_c;
@@ -986,7 +986,7 @@ void x264_predict_8x16c_init( int cpu, x264_predict_t pf[7] )
 #endif
 }
 
-void x264_predict_8x8_init( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
+void x264_predict_8x8_init( uint32_t cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
 {
     pf[I_PRED_8x8_V]      = x264_predict_8x8_v_c;
     pf[I_PRED_8x8_H]      = x264_predict_8x8_h_c;
@@ -1024,7 +1024,7 @@ void x264_predict_8x8_init( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_
 #endif
 }
 
-void x264_predict_4x4_init( int cpu, x264_predict_t pf[12] )
+void x264_predict_4x4_init( uint32_t cpu, x264_predict_t pf[12] )
 {
     pf[I_PRED_4x4_V]      = x264_predict_4x4_v_c;
     pf[I_PRED_4x4_H]      = x264_predict_4x4_h_c;

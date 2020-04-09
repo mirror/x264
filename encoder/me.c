@@ -1,7 +1,7 @@
 /*****************************************************************************
  * me.c: motion estimation
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -1043,8 +1043,8 @@ static ALWAYS_INLINE void me_refine_bidir( x264_t *h, x264_me_t *m0, x264_me_t *
     int chroma_x = (8 >> CHROMA_H_SHIFT) * x;
     int chroma_y = (8 >> chroma_v_shift) * y;
     pixel *pix  = &h->mb.pic.p_fdec[0][8*x + 8*y*FDEC_STRIDE];
-    pixel *pixu = &h->mb.pic.p_fdec[1][chroma_x + chroma_y*FDEC_STRIDE];
-    pixel *pixv = &h->mb.pic.p_fdec[2][chroma_x + chroma_y*FDEC_STRIDE];
+    pixel *pixu = CHROMA_FORMAT ? &h->mb.pic.p_fdec[1][chroma_x + chroma_y*FDEC_STRIDE] : NULL;
+    pixel *pixv = CHROMA_FORMAT ? &h->mb.pic.p_fdec[2][chroma_x + chroma_y*FDEC_STRIDE] : NULL;
     int ref0 = h->mb.cache.ref[0][s8];
     int ref1 = h->mb.cache.ref[1][s8];
     const int mv0y_offset = chroma_v_shift & MB_INTERLACED & ref0 ? (h->mb.i_mb_y & 1)*4 - 2 : 0;
@@ -1256,10 +1256,15 @@ void x264_me_refine_qpel_rd( x264_t *h, x264_me_t *m, int i_lambda2, int i4, int
         pixu = &h->mb.pic.p_fdec[1][block_idx_xy_fdec[i4]];
         pixv = &h->mb.pic.p_fdec[2][block_idx_xy_fdec[i4]];
     }
-    else
+    else if( CHROMA_FORMAT )
     {
         pixu = &h->mb.pic.p_fdec[1][(i8>>1)*(8*FDEC_STRIDE>>chroma_v_shift)+(i8&1)*4];
         pixv = &h->mb.pic.p_fdec[2][(i8>>1)*(8*FDEC_STRIDE>>chroma_v_shift)+(i8&1)*4];
+    }
+    else
+    {
+        pixu = NULL;
+        pixv = NULL;
     }
 
     h->mb.b_skip_mc = 1;

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * example.c: libx264 API usage example
  *****************************************************************************
- * Copyright (C) 2014-2019 x264 project
+ * Copyright (C) 2014-2020 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *
@@ -97,11 +97,11 @@ int main( int argc, char **argv )
     for( ;; i_frame++ )
     {
         /* Read input frame */
-        if( fread( pic.img.plane[0], 1, luma_size, stdin ) != luma_size )
+        if( fread( pic.img.plane[0], 1, luma_size, stdin ) != (unsigned)luma_size )
             break;
-        if( fread( pic.img.plane[1], 1, chroma_size, stdin ) != chroma_size )
+        if( fread( pic.img.plane[1], 1, chroma_size, stdin ) != (unsigned)chroma_size )
             break;
-        if( fread( pic.img.plane[2], 1, chroma_size, stdin ) != chroma_size )
+        if( fread( pic.img.plane[2], 1, chroma_size, stdin ) != (unsigned)chroma_size )
             break;
 
         pic.i_pts = i_frame;

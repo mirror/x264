@@ -1,7 +1,7 @@
 /*****************************************************************************
  * set: header writing
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -594,7 +594,7 @@ int x264_sei_version_write( x264_t *h, bs_t *s )
 
     memcpy( payload, uuid, 16 );
     sprintf( payload+16, "x264 - core %d%s - H.264/MPEG-4 AVC codec - "
-             "Copy%s 2003-2019 - http://www.videolan.org/x264.html - options: %s",
+             "Copy%s 2003-2020 - http://www.videolan.org/x264.html - options: %s",
              X264_BUILD, X264_VERSION, HAVE_GPL?"left":"right", opts );
     length = strlen(payload)+1;
 
@@ -794,7 +794,7 @@ int x264_sei_avcintra_vanc_write( x264_t *h, bs_t *s, int len )
 {
     uint8_t data[6000];
     const char *msg = "VANC";
-    if( len > sizeof(data) )
+    if( len < 0 || (unsigned)len > sizeof(data) )
     {
         x264_log( h, X264_LOG_ERROR, "AVC-Intra SEI is too large (%d)\n", len );
         return -1;

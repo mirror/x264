@@ -1,7 +1,7 @@
 /*****************************************************************************
  * common.h: misc common functions
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -107,6 +107,8 @@
 #   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)
 #   define MPIXEL_X4(src) M32(src)
 #endif
+
+#define SIZEOF_PIXEL ((int)sizeof(pixel))
 
 #define CPPIXEL_X4(dst,src) MPIXEL_X4(dst) = MPIXEL_X4(src)
 
@@ -528,7 +530,7 @@ struct x264_t
         int16_t (*mvr[2][X264_REF_MAX*2])[2];/* 16x16 mv for each possible ref */
         int8_t  *skipbp;                    /* block pattern for SKIP or DIRECT (sub)mbs. B-frames + cabac only */
         int8_t  *mb_transform_size;         /* transform_size_8x8_flag of each mb */
-        uint32_t *slice_table;              /* sh->first_mb of the slice that the indexed mb is part of */
+        int32_t *slice_table;               /* sh->first_mb of the slice that the indexed mb is part of */
         uint8_t *field;
 
          /* buffer for weighted versions of the reference frames */

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * base.h: misc common functions (bit depth independent)
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -53,7 +53,7 @@
  ****************************************************************************/
 #define XCHG(type,a,b) do { type t = a; a = b; b = t; } while( 0 )
 #define FIX8(f) ((int)(f*(1<<8)+.5))
-#define ARRAY_ELEMS(a) ((sizeof(a))/(sizeof(a[0])))
+#define ARRAY_ELEMS(a) ((int)((sizeof(a))/(sizeof(a[0]))))
 #define ALIGN(x,a) (((x)+((a)-1))&~((a)-1))
 #define IS_DISPOSABLE(type) ( type == X264_TYPE_B )
 
@@ -61,11 +61,11 @@
  * Mn: load or store n bits, aligned, native-endian
  * CPn: copy n bits, aligned, native-endian
  * we don't use memcpy for CPn because memcpy's args aren't assumed to be aligned */
-typedef union { uint16_t i; uint8_t  c[2]; } MAY_ALIAS x264_union16_t;
-typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } MAY_ALIAS x264_union32_t;
-typedef union { uint64_t i; uint32_t a[2]; uint16_t b[4]; uint8_t c[8]; } MAY_ALIAS x264_union64_t;
+typedef union { uint16_t i; uint8_t  b[2]; } MAY_ALIAS x264_union16_t;
+typedef union { uint32_t i; uint16_t w[2]; uint8_t  b[4]; } MAY_ALIAS x264_union32_t;
+typedef union { uint64_t i; uint32_t d[2]; uint16_t w[4]; uint8_t b[8]; } MAY_ALIAS x264_union64_t;
 typedef struct { uint64_t i[2]; } x264_uint128_t;
-typedef union { x264_uint128_t i; uint64_t a[2]; uint32_t b[4]; uint16_t c[8]; uint8_t d[16]; } MAY_ALIAS x264_union128_t;
+typedef union { x264_uint128_t i; uint64_t q[2]; uint32_t d[4]; uint16_t w[8]; uint8_t b[16]; } MAY_ALIAS x264_union128_t;
 #define M16(src) (((x264_union16_t*)(src))->i)
 #define M32(src) (((x264_union32_t*)(src))->i)
 #define M64(src) (((x264_union64_t*)(src))->i)
@@ -303,14 +303,14 @@ do {\
 do {\
     var = (void*)(intptr_t)prealloc_size;\
     preallocs[prealloc_idx++] = (uint8_t**)&var;\
-    prealloc_size += ALIGN(size, NATIVE_ALIGN);\
+    prealloc_size += ALIGN((int64_t)(size), NATIVE_ALIGN);\
 } while( 0 )
 
 #define PREALLOC_END( ptr )\
 do {\
     CHECKED_MALLOC( ptr, prealloc_size );\
     while( prealloc_idx-- )\
-        *preallocs[prealloc_idx] += (intptr_t)ptr;\
+        *preallocs[prealloc_idx] = (uint8_t*)((intptr_t)(*preallocs[prealloc_idx]) + (intptr_t)ptr);\
 } while( 0 )
 
 #endif

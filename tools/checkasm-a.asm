@@ -1,7 +1,7 @@
 ;*****************************************************************************
 ;* checkasm-a.asm: assembly check tool
 ;*****************************************************************************
-;* Copyright (C) 2008-2019 x264 project
+;* Copyright (C) 2008-2020 x264 project
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
 ;*          Henrik Gramner <henrik@gramner.com>
@@ -58,7 +58,6 @@ SECTION .text
 cextern_naked puts
 
 ; max number of args used by any x264 asm function.
-; (max_args % 4) must equal 3 for stack alignment
 %define max_args 15
 
 %if ARCH_X86_64
@@ -88,7 +87,7 @@ cglobal checkasm_stack_clobber, 1,2
 ; intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... )
 ;-----------------------------------------------------------------------------
 INIT_XMM
-cglobal checkasm_call, 2,15,16,max_args*8+8
+cglobal checkasm_call, 2,15,16,-1*(((max_args+1)*8+STACK_ALIGNMENT-1) & ~(STACK_ALIGNMENT-1))
     mov  r6, r0
     mov  [rsp+max_args*8], r1
 
@@ -103,14 +102,14 @@ cglobal checkasm_call, 2,15,16,max_args*8+8
     mov  r5, r11mp
     %assign i 6
     %rep max_args-6
-        mov  r9, [rsp+stack_offset+(i+1)*8]
+        mov  r9, [rstk+stack_offset+(i+1)*8]
         mov  [rsp+(i-6)*8], r9
         %assign i i+1
     %endrep
 %else
     %assign i 4
     %rep max_args-4
-        mov  r9, [rsp+stack_offset+(i+7)*8]
+        mov  r9, [rstk+stack_offset+(i+7)*8]
         mov  [rsp+i*8], r9
         %assign i i+1
     %endrep
@@ -176,16 +175,19 @@ cglobal checkasm_call, 2,15,16,max_args*8+8
 ;-----------------------------------------------------------------------------
 ; intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... )
 ;-----------------------------------------------------------------------------
-cglobal checkasm_call, 1,7
+cglobal checkasm_call, 2,7,0,-1*(((max_args+1)*4+STACK_ALIGNMENT-1) & ~(STACK_ALIGNMENT-1))
+    mov  [esp+max_args*4], r1
+%assign i 0
+%rep max_args
+    mov  r1, [rstk+stack_offset+12+i*4]
+    mov  [esp+i*4], r1
+    %assign i i+1
+%endrep
     mov  r3, n3
     mov  r4, n4
     mov  r5, n5
     mov  r6, n6
-%rep max_args
-    push dword [esp+24+max_args*4]
-%endrep
     call r0
-    add  esp, max_args*4
     xor  r3, n3
     xor  r4, n4
     xor  r5, n5
@@ -197,10 +199,9 @@ cglobal checkasm_call, 1,7
     mov  r3, eax
     mov  r4, edx
     lea  r1, [error_message]
-    push r1
+    mov  [esp], r1
     call puts
-    add  esp, 4
-    mov  r1, r1m
+    mov  r1, [esp+max_args*4]
     mov  dword [r1], 0
     mov  edx, r4
     mov  eax, r3

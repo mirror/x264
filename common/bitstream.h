@@ -1,7 +1,7 @@
 /*****************************************************************************
  * bitstream.h: bitstream writing
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Fiona Glaser <fiona@x264.com>
@@ -66,7 +66,7 @@ typedef struct
 } x264_bitstream_function_t;
 
 #define x264_bitstream_init x264_template(bitstream_init)
-void x264_bitstream_init( int cpu, x264_bitstream_function_t *pf );
+void x264_bitstream_init( uint32_t cpu, x264_bitstream_function_t *pf );
 
 /* A larger level table size theoretically could help a bit at extremely
  * high bitrates, but the cost in cache is usually too high for it to be

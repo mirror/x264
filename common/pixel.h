@@ -1,7 +1,7 @@
 /*****************************************************************************
  * pixel.c: pixel metrics
  *****************************************************************************
- * Copyright (C) 2004-2019 x264 project
+ * Copyright (C) 2004-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Fiona Glaser <fiona@x264.com>
@@ -144,7 +144,7 @@ typedef struct
 } x264_pixel_function_t;
 
 #define x264_pixel_init x264_template(pixel_init)
-void x264_pixel_init( int cpu, x264_pixel_function_t *pixf );
+void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf );
 #define x264_pixel_ssd_nv12 x264_template(pixel_ssd_nv12)
 void x264_pixel_ssd_nv12   ( x264_pixel_function_t *pf, pixel *pix1, intptr_t i_pix1, pixel *pix2, intptr_t i_pix2,
                              int i_width, int i_height, uint64_t *ssd_u, uint64_t *ssd_v );

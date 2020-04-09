@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc.c: motion compensation
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -160,7 +160,7 @@ static void mc_copy( pixel *src, intptr_t i_src_stride, pixel *dst, intptr_t i_d
 {
     for( int y = 0; y < i_height; y++ )
     {
-        memcpy( dst, src, i_width * sizeof(pixel) );
+        memcpy( dst, src, i_width * SIZEOF_PIXEL );
 
         src += i_src_stride;
         dst += i_dst_stride;
@@ -293,7 +293,7 @@ void x264_plane_copy_c( pixel *dst, intptr_t i_dst,
 {
     while( h-- )
     {
-        memcpy( dst, src, w * sizeof(pixel) );
+        memcpy( dst, src, w * SIZEOF_PIXEL );
         dst += i_dst;
         src += i_src;
     }
@@ -462,7 +462,7 @@ void x264_frame_init_lowres( x264_t *h, x264_frame_t *frame )
     // duplicate last row and column so that their interpolation doesn't have to be special-cased
     for( int y = 0; y < i_height; y++ )
         src[i_width+y*i_stride] = src[i_width-1+y*i_stride];
-    memcpy( src+i_stride*i_height, src+i_stride*(i_height-1), (i_width+1) * sizeof(pixel) );
+    memcpy( src+i_stride*i_height, src+i_stride*(i_height-1), (i_width+1) * SIZEOF_PIXEL );
     h->mc.frame_init_lowres_core( src, frame->lowres[0], frame->lowres[1], frame->lowres[2], frame->lowres[3],
                                   i_stride, frame->i_stride_lowres, frame->i_width_lowres, frame->i_lines_lowres );
     x264_frame_expand_border_lowres( frame );
@@ -529,7 +529,7 @@ static void mbtree_propagate_list( x264_t *h, uint16_t *ref_costs, int16_t (*mvs
     unsigned width = h->mb.i_mb_width;
     unsigned height = h->mb.i_mb_height;
 
-    for( unsigned i = 0; i < len; i++ )
+    for( int i = 0; i < len; i++ )
     {
         int lists_used = lowres_costs[i]>>LOWRES_COST_SHIFT;
 
@@ -607,7 +607,7 @@ static void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
         dst[i] = (int16_t)endian_fix16( src[i] ) * (1.0f/256.0f);
 }
 
-void x264_mc_init( int cpu, x264_mc_functions_t *pf, int cpu_independent )
+void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent )
 {
     pf->mc_luma   = mc_luma;
     pf->get_ref   = get_ref;

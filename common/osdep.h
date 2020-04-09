@@ -1,7 +1,7 @@
 /*****************************************************************************
  * osdep.h: platform-specific code
  *****************************************************************************
- * Copyright (C) 2007-2019 x264 project
+ * Copyright (C) 2007-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -185,7 +185,7 @@ static inline int x264_vfprintf( FILE *stream, const char *format, va_list arg )
         int length = vsnprintf( buf, sizeof(buf), format, arg2 );
         va_end( arg2 );
 
-        if( length > 0 && length < sizeof(buf) )
+        if( length > 0 && (unsigned)length < sizeof(buf) )
         {
             /* WriteConsoleW is the most reliable way to output Unicode to a console. */
             int length_utf16 = MultiByteToWideChar( CP_UTF8, 0, buf, length, buf_utf16, sizeof(buf_utf16)/sizeof(wchar_t) );
@@ -423,7 +423,7 @@ static ALWAYS_INLINE uint64_t endian_fix64( uint64_t x )
     return endian_fix32(x>>32) + ((uint64_t)endian_fix32(x)<<32);
 }
 #endif
-static ALWAYS_INLINE intptr_t endian_fix( intptr_t x )
+static ALWAYS_INLINE uintptr_t endian_fix( uintptr_t x )
 {
     return WORD_SIZE == 8 ? endian_fix64(x) : endian_fix32(x);
 }

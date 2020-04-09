@@ -1,7 +1,7 @@
 /*****************************************************************************
  * predict.h: intra prediction
  *****************************************************************************
- * Copyright (C) 2003-2019 x264 project
+ * Copyright (C) 2003-2020 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -147,14 +147,14 @@ void x264_predict_8x16c_v_c ( pixel *src );
 void x264_predict_8x16c_p_c ( pixel *src );
 
 #define x264_predict_16x16_init x264_template(predict_16x16_init)
-void x264_predict_16x16_init ( int cpu, x264_predict_t pf[7] );
+void x264_predict_16x16_init ( uint32_t cpu, x264_predict_t pf[7] );
 #define x264_predict_8x8c_init x264_template(predict_8x8c_init)
-void x264_predict_8x8c_init  ( int cpu, x264_predict_t pf[7] );
+void x264_predict_8x8c_init  ( uint32_t cpu, x264_predict_t pf[7] );
 #define x264_predict_8x16c_init x264_template(predict_8x16c_init)
-void x264_predict_8x16c_init ( int cpu, x264_predict_t pf[7] );
+void x264_predict_8x16c_init ( uint32_t cpu, x264_predict_t pf[7] );
 #define x264_predict_4x4_init x264_template(predict_4x4_init)
-void x264_predict_4x4_init   ( int cpu, x264_predict_t pf[12] );
+void x264_predict_4x4_init   ( uint32_t cpu, x264_predict_t pf[12] );
 #define x264_predict_8x8_init x264_template(predict_8x8_init)
-void x264_predict_8x8_init   ( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter );
+void x264_predict_8x8_init   ( uint32_t cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter );
 
 #endif

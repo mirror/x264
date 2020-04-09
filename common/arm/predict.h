@@ -1,7 +1,7 @@
 /*****************************************************************************
  * predict.h: arm intra prediction
  *****************************************************************************
- * Copyright (C) 2009-2019 x264 project
+ * Copyright (C) 2009-2020 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *
@@ -92,14 +92,14 @@ void x264_predict_16x16_v_neon( uint8_t *src );
 void x264_predict_16x16_p_neon( uint8_t *src );
 
 #define x264_predict_4x4_init_arm x264_template(predict_4x4_init_arm)
-void x264_predict_4x4_init_arm( int cpu, x264_predict_t pf[12] );
+void x264_predict_4x4_init_arm( uint32_t cpu, x264_predict_t pf[12] );
 #define x264_predict_8x8_init_arm x264_template(predict_8x8_init_arm)
-void x264_predict_8x8_init_arm( int cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter );
+void x264_predict_8x8_init_arm( uint32_t cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter );
 #define x264_predict_8x8c_init_arm x264_template(predict_8x8c_init_arm)
-void x264_predict_8x8c_init_arm( int cpu, x264_predict_t pf[7] );
+void x264_predict_8x8c_init_arm( uint32_t cpu, x264_predict_t pf[7] );
 #define x264_predict_8x16c_init_arm x264_template(predict_8x16c_init_arm)
-void x264_predict_8x16c_init_arm( int cpu, x264_predict_t pf[7] );
+void x264_predict_8x16c_init_arm( uint32_t cpu, x264_predict_t pf[7] );
 #define x264_predict_16x16_init_arm x264_template(predict_16x16_init_arm)
-void x264_predict_16x16_init_arm( int cpu, x264_predict_t pf[7] );
+void x264_predict_16x16_init_arm( uint32_t cpu, x264_predict_t pf[7] );
 
 #endif

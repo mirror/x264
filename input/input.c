@@ -1,7 +1,7 @@
 /*****************************************************************************
  * input.c: common input functions
  *****************************************************************************
- * Copyright (C) 2010-2019 x264 project
+ * Copyright (C) 2010-2020 x264 project
  *
  * Authors: Steven Walters <kemuri9@gmail.com>
  *          Henrik Gramner <henrik@gramner.com>
@@ -187,14 +187,14 @@ void *x264_cli_mmap( cli_mmap_t *h, int64_t offset, int64_t size )
 #if defined(_WIN32) || HAVE_MMAP
     uint8_t *base;
     int align = offset & h->align_mask;
-    if( size < 0 || size > (SIZE_MAX - MMAP_PADDING - align) )
+    if( offset < 0 || size < 0 || (uint64_t)size > (SIZE_MAX - MMAP_PADDING - align) )
         return NULL;
     offset -= align;
     size   += align;
 #ifdef _WIN32
     /* If the padding crosses a page boundary we need to increase the mapping size. */
     size_t padded_size = (-size & h->page_mask) < MMAP_PADDING ? size + MMAP_PADDING : size;
-    if( offset + padded_size > h->file_size )
+    if( (uint64_t)offset + padded_size > (uint64_t)h->file_size )
     {
         /* It's not possible to do the POSIX mmap() remapping trick on Windows, so if the padding crosses a
          * page boundary past the end of the file we have to copy the entire frame into a padded buffer. */
