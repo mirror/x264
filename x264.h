@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 161
+#define X264_BUILD 162
 
 #ifdef _WIN32
 #   define X264_DLL_IMPORT __declspec(dllimport)
@@ -628,6 +628,7 @@ X264_API void x264_param_default( x264_param_t * );
  *  value=NULL means "true" for boolean options, but is a BAD_VALUE for non-booleans. */
 #define X264_PARAM_BAD_NAME  (-1)
 #define X264_PARAM_BAD_VALUE (-2)
+#define X264_PARAM_ALLOC_FAILED (-3)
 X264_API int x264_param_parse( x264_param_t *, const char *name, const char *value );
 
 /* x264_param_cleanup:
