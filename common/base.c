@@ -281,6 +281,11 @@ REALIGN_STACK void x264_picture_clean( x264_picture_t *pic )
  ****************************************************************************/
 REALIGN_STACK void x264_param_default( x264_param_t *param )
 {
+    /* Account for repeated calls of x264_param_default(). */
+    if( param->rc.psz_stat_out )
+        free( param->rc.psz_stat_out );
+    if( param->rc.psz_stat_in )
+        free( param->rc.psz_stat_in );
     /* */
     memset( param, 0, sizeof( x264_param_t ) );
 
@@ -355,9 +360,16 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->rc.i_lookahead = 40;
 
     param->rc.b_stat_write = 0;
-    param->rc.psz_stat_out = "x264_2pass.log";
+    param->rc.psz_stat_out = strdup("x264_2pass.log");
     param->rc.b_stat_read = 0;
-    param->rc.psz_stat_in = "x264_2pass.log";
+    param->rc.psz_stat_in = strdup("x264_2pass.log");
+    if( !param->rc.psz_stat_in )
+    {
+        /* Since we can't fail here due to historical API decisions,
+         * I guess this is the best we can do. */
+        free( param->rc.psz_stat_out );
+        param->rc.psz_stat_out = NULL;
+    }
     param->rc.f_qcompress = 0.6;
     param->rc.f_qblur = 0.5;
     param->rc.f_complexity_blur = 20;
@@ -749,6 +761,41 @@ REALIGN_STACK int x264_param_apply_profile( x264_param_t *param, const char *pro
         param->psz_cqm_file = NULL;
     }
     return 0;
+}
+
+REALIGN_STACK void x264_param_cleanup( x264_param_t *p )
+{
+    /* We have to use free() here because these were all allocated with strdup(). */
+    if( p->psz_cqm_file )
+    {
+        free( p->psz_cqm_file );
+        p->psz_cqm_file = NULL;
+    }
+    if( p->psz_dump_yuv )
+    {
+        free( p->psz_dump_yuv );
+        p->psz_dump_yuv = NULL;
+    }
+    if( p->rc.psz_stat_in )
+    {
+        free( p->rc.psz_stat_in );
+        p->rc.psz_stat_in = NULL;
+    }
+    if( p->rc.psz_stat_out )
+    {
+        free( p->rc.psz_stat_out );
+        p->rc.psz_stat_out = NULL;
+    }
+    if( p->rc.psz_zones )
+    {
+        free( p->rc.psz_zones );
+        p->rc.psz_zones = NULL;
+    }
+    if( p->psz_clbin_file )
+    {
+        free( p->psz_clbin_file );
+        p->psz_clbin_file = NULL;
+    }
 }
 
 static int parse_enum( const char *arg, const char * const *names, int *dst )

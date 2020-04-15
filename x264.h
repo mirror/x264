@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 160
+#define X264_BUILD 161
 
 #ifdef _WIN32
 #   define X264_DLL_IMPORT __declspec(dllimport)
@@ -629,6 +629,14 @@ X264_API void x264_param_default( x264_param_t * );
 #define X264_PARAM_BAD_NAME  (-1)
 #define X264_PARAM_BAD_VALUE (-2)
 X264_API int x264_param_parse( x264_param_t *, const char *name, const char *value );
+
+/* x264_param_cleanup:
+ * Cleans up and frees allocated members of x264_param_t.
+ * This *does not* free the x264_param_t itself, as it may exist on the
+ * stack. It only frees any members of the struct that were allocated by
+ * x264 itself, in e.g. x264_param_parse().
+ * x264_param_default() *must* have been called on the x264_param_t. */
+X264_API void x264_param_cleanup( x264_param_t * );
 
 /****************************************************************************
  * Advanced parameter handling functions
