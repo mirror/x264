@@ -1770,8 +1770,8 @@ int x264_ratecontrol_slice_type( x264_t *h, int frame_num )
             h->param.rc.i_qp_constant = (h->stat.i_frame_count[SLICE_TYPE_P] == 0) ? 24 + QP_BD_OFFSET
                                       : 1 + h->stat.f_frame_qp[SLICE_TYPE_P] / h->stat.i_frame_count[SLICE_TYPE_P];
             rc->qp_constant[SLICE_TYPE_P] = x264_clip3( h->param.rc.i_qp_constant, 0, QP_MAX );
-            rc->qp_constant[SLICE_TYPE_I] = x264_clip3( (int)( qscale2qp( qp2qscale( h->param.rc.i_qp_constant ) / fabs( h->param.rc.f_ip_factor )) + 0.5 ), 0, QP_MAX );
-            rc->qp_constant[SLICE_TYPE_B] = x264_clip3( (int)( qscale2qp( qp2qscale( h->param.rc.i_qp_constant ) * fabs( h->param.rc.f_pb_factor )) + 0.5 ), 0, QP_MAX );
+            rc->qp_constant[SLICE_TYPE_I] = x264_clip3( (int)( qscale2qp( qp2qscale( h->param.rc.i_qp_constant ) / h->param.rc.f_ip_factor ) + 0.5 ), 0, QP_MAX );
+            rc->qp_constant[SLICE_TYPE_B] = x264_clip3( (int)( qscale2qp( qp2qscale( h->param.rc.i_qp_constant ) * h->param.rc.f_pb_factor ) + 0.5 ), 0, QP_MAX );
 
             x264_log( h, X264_LOG_ERROR, "2nd pass has more frames than 1st pass (%d)\n", rc->num_entries );
             x264_log( h, X264_LOG_ERROR, "continuing anyway, at constant QP=%d\n", h->param.rc.i_qp_constant );
@@ -1909,7 +1909,7 @@ int x264_ratecontrol_end( x264_t *h, int bits, int *filler )
         {
             /* Depends on the fact that B-frame's QP is an offset from the following P-frame's.
              * Not perfectly accurate with B-refs, but good enough. */
-            rc->cplxr_sum += bits * qp2qscale( rc->qpa_rc ) / (rc->last_rceq * fabs( h->param.rc.f_pb_factor ));
+            rc->cplxr_sum += bits * qp2qscale( rc->qpa_rc ) / (rc->last_rceq * h->param.rc.f_pb_factor);
         }
         rc->cplxr_sum *= rc->cbr_decay;
         rc->wanted_bits_window += h->fenc->f_duration * rc->bitrate;
@@ -2034,12 +2034,10 @@ static double get_diff_limited_q(x264_t *h, ratecontrol_entry_t *rce, double q, 
     {
         double iq = q;
         double pq = qp2qscale( rcc->accum_p_qp / rcc->accum_p_norm );
-        double ip_factor = fabs( h->param.rc.f_ip_factor );
+        double ip_factor = h->param.rc.f_ip_factor;
         /* don't apply ip_factor if the following frame is also I */
         if( rcc->accum_p_norm <= 0 )
             q = iq;
-        else if( h->param.rc.f_ip_factor < 0 )
-            q = iq / ip_factor;
         else if( rcc->accum_p_norm >= 1 )
             q = pq / ip_factor;
         else
@@ -2047,10 +2045,9 @@ static double get_diff_limited_q(x264_t *h, ratecontrol_entry_t *rce, double q, 
     }
     else if( pict_type == SLICE_TYPE_B )
     {
-        if( h->param.rc.f_pb_factor > 0 )
-            q = rcc->last_qscale_for[rcc->last_non_b_pict_type];
+        q = rcc->last_qscale_for[rcc->last_non_b_pict_type];
         if( !rce->kept_as_ref )
-            q *= fabs( h->param.rc.f_pb_factor );
+            q *= h->param.rc.f_pb_factor;
     }
     else if( pict_type == SLICE_TYPE_P
              && rcc->last_non_b_pict_type == SLICE_TYPE_P
@@ -2583,7 +2580,7 @@ static float rate_estimate_qscale( x264_t *h )
                 && rcc->last_non_b_pict_type != SLICE_TYPE_I )
             {
                 q = qp2qscale( rcc->accum_p_qp / rcc->accum_p_norm );
-                q /= fabs( h->param.rc.f_ip_factor );
+                q /= h->param.rc.f_ip_factor;
             }
             else if( h->i_frame > 0 )
             {
@@ -2603,7 +2600,7 @@ static float rate_estimate_qscale( x264_t *h )
             }
             else if( h->param.rc.i_rc_method == X264_RC_CRF && rcc->qcompress != 1 )
             {
-                q = qp2qscale( ABR_INIT_QP ) / fabs( h->param.rc.f_ip_factor );
+                q = qp2qscale( ABR_INIT_QP ) / h->param.rc.f_ip_factor;
             }
             rcc->qp_novbv = qscale2qp( q );
 
@@ -2615,7 +2612,7 @@ static float rate_estimate_qscale( x264_t *h )
         rcc->last_qscale = q;
 
         if( !(rcc->b_2pass && !rcc->b_vbv) && h->fenc->i_frame == 0 )
-            rcc->last_qscale_for[SLICE_TYPE_P] = q * fabs( h->param.rc.f_ip_factor );
+            rcc->last_qscale_for[SLICE_TYPE_P] = q * h->param.rc.f_ip_factor;
 
         if( rcc->b_2pass )
             rcc->frame_size_planned = qscale2bits( &rce, q );
