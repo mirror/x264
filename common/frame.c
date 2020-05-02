@@ -318,7 +318,10 @@ void x264_frame_delete( x264_frame_t *frame )
         x264_free( frame->base );
 
         if( frame->param && frame->param->param_free )
+        {
+            x264_param_cleanup( frame->param );
             frame->param->param_free( frame->param );
+        }
         if( frame->mb_info_free )
             frame->mb_info_free( frame->mb_info );
         if( frame->extra_sei.sei_free )
