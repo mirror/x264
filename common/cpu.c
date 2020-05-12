@@ -431,6 +431,8 @@ uint32_t x264_cpu_detect( void )
         }
     }
     fclose(fp);
+# else
+    flags |= X264_CPU_MSA;
 # endif
 
     return flags;
