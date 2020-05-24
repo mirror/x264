@@ -780,7 +780,7 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
         x264_emms();
         res_c = x264_pixel_ssim_wxh( &pixel_c,   pbuf1+2, 32, pbuf2+2, 32, 32, 28, pbuf3, &cnt );
         res_a = x264_pixel_ssim_wxh( &pixel_asm, pbuf1+2, 32, pbuf2+2, 32, 32, 28, pbuf3, &cnt );
-        if( fabs( res_c - res_a ) > 1e-6 )
+        if( fabs( res_c - res_a ) > 1e-5 )
         {
             ok = 0;
             fprintf( stderr, "ssim: %.7f != %.7f [FAILED]\n", res_c, res_a );
