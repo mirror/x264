@@ -251,7 +251,7 @@ void          x264_deblock_init( uint32_t cpu, x264_deblock_function_t *pf, int 
 #define x264_frame_cond_broadcast x264_template(frame_cond_broadcast)
 void          x264_frame_cond_broadcast( x264_frame_t *frame, int i_lines_completed );
 #define x264_frame_cond_wait x264_template(frame_cond_wait)
-void          x264_frame_cond_wait( x264_frame_t *frame, int i_lines_completed );
+int           x264_frame_cond_wait( x264_frame_t *frame, int i_lines_completed );
 #define x264_frame_new_slice x264_template(frame_new_slice)
 int           x264_frame_new_slice( x264_t *h, x264_frame_t *frame );
 

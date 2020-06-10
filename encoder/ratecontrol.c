@@ -7,7 +7,7 @@
  *          Michael Niedermayer <michaelni@gmx.at>
  *          Gabriel Bouvigne <gabriel.bouvigne@joost.com>
  *          Fiona Glaser <fiona@x264.com>
- *          Måns Rullgård <mru@mru.ath.cx>
+ *          MÃ¥ns RullgÃ¥rd <mru@mru.ath.cx>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2030,8 +2030,6 @@ static double get_diff_limited_q(x264_t *h, ratecontrol_entry_t *rce, double q, 
     x264_zone_t *zone = get_zone( h, frame_num );
 
     // force I/B quants as a function of P quants
-    const double last_p_q    = rcc->last_qscale_for[SLICE_TYPE_P];
-    const double last_non_b_q= rcc->last_qscale_for[rcc->last_non_b_pict_type];
     if( pict_type == SLICE_TYPE_I )
     {
         double iq = q;
@@ -2050,7 +2048,7 @@ static double get_diff_limited_q(x264_t *h, ratecontrol_entry_t *rce, double q, 
     else if( pict_type == SLICE_TYPE_B )
     {
         if( h->param.rc.f_pb_factor > 0 )
-            q = last_non_b_q;
+            q = rcc->last_qscale_for[rcc->last_non_b_pict_type];
         if( !rce->kept_as_ref )
             q *= fabs( h->param.rc.f_pb_factor );
     }
@@ -2058,7 +2056,7 @@ static double get_diff_limited_q(x264_t *h, ratecontrol_entry_t *rce, double q, 
              && rcc->last_non_b_pict_type == SLICE_TYPE_P
              && rce->tex_bits == 0 )
     {
-        q = last_p_q;
+        q = rcc->last_qscale_for[SLICE_TYPE_P];
     }
 
     /* last qscale / qdiff stuff */

@@ -725,15 +725,15 @@ function sub8x16_dct_dc_neon
     vadd.s16        q3,  q3,  q15
     vsub.s16        d17, d0,  d1  @ b4
     vadd.s16        d18, d2,  d3  @ b1
-    vsub.s16        d19, d2,  d3  @ b5
+    vsub.s16        d19, d2,  d3  @ b5
     vadd.s16        d20, d4,  d5  @ b2
-    vsub.s16        d21, d4,  d5  @ b6
+    vsub.s16        d21, d4,  d5  @ b6
     vadd.s16        d22, d6,  d7  @ b3
-    vsub.s16        d23, d6,  d7  @ b7
+    vsub.s16        d23, d6,  d7  @ b7
     vadd.s16        q0,  q8,  q9  @ b0 + b1, b4 + b5; a0, a2
-    vsub.s16        q1,  q8,  q9  @ b0 - b1, b4 - b5; a4, a6
+    vsub.s16        q1,  q8,  q9  @ b0 - b1, b4 - b5; a4, a6
     vadd.s16        q2,  q10, q11 @ b2 + b3, b6 + b7; a1, a3
-    vsub.s16        q3,  q10, q11 @ b2 - b3, b6 - b7; a5, a7
+    vsub.s16        q3,  q10, q11 @ b2 - b3, b6 - b7; a5, a7
 
     vadd.s16        q8,  q0,  q2  @ a0 + a1, a2 + a3
     vsub.s16        q9,  q0,  q2  @ a0 - a1, a2 - a3
