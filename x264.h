@@ -585,11 +585,7 @@ typedef struct x264_param_t
     void (*nalu_process)( x264_t *h, x264_nal_t *nal, void *opaque );
 
     /* For internal use only */
-    struct {
-        void **ptr;
-        int size;
-        int count;
-    } buffer;
+    void *opaque;
 } x264_param_t;
 
 X264_API void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
@@ -640,7 +636,10 @@ X264_API void x264_param_default( x264_param_t * );
 X264_API int x264_param_parse( x264_param_t *, const char *name, const char *value );
 
 /* x264_param_cleanup:
- *  free memory allocated during x264_param_parse. */
+ * Cleans up and frees allocated members of x264_param_t.
+ * This *does not* free the x264_param_t itself, as it may exist on the
+ * stack. It only frees any members of the struct that were allocated by
+ * x264 itself, in e.g. x264_param_parse(). */
 X264_API void x264_param_cleanup( x264_param_t *param );
 
 /****************************************************************************

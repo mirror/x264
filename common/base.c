@@ -201,37 +201,49 @@ error:
 /****************************************************************************
  * x264_strdup:
  ****************************************************************************/
+typedef struct {
+    int size;
+    int count;
+    void *ptr[];
+} strdup_buffer;
+
+#define BUFFER_OFFSET offsetof(strdup_buffer, ptr)
+#define BUFFER_DEFAULT_SIZE 16
+
 char *x264_strdup( x264_param_t *param, const char *src )
 {
-    if( !param->buffer.ptr )
+    strdup_buffer *buf = param->opaque;
+    if( !buf )
     {
-        param->buffer.ptr = x264_malloc( 16 * sizeof(void *) );
-        if( !param->buffer.ptr )
+        buf = x264_malloc( BUFFER_OFFSET + BUFFER_DEFAULT_SIZE * sizeof(void *) );
+        if( !buf )
             return NULL;
-        param->buffer.size = 16;
-        param->buffer.count = 0;
+        buf->size = BUFFER_DEFAULT_SIZE;
+        buf->count = 0;
+        param->opaque = buf;
     }
-    else if( param->buffer.count == param->buffer.size )
+    else if( buf->count == buf->size )
     {
-        if( param->buffer.size > INT_MAX / 2 / (int)sizeof(void *) )
+        if( buf->size > (INT_MAX - BUFFER_OFFSET) / 2 / (int)sizeof(void *) )
             return NULL;
-        int new_size = param->buffer.size * 2;
-        void **tmp = x264_malloc( new_size * sizeof(void *) );
+        int new_size = buf->size * 2;
+        void *tmp = x264_malloc( BUFFER_OFFSET + new_size * sizeof(void *) );
         if( !tmp )
             return NULL;
-        memcpy( tmp, param->buffer.ptr, param->buffer.size * sizeof(void *) );
-        x264_free( param->buffer.ptr );
-        param->buffer.ptr = tmp;
-        param->buffer.size = new_size;
+        memcpy( tmp, buf, BUFFER_OFFSET + buf->size * sizeof(void *) );
+        x264_free( buf );
+        buf = tmp;
+        buf->size = new_size;
+        param->opaque = buf;
     }
-    char *buf = strdup( src );
-    if( !buf )
+    char *res = strdup( src );
+    if( !res )
     {
         x264_log_internal( X264_LOG_ERROR, "strdup failed\n" );
         return NULL;
     }
-    param->buffer.ptr[param->buffer.count++] = buf;
-    return buf;
+    buf->ptr[buf->count++] = res;
+    return res;
 }
 
 /****************************************************************************
@@ -239,14 +251,13 @@ char *x264_strdup( x264_param_t *param, const char *src )
  ****************************************************************************/
 REALIGN_STACK void x264_param_cleanup( x264_param_t *param )
 {
-    if( param->buffer.ptr )
+    strdup_buffer *buf = param->opaque;
+    if( buf )
     {
-        for( int i = 0; i < param->buffer.count; i++ )
-            free( param->buffer.ptr[i] );
-        x264_free( param->buffer.ptr );
-        param->buffer.ptr = NULL;
-        param->buffer.size = 0;
-        param->buffer.count = 0;
+        for( int i = 0; i < buf->count; i++ )
+            free( buf->ptr[i] );
+        x264_free( buf );
+        param->opaque = NULL;
     }
 }
 

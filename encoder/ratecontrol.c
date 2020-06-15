@@ -1237,9 +1237,7 @@ static int parse_zone( x264_t *h, x264_zone_t *z, char *p )
         return 0;
     CHECKED_MALLOC( z->param, sizeof(x264_param_t) );
     memcpy( z->param, &h->param, sizeof(x264_param_t) );
-    z->param->buffer.ptr = NULL;
-    z->param->buffer.size = 0;
-    z->param->buffer.count = 0;
+    z->param->opaque = NULL;
     z->param->param_free = x264_free;
     while( (tok = strtok_r( p, ",", &saveptr )) )
     {
@@ -1318,9 +1316,7 @@ static int parse_zones( x264_t *h )
         rc->zones[0].f_bitrate_factor = 1;
         CHECKED_MALLOC( rc->zones[0].param, sizeof(x264_param_t) );
         memcpy( rc->zones[0].param, &h->param, sizeof(x264_param_t) );
-        rc->zones[0].param->buffer.ptr = NULL;
-        rc->zones[0].param->buffer.size = 0;
-        rc->zones[0].param->buffer.count = 0;
+        rc->zones[0].param->opaque = NULL;
         for( int i = 1; i < rc->i_zones; i++ )
         {
             if( !rc->zones[i].param )
