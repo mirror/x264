@@ -574,7 +574,7 @@ trap 'rm -rf conftest*' EXIT
 # test for use of compilers that require specific handling
 cc_base="$(basename "$CC")"
 QPRE="-"
-if [[ $host_os = mingw* || $host_os = cygwin* ]]; then
+if [[ $host_os = mingw* || $host_os = msys* || $host_os = cygwin* ]]; then
     if [[ "$cc_base" = icl || "$cc_base" = icl[\ .]* ]]; then
         # Windows Intel Compiler creates dependency generation with absolute Windows paths, Cygwin's make does not support Windows paths.
         [[ $host_os = cygwin* ]] && die "Windows Intel Compiler support requires MSYS"
