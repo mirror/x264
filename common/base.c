@@ -215,7 +215,7 @@ char *x264_strdup( x264_param_t *param, const char *src )
     strdup_buffer *buf = param->opaque;
     if( !buf )
     {
-        buf = x264_malloc( BUFFER_OFFSET + BUFFER_DEFAULT_SIZE * sizeof(void *) );
+        buf = malloc( BUFFER_OFFSET + BUFFER_DEFAULT_SIZE * sizeof(void *) );
         if( !buf )
             return NULL;
         buf->size = BUFFER_DEFAULT_SIZE;
@@ -227,12 +227,9 @@ char *x264_strdup( x264_param_t *param, const char *src )
         if( buf->size > (INT_MAX - BUFFER_OFFSET) / 2 / (int)sizeof(void *) )
             return NULL;
         int new_size = buf->size * 2;
-        void *tmp = x264_malloc( BUFFER_OFFSET + new_size * sizeof(void *) );
-        if( !tmp )
+        buf = realloc( buf, BUFFER_OFFSET + new_size * sizeof(void *) );
+        if( !buf )
             return NULL;
-        memcpy( tmp, buf, BUFFER_OFFSET + buf->size * sizeof(void *) );
-        x264_free( buf );
-        buf = tmp;
         buf->size = new_size;
         param->opaque = buf;
     }
@@ -256,7 +253,7 @@ REALIGN_STACK void x264_param_cleanup( x264_param_t *param )
     {
         for( int i = 0; i < buf->count; i++ )
             free( buf->ptr[i] );
-        x264_free( buf );
+        free( buf );
         param->opaque = NULL;
     }
 }
