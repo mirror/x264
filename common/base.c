@@ -217,7 +217,7 @@ char *x264_strdup( x264_param_t *param, const char *src )
     {
         buf = malloc( BUFFER_OFFSET + BUFFER_DEFAULT_SIZE * sizeof(void *) );
         if( !buf )
-            return NULL;
+            goto fail;
         buf->size = BUFFER_DEFAULT_SIZE;
         buf->count = 0;
         param->opaque = buf;
@@ -225,22 +225,22 @@ char *x264_strdup( x264_param_t *param, const char *src )
     else if( buf->count == buf->size )
     {
         if( buf->size > (INT_MAX - BUFFER_OFFSET) / 2 / (int)sizeof(void *) )
-            return NULL;
+            goto fail;
         int new_size = buf->size * 2;
         buf = realloc( buf, BUFFER_OFFSET + new_size * sizeof(void *) );
         if( !buf )
-            return NULL;
+            goto fail;
         buf->size = new_size;
         param->opaque = buf;
     }
     char *res = strdup( src );
     if( !res )
-    {
-        x264_log_internal( X264_LOG_ERROR, "strdup failed\n" );
-        return NULL;
-    }
+        goto fail;
     buf->ptr[buf->count++] = res;
     return res;
+fail:
+    x264_log_internal( X264_LOG_ERROR, "strdup failed\n" );
+    return NULL;
 }
 
 /****************************************************************************
