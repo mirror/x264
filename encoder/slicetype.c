@@ -1809,6 +1809,9 @@ void x264_slicetype_decide( x264_t *h )
     for( bframes = 0, brefs = 0;; bframes++ )
     {
         frm = h->lookahead->next.list[bframes];
+        // FIXME better place to do this?
+        if( PARAM_FIELD_ENCODE )
+            frm->b_ref_opp_field = 0;
 
         /* Any non-scenecut field following an I-field must be a P-field */
         if( PARAM_FIELD_ENCODE && !IS_X264_TYPE_I( frm->i_type ) && h->param.i_keyint_max > 1 &&
