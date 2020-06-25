@@ -681,7 +681,7 @@ struct x264_t
         int ref_blind_dupe; /* The index of the blind reference frame duplicate. */
         int8_t deblock_ref_table[X264_REF_MAX*2+2];
 #define deblock_ref_table(x) h->mb.deblock_ref_table[(x)+2]
-        int     i_mvy_offset[2][X264_REF_MAX];
+        int8_t     i_mvy_offset[2][X264_REF_MAX];
     } mb;
 
     /* rate control encoding only */
