@@ -1620,3 +1620,4 @@ mkdir -p common/{aarch64,arm,mips,ppc,x86} encoder extras filters/video input ou
 
 echo
 echo "You can run 'make' or 'make fprofiled' now."
+

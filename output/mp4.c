@@ -237,7 +237,7 @@ static int set_param( hnd_t handle, x264_param_t *p_param )
             dw *= sar;
         else
             dh /= sar;
-        gf_isom_set_pixel_aspect_ratio( p_mp4->p_file, p_mp4->i_track, p_mp4->i_descidx, p_param->vui.i_sar_width, p_param->vui.i_sar_height, GF_FALSE );
+        gf_isom_set_pixel_aspect_ratio( p_mp4->p_file, p_mp4->i_track, p_mp4->i_descidx, p_param->vui.i_sar_width, p_param->vui.i_sar_height, 0 );
         gf_isom_set_track_layout_info( p_mp4->p_file, p_mp4->i_track, dw, dh, 0, 0, 0 );
     }
 
