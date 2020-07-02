@@ -584,8 +584,10 @@
     %elif %1==2
         %if mmsize==8
             SBUTTERFLY dq, %3, %4, %5
-        %else
+        %elif %0==6
             TRANS q, ORDER, %3, %4, %5, %6
+        %else
+            TRANS q, ORDER, %3, %4, %5
         %endif
     %elif %1==4
         SBUTTERFLY qdq, %3, %4, %5

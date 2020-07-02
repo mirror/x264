@@ -674,7 +674,7 @@ cglobal cabac_block_residual_internal, 4,15,0,-4*64
     xor    r10d, r10d
     cmp countcatd, 63
     je .sigmap_8x8
-    SIGMAP_LOOP 0, r12d, countcatd,
+    SIGMAP_LOOP 0, r12d, countcatd
 .sigmap_8x8:
     SIGMAP_LOOP 1, r11d, 63, _8x8
 .level_loop_start:
