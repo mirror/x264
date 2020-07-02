@@ -1237,6 +1237,7 @@ static int parse_zone( x264_t *h, x264_zone_t *z, char *p )
         return 0;
     CHECKED_MALLOC( z->param, sizeof(x264_param_t) );
     memcpy( z->param, &h->param, sizeof(x264_param_t) );
+    z->param->opaque = NULL;
     z->param->param_free = x264_free;
     while( (tok = strtok_r( p, ",", &saveptr )) )
     {
@@ -1315,6 +1316,7 @@ static int parse_zones( x264_t *h )
         rc->zones[0].f_bitrate_factor = 1;
         CHECKED_MALLOC( rc->zones[0].param, sizeof(x264_param_t) );
         memcpy( rc->zones[0].param, &h->param, sizeof(x264_param_t) );
+        rc->zones[0].param->opaque = NULL;
         for( int i = 1; i < rc->i_zones; i++ )
         {
             if( !rc->zones[i].param )
@@ -1391,10 +1393,14 @@ void x264_ratecontrol_delete( x264_t *h )
     macroblock_tree_rescale_destroy( rc );
     if( rc->zones )
     {
+        x264_param_cleanup( rc->zones[0].param );
         x264_free( rc->zones[0].param );
         for( int i = 1; i < rc->i_zones; i++ )
             if( rc->zones[i].param != rc->zones[0].param && rc->zones[i].param->param_free )
+            {
+                x264_param_cleanup( rc->zones[i].param );
                 rc->zones[i].param->param_free( rc->zones[i].param );
+            }
         x264_free( rc->zones );
     }
     x264_free( rc );
