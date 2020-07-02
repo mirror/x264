@@ -1460,9 +1460,27 @@ x264_t *x264_encoder_open( x264_param_t *param )
 
     /* Create a copy of param */
     memcpy( &h->param, param, sizeof(x264_param_t) );
+    h->param.opaque = NULL;
+    h->param.param_free = NULL;
+
+    if( h->param.psz_cqm_file )
+        CHECKED_STRDUP( h->param.psz_cqm_file, &h->param, h->param.psz_cqm_file );
+    if( h->param.psz_dump_yuv )
+        CHECKED_STRDUP( h->param.psz_dump_yuv, &h->param, h->param.psz_dump_yuv );
+    if( h->param.rc.psz_stat_out )
+        CHECKED_STRDUP( h->param.rc.psz_stat_out, &h->param, h->param.rc.psz_stat_out );
+    if( h->param.rc.psz_stat_in )
+        CHECKED_STRDUP( h->param.rc.psz_stat_in, &h->param, h->param.rc.psz_stat_in );
+    if( h->param.rc.psz_zones )
+        CHECKED_STRDUP( h->param.rc.psz_zones, &h->param, h->param.rc.psz_zones );
+    if( h->param.psz_clbin_file )
+        CHECKED_STRDUP( h->param.psz_clbin_file, &h->param, h->param.psz_clbin_file );
 
     if( param->param_free )
+    {
+        x264_param_cleanup( param );
         param->param_free( param );
+    }
 
 #if HAVE_INTEL_DISPATCHER
     x264_intel_dispatcher_override();
@@ -1480,11 +1498,6 @@ x264_t *x264_encoder_open( x264_param_t *param )
     if( h->param.psz_cqm_file )
         if( x264_cqm_parse_file( h, h->param.psz_cqm_file ) < 0 )
             goto fail;
-
-    if( h->param.rc.psz_stat_out )
-        h->param.rc.psz_stat_out = strdup( h->param.rc.psz_stat_out );
-    if( h->param.rc.psz_stat_in )
-        h->param.rc.psz_stat_in = strdup( h->param.rc.psz_stat_in );
 
     x264_reduce_fraction( &h->param.i_fps_num, &h->param.i_fps_den );
     x264_reduce_fraction( &h->param.i_timebase_num, &h->param.i_timebase_den );
@@ -1900,6 +1913,7 @@ int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
 void x264_encoder_parameters( x264_t *h, x264_param_t *param )
 {
     memcpy( param, &h->thread[h->i_thread_phase]->param, sizeof(x264_param_t) );
+    param->opaque = NULL;
 }
 
 /* internal usage */
@@ -3395,6 +3409,7 @@ int     x264_encoder_encode( x264_t *h,
         x264_encoder_reconfig_apply( h, h->fenc->param );
         if( h->fenc->param->param_free )
         {
+            x264_param_cleanup( h->fenc->param );
             h->fenc->param->param_free( h->fenc->param );
             h->fenc->param = NULL;
         }
@@ -4418,10 +4433,7 @@ void    x264_encoder_close  ( x264_t *h )
     x264_ratecontrol_delete( h );
 
     /* param */
-    if( h->param.rc.psz_stat_out )
-        free( h->param.rc.psz_stat_out );
-    if( h->param.rc.psz_stat_in )
-        free( h->param.rc.psz_stat_in );
+    x264_param_cleanup( &h->param );
 
     x264_cqm_delete( h );
     x264_free( h->nal_buffer );

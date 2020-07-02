@@ -261,13 +261,17 @@ X264_API void x264_reduce_fraction64( uint64_t *n, uint64_t *d );
 X264_API void x264_log_default( void *p_unused, int i_level, const char *psz_fmt, va_list arg );
 X264_API void x264_log_internal( int i_level, const char *psz_fmt, ... );
 
-/* x264_malloc : will do or emulate a memalign
+/* x264_malloc: will do or emulate a memalign
  * you have to use x264_free for buffers allocated with x264_malloc */
 X264_API void *x264_malloc( int64_t );
 X264_API void  x264_free( void * );
 
 /* x264_slurp_file: malloc space for the whole file and read it */
 X264_API char *x264_slurp_file( const char *filename );
+
+/* x264_strdup: will do strdup and save returned pointer inside
+ * x264_param_t for later freeing during x264_param_cleanup */
+char *x264_strdup( x264_param_t *param, const char *src );
 
 /* x264_param2string: return a (malloced) string containing most of
  * the encoding options */
@@ -286,6 +290,12 @@ do {\
 do {\
     CHECKED_MALLOC( var, size );\
     memset( var, 0, size );\
+} while( 0 )
+#define CHECKED_STRDUP( var, param, src )\
+do {\
+    var = x264_strdup( param, src );\
+    if( !var )\
+        goto fail;\
 } while( 0 )
 
 /* Macros for merging multiple allocations into a single large malloc, for improved

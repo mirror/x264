@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 160
+#define X264_BUILD 161
 
 #ifdef _WIN32
 #   define X264_DLL_IMPORT __declspec(dllimport)
@@ -583,6 +583,9 @@ typedef struct x264_param_t
      * e.g. if doing multiple encodes in one process.
      */
     void (*nalu_process)( x264_t *h, x264_nal_t *nal, void *opaque );
+
+    /* For internal use only */
+    void *opaque;
 } x264_param_t;
 
 X264_API void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
@@ -625,10 +628,19 @@ X264_API void x264_param_default( x264_param_t * );
  *  note: BAD_VALUE occurs only if it can't even parse the value,
  *  numerical range is not checked until x264_encoder_open() or
  *  x264_encoder_reconfig().
- *  value=NULL means "true" for boolean options, but is a BAD_VALUE for non-booleans. */
+ *  value=NULL means "true" for boolean options, but is a BAD_VALUE for non-booleans.
+ *  can allocate memory which should be freed by call of x264_param_cleanup. */
 #define X264_PARAM_BAD_NAME  (-1)
 #define X264_PARAM_BAD_VALUE (-2)
+#define X264_PARAM_ALLOC_FAILED (-3)
 X264_API int x264_param_parse( x264_param_t *, const char *name, const char *value );
+
+/* x264_param_cleanup:
+ * Cleans up and frees allocated members of x264_param_t.
+ * This *does not* free the x264_param_t itself, as it may exist on the
+ * stack. It only frees any members of the struct that were allocated by
+ * x264 itself, in e.g. x264_param_parse(). */
+X264_API void x264_param_cleanup( x264_param_t *param );
 
 /****************************************************************************
  * Advanced parameter handling functions
