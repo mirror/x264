@@ -331,8 +331,8 @@ int x264_cli_autocomplete( const char *prev, const char *cur )
     OPT( "--input-fmt" )
     {
 #if HAVE_LAVF
-        av_register_all();
-        for( const AVInputFormat *f = NULL; (f = av_iformat_next( f )); )
+        void *i = NULL;
+        for( const AVInputFormat *f; (f = av_demuxer_iterate( &i )); )
             suggest_token( f->name, ',' );
 #endif
     }

@@ -1154,7 +1154,7 @@ if [ "$lavf" = "auto" ] ; then
         done
     fi
 
-    if cc_check libavformat/avformat.h "$LAVF_CFLAGS $LAVF_LIBS" "av_register_all();" ; then
+    if cc_check libavformat/avformat.h "$LAVF_CFLAGS $LAVF_LIBS" "av_demuxer_iterate(0);" ; then
         if cc_check libavcodec/avcodec.h "$LAVF_CFLAGS $LAVF_LIBS" "avcodec_send_packet(0,0);" ; then
             lavf="yes"
         else
