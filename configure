@@ -1232,15 +1232,16 @@ if [ "$gpac" = "auto" -a "$lsmash" != "yes" ] ; then
     gpac="no"
     GPAC_LIBS="-lgpac_static"
     cc_check "" -lz && GPAC_LIBS="$GPAC_LIBS -lz"
+    cc_check "" -ldl && GPAC_LIBS="$GPAC_LIBS -ldl"
     if [ "$SYS" = "WINDOWS" ] ; then
         cc_check "" -lws2_32 && GPAC_LIBS="$GPAC_LIBS -lws2_32"
         cc_check "" -lwinmm && GPAC_LIBS="$GPAC_LIBS -lwinmm"
     fi
     if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_close(0);" ; then
-        if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_set_pixel_aspect_ratio(0,0,0,0,0);" ; then
+        if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_set_pixel_aspect_ratio(0,0,0,0,0,0);" ; then
             gpac="yes"
         else
-            echo "Warning: gpac is too old, update to 2007-06-21 UTC or later"
+            echo "Warning: gpac is too old, update to v0.8.0 or later"
         fi
     fi
 fi
