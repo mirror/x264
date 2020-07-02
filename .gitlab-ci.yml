@@ -37,12 +37,20 @@ stages:
     stage: build
     script: |
         set -x
-        curl -L -- https://download.videolan.org/videolan/x264/av.tar.gz > av.tar.gz && tar xfzv av.tar.gz
-        cd av
-        ./bootstrap
+        LOCAL_INSTALL_DIR=`pwd`/local_install
+        export PKG_CONFIG_LIBDIR=${LOCAL_INSTALL_DIR}/lib/pkgconfig
+        git clone --depth 1 --branch master https://git.ffmpeg.org/ffmpeg.git ffmpeg
+        cd ffmpeg
+        ./configure --prefix="${LOCAL_INSTALL_DIR}" --enable-pic --disable-debug --extra-ldflags="-static" --disable-programs --disable-doc --disable-avdevice --disable-postproc --disable-avfilter --disable-network --disable-encoders --disable-muxers
         make -j$(getconf _NPROCESSORS_ONLN)
+        make -j$(getconf _NPROCESSORS_ONLN) install
         cd ..
-        export PKG_CONFIG_PATH=`/bin/ls -d $PWD/av/*/lib/pkgconfig`
+        git clone --depth 1 --branch master https://github.com/l-smash/l-smash.git lsmash
+        cd lsmash
+        ./configure --prefix="${LOCAL_INSTALL_DIR}" --extra-ldflags="-static"
+        make -j$(getconf _NPROCESSORS_ONLN)
+        make -j$(getconf _NPROCESSORS_ONLN) install
+        cd ..
         ./configure --enable-pic --enable-strip --extra-ldflags="-static"
         make -j$(getconf _NPROCESSORS_ONLN) x264 checkasm
     artifacts:
@@ -73,12 +81,19 @@ build-debian-aarch64:
     extends: build-debian-amd64
     script: |
         set -x
-        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2 || curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/${_PATH}/last/vlc-contrib-${_TRIPLET}-`date +%Y%m%d`.tar.bz2
+        LOCAL_INSTALL_DIR=`pwd`/${_TRIPLET}
+        export PKG_CONFIG_LIBDIR=${LOCAL_INSTALL_DIR}/lib/pkgconfig
+        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2
         bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
         tar xvf vlc-contrib-${_TRIPLET}-latest.tar
-        sed -i "s#@@CONTRIB_PREFIX@@#`pwd`/${_TRIPLET}#g" ${_TRIPLET}/lib/pkgconfig/*.pc
-        export PKG_CONFIG_LIBDIR=`pwd`/${_TRIPLET}/lib/pkgconfig
-        ./configure --host=${_TRIPLET} --cross-prefix=${_TRIPLET}- --enable-pic --enable-strip
+        sed -i "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
+        git clone --depth 1 --branch master https://github.com/l-smash/l-smash.git lsmash
+        cd lsmash
+        ./configure --prefix="${LOCAL_INSTALL_DIR}" --target-os="${_TRIPLET}" --cross-prefix="${_TRIPLET}-"
+        make -j$(getconf _NPROCESSORS_ONLN)
+        make -j$(getconf _NPROCESSORS_ONLN) install
+        cd ..
+        ./configure --host="${_TRIPLET}" --cross-prefix="${_TRIPLET}-" --enable-pic --enable-strip
         make -j$(getconf _NPROCESSORS_ONLN) x264 checkasm
 
 build-win32:
@@ -95,12 +110,19 @@ build-macos:
         - macos
     script: |
         set -x
-        curl -O https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2
+        LOCAL_INSTALL_DIR=`pwd`/${_TRIPLET}
+        export PKG_CONFIG_LIBDIR=${LOCAL_INSTALL_DIR}/lib/pkgconfig
+        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2
         bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
         tar xvf vlc-contrib-${_TRIPLET}-latest.tar
-        sed -i.bak "s#@@CONTRIB_PREFIX@@#`pwd`/${_TRIPLET}#g" ${_TRIPLET}/lib/pkgconfig/*.pc
-        export PKG_CONFIG_LIBDIR=`pwd`/${_TRIPLET}/lib/pkgconfig
-        ./configure --enable-strip
+        sed -i.bak "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
+        git clone --depth 1 --branch master https://github.com/l-smash/l-smash.git lsmash
+        cd lsmash
+        ./configure --prefix="${LOCAL_INSTALL_DIR}"
+        make -j$(getconf _NPROCESSORS_ONLN)
+        make -j$(getconf _NPROCESSORS_ONLN) install
+        cd ..
+        ./configure --enable-pic --enable-strip
         make -j$(getconf _NPROCESSORS_ONLN) x264 checkasm
     variables: *variables-macos
 
