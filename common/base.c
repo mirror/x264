@@ -281,6 +281,11 @@ REALIGN_STACK void x264_picture_clean( x264_picture_t *pic )
  ****************************************************************************/
 REALIGN_STACK void x264_param_default( x264_param_t *param )
 {
+    /* Account for repeated calls of x264_param_default(). */
+    if( param->rc.psz_stat_out )
+        free( param->rc.psz_stat_out );
+    if( param->rc.psz_stat_in )
+        free( param->rc.psz_stat_in );
     /* */
     memset( param, 0, sizeof( x264_param_t ) );
 
@@ -355,9 +360,16 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->rc.i_lookahead = 40;
 
     param->rc.b_stat_write = 0;
-    param->rc.psz_stat_out = "x264_2pass.log";
+    param->rc.psz_stat_out = strdup("x264_2pass.log");
     param->rc.b_stat_read = 0;
-    param->rc.psz_stat_in = "x264_2pass.log";
+    param->rc.psz_stat_in = strdup("x264_2pass.log");
+    if( !param->rc.psz_stat_in )
+    {
+        /* Since we can't fail here due to historical API decisions,
+         * I guess this is the best we can do. */
+        free( param->rc.psz_stat_out );
+        param->rc.psz_stat_out = NULL;
+    }
     param->rc.f_qcompress = 0.6;
     param->rc.f_qblur = 0.5;
     param->rc.f_complexity_blur = 20;
@@ -751,6 +763,41 @@ REALIGN_STACK int x264_param_apply_profile( x264_param_t *param, const char *pro
     return 0;
 }
 
+REALIGN_STACK void x264_param_cleanup( x264_param_t *p )
+{
+    /* We have to use free() here because these were all allocated with strdup(). */
+    if( p->psz_cqm_file )
+    {
+        free( p->psz_cqm_file );
+        p->psz_cqm_file = NULL;
+    }
+    if( p->psz_dump_yuv )
+    {
+        free( p->psz_dump_yuv );
+        p->psz_dump_yuv = NULL;
+    }
+    if( p->rc.psz_stat_in )
+    {
+        free( p->rc.psz_stat_in );
+        p->rc.psz_stat_in = NULL;
+    }
+    if( p->rc.psz_stat_out )
+    {
+        free( p->rc.psz_stat_out );
+        p->rc.psz_stat_out = NULL;
+    }
+    if( p->rc.psz_zones )
+    {
+        free( p->rc.psz_zones );
+        p->rc.psz_zones = NULL;
+    }
+    if( p->psz_clbin_file )
+    {
+        free( p->psz_clbin_file );
+        p->psz_clbin_file = NULL;
+    }
+}
+
 static int parse_enum( const char *arg, const char * const *names, int *dst )
 {
     for( int i = 0; names[i]; i++ )
@@ -833,7 +880,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         char *c;
         name_buf = strdup(name);
         if( !name_buf )
-            return X264_PARAM_BAD_NAME;
+            return X264_PARAM_ALLOC_FAILED;
         while( (c = strchr( name_buf, '_' )) )
             *c = '-';
         name = name_buf;
@@ -876,6 +923,8 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
                 if( (p->cpu&X264_CPU_SSSE3) && !(p->cpu&X264_CPU_SSE2_IS_SLOW) )
                     p->cpu |= X264_CPU_SSE2_IS_FAST;
             }
+            else
+                errortype = X264_PARAM_ALLOC_FAILED;
         }
     }
     OPT("threads")
@@ -1062,10 +1111,28 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         else if( strstr( value, "jvt" ) )
             p->i_cqm_preset = X264_CQM_JVT;
         else
+        {
+            if ( p->psz_cqm_file )
+                free( p->psz_cqm_file );
             p->psz_cqm_file = strdup(value);
+            if( !p->psz_cqm_file )
+            {
+                b_error = 1;
+                errortype = X264_PARAM_ALLOC_FAILED;
+            }
+        }
     }
     OPT("cqmfile")
+    {
+        if( p->psz_cqm_file )
+            free( p->psz_cqm_file );
         p->psz_cqm_file = strdup(value);
+        if( !p->psz_cqm_file )
+        {
+            b_error = 1;
+            errortype = X264_PARAM_ALLOC_FAILED;
+        }
+    }
     OPT("cqm4")
     {
         p->i_cqm_preset = X264_CQM_CUSTOM;
@@ -1129,7 +1196,16 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT("log")
         p->i_log_level = atoi(value);
     OPT("dump-yuv")
+    {
+        if( p->psz_dump_yuv )
+            free( p->psz_dump_yuv );
         p->psz_dump_yuv = strdup(value);
+        if( !p->psz_dump_yuv )
+        {
+            b_error = 1;
+            errortype = X264_PARAM_ALLOC_FAILED;
+        }
+    }
     OPT2("analyse", "partitions")
     {
         p->analyse.inter = 0;
@@ -1245,8 +1321,17 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     }
     OPT("stats")
     {
+        if( p->rc.psz_stat_in )
+            free( p->rc.psz_stat_in );
+        if( p->rc.psz_stat_out )
+            free( p->rc.psz_stat_out );
         p->rc.psz_stat_in = strdup(value);
         p->rc.psz_stat_out = strdup(value);
+        if( !p->rc.psz_stat_in || !p->rc.psz_stat_out )
+        {
+            b_error = 1;
+            errortype = X264_PARAM_ALLOC_FAILED;
+        }
     }
     OPT("qcomp")
         p->rc.f_qcompress = atof(value);
@@ -1257,7 +1342,16 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT2("cplxblur", "cplx-blur")
         p->rc.f_complexity_blur = atof(value);
     OPT("zones")
+    {
+        if( p->rc.psz_zones )
+            free( p->rc.psz_zones );
         p->rc.psz_zones = strdup(value);
+        if( !p->rc.psz_zones )
+        {
+            b_error = 1;
+            errortype = X264_PARAM_ALLOC_FAILED;
+        }
+    }
     OPT("crop-rect")
         b_error |= sscanf( value, "%d,%d,%d,%d", &p->crop_rect.i_left, &p->crop_rect.i_top,
                                                  &p->crop_rect.i_right, &p->crop_rect.i_bottom ) != 4;
@@ -1292,7 +1386,16 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT("opencl")
         p->b_opencl = atobool( value );
     OPT("opencl-clbin")
+    {
+        if( p->psz_clbin_file )
+            free( p->psz_clbin_file );
         p->psz_clbin_file = strdup( value );
+        if( !p->psz_clbin_file )
+        {
+            b_error = 1;
+            errortype = X264_PARAM_ALLOC_FAILED;
+        }
+    }
     OPT("opencl-device")
         p->i_opencl_device = atoi( value );
     else
