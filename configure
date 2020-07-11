@@ -1624,7 +1624,7 @@ cli:           $cli
 libx264:       $cli_libx264
 shared:        $shared
 static:        $static
-bashcomplition $bashcompletion
+bashcompletion $bashcompletion
 asm:           $asm
 interlaced:    $interlaced
 avs:           $avs
