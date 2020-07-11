@@ -25,7 +25,8 @@ Configuration options:
   --system-libx264         use system libx264 instead of internal
   --enable-shared          build shared library
   --enable-static          build static library
-  --enable-bashcompletion  install bash-completion script
+  --disable-bashcompletion disable installation of bash-completion script
+  --enable-bashcompletion  force installation of bash-completion script
   --bashcompletionsdir=DIR install bash-completion script in DIR [auto]
   --disable-opencl         disable OpenCL features
   --disable-gpl            disable GPL-only features
@@ -365,7 +366,7 @@ cli="yes"
 cli_libx264="internal"
 shared="no"
 static="no"
-bashcompletion="no"
+bashcompletion="auto"
 bashcompletionsdir=""
 avs="auto"
 lavf="auto"
@@ -443,8 +444,11 @@ for opt do
         --enable-static)
             static="yes"
             ;;
+        --disable-bashcompletion)
+            bashcompletion="no"
+            ;;
         --enable-bashcompletion)
-            bashcompletion="auto"
+            bashcompletion="yes"
             ;;
         --bashcompletionsdir=*)
             bashcompletionsdir="$optarg"
@@ -1575,6 +1579,14 @@ if [ "$static" = "yes" ]; then
 fi
 
 if [ "$bashcompletion" = "auto" ]; then
+    if [ "$cli" = "no" ]; then
+        bashcompletion="no"
+    elif [[ -z "$bashcompletionsdir" && "$prefix" != "/usr" && "$prefix" != "/usr/"* ]]; then
+        bashcompletion="no"
+    fi
+fi
+
+if [ "$bashcompletion" != "no" ]; then
     if [ -z "$bashcompletionsdir" ] && pkg_check bash-completion ; then
         bashcompletionsdir="$($PKGCONFIG --variable=completionsdir bash-completion)"
     fi
