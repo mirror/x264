@@ -65,6 +65,14 @@
 #include <ffms.h>
 #endif
 
+#if HAVE_GPAC
+#include <gpac/version.h>
+#endif
+
+#if HAVE_LSMASH
+#include <lsmash.h>
+#endif
+
 #ifdef _WIN32
 #define CONSOLE_TITLE_SIZE 200
 static wchar_t org_console_title[CONSOLE_TITLE_SIZE] = L"";
@@ -345,9 +353,17 @@ static void print_version_info( void )
 #if HAVE_FFMS
     printf( "(ffmpegsource %d.%d.%d.%d)\n", FFMS_VERSION >> 24, (FFMS_VERSION & 0xff0000) >> 16, (FFMS_VERSION & 0xff00) >> 8, FFMS_VERSION & 0xff );
 #endif
+#if HAVE_GPAC
+    printf( "(gpac " GPAC_FULL_VERSION ")\n" );
+#endif
+#if HAVE_LSMASH
+    printf( "(lsmash %d.%d.%d)\n", LSMASH_VERSION_MAJOR, LSMASH_VERSION_MINOR, LSMASH_VERSION_MICRO );
+#endif
     printf( "built on " __DATE__ ", " );
 #ifdef __INTEL_COMPILER
     printf( "intel: %.2f (%d)\n", __INTEL_COMPILER / 100.f, __INTEL_COMPILER_BUILD_DATE );
+#elif defined(__clang__)
+    printf( "clang: " __clang_version__ "\n" );
 #elif defined(__GNUC__)
     printf( "gcc: " __VERSION__ "\n" );
 #elif defined(_MSC_FULL_VER)
