@@ -199,7 +199,7 @@ error:
 }
 
 /****************************************************************************
- * x264_strdup:
+ * x264_param_strdup:
  ****************************************************************************/
 typedef struct {
     int size;
@@ -210,7 +210,7 @@ typedef struct {
 #define BUFFER_OFFSET offsetof(strdup_buffer, ptr)
 #define BUFFER_DEFAULT_SIZE 16
 
-char *x264_strdup( x264_param_t *param, const char *src )
+char *x264_param_strdup( x264_param_t *param, const char *src )
 {
     strdup_buffer *buf = param->opaque;
     if( !buf )
@@ -239,7 +239,7 @@ char *x264_strdup( x264_param_t *param, const char *src )
     buf->ptr[buf->count++] = res;
     return res;
 fail:
-    x264_log_internal( X264_LOG_ERROR, "strdup failed\n" );
+    x264_log_internal( X264_LOG_ERROR, "x264_param_strdup failed\n" );
     return NULL;
 }
 
@@ -871,9 +871,9 @@ static double atof_internal( const char *str, int *b_error )
 #undef atof
 #define atoi(str) atoi_internal( str, &b_error )
 #define atof(str) atof_internal( str, &b_error )
-#define CHECKED_ERROR_STRDUP( var, param, src )\
+#define CHECKED_ERROR_PARAM_STRDUP( var, param, src )\
 do {\
-    var = x264_strdup( param, src );\
+    var = x264_param_strdup( param, src );\
     if( !var )\
     {\
         b_error = 1;\
@@ -1133,10 +1133,10 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         else if( strstr( value, "jvt" ) )
             p->i_cqm_preset = X264_CQM_JVT;
         else
-            CHECKED_ERROR_STRDUP( p->psz_cqm_file, p, value );
+            CHECKED_ERROR_PARAM_STRDUP( p->psz_cqm_file, p, value );
     }
     OPT("cqmfile")
-        CHECKED_ERROR_STRDUP( p->psz_cqm_file, p, value );
+        CHECKED_ERROR_PARAM_STRDUP( p->psz_cqm_file, p, value );
     OPT("cqm4")
     {
         p->i_cqm_preset = X264_CQM_CUSTOM;
@@ -1200,7 +1200,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT("log")
         p->i_log_level = atoi(value);
     OPT("dump-yuv")
-        CHECKED_ERROR_STRDUP( p->psz_dump_yuv, p, value );
+        CHECKED_ERROR_PARAM_STRDUP( p->psz_dump_yuv, p, value );
     OPT2("analyse", "partitions")
     {
         p->analyse.inter = 0;
@@ -1316,8 +1316,8 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     }
     OPT("stats")
     {
-        CHECKED_ERROR_STRDUP( p->rc.psz_stat_in, p, value );
-        CHECKED_ERROR_STRDUP( p->rc.psz_stat_out, p, value );
+        CHECKED_ERROR_PARAM_STRDUP( p->rc.psz_stat_in, p, value );
+        CHECKED_ERROR_PARAM_STRDUP( p->rc.psz_stat_out, p, value );
     }
     OPT("qcomp")
         p->rc.f_qcompress = atof(value);
@@ -1328,7 +1328,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT2("cplxblur", "cplx-blur")
         p->rc.f_complexity_blur = atof(value);
     OPT("zones")
-        CHECKED_ERROR_STRDUP( p->rc.psz_zones, p, value );
+        CHECKED_ERROR_PARAM_STRDUP( p->rc.psz_zones, p, value );
     OPT("crop-rect")
         b_error |= sscanf( value, "%d,%d,%d,%d", &p->crop_rect.i_left, &p->crop_rect.i_top,
                                                  &p->crop_rect.i_right, &p->crop_rect.i_bottom ) != 4;
@@ -1363,7 +1363,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT("opencl")
         p->b_opencl = atobool( value );
     OPT("opencl-clbin")
-        CHECKED_ERROR_STRDUP( p->psz_clbin_file, p, value );
+        CHECKED_ERROR_PARAM_STRDUP( p->psz_clbin_file, p, value );
     OPT("opencl-device")
         p->i_opencl_device = atoi( value );
     else

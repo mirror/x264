@@ -1464,17 +1464,17 @@ x264_t *x264_encoder_open( x264_param_t *param )
     h->param.param_free = NULL;
 
     if( h->param.psz_cqm_file )
-        CHECKED_STRDUP( h->param.psz_cqm_file, &h->param, h->param.psz_cqm_file );
+        CHECKED_PARAM_STRDUP( h->param.psz_cqm_file, &h->param, h->param.psz_cqm_file );
     if( h->param.psz_dump_yuv )
-        CHECKED_STRDUP( h->param.psz_dump_yuv, &h->param, h->param.psz_dump_yuv );
+        CHECKED_PARAM_STRDUP( h->param.psz_dump_yuv, &h->param, h->param.psz_dump_yuv );
     if( h->param.rc.psz_stat_out )
-        CHECKED_STRDUP( h->param.rc.psz_stat_out, &h->param, h->param.rc.psz_stat_out );
+        CHECKED_PARAM_STRDUP( h->param.rc.psz_stat_out, &h->param, h->param.rc.psz_stat_out );
     if( h->param.rc.psz_stat_in )
-        CHECKED_STRDUP( h->param.rc.psz_stat_in, &h->param, h->param.rc.psz_stat_in );
+        CHECKED_PARAM_STRDUP( h->param.rc.psz_stat_in, &h->param, h->param.rc.psz_stat_in );
     if( h->param.rc.psz_zones )
-        CHECKED_STRDUP( h->param.rc.psz_zones, &h->param, h->param.rc.psz_zones );
+        CHECKED_PARAM_STRDUP( h->param.rc.psz_zones, &h->param, h->param.rc.psz_zones );
     if( h->param.psz_clbin_file )
-        CHECKED_STRDUP( h->param.psz_clbin_file, &h->param, h->param.psz_clbin_file );
+        CHECKED_PARAM_STRDUP( h->param.psz_clbin_file, &h->param, h->param.psz_clbin_file );
 
     if( param->param_free )
     {
