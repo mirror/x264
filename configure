@@ -1617,31 +1617,31 @@ filters="crop select_every"
 [ $swscale = yes ] && filters="resize $filters"
 
 cat > conftest.log <<EOF
-platform:      $ARCH
-byte order:    $CPU_ENDIAN
-system:        $SYS
-cli:           $cli
-libx264:       $cli_libx264
-shared:        $shared
-static:        $static
-bashcompletion $bashcompletion
-asm:           $asm
-interlaced:    $interlaced
-avs:           $avs
-lavf:          $lavf
-ffms:          $ffms
-mp4:           $mp4
-gpl:           $gpl
-thread:        $thread
-opencl:        $opencl
-filters:       $filters
-lto:           $lto
-debug:         $debug
-gprof:         $gprof
-strip:         $strip
-PIC:           $pic
-bit depth:     $bit_depth
-chroma format: $chroma_format
+platform:       $ARCH
+byte order:     $CPU_ENDIAN
+system:         $SYS
+cli:            $cli
+libx264:        $cli_libx264
+shared:         $shared
+static:         $static
+bashcompletion: $bashcompletion
+asm:            $asm
+interlaced:     $interlaced
+avs:            $avs
+lavf:           $lavf
+ffms:           $ffms
+mp4:            $mp4
+gpl:            $gpl
+thread:         $thread
+opencl:         $opencl
+filters:        $filters
+lto:            $lto
+debug:          $debug
+gprof:          $gprof
+strip:          $strip
+PIC:            $pic
+bit depth:      $bit_depth
+chroma format:  $chroma_format
 EOF
 
 echo >> config.log
