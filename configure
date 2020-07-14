@@ -25,6 +25,9 @@ Configuration options:
   --system-libx264         use system libx264 instead of internal
   --enable-shared          build shared library
   --enable-static          build static library
+  --disable-bashcompletion disable installation of bash-completion script
+  --enable-bashcompletion  force installation of bash-completion script
+  --bashcompletionsdir=DIR install bash-completion script in DIR [auto]
   --disable-opencl         disable OpenCL features
   --disable-gpl            disable GPL-only features
   --disable-thread         disable multithreaded encoding
@@ -363,6 +366,8 @@ cli="yes"
 cli_libx264="internal"
 shared="no"
 static="no"
+bashcompletion="auto"
+bashcompletionsdir=""
 avs="auto"
 lavf="auto"
 ffms="auto"
@@ -438,6 +443,15 @@ for opt do
             ;;
         --enable-static)
             static="yes"
+            ;;
+        --disable-bashcompletion)
+            bashcompletion="no"
+            ;;
+        --enable-bashcompletion)
+            bashcompletion="yes"
+            ;;
+        --bashcompletionsdir=*)
+            bashcompletionsdir="$optarg"
             ;;
         --disable-asm)
             asm="no"
@@ -1529,9 +1543,6 @@ fi
 if [ "$cli" = "yes" ]; then
     echo 'default: cli' >> config.mak
     echo 'install: install-cli' >> config.mak
-    if pkg_check bash-completion ; then
-        echo "BASHCOMPLETIONSDIR=$($PKGCONFIG --variable=completionsdir bash-completion)" >> config.mak
-    fi
 fi
 
 if [ "$shared" = "yes" ]; then
@@ -1567,6 +1578,27 @@ if [ "$static" = "yes" ]; then
     echo 'install: install-lib-static' >> config.mak
 fi
 
+if [ "$bashcompletion" = "auto" ]; then
+    if [ "$cli" = "no" ]; then
+        bashcompletion="no"
+    elif [[ -z "$bashcompletionsdir" && "$prefix" != "/usr" && "$prefix" != "/usr/"* ]]; then
+        bashcompletion="no"
+    fi
+fi
+
+if [ "$bashcompletion" != "no" ]; then
+    if [ -z "$bashcompletionsdir" ] && pkg_check bash-completion ; then
+        bashcompletionsdir="$($PKGCONFIG --variable=completionsdir bash-completion)"
+    fi
+    if [ -n "$bashcompletionsdir" ]; then
+        bashcompletion="yes"
+        echo 'install: install-bashcompletion' >> config.mak
+        echo "BASHCOMPLETIONSDIR=$bashcompletionsdir" >> config.mak
+    else
+        bashcompletion="no"
+    fi
+fi
+
 cat > x264.pc << EOF
 prefix=$prefix
 exec_prefix=$exec_prefix
@@ -1585,30 +1617,31 @@ filters="crop select_every"
 [ $swscale = yes ] && filters="resize $filters"
 
 cat > conftest.log <<EOF
-platform:      $ARCH
-byte order:    $CPU_ENDIAN
-system:        $SYS
-cli:           $cli
-libx264:       $cli_libx264
-shared:        $shared
-static:        $static
-asm:           $asm
-interlaced:    $interlaced
-avs:           $avs
-lavf:          $lavf
-ffms:          $ffms
-mp4:           $mp4
-gpl:           $gpl
-thread:        $thread
-opencl:        $opencl
-filters:       $filters
-lto:           $lto
-debug:         $debug
-gprof:         $gprof
-strip:         $strip
-PIC:           $pic
-bit depth:     $bit_depth
-chroma format: $chroma_format
+platform:       $ARCH
+byte order:     $CPU_ENDIAN
+system:         $SYS
+cli:            $cli
+libx264:        $cli_libx264
+shared:         $shared
+static:         $static
+bashcompletion: $bashcompletion
+asm:            $asm
+interlaced:     $interlaced
+avs:            $avs
+lavf:           $lavf
+ffms:           $ffms
+mp4:            $mp4
+gpl:            $gpl
+thread:         $thread
+opencl:         $opencl
+filters:        $filters
+lto:            $lto
+debug:          $debug
+gprof:          $gprof
+strip:          $strip
+PIC:            $pic
+bit depth:      $bit_depth
+chroma format:  $chroma_format
 EOF
 
 echo >> config.log
