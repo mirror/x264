@@ -388,10 +388,6 @@ distclean: clean
 install-cli: cli
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL) x264$(EXE) $(DESTDIR)$(bindir)
-ifneq ($(BASHCOMPLETIONSDIR),)
-	$(INSTALL) -d $(DESTDIR)$(BASHCOMPLETIONSDIR)
-	$(INSTALL) -m 644 -T $(SRCPATH)/tools/bash-autocomplete.sh $(DESTDIR)$(BASHCOMPLETIONSDIR)/x264
-endif
 
 install-lib-dev:
 	$(INSTALL) -d $(DESTDIR)$(includedir) $(DESTDIR)$(libdir)/pkgconfig
@@ -412,6 +408,12 @@ ifneq ($(IMPLIBNAME),)
 else ifneq ($(SONAME),)
 	ln -f -s $(SONAME) $(DESTDIR)$(libdir)/libx264.$(SOSUFFIX)
 	$(INSTALL) -m 755 $(SONAME) $(DESTDIR)$(libdir)
+endif
+
+install-bashcompletion:
+ifneq ($(BASHCOMPLETIONSDIR),)
+	$(INSTALL) -d $(DESTDIR)$(BASHCOMPLETIONSDIR)
+	$(INSTALL) -m 644 -T $(SRCPATH)/tools/bash-autocomplete.sh $(DESTDIR)$(BASHCOMPLETIONSDIR)/x264
 endif
 
 uninstall:
