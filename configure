@@ -821,6 +821,18 @@ case $host_cpu in
         AS="${AS-${CC}}"
         AS_EXT=".c"
         ;;
+    aarch64|arm64*)
+        ARCH="AARCH64"
+        stack_alignment=16
+        if [ "$SYS" = MACOSX ] ; then
+            AS="${AS-${CC}}"
+            ASFLAGS="$ASFLAGS -DPREFIX -DPIC"
+        elif [ "$SYS" = WINDOWS ] && [ "$compiler" = CL ] ; then
+            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -as-type armasm -- armasm64 -nologo}"
+        else
+            AS="${AS-${CC}}"
+        fi
+        ;;
     arm*)
         ARCH="ARM"
         if [ "$SYS" = MACOSX ] ; then
@@ -835,18 +847,6 @@ case $host_cpu in
             AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type armasm -force-thumb -- armasm -nologo -ignore 4509}"
         elif [ "$SYS" = WINDOWS ] ; then
             AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type clang -force-thumb -- ${CC} -mimplicit-it=always}"
-        else
-            AS="${AS-${CC}}"
-        fi
-        ;;
-    aarch64)
-        ARCH="AARCH64"
-        stack_alignment=16
-        if [ "$SYS" = MACOSX ] ; then
-            AS="${AS-${CC}}"
-            ASFLAGS="$ASFLAGS -DPREFIX -DPIC"
-        elif [ "$SYS" = WINDOWS ] && [ "$compiler" = CL ] ; then
-            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -as-type armasm -- armasm64 -nologo}"
         else
             AS="${AS-${CC}}"
         fi
