@@ -25,15 +25,21 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
+// инклюдегард
 #ifndef X264_X264_H
 #define X264_X264_H
 
+// использовать Си-шное связывание без манглинга
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// здесь юзеру предоставляется возможность самому предварительно выбрать, 
+// какой именно файл (stdint.h или inttypes.h) ему использовать, т.к. они имеют 
+// схожий функционал
 #if !defined(_STDINT_H) && !defined(_STDINT_H_) && !defined(_STDINT_H_INCLUDED) && !defined(_STDINT) &&\
     !defined(_SYS_STDINT_H_) && !defined(_INTTYPES_H) && !defined(_INTTYPES_H_) && !defined(_INTTYPES)
+// _MSC_VER определен при компиляции в Visual Studio
 # ifdef _MSC_VER
 #  pragma message("You must include stdint.h or inttypes.h before x264.h")
 # else
@@ -47,12 +53,17 @@ extern "C" {
 
 #define X264_BUILD 161
 
+// этот макрос определен при работе компилятора Visual Studio
 #ifdef _WIN32
+// объявляемая сущность будет импортируемой из DLL (???)
 #   define X264_DLL_IMPORT __declspec(dllimport)
+// объявляемая сущность будет экспортируемой в DLL (???)
 #   define X264_DLL_EXPORT __declspec(dllexport)
 #else
+// этот макрос определен, если работает компилятор gcc старше 4+ версии
 #   if defined(__GNUC__) && (__GNUC__ >= 4)
 #       define X264_DLL_IMPORT
+        // ???
 #       define X264_DLL_EXPORT __attribute__((visibility("default")))
 #   else
 #       define X264_DLL_IMPORT
@@ -77,6 +88,8 @@ extern "C" {
 
 /* x264_t:
  *      opaque handler for encoder */
+// здесь от пользователя скрываются детали реализации структуры x264_t
+// он довольствуется только указателями на эту структуру
 typedef struct x264_t x264_t;
 
 /****************************************************************************
@@ -987,8 +1000,10 @@ X264_API void x264_encoder_intra_refresh( x264_t * );
  *      Returns 0 on success, negative on failure. */
 X264_API int x264_encoder_invalidate_reference( x264_t *, int64_t pts );
 
+// добивка к Си-шному связыванию
 #ifdef __cplusplus
 }
 #endif
 
+// добивка к инклюдегард
 #endif
