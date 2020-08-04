@@ -174,11 +174,7 @@ typedef struct x264_nal_t
 #define X264_CPU_SSE2_IS_FAST       (1U<<20) /* a few functions are only faster on Core2 and Phenom */
 #define X264_CPU_SLOW_SHUFFLE       (1U<<21) /* The Conroe has a slow shuffle unit (relative to overall SSE performance) */
 #define X264_CPU_STACK_MOD4         (1U<<22) /* if stack is only mod4 and not mod16 */
-#define X264_CPU_SLOW_ATOM          (1U<<23) /* The Atom is terrible: slow SSE unaligned loads, slow
-                                              * SIMD multiplies, slow SIMD variable shifts, slow pshufb,
-                                              * cacheline split penalties -- gather everything here that
-                                              * isn't shared by other CPUs to avoid making half a dozen
-                                              * new SLOW flags. */
+#define X264_CPU_SLOW_ATOM          (1U<<23) /* The Atom is terrible: slow SSE unaligned loads, slow SIMD multiplies, slow SIMD variable shifts, slow pshufb, cacheline split penalties -- gather everything here that isn't shared by other CPUs to avoid making half a dozen new SLOW flags. */
 #define X264_CPU_SLOW_PSHUFB        (1U<<24) /* such as on the Intel Atom */
 #define X264_CPU_SLOW_PALIGNR       (1U<<25) /* such as on the AMD Bobcat */
 
@@ -237,6 +233,9 @@ typedef struct x264_nal_t
 #define X264_AVCINTRA_FLAVOR_PANASONIC 0
 #define X264_AVCINTRA_FLAVOR_SONY      1
 
+// применяем спиральную технику 
+// x264_direct_pred_names - это константный массив указателей на константные массивы символов
+// обращаем также внимание, то массивы оканчиваются нулями 
 static const char * const x264_direct_pred_names[] = { "none", "spatial", "temporal", "auto", 0 };
 static const char * const x264_motion_est_names[] = { "dia", "hex", "umh", "esa", "tesa", 0 };
 static const char * const x264_b_pyramid_names[] = { "none", "strict", "normal", 0 };
