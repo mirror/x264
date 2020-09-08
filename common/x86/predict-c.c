@@ -91,8 +91,10 @@ static void predict_16x16_p_##name( pixel *src )\
         "paddd        %%xmm1, %%xmm0 \n"\
         "movd         %%xmm0, %0     \n"\
         :"=r"(H)\
-        :"m"(src[-FDEC_STRIDE-1]), "m"(src[-FDEC_STRIDE+8]),\
-         "m"(*pw_12345678), "m"(*pw_m87654321)\
+        :"m"(MEM_FIX(&src[-FDEC_STRIDE-1], const pixel, 8)),\
+         "m"(MEM_FIX(&src[-FDEC_STRIDE+8], const pixel, 8)),\
+         "m"(MEM_FIX(pw_12345678, const int16_t, 8)),\
+         "m"(MEM_FIX(pw_m87654321, const int16_t, 8))\
         :"xmm0", "xmm1"\
     );
 #else // !HIGH_BIT_DEPTH
@@ -111,8 +113,11 @@ static void predict_16x16_p_##name( pixel *src )\
         "movd        %%mm0, %0    \n"\
         "movswl        %w0, %0    \n"\
         :"=r"(H)\
-        :"m"(src[-FDEC_STRIDE]), "m"(src[-FDEC_STRIDE+8]),\
-         "m"(src[-FDEC_STRIDE-8]), "m"(*pb_12345678), "m"(*pb_m87654321)\
+        :"m"(MEM_FIX(&src[-FDEC_STRIDE], const pixel, 8)),\
+         "m"(MEM_FIX(&src[-FDEC_STRIDE+8], const pixel, 8)),\
+         "m"(MEM_FIX(&src[-FDEC_STRIDE-8], const pixel, 8)),\
+         "m"(MEM_FIX(pb_12345678, const int8_t, 8)),\
+         "m"(MEM_FIX(pb_m87654321, const int8_t, 8))\
         :"mm0", "mm1"\
     );
 #endif // HIGH_BIT_DEPTH
@@ -231,7 +236,8 @@ static void predict_8x8c_p_##name( pixel *src )\
         "paddd        %%xmm1, %%xmm0 \n"\
         "movd         %%xmm0, %0     \n"\
         :"=r"(H)\
-        :"m"(src[-FDEC_STRIDE]), "m"(*pw_m32101234)\
+        :"m"(MEM_FIX(&src[-FDEC_STRIDE], const pixel, 8)),\
+         "m"(MEM_FIX(pw_m32101234, const int16_t, 8))\
         :"xmm0", "xmm1"\
     );
 #else // !HIGH_BIT_DEPTH
@@ -246,7 +252,8 @@ static void predict_8x8c_p_##name( pixel *src )\
         "movd        %%mm0, %0    \n"\
         "movswl        %w0, %0    \n"\
         :"=r"(H)\
-        :"m"(src[-FDEC_STRIDE]), "m"(*pb_m32101234)\
+        :"m"(MEM_FIX(&src[-FDEC_STRIDE], const pixel, 8)),\
+         "m"(MEM_FIX(pb_m32101234, const int8_t, 8))\
         :"mm0", "mm1"\
     );
 #endif // HIGH_BIT_DEPTH

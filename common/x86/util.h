@@ -91,7 +91,7 @@ static ALWAYS_INLINE int x264_predictor_difference_mmx2( int16_t (*mvc)[2], intp
         "paddd   %%mm0, %%mm4 \n"
         "movd    %%mm4, %0    \n"
         :"=r"(sum), "+r"(i_mvc)
-        :"r"(mvc), "m"(M64( mvc )), "m"(pw_1)
+        :"r"(mvc), "m"(MEM_DYN( mvc, const int16_t )), "m"(pw_1)
         :"mm0", "mm2", "mm3", "mm4", "cc"
     );
     return sum;
@@ -179,8 +179,8 @@ static ALWAYS_INLINE int x264_predictor_clip_mmx2( int16_t (*dst)[2], int16_t (*
         "and          $1, %k2   \n"
         "sub          %2, %4    \n" // output += !(mv == pmv || mv == 0)
         "3:                     \n"
-        :"+r"(mvc), "=m"(M64( dst )), "+r"(tmp), "+r"(mvc_max), "+r"(i)
-        :"r"(dst), "g"(pmv), "m"(pd_32), "m"(M64( mvc ))
+        :"+r"(mvc), "=m"(MEM_DYN( dst, int16_t )), "+r"(tmp), "+r"(mvc_max), "+r"(i)
+        :"r"(dst), "g"(pmv), "m"(pd_32), "m"(MEM_DYN( mvc, const int16_t ))
         :"mm0", "mm1", "mm2", "mm3", "mm4", "mm5", "mm6", "cc"
     );
     return i;
@@ -247,8 +247,8 @@ static ALWAYS_INLINE int x264_predictor_roundclip_mmx2( int16_t (*dst)[2], int16
         "and          $1, %k2   \n"
         "sub          %2, %4    \n"
         "3:                     \n"
-        :"+r"(mvc), "=m"(M64( dst )), "+r"(tmp), "+r"(mvc_max), "+r"(i)
-        :"r"(dst), "m"(pw_2), "g"(pmv), "m"(pd_32), "m"(M64( mvc ))
+        :"+r"(mvc), "=m"(MEM_DYN( dst, int16_t )), "+r"(tmp), "+r"(mvc_max), "+r"(i)
+        :"r"(dst), "m"(pw_2), "g"(pmv), "m"(pd_32), "m"(MEM_DYN( mvc, const int16_t ))
         :"mm0", "mm1", "mm2", "mm3", "mm4", "mm5", "mm6", "mm7", "cc"
     );
     return i;
