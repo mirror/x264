@@ -354,7 +354,7 @@ static void print_version_info( void )
     printf( "(ffmpegsource %d.%d.%d.%d)\n", FFMS_VERSION >> 24, (FFMS_VERSION & 0xff0000) >> 16, (FFMS_VERSION & 0xff00) >> 8, FFMS_VERSION & 0xff );
 #endif
 #if HAVE_GPAC
-    printf( "(gpac " GPAC_FULL_VERSION ")\n" );
+    printf( "(gpac " GPAC_VERSION ")\n" );
 #endif
 #if HAVE_LSMASH
     printf( "(lsmash %d.%d.%d)\n", LSMASH_VERSION_MAJOR, LSMASH_VERSION_MINOR, LSMASH_VERSION_MICRO );
