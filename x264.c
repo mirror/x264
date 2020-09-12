@@ -84,40 +84,6 @@ void x264_cli_set_console_title( const char *title )
         SetConsoleTitleW( title_utf16 );
 }
 
-static int utf16_to_ansi( const wchar_t *utf16, char *ansi, int size )
-{
-    int invalid;
-    return WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, utf16, -1, ansi, size, NULL, &invalid ) && !invalid;
-}
-
-/* Some external libraries doesn't support Unicode in filenames,
- * as a workaround we can try to get an ANSI filename instead. */
-int x264_ansi_filename( const char *filename, char *ansi_filename, int size, int create_file )
-{
-    wchar_t filename_utf16[MAX_PATH];
-    if( utf8_to_utf16( filename, filename_utf16 ) )
-    {
-        if( create_file )
-        {
-            /* Create the file using the Unicode filename if it doesn't already exist. */
-            FILE *fh = _wfopen( filename_utf16, L"ab" );
-            if( fh )
-                fclose( fh );
-        }
-
-        /* Check if the filename already is valid ANSI. */
-        if( utf16_to_ansi( filename_utf16, ansi_filename, size ) )
-            return 1;
-
-        /* Check for a legacy 8.3 short filename. */
-        int short_length = GetShortPathNameW( filename_utf16, filename_utf16, MAX_PATH );
-        if( short_length > 0 && short_length < MAX_PATH )
-            if( utf16_to_ansi( filename_utf16, ansi_filename, size ) )
-                return 1;
-    }
-    return 0;
-}
-
 /* Retrieve command line arguments as UTF-8. */
 static int get_argv_utf8( int *argc_ptr, char ***argv_ptr )
 {

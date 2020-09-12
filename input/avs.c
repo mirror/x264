@@ -253,6 +253,32 @@ static float get_avs_version( avs_hnd_t *h )
 #endif
 }
 
+#ifdef _WIN32
+static int utf16_to_ansi( const wchar_t *utf16, char *ansi )
+{
+    BOOL invalid;
+    return WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, utf16, -1, ansi, MAX_PATH, NULL, &invalid ) && !invalid;
+}
+
+static int utf8_to_ansi( const char *filename, char *ansi_filename )
+{
+    wchar_t filename_utf16[MAX_PATH];
+    if( utf8_to_utf16( filename, filename_utf16 ) )
+    {
+        /* Check if the filename already is valid ANSI. */
+        if( utf16_to_ansi( filename_utf16, ansi_filename ) )
+            return 1;
+
+        /* Check for a legacy 8.3 short filename. */
+        int short_length = GetShortPathNameW( filename_utf16, filename_utf16, MAX_PATH );
+        if( short_length > 0 && short_length < MAX_PATH )
+            if( utf16_to_ansi( filename_utf16, ansi_filename ) )
+                return 1;
+    }
+    return 0;
+}
+#endif
+
 static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, cli_input_opt_t *opt )
 {
     FILE *fh = x264_fopen( psz_filename, "r" );
@@ -280,7 +306,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
 #ifdef _WIN32
     /* Avisynth doesn't support Unicode filenames. */
     char ansi_filename[MAX_PATH];
-    FAIL_IF_ERROR( !x264_ansi_filename( psz_filename, ansi_filename, MAX_PATH, 0 ), "invalid ansi filename\n" );
+    FAIL_IF_ERROR( !utf8_to_ansi( psz_filename, ansi_filename ), "invalid ansi filename\n" );
     AVS_Value arg = avs_new_value_string( ansi_filename );
 #else
     AVS_Value arg = avs_new_value_string( psz_filename );
