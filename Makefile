@@ -7,6 +7,7 @@ vpath %.h $(SRCPATH)
 vpath %.S $(SRCPATH)
 vpath %.asm $(SRCPATH)
 vpath %.rc $(SRCPATH)
+vpath %.manifest $(SRCPATH)
 
 CFLAGS += $(CFLAGSPROF)
 LDFLAGS += $(LDFLAGSPROF)
@@ -312,7 +313,7 @@ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK) $(OBJCHK_8) $(OBJCHK_10) $(OBJEXA
 %.dll.o: %.rc x264.h
 	$(RC) $(RCFLAGS)$@ -DDLL $<
 
-%.o: %.rc x264.h
+%.o: %.rc x264.h x264res.manifest
 	$(RC) $(RCFLAGS)$@ $<
 
 .depend: config.mak

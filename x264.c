@@ -80,7 +80,7 @@ static wchar_t org_console_title[CONSOLE_TITLE_SIZE] = L"";
 void x264_cli_set_console_title( const char *title )
 {
     wchar_t title_utf16[CONSOLE_TITLE_SIZE];
-    if( utf8_to_utf16( title, title_utf16 ) )
+    if( MultiByteToWideChar( CP_UTF8, MB_ERR_INVALID_CHARS, title, -1, title_utf16, CONSOLE_TITLE_SIZE ) )
         SetConsoleTitleW( title_utf16 );
 }
 

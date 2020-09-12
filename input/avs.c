@@ -254,28 +254,48 @@ static float get_avs_version( avs_hnd_t *h )
 }
 
 #ifdef _WIN32
-static int utf16_to_ansi( const wchar_t *utf16, char *ansi )
+static char *utf16_to_ansi( const wchar_t *utf16 )
 {
     BOOL invalid;
-    return WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, utf16, -1, ansi, MAX_PATH, NULL, &invalid ) && !invalid;
+    int len = WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, utf16, -1, NULL, 0, NULL, &invalid );
+    if( len && !invalid )
+    {
+        char *ansi = malloc( len * sizeof( char ) );
+        if( ansi )
+        {
+            if( WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, utf16, -1, ansi, len, NULL, &invalid ) && !invalid )
+                return ansi;
+            free( ansi );
+        }
+    }
+    return NULL;
 }
 
-static int utf8_to_ansi( const char *filename, char *ansi_filename )
+static char *utf8_to_ansi( const char *filename )
 {
-    wchar_t filename_utf16[MAX_PATH];
-    if( utf8_to_utf16( filename, filename_utf16 ) )
+    char *ansi = NULL;
+    wchar_t *filename_utf16 = x264_utf8_to_utf16( filename );
+    if( filename_utf16 )
     {
         /* Check if the filename already is valid ANSI. */
-        if( utf16_to_ansi( filename_utf16, ansi_filename ) )
-            return 1;
-
-        /* Check for a legacy 8.3 short filename. */
-        int short_length = GetShortPathNameW( filename_utf16, filename_utf16, MAX_PATH );
-        if( short_length > 0 && short_length < MAX_PATH )
-            if( utf16_to_ansi( filename_utf16, ansi_filename ) )
-                return 1;
+        if( !(ansi = utf16_to_ansi( filename_utf16 )) )
+        {
+            /* Check for a legacy 8.3 short filename. */
+            int len = GetShortPathNameW( filename_utf16, NULL, 0 );
+            if( len )
+            {
+                wchar_t *short_utf16 = malloc( len * sizeof( wchar_t ) );
+                if( short_utf16 )
+                {
+                    if( GetShortPathNameW( filename_utf16, short_utf16, len ) )
+                        ansi = utf16_to_ansi( short_utf16 );
+                    free( short_utf16 );
+                }
+            }
+        }
+        free( filename_utf16 );
     }
-    return 0;
+    return ansi;
 }
 #endif
 
@@ -305,8 +325,8 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
 
 #ifdef _WIN32
     /* Avisynth doesn't support Unicode filenames. */
-    char ansi_filename[MAX_PATH];
-    FAIL_IF_ERROR( !utf8_to_ansi( psz_filename, ansi_filename ), "invalid ansi filename\n" );
+    char *ansi_filename = utf8_to_ansi( psz_filename );
+    FAIL_IF_ERROR( !ansi_filename, "invalid ansi filename\n" );
     AVS_Value arg = avs_new_value_string( ansi_filename );
 #else
     AVS_Value arg = avs_new_value_string( psz_filename );
@@ -318,6 +338,9 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     if( !strcasecmp( filename_ext, "avs" ) )
     {
         res = h->func.avs_invoke( h->env, "Import", arg, NULL );
+#ifdef _WIN32
+        free( ansi_filename );
+#endif
         FAIL_IF_ERROR( avs_is_error( res ), "%s\n", avs_as_error( res ) );
         /* check if the user is using a multi-threaded script and apply distributor if necessary.
            adapted from avisynth's vfw interface */
@@ -358,6 +381,9 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
             }
             x264_cli_printf( X264_LOG_INFO, "failed\n" );
         }
+#ifdef _WIN32
+        free( ansi_filename );
+#endif
         FAIL_IF_ERROR( !filter[i], "unable to find source filter to open `%s'\n", psz_filename );
     }
     FAIL_IF_ERROR( !avs_is_clip( res ), "`%s' didn't return a video clip\n", psz_filename );

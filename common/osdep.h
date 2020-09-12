@@ -116,30 +116,65 @@ static inline int x264_snprintf( char *s, size_t n, const char *fmt, ... )
 #endif
 
 #ifdef _WIN32
-#define utf8_to_utf16( utf8, utf16 )\
-    MultiByteToWideChar( CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, utf16, sizeof(utf16)/sizeof(wchar_t) )
-
 /* Functions for dealing with Unicode on Windows. */
-static inline FILE *x264_fopen( const char *filename, const char *mode )
+static inline wchar_t *x264_utf8_to_utf16( const char *utf8 )
 {
-    wchar_t filename_utf16[MAX_PATH];
-    wchar_t mode_utf16[16];
-    if( utf8_to_utf16( filename, filename_utf16 ) && utf8_to_utf16( mode, mode_utf16 ) )
-        return _wfopen( filename_utf16, mode_utf16 );
+    int len = MultiByteToWideChar( CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, NULL, 0 );
+    if( len )
+    {
+        wchar_t *utf16 = malloc( len * sizeof( wchar_t ) );
+        if( utf16 )
+        {
+            if( MultiByteToWideChar( CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, utf16, len ) )
+                return utf16;
+            free( utf16 );
+        }
+    }
     return NULL;
+}
+
+static inline wchar_t *x264_utf8_to_utf16_try_buf( const char *utf8, wchar_t *buf_utf16, int buf_len ) {
+    if( MultiByteToWideChar( CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, buf_utf16, buf_len ) )
+        return buf_utf16;
+    return x264_utf8_to_utf16( utf8 );
+}
+
+#define x264_fopen( filename, mode ) x264_fopen_internal( filename, L##mode )
+static inline FILE *x264_fopen_internal( const char *filename, const wchar_t *mode_utf16 )
+{
+    FILE *f = NULL;
+    wchar_t filename_buf[MAX_PATH];
+    wchar_t *filename_utf16 = x264_utf8_to_utf16_try_buf( filename, filename_buf, MAX_PATH );
+    if( filename_utf16 )
+    {
+        f = _wfopen( filename_utf16, mode_utf16 );
+        if( filename_utf16 != filename_buf )
+            free( filename_utf16 );
+    }
+    return f;
 }
 
 static inline int x264_rename( const char *oldname, const char *newname )
 {
-    wchar_t oldname_utf16[MAX_PATH];
-    wchar_t newname_utf16[MAX_PATH];
-    if( utf8_to_utf16( oldname, oldname_utf16 ) && utf8_to_utf16( newname, newname_utf16 ) )
+    int ret = -1;
+    wchar_t oldname_buf[MAX_PATH];
+    wchar_t *oldname_utf16 = x264_utf8_to_utf16_try_buf( oldname, oldname_buf, MAX_PATH );
+    if( oldname_utf16 )
     {
-        /* POSIX says that rename() removes the destination, but Win32 doesn't. */
-        _wunlink( newname_utf16 );
-        return _wrename( oldname_utf16, newname_utf16 );
+        wchar_t newname_buf[MAX_PATH];
+        wchar_t *newname_utf16 = x264_utf8_to_utf16_try_buf( newname, newname_buf, MAX_PATH );
+        if( newname_utf16 )
+        {
+            /* POSIX says that rename() removes the destination, but Win32 doesn't. */
+            _wunlink( newname_utf16 );
+            ret = _wrename( oldname_utf16, newname_utf16 );
+            if( newname_utf16 != newname_buf )
+                free( newname_utf16 );
+        }
+        if( oldname_utf16 != oldname_buf )
+            free( oldname_utf16 );
     }
-    return -1;
+    return ret;
 }
 
 #define x264_struct_stat struct _stati64
@@ -147,10 +182,16 @@ static inline int x264_rename( const char *oldname, const char *newname )
 
 static inline int x264_stat( const char *path, x264_struct_stat *buf )
 {
-    wchar_t path_utf16[MAX_PATH];
-    if( utf8_to_utf16( path, path_utf16 ) )
-        return _wstati64( path_utf16, buf );
-    return -1;
+    int ret = -1;
+    wchar_t path_buf[MAX_PATH];
+    wchar_t *path_utf16 = x264_utf8_to_utf16_try_buf( path, path_buf, MAX_PATH );
+    if( path_utf16 )
+    {
+        ret = _wstati64( path_utf16, buf );
+        if( path_utf16 != path_buf )
+            free( path_utf16 );
+    }
+    return ret;
 }
 #else
 #define x264_fopen       fopen
@@ -197,17 +238,42 @@ static inline int x264_vfprintf( FILE *stream, const char *format, va_list arg )
     return vfprintf( stream, format, arg );
 }
 
-static inline int x264_is_pipe( const char *path )
+static inline int x264_is_regular_file_path( const char *path )
 {
-    wchar_t path_utf16[MAX_PATH];
-    if( utf8_to_utf16( path, path_utf16 ) )
-        return WaitNamedPipeW( path_utf16, 0 );
-    return 0;
+    int ret = -1;
+    wchar_t path_buf[MAX_PATH];
+    wchar_t *path_utf16 = x264_utf8_to_utf16_try_buf( path, path_buf, MAX_PATH );
+    if( path_utf16 )
+    {
+        x264_struct_stat buf;
+        if( _wstati64( path_utf16, &buf ) )
+            ret = !WaitNamedPipeW( path_utf16, 0 );
+        else
+            ret = S_ISREG( buf.st_mode );
+        if( path_utf16 != path_buf )
+            free( path_utf16 );
+    }
+    return ret;
 }
 #else
 #define x264_vfprintf vfprintf
-#define x264_is_pipe(x) 0
+
+static inline int x264_is_regular_file_path( const char *filename )
+{
+    x264_struct_stat file_stat;
+    if( x264_stat( filename, &file_stat ) )
+        return 1;
+    return S_ISREG( file_stat.st_mode );
+}
 #endif
+
+static inline int x264_is_regular_file( FILE *filehandle )
+{
+    x264_struct_stat file_stat;
+    if( x264_fstat( fileno( filehandle ), &file_stat ) )
+        return 1;
+    return S_ISREG( file_stat.st_mode );
+}
 
 #define x264_glue3_expand(x,y,z) x##_##y##_##z
 #define x264_glue3(x,y,z) x264_glue3_expand(x,y,z)
@@ -509,21 +575,5 @@ static ALWAYS_INLINE void x264_prefetch( void *p )
 #else
 #define x264_lower_thread_priority(p)
 #endif
-
-static inline int x264_is_regular_file( FILE *filehandle )
-{
-    x264_struct_stat file_stat;
-    if( x264_fstat( fileno( filehandle ), &file_stat ) )
-        return 1;
-    return S_ISREG( file_stat.st_mode );
-}
-
-static inline int x264_is_regular_file_path( const char *filename )
-{
-    x264_struct_stat file_stat;
-    if( x264_stat( filename, &file_stat ) )
-        return !x264_is_pipe( filename );
-    return S_ISREG( file_stat.st_mode );
-}
 
 #endif /* X264_OSDEP_H */
