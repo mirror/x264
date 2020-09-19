@@ -60,6 +60,9 @@ static int quiet = 0;
 #define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
 #define MAX_CPUS 30     // number of different combinations of cpu flags
 
+// RAND_MAX is guaranteed to be at least 32767, to get 30 bits of random data, we'll call rand() twice
+#define rand30() (((rand() & 0x7fff) << 15) + (rand() & 0x7fff))
+
 typedef struct
 {
     void *pointer; // just for detecting duplicates
@@ -799,7 +802,7 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
 
     ok = 1; used_asm = 0;
     for( int i = 0; i < 32; i++ )
-        cost_mv[i] = i*10;
+        cost_mv[i] = rand30() & 0xffff;
     for( int i = 0; i < 100 && ok; i++ )
         if( pixel_asm.ads[i&3] != pixel_ref.ads[i&3] )
         {
@@ -808,18 +811,36 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
             ALIGNED_16( int16_t mvs_a[48] );
             ALIGNED_16( int16_t mvs_c[48] );
             int mvn_a, mvn_c;
-            int thresh = rand() & 0x3fff;
-            set_func_name( "esa_ads" );
-            for( int j = 0; j < 72; j++ )
-                sums[j] = rand() & 0x3fff;
-            for( int j = 0; j < 4; j++ )
-                dc[j] = rand() & 0x3fff;
+            int thresh = (rand() % 257) * PIXEL_MAX + (rand30() & 0xffff);
+            set_func_name( "esa_ads_%s", pixel_names[i&3] );
+            if( i < 40 )
+            {
+                for( int j = 0; j < 72; j++ )
+                    sums[j] = (rand() % 9) * 8 * PIXEL_MAX;
+                for( int j = 0; j < 4; j++ )
+                    dc[j]   = (rand() % 9) * 8 * PIXEL_MAX;
+            }
+            else
+            {
+#if BIT_DEPTH + 6 > 15
+                for( int j = 0; j < 72; j++ )
+                    sums[j] = rand30() & ((1 << (BIT_DEPTH + 6))-1);
+                for( int j = 0; j < 4; j++ )
+                    dc[j]   = rand30() & ((1 << (BIT_DEPTH + 6))-1);
+#else
+                for( int j = 0; j < 72; j++ )
+                    sums[j] = rand() & ((1 << (BIT_DEPTH + 6))-1);
+                for( int j = 0; j < 4; j++ )
+                    dc[j]   = rand() & ((1 << (BIT_DEPTH + 6))-1);
+#endif
+            }
             used_asm = 1;
             mvn_c = call_c( pixel_c.ads[i&3], dc, sums, 32, cost_mv, mvs_c, 28, thresh );
             mvn_a = call_a( pixel_asm.ads[i&3], dc, sums, 32, cost_mv, mvs_a, 28, thresh );
             if( mvn_c != mvn_a || memcmp( mvs_c, mvs_a, mvn_c*sizeof(*mvs_c) ) )
             {
                 ok = 0;
+                printf( "thresh: %d\n", thresh );
                 printf( "c%d: ", i&3 );
                 for( int j = 0; j < mvn_c; j++ )
                     printf( "%d ", mvs_c[j] );
@@ -1721,7 +1742,7 @@ static int check_mc( uint32_t cpu_ref, uint32_t cpu_new )
         x264_emms();
         for( int i = 0; i < 10; i++ )
         {
-            float fps_factor = (rand()&65535) / 65535.0f;
+            float fps_factor = (rand30()&65535) / 65535.0f;
             set_func_name( "mbtree_propagate_cost" );
             int16_t *dsta = (int16_t*)buf3;
             int16_t *dstc = dsta+400;
