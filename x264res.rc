@@ -35,6 +35,10 @@
 #define str(s) #s
 #define xstr(s) str(s)
 
+#ifndef DLL
+1 RT_MANIFEST "x264res.manifest"
+#endif
+
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     0, X264_BUILD, X264_REV, X264_REV_DIFF
 PRODUCTVERSION  0, X264_BUILD, X264_REV, X264_REV_DIFF

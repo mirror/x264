@@ -27,10 +27,6 @@
 #include "output.h"
 #include <gpac/isomedia.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 typedef struct
 {
     GF_ISOFile *p_file;
@@ -181,15 +177,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, cli_output_opt_t *opt
     if( !p_mp4 )
         return -1;
 
-#ifdef _WIN32
-    /* GPAC doesn't support Unicode filenames. */
-    char ansi_filename[MAX_PATH];
-    FAIL_IF_ERR( !x264_ansi_filename( psz_filename, ansi_filename, MAX_PATH, 1 ), "mp4", "invalid ansi filename\n" );
-    p_mp4->p_file = gf_isom_open( ansi_filename, GF_ISOM_OPEN_WRITE, NULL );
-#else
     p_mp4->p_file = gf_isom_open( psz_filename, GF_ISOM_OPEN_WRITE, NULL );
-#endif
-
     p_mp4->b_dts_compress = opt->use_dts_compress;
 
     if( !(p_mp4->p_sample = gf_isom_sample_new()) )
