@@ -116,7 +116,20 @@ endfunc
 
 function cabac_encode_terminal_asm, export=1
     ldr         w12, [x0, #CABAC_I_RANGE]
-    ldr         w11, [x0, #CABAC_I_LOW]
     sub         w12, w12, #2
-    b           cabac_encode_renorm
+    tbz         w12, #8, 1f
+
+    str         w12, [x0, #CABAC_I_RANGE]
+    ret
+1:
+    ldr         w2,  [x0, #CABAC_I_QUEUE]
+    ldr         w11, [x0, #CABAC_I_LOW]
+    lsl         w12, w12, #1
+    adds        w2,  w2,  #1
+    lsl         w11, w11, #1
+    b.ge        cabac_putbyte
+
+    stp         w11, w12, [x0, #CABAC_I_LOW]    // store i_low, i_range
+    str         w2,  [x0, #CABAC_I_QUEUE]
+    ret
 endfunc
