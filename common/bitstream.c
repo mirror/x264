@@ -109,7 +109,7 @@ void x264_bitstream_init( uint32_t cpu, x264_bitstream_function_t *pf )
 
     pf->nal_escape = nal_escape_c;
 #if HAVE_MMX
-#if ARCH_X86_64 && !defined( __MACH__ )
+#if ARCH_X86_64
     pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_sse2;
     pf->cabac_block_residual_rd_internal = x264_cabac_block_residual_rd_internal_sse2;
     pf->cabac_block_residual_8x8_rd_internal = x264_cabac_block_residual_8x8_rd_internal_sse2;
@@ -122,7 +122,7 @@ void x264_bitstream_init( uint32_t cpu, x264_bitstream_function_t *pf )
         if( cpu&X264_CPU_SSE2_IS_FAST )
             pf->nal_escape = x264_nal_escape_sse2;
     }
-#if ARCH_X86_64 && !defined( __MACH__ )
+#if ARCH_X86_64
     if( cpu&X264_CPU_LZCNT )
     {
         pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_lzcnt;

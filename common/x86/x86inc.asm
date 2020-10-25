@@ -664,6 +664,8 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 %if WIN64 == 0
     %macro WIN64_SPILL_XMM 1
     %endmacro
+    %macro WIN64_RESTORE_XMM_INTERNAL 0
+    %endmacro
     %macro WIN64_RESTORE_XMM 0
     %endmacro
     %macro WIN64_PUSH_XMM 0

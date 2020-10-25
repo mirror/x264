@@ -648,7 +648,6 @@ void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
         pf->decimate_score16 = x264_decimate_score16_ssse3;
         pf->decimate_score64 = x264_decimate_score64_ssse3;
         INIT_TRELLIS( ssse3 );
-#if ARCH_X86 || !defined( __MACH__ )
         pf->coeff_level_run4 = x264_coeff_level_run4_ssse3;
         pf->coeff_level_run8 = x264_coeff_level_run8_ssse3;
         pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_ssse3;
@@ -660,7 +659,6 @@ void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
             pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_ssse3_lzcnt;
             pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_ssse3_lzcnt;
         }
-#endif
     }
 
     if( cpu&X264_CPU_SSE4 )
@@ -711,10 +709,8 @@ void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
         pf->decimate_score64 = x264_decimate_score64_avx2;
         pf->denoise_dct = x264_denoise_dct_avx2;
         pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx2;
-#if ARCH_X86 || !defined( __MACH__ )
         pf->coeff_level_run[ DCT_LUMA_AC] = x264_coeff_level_run15_avx2;
         pf->coeff_level_run[DCT_LUMA_4x4] = x264_coeff_level_run16_avx2;
-#endif
     }
     if( cpu&X264_CPU_AVX512 )
     {

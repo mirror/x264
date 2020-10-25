@@ -286,18 +286,51 @@
 %if cpuflag(avx2) && %3 == 0
     vpbroadcastw %1, %2
 %else
-    PSHUFLW      %1, %2, (%3)*q1111
-%if mmsize == 16
+    %define %%s %2
+%ifid %2
+    %define %%s xmm%2
+%elif %3 == 0
+    movd      xmm%1, %2
+    %define %%s xmm%1
+%endif
+    PSHUFLW   xmm%1, %%s, (%3)*q1111
+%if mmsize >= 32
+    vpbroadcastq %1, xmm%1
+%elif mmsize == 16
     punpcklqdq   %1, %1
 %endif
 %endif
 %endmacro
 
 %imacro SPLATD 2-3 0
-%if mmsize == 16
-    pshufd %1, %2, (%3)*q1111
+%if cpuflag(avx2) && %3 == 0
+    vpbroadcastd %1, %2
 %else
-    pshufw %1, %2, (%3)*q0101 + ((%3)+1)*q1010
+    %define %%s %2
+%ifid %2
+    %define %%s xmm%2
+%elif %3 == 0
+    movd      xmm%1, %2
+    %define %%s xmm%1
+%endif
+%if mmsize == 8 && %3 == 0
+%ifidn %1, %%s
+    punpckldq    %1, %1
+%else
+    pshufw       %1, %%s, q1010
+%endif
+%elif mmsize == 8 && %3 == 1
+%ifidn %1, %%s
+    punpckhdq    %1, %1
+%else
+    pshufw       %1, %%s, q3232
+%endif
+%else
+    pshufd    xmm%1, %%s, (%3)*q1111
+%endif
+%if mmsize >= 32
+    vpbroadcastq %1, xmm%1
+%endif
 %endif
 %endmacro
 
