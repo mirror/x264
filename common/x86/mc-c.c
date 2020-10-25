@@ -747,6 +747,7 @@ do\
         "movd   %%xmm0, %0         \n"\
         :"+&r"(temp_s)\
         :"r"(temp_x)\
+        :"xmm0", "xmm1"\
     );\
     s = temp_s;\
 } while( 0 )
@@ -762,6 +763,7 @@ do\
         "movd   %%xmm0, %0         \n"\
         :"+&r"(temp)\
         :"m"(M32(x))\
+        :"xmm0", "xmm1"\
     );\
     (s)[0] = temp.w[0];\
     (s)[1] = temp.w[1];\
