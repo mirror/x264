@@ -6,31 +6,26 @@ stages:
 .variables-debian-amd64: &variables-debian-amd64
     _TRIPLET: ""
     _PLATFORMSUFFIX: ""
-    _PATH: "debian-x86_64"
     _WRAPPER: ""
 
 .variables-debian-aarch64: &variables-debian-aarch64
     _TRIPLET: ""
     _PLATFORMSUFFIX: ""
-    _PATH: "debian-aarch64"
     _WRAPPER: ""
 
 .variables-win32: &variables-win32
     _TRIPLET: "i686-w64-mingw32"
     _PLATFORMSUFFIX: ".exe"
-    _PATH: "win32"
     _WRAPPER: "wine"
 
 .variables-win64: &variables-win64
     _TRIPLET: "x86_64-w64-mingw32"
     _PLATFORMSUFFIX: ".exe"
-    _PATH: "win64"
     _WRAPPER: "wine64"
 
 .variables-macos: &variables-macos
     _TRIPLET: "x86_64-apple-darwin18"
     _PLATFORMSUFFIX: ""
-    _PATH: "macos-x86_64"
     _WRAPPER: ""
 
 .build:
