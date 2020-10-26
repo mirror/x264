@@ -23,6 +23,16 @@ stages:
     _PLATFORMSUFFIX: ".exe"
     _WRAPPER: "wine64"
 
+.variables-win-armv7: &variables-win-armv7
+    _TRIPLET: "armv7-w64-mingw32"
+    _PLATFORMSUFFIX: ".exe"
+    _WRAPPER: ""
+
+.variables-win-aarch64: &variables-win-aarch64
+    _TRIPLET: "aarch64-w64-mingw32"
+    _PLATFORMSUFFIX: ".exe"
+    _WRAPPER: ""
+
 .variables-macos: &variables-macos
     _TRIPLET: "x86_64-apple-darwin18"
     _PLATFORMSUFFIX: ""
@@ -98,6 +108,25 @@ build-win32:
 build-win64:
     extends: .build-win
     variables: *variables-win64
+
+.build-llvm-mingw:
+    extends: .build
+    image: registry.videolan.org/vlc-debian-llvm-mingw:20200703084018
+    tags:
+        - docker
+        - amd64
+    script: |
+        set -x
+        PKGCONFIG=pkg-config ./configure --host="${_TRIPLET}" --cross-prefix="${_TRIPLET}-" --enable-pic --enable-strip
+        make -j$(getconf _NPROCESSORS_ONLN) x264 checkasm
+
+build-llvm-mingw-armv7:
+    extends: .build-llvm-mingw
+    variables: *variables-win-armv7
+
+build-llvm-mingw-aarch64:
+    extends: .build-llvm-mingw
+    variables: *variables-win-aarch64
 
 build-macos:
     extends: .build
