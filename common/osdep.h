@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <inttypes.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "config.h"
 
