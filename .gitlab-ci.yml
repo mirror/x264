@@ -36,7 +36,7 @@ stages:
     _WRAPPER: ""
 
 .variables-macos: &variables-macos
-    _TRIPLET: "x86_64-apple-darwin18"
+    _TRIPLET: "x86_64-apple-darwin19"
     _PLATFORMSUFFIX: ""
     _WRAPPER: ""
     _CONTRIB_URL: "https://artifacts.videolan.org/vlc/macos/"
@@ -136,7 +136,8 @@ build-llvm-mingw-aarch64:
 build-macos:
     extends: .build
     tags:
-        - macos
+        - amd64
+        - catalina
     script: |
         set -x
         LOCAL_INSTALL_DIR=`pwd`/${_TRIPLET}
