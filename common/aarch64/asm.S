@@ -101,15 +101,30 @@ MACH    .const_data
 \name:
 .endm
 
-.macro  movrel rd, val
-#if defined(PIC) && defined(__APPLE__)
+.macro  movrel rd, val, offset=0
+#if defined(__APPLE__)
+  .if \offset < 0
         adrp            \rd, \val@PAGE
         add             \rd, \rd, \val@PAGEOFF
-#elif defined(PIC)
+        sub             \rd, \rd, -(\offset)
+  .else
+        adrp            \rd, \val+(\offset)@PAGE
+        add             \rd, \rd, \val+(\offset)@PAGEOFF
+  .endif
+#elif defined(PIC) && defined(_WIN32)
+  .if \offset < 0
         adrp            \rd, \val
         add             \rd, \rd, :lo12:\val
+        sub             \rd, \rd, -(\offset)
+  .else
+        adrp            \rd, \val+(\offset)
+        add             \rd, \rd, :lo12:\val+(\offset)
+  .endif
+#elif defined(PIC)
+        adrp            \rd, \val+(\offset)
+        add             \rd, \rd, :lo12:\val+(\offset)
 #else
-        ldr             \rd, =\val
+        ldr             \rd, =\val+\offset
 #endif
 .endm
 

@@ -30,54 +30,51 @@
 // w12 holds x264_cabac_t.i_range
 
 function cabac_encode_decision_asm, export=1
-    movrel      x8,  X264(cabac_range_lps)
-    movrel      x9,  X264(cabac_transition)
-    add         w10, w1, #CABAC_STATE
-    ldrb        w3,  [x0,  x10]         // i_state
+    add         w10, w1,  #CABAC_STATE
+    ldrb        w3,  [x0,  w10, uxtw]           // i_state
     ldr         w12, [x0,  #CABAC_I_RANGE]
-    and         x4,  x3,  #~1
+    movrel      x8,  X264(cabac_range_lps), -4
+    movrel      x9,  X264(cabac_transition)
+    ubfx        x4,  x3,  #1,  #7
     asr         w5,  w12, #6
-    add         x8,  x8,  x4, lsl #1
-    sub         w5,  w5,  #4
-    eor         w6,  w2,  w3            // b ^ i_state
-    ldrb        w4,  [x8,  x5]          // i_range_lps
-    ldr         w11, [x0, #CABAC_I_LOW]
+    add         x8,  x8,  x4, lsl #2
+    orr         w14, w2,  w3, lsl #1
+    ldrb        w4,  [x8,  w5,  uxtw]           // i_range_lps
+    ldr         w11, [x0,  #CABAC_I_LOW]
+    eor         w6,  w2,  w3               	    // b ^ i_state
+    ldrb        w9,  [x9,  w14, uxtw]
     sub         w12, w12, w4
-    tbz         w6,  #0,  1f            // (b ^ i_state) & 1
-    add         w11, w11, w12
-    mov         w12,  w4
-1:
-    orr         w4,  w2,  w3, lsl #1
-    ldrb        w9,  [x9,  x4]
-    strb        w9,  [x0,  x10]    // i_state
+    add         w7,  w11, w12
+    tst         w6,  #1                         // (b ^ i_state) & 1
+    csel        w12, w4, w12, ne
+    csel        w11, w7, w11, ne
+    strb        w9,  [x0,  w10, uxtw]           // i_state
 
 cabac_encode_renorm:
-    clz         w5,  w12
     ldr         w2,  [x0, #CABAC_I_QUEUE]
+    clz         w5,  w12
     sub         w5,  w5,  #23
-    lsl         w12, w12, w5
     lsl         w11, w11, w5
-2:
+    lsl         w12, w12, w5
     adds        w2,  w2,  w5
-    str         w12, [x0, #CABAC_I_RANGE]
-    b.lt        0f
-cabac_putbyte:
-    mov         w13, #0x400
-    add         w12, w2,  #10
-    lsl         w13, w13, w2
-    asr         w4,  w11, w12           // out
-    sub         w2,  w2,  #8
-    sub         w13, w13, #1
-    subs        w5,  w4,  #0xff
-    and         w11, w11, w13
-    ldr         w6,  [x0, #CABAC_I_BYTES_OUTSTANDING]
-    str         w2,  [x0, #CABAC_I_QUEUE]
-    b.ne        1f
+    b.ge        cabac_putbyte
 
-    add         w6,  w6,  #1
-    str         w11, [x0, #CABAC_I_LOW]
-    str         w6,  [x0, #CABAC_I_BYTES_OUTSTANDING]
+    stp         w11, w12, [x0, #CABAC_I_LOW]    // store i_low, i_range
+    str         w2,  [x0, #CABAC_I_QUEUE]
     ret
+
+.align 5
+cabac_putbyte:
+    ldr         w6,  [x0, #CABAC_I_BYTES_OUTSTANDING]
+    add         w14, w2,  #10
+    mov         w13, #-1
+    sub         w2,  w2,  #8
+    asr         w4,  w11, w14           // out
+    lsl         w13, w13, w14
+    subs        w5,  w4,  #0xff
+    bic         w11, w11, w13
+    cinc        w6,  w6,  eq
+    b.eq        0f
 
 1:
     ldr         x7,  [x0, #CABAC_P]
@@ -93,15 +90,14 @@ cabac_putbyte:
     b.gt        2b
 3:
     strb        w4,  [x7],  #1
-    str         wzr, [x0, #CABAC_I_BYTES_OUTSTANDING]
     str         x7,  [x0, #CABAC_P]
 0:
-    str         w11, [x0, #CABAC_I_LOW]
-    str         w2,  [x0, #CABAC_I_QUEUE]
+    stp         w11, w12, [x0, #CABAC_I_LOW]    // store i_low, i_range
+    stp         w2,  w6,  [x0, #CABAC_I_QUEUE]  // store i_queue, i_bytes_outstanding
     ret
 endfunc
 
-function cabac_encode_bypass_asm, export=1
+function cabac_encode_bypass_asm, export=1, align=5
     ldr         w12, [x0, #CABAC_I_RANGE]
     ldr         w11, [x0, #CABAC_I_LOW]
     ldr         w2,  [x0, #CABAC_I_QUEUE]
@@ -114,9 +110,22 @@ function cabac_encode_bypass_asm, export=1
     ret
 endfunc
 
-function cabac_encode_terminal_asm, export=1
+function cabac_encode_terminal_asm, export=1, align=5
     ldr         w12, [x0, #CABAC_I_RANGE]
-    ldr         w11, [x0, #CABAC_I_LOW]
     sub         w12, w12, #2
-    b           cabac_encode_renorm
+    tbz         w12, #8, 1f
+
+    str         w12, [x0, #CABAC_I_RANGE]
+    ret
+1:
+    ldr         w2,  [x0, #CABAC_I_QUEUE]
+    ldr         w11, [x0, #CABAC_I_LOW]
+    lsl         w12, w12, #1
+    adds        w2,  w2,  #1
+    lsl         w11, w11, #1
+    b.ge        cabac_putbyte
+
+    stp         w11, w12, [x0, #CABAC_I_LOW]    // store i_low, i_range
+    str         w2,  [x0, #CABAC_I_QUEUE]
+    ret
 endfunc
