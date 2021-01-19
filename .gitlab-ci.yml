@@ -17,11 +17,13 @@ stages:
     _TRIPLET: "i686-w64-mingw32"
     _PLATFORMSUFFIX: ".exe"
     _WRAPPER: "wine"
+    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/win32/"
 
 .variables-win64: &variables-win64
     _TRIPLET: "x86_64-w64-mingw32"
     _PLATFORMSUFFIX: ".exe"
     _WRAPPER: "wine64"
+    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/win64/"
 
 .variables-win-armv7: &variables-win-armv7
     _TRIPLET: "armv7-w64-mingw32"
@@ -34,9 +36,10 @@ stages:
     _WRAPPER: ""
 
 .variables-macos: &variables-macos
-    _TRIPLET: "x86_64-apple-darwin18"
+    _TRIPLET: "x86_64-apple-darwin19"
     _PLATFORMSUFFIX: ""
     _WRAPPER: ""
+    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/macos/"
 
 .build:
     stage: build
@@ -88,10 +91,12 @@ build-debian-aarch64:
         set -x
         LOCAL_INSTALL_DIR=`pwd`/${_TRIPLET}
         export PKG_CONFIG_LIBDIR=${LOCAL_INSTALL_DIR}/lib/pkgconfig
-        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2
+        curl -f -o vlc-contrib.txt ${_CONTRIB_URL}
+        CONTRIB_NAME=$(sed -n -e "s@.*href=\"\(vlc-contrib-${_TRIPLET}-[^\"]*\.tar\.bz2\)\".*@\1@p" vlc-contrib.txt | sed -n -e '1p')
+        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 ${_CONTRIB_URL}${CONTRIB_NAME}
         bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
         tar xvf vlc-contrib-${_TRIPLET}-latest.tar
-        sed -i "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
+        sed -i.bak -e "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
         git clone --depth 1 --branch master https://github.com/l-smash/l-smash.git lsmash
         cd lsmash
         ./configure --prefix="${LOCAL_INSTALL_DIR}" --target-os="${_TRIPLET}" --cross-prefix="${_TRIPLET}-"
@@ -131,15 +136,18 @@ build-llvm-mingw-aarch64:
 build-macos:
     extends: .build
     tags:
-        - macos
+        - amd64
+        - catalina
     script: |
         set -x
         LOCAL_INSTALL_DIR=`pwd`/${_TRIPLET}
         export PKG_CONFIG_LIBDIR=${LOCAL_INSTALL_DIR}/lib/pkgconfig
-        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 https://nightlies.videolan.org/build/contribs/vlc-contrib-${_TRIPLET}-latest.tar.bz2
+        curl -f -o vlc-contrib.txt ${_CONTRIB_URL}
+        CONTRIB_NAME=$(sed -n -e "s@.*href=\"\(vlc-contrib-${_TRIPLET}-[^\"]*\.tar\.bz2\)\".*@\1@p" vlc-contrib.txt | sed -n -e '1p')
+        curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 ${_CONTRIB_URL}${CONTRIB_NAME}
         bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
         tar xvf vlc-contrib-${_TRIPLET}-latest.tar
-        sed -i.bak "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
+        sed -i.bak -e "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
         git clone --depth 1 --branch master https://github.com/l-smash/l-smash.git lsmash
         cd lsmash
         ./configure --prefix="${LOCAL_INSTALL_DIR}"
