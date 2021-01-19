@@ -1890,34 +1890,36 @@ void x264_macroblock_bipred_init( x264_t *h )
                 int poc0 = l0->i_poc + mbfield*l0->i_delta_poc[field^(i_ref0&1)];
                 for( int i_ref1 = 0; i_ref1 < (h->i_ref[1]<<mbfield); i_ref1++ )
                 {
-                    int dist_scale_factor;
                     x264_frame_t *l1 = h->fref[1][i_ref1>>mbfield];
                     int cur_poc = h->fdec->i_poc + mbfield*h->fdec->i_delta_poc[field];
                     int poc1 = l1->i_poc + mbfield*l1->i_delta_poc[field^(i_ref1&1)];
                     int td = x264_clip3( poc1 - poc0, -128, 127 );
                     if( td == 0 /* || pic0 is a long-term ref */ )
-                        dist_scale_factor = 256;
+                    {
+                        h->mb.dist_scale_factor_buf[mbfield][field][i_ref0][i_ref1] = 256;
+                        h->mb.bipred_weight_buf[mbfield][field][i_ref0][i_ref1] = 32;
+                    }
                     else
                     {
                         int tb = x264_clip3( cur_poc - poc0, -128, 127 );
                         int tx = (16384 + (abs(td) >> 1)) / td;
-                        dist_scale_factor = x264_clip3( (tb * tx + 32) >> 6, -1024, 1023 );
-                    }
+                        int dist_scale_factor = x264_clip3( (tb * tx + 32) >> 6, -1024, 1023 );
 
-                    h->mb.dist_scale_factor_buf[mbfield][field][i_ref0][i_ref1] = dist_scale_factor;
+                        h->mb.dist_scale_factor_buf[mbfield][field][i_ref0][i_ref1] = dist_scale_factor;
 
-                    dist_scale_factor >>= 2;
-                    if( h->param.analyse.b_weighted_bipred
-                          && dist_scale_factor >= -64
-                          && dist_scale_factor <= 128 )
-                    {
-                        h->mb.bipred_weight_buf[mbfield][field][i_ref0][i_ref1] = 64 - dist_scale_factor;
-                        // ssse3 implementation of biweight doesn't support the extrema.
-                        // if we ever generate them, we'll have to drop that optimization.
-                        assert( dist_scale_factor >= -63 && dist_scale_factor <= 127 );
+                        dist_scale_factor >>= 2;
+                        if( h->param.analyse.b_weighted_bipred /* && pic1 is not a long-term ref */
+                              && dist_scale_factor >= -64
+                              && dist_scale_factor <= 128 )
+                        {
+                            h->mb.bipred_weight_buf[mbfield][field][i_ref0][i_ref1] = 64 - dist_scale_factor;
+                            // ssse3 implementation of biweight doesn't support the extrema.
+                            // if we ever generate them, we'll have to drop that optimization.
+                            assert( dist_scale_factor >= -63 && dist_scale_factor <= 127 );
+                        }
+                        else
+                            h->mb.bipred_weight_buf[mbfield][field][i_ref0][i_ref1] = 32;
                     }
-                    else
-                        h->mb.bipred_weight_buf[mbfield][field][i_ref0][i_ref1] = 32;
                 }
             }
 }
