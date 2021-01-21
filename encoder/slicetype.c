@@ -492,11 +492,11 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
         //scale lowres in lookahead for slicetype_frame_cost
         pixel *src = ref->buffer_lowres;
         pixel *dst = h->mb.p_weight_buf[0];
-        int width = ref->i_width_lowres + PADH*2;
+        int width = ref->i_width_lowres + PADH2;
         int height = ref->i_lines_lowres + PADV*2;
         x264_weight_scale_plane( h, dst, ref->i_stride_lowres, src, ref->i_stride_lowres,
                                  width, height, &weights[0] );
-        fenc->weighted[0] = h->mb.p_weight_buf[0] + PADH + ref->i_stride_lowres * PADV;
+        fenc->weighted[0] = h->mb.p_weight_buf[0] + PADH_ALIGN + ref->i_stride_lowres * PADV;
     }
 }
 
