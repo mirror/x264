@@ -31,7 +31,7 @@
  ****************************************************************************/
 const int x264_chroma_format = X264_CHROMA_FORMAT;
 
-x264_t *x264_8_encoder_open( x264_param_t * );
+x264_t *x264_8_encoder_open( x264_param_t *, void * );
 void x264_8_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
 int  x264_8_encoder_reconfig( x264_t *, x264_param_t * );
 void x264_8_encoder_parameters( x264_t *, x264_param_t * );
@@ -43,7 +43,7 @@ int  x264_8_encoder_maximum_delayed_frames( x264_t * );
 void x264_8_encoder_intra_refresh( x264_t * );
 int  x264_8_encoder_invalidate_reference( x264_t *, int64_t pts );
 
-x264_t *x264_10_encoder_open( x264_param_t * );
+x264_t *x264_10_encoder_open( x264_param_t *, void * );
 void x264_10_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
 int  x264_10_encoder_reconfig( x264_t *, x264_param_t * );
 void x264_10_encoder_parameters( x264_t *, x264_param_t * );
@@ -92,7 +92,7 @@ REALIGN_STACK x264_t *x264_encoder_open( x264_param_t *param )
         api->encoder_intra_refresh = x264_8_encoder_intra_refresh;
         api->encoder_invalidate_reference = x264_8_encoder_invalidate_reference;
 
-        api->x264 = x264_8_encoder_open( param );
+        api->x264 = x264_8_encoder_open( param, api );
     }
     else if( HAVE_BITDEPTH10 && param->i_bitdepth == 10 )
     {
@@ -107,7 +107,7 @@ REALIGN_STACK x264_t *x264_encoder_open( x264_param_t *param )
         api->encoder_intra_refresh = x264_10_encoder_intra_refresh;
         api->encoder_invalidate_reference = x264_10_encoder_invalidate_reference;
 
-        api->x264 = x264_10_encoder_open( param );
+        api->x264 = x264_10_encoder_open( param, api );
     }
     else
         x264_log_internal( X264_LOG_ERROR, "not compiled with %d bit depth support\n", param->i_bitdepth );

@@ -271,6 +271,8 @@ struct x264_t
 {
     /* encoder parameters */
     x264_param_t    param;
+    /* opaque pointer to bit depth independent interface */
+    void            *api;
 
     x264_t          *thread[X264_THREAD_MAX+1];
     x264_t          *lookahead_thread[X264_LOOKAHEAD_THREAD_MAX];
