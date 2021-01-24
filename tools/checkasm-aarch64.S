@@ -1,7 +1,7 @@
 /****************************************************************************
  * checkasm-aarch64.S: assembly check tool
  *****************************************************************************
- * Copyright (C) 2015-2020 x264 project
+ * Copyright (C) 2015-2021 x264 project
  *
  * Authors: Martin Storsjo <martin@martin.st>
  *

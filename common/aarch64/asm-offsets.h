@@ -1,7 +1,7 @@
 /*****************************************************************************
  * asm-offsets.h: asm offsets for aarch64
  *****************************************************************************
- * Copyright (C) 2014-2020 x264 project
+ * Copyright (C) 2014-2021 x264 project
  *
  * Authors: Janne Grunau <janne-x264@jannau.net>
  *

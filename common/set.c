@@ -1,7 +1,7 @@
 /*****************************************************************************
  * set.c: quantization init
  *****************************************************************************
- * Copyright (C) 2005-2020 x264 project
+ * Copyright (C) 2005-2021 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *

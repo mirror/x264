@@ -1,7 +1,7 @@
 /*****************************************************************************
  * bitstream.h: x86 bitstream functions
  *****************************************************************************
- * Copyright (C) 2017-2020 x264 project
+ * Copyright (C) 2017-2021 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *
