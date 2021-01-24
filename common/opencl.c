@@ -1,7 +1,7 @@
 /*****************************************************************************
  * opencl.c: OpenCL initialization and kernel compilation
  *****************************************************************************
- * Copyright (C) 2012-2020 x264 project
+ * Copyright (C) 2012-2021 x264 project
  *
  * Authors: Steve Borho <sborho@multicorewareinc.com>
  *          Anton Mitrofanov <BugMaster@narod.ru>

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * pixel.h: aarch64 pixel metrics
  *****************************************************************************
- * Copyright (C) 2009-2020 x264 project
+ * Copyright (C) 2009-2021 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *          Janne Grunau <janne-x264@jannau.net>

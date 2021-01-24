@@ -1,7 +1,7 @@
 /*****************************************************************************
  * bitstream.c: bitstream writing
  *****************************************************************************
- * Copyright (C) 2003-2020 x264 project
+ * Copyright (C) 2003-2021 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Fiona Glaser <fiona@x264.com>

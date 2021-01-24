@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc-c.c: msa motion compensation
  *****************************************************************************
- * Copyright (C) 2015-2020 x264 project
+ * Copyright (C) 2015-2021 x264 project
  *
  * Authors: Neha Rana <neha.rana@imgtec.com>
  *

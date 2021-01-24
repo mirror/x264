@@ -1,7 +1,7 @@
 /*****************************************************************************
  * intel_dispatcher.h: intel compiler cpu dispatcher override
  *****************************************************************************
- * Copyright (C) 2014-2020 x264 project
+ * Copyright (C) 2014-2021 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *

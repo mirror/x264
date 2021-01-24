@@ -1,7 +1,7 @@
 /*****************************************************************************
  * threadpool.c: thread pooling
  *****************************************************************************
- * Copyright (C) 2010-2020 x264 project
+ * Copyright (C) 2010-2021 x264 project
  *
  * Authors: Steven Walters <kemuri9@gmail.com>
  *

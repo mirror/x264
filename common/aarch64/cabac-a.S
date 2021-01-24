@@ -1,7 +1,7 @@
 /*****************************************************************************
  * cabac-a.S: aarch64 cabac
  *****************************************************************************
- * Copyright (C) 2014-2020 x264 project
+ * Copyright (C) 2014-2021 x264 project
  *
  * Authors: Janne Grunau <janne-x264@jannau.net>
  *
@@ -41,7 +41,7 @@ function cabac_encode_decision_asm, export=1
     orr         w14, w2,  w3, lsl #1
     ldrb        w4,  [x8,  w5,  uxtw]           // i_range_lps
     ldr         w11, [x0,  #CABAC_I_LOW]
-    eor         w6,  w2,  w3               	    // b ^ i_state
+    eor         w6,  w2,  w3                    // b ^ i_state
     ldrb        w9,  [x9,  w14, uxtw]
     sub         w12, w12, w4
     add         w7,  w11, w12
