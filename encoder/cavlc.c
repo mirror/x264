@@ -91,7 +91,7 @@ static inline int cavlc_block_residual_escape( x264_t *h, int i_suffix_length, i
         {
             if( h->sps->i_profile_idc >= PROFILE_HIGH )
             {
-                while( i_level_code > 1<<(i_level_prefix-3) )
+                while( i_level_code >= 1<<(i_level_prefix-3) )
                 {
                     i_level_code -= 1<<(i_level_prefix-3);
                     i_level_prefix++;
