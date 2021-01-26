@@ -2185,14 +2185,14 @@ static void weighted_pred_init( x264_t *h )
                     assert( h->sh.weight[j][i].i_denom == denom );
                     if( !i )
                     {
-                        h->fenc->weighted[j] = h->mb.p_weight_buf[buffer_next++] + h->fenc->i_stride[0] * i_padv + PADH;
+                        h->fenc->weighted[j] = h->mb.p_weight_buf[buffer_next++] + h->fenc->i_stride[0] * i_padv + PADH_ALIGN;
                         //scale full resolution frame
                         if( h->param.i_threads == 1 )
                         {
-                            pixel *src = h->fref[0][j]->filtered[0][0] - h->fref[0][j]->i_stride[0]*i_padv - PADH;
-                            pixel *dst = h->fenc->weighted[j] - h->fenc->i_stride[0]*i_padv - PADH;
+                            pixel *src = h->fref[0][j]->filtered[0][0] - h->fref[0][j]->i_stride[0]*i_padv - PADH_ALIGN;
+                            pixel *dst = h->fenc->weighted[j] - h->fenc->i_stride[0]*i_padv - PADH_ALIGN;
                             int stride = h->fenc->i_stride[0];
-                            int width = h->fenc->i_width[0] + PADH*2;
+                            int width = h->fenc->i_width[0] + PADH2;
                             int height = h->fenc->i_lines[0] + i_padv*2;
                             x264_weight_scale_plane( h, dst, stride, src, stride, width, height, &h->sh.weight[j][0] );
                             h->fenc->i_lines_weighted = height;

@@ -38,7 +38,7 @@ static int align_stride( int x, int align, int disalign )
 static int align_plane_size( int x, int disalign )
 {
     if( !(x&(disalign-1)) )
-        x += 128;
+        x += X264_MAX( 128, NATIVE_ALIGN ) / SIZEOF_PIXEL;
     return x;
 }
 
@@ -63,21 +63,20 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     int i_mb_count = h->mb.i_mb_count;
     int i_stride, i_width, i_lines, luma_plane_count;
     int i_padv = PADV << PARAM_INTERLACED;
-    int align = 16;
+    int align = NATIVE_ALIGN / SIZEOF_PIXEL;
 #if ARCH_X86 || ARCH_X86_64
     if( h->param.cpu&X264_CPU_CACHELINE_64 || h->param.cpu&X264_CPU_AVX512 )
-        align = 64;
+        align = 64 / SIZEOF_PIXEL;
     else if( h->param.cpu&X264_CPU_CACHELINE_32 || h->param.cpu&X264_CPU_AVX )
-        align = 32;
+        align = 32 / SIZEOF_PIXEL;
+    else
+        align = 16 / SIZEOF_PIXEL;
 #endif
 #if ARCH_PPC
-    int disalign = 1<<9;
+    int disalign = (1<<9) / SIZEOF_PIXEL;
 #else
-    int disalign = 1<<10;
+    int disalign = (1<<10) / SIZEOF_PIXEL;
 #endif
-
-    /* ensure frame alignment after PADH is added */
-    int padh_align = X264_MAX( align - PADH * SIZEOF_PIXEL, 0 ) / SIZEOF_PIXEL;
 
     CHECKED_MALLOCZERO( frame, sizeof(x264_frame_t) );
     PREALLOC_INIT
@@ -85,7 +84,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     /* allocate frame data (+64 for extra data for me) */
     i_width  = h->mb.i_mb_width*16;
     i_lines  = h->mb.i_mb_height*16;
-    i_stride = align_stride( i_width + 2*PADH, align, disalign );
+    i_stride = align_stride( i_width + PADH2, align, disalign );
 
     if( i_csp == X264_CSP_NV12 || i_csp == X264_CSP_NV16 )
     {
@@ -123,7 +122,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     frame->i_csp = i_csp;
     frame->i_width_lowres = frame->i_width[0]/2;
     frame->i_lines_lowres = frame->i_lines[0]/2;
-    frame->i_stride_lowres = align_stride( frame->i_width_lowres + 2*PADH, align, disalign<<1 );
+    frame->i_stride_lowres = align_stride( frame->i_width_lowres + PADH2, align, disalign<<1 );
 
     for( int i = 0; i < h->param.i_bframe + 2; i++ )
         for( int j = 0; j < h->param.i_bframe + 2; j++ )
@@ -152,9 +151,9 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     {
         int chroma_padv = i_padv >> (i_csp == X264_CSP_NV12);
         int chroma_plane_size = (frame->i_stride[1] * (frame->i_lines[1] + 2*chroma_padv));
-        PREALLOC( frame->buffer[1], (chroma_plane_size + padh_align) * SIZEOF_PIXEL );
+        PREALLOC( frame->buffer[1], chroma_plane_size * SIZEOF_PIXEL );
         if( PARAM_INTERLACED )
-            PREALLOC( frame->buffer_fld[1], (chroma_plane_size + padh_align) * SIZEOF_PIXEL );
+            PREALLOC( frame->buffer_fld[1], chroma_plane_size * SIZEOF_PIXEL );
     }
 
     /* all 4 luma planes allocated together, since the cacheline split code
@@ -167,9 +166,9 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
             luma_plane_size *= 4;
 
         /* FIXME: Don't allocate both buffers in non-adaptive MBAFF. */
-        PREALLOC( frame->buffer[p], (luma_plane_size + padh_align) * SIZEOF_PIXEL );
+        PREALLOC( frame->buffer[p], luma_plane_size * SIZEOF_PIXEL );
         if( PARAM_INTERLACED )
-            PREALLOC( frame->buffer_fld[p], (luma_plane_size + padh_align) * SIZEOF_PIXEL );
+            PREALLOC( frame->buffer_fld[p], luma_plane_size * SIZEOF_PIXEL );
     }
 
     frame->b_duplicate = 0;
@@ -207,7 +206,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
         {
             int64_t luma_plane_size = align_plane_size( frame->i_stride_lowres * (frame->i_lines[0]/2 + 2*PADV), disalign );
 
-            PREALLOC( frame->buffer_lowres, (4 * luma_plane_size + padh_align) * SIZEOF_PIXEL );
+            PREALLOC( frame->buffer_lowres, 4 * luma_plane_size * SIZEOF_PIXEL );
 
             for( int j = 0; j <= !!h->param.i_bframe; j++ )
                 for( int i = 0; i <= h->param.i_bframe; i++ )
@@ -237,9 +236,9 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     if( i_csp == X264_CSP_NV12 || i_csp == X264_CSP_NV16 )
     {
         int chroma_padv = i_padv >> (i_csp == X264_CSP_NV12);
-        frame->plane[1] = frame->buffer[1] + frame->i_stride[1] * chroma_padv + PADH + padh_align;
+        frame->plane[1] = frame->buffer[1] + frame->i_stride[1] * chroma_padv + PADH_ALIGN;
         if( PARAM_INTERLACED )
-            frame->plane_fld[1] = frame->buffer_fld[1] + frame->i_stride[1] * chroma_padv + PADH + padh_align;
+            frame->plane_fld[1] = frame->buffer_fld[1] + frame->i_stride[1] * chroma_padv + PADH_ALIGN;
     }
 
     for( int p = 0; p < luma_plane_count; p++ )
@@ -249,18 +248,18 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
         {
             for( int i = 0; i < 4; i++ )
             {
-                frame->filtered[p][i] = frame->buffer[p] + i*luma_plane_size + frame->i_stride[p] * i_padv + PADH + padh_align;
+                frame->filtered[p][i] = frame->buffer[p] + i*luma_plane_size + frame->i_stride[p] * i_padv + PADH_ALIGN;
                 if( PARAM_INTERLACED )
-                    frame->filtered_fld[p][i] = frame->buffer_fld[p] + i*luma_plane_size + frame->i_stride[p] * i_padv + PADH + padh_align;
+                    frame->filtered_fld[p][i] = frame->buffer_fld[p] + i*luma_plane_size + frame->i_stride[p] * i_padv + PADH_ALIGN;
             }
             frame->plane[p] = frame->filtered[p][0];
             frame->plane_fld[p] = frame->filtered_fld[p][0];
         }
         else
         {
-            frame->filtered[p][0] = frame->plane[p] = frame->buffer[p] + frame->i_stride[p] * i_padv + PADH + padh_align;
+            frame->filtered[p][0] = frame->plane[p] = frame->buffer[p] + frame->i_stride[p] * i_padv + PADH_ALIGN;
             if( PARAM_INTERLACED )
-                frame->filtered_fld[p][0] = frame->plane_fld[p] = frame->buffer_fld[p] + frame->i_stride[p] * i_padv + PADH + padh_align;
+                frame->filtered_fld[p][0] = frame->plane_fld[p] = frame->buffer_fld[p] + frame->i_stride[p] * i_padv + PADH_ALIGN;
         }
     }
 
@@ -270,7 +269,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
         frame->mv16x16++;
 
         if( h->param.analyse.i_me_method >= X264_ME_ESA )
-            frame->integral = (uint16_t*)frame->buffer[3] + frame->i_stride[0] * i_padv + PADH;
+            frame->integral = (uint16_t*)frame->buffer[3] + frame->i_stride[0] * i_padv + PADH_ALIGN;
     }
     else
     {
@@ -278,7 +277,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
         {
             int64_t luma_plane_size = align_plane_size( frame->i_stride_lowres * (frame->i_lines[0]/2 + 2*PADV), disalign );
             for( int i = 0; i < 4; i++ )
-                frame->lowres[i] = frame->buffer_lowres + frame->i_stride_lowres * PADV + PADH + padh_align + i * luma_plane_size;
+                frame->lowres[i] = frame->buffer_lowres + frame->i_stride_lowres * PADV + PADH_ALIGN + i * luma_plane_size;
 
             for( int j = 0; j <= !!h->param.i_bframe; j++ )
                 for( int i = 0; i <= h->param.i_bframe; i++ )

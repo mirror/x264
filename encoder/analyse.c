@@ -223,10 +223,10 @@ void x264_analyse_weight_frame( x264_t *h, int end )
         if( h->sh.weight[j][0].weightfn )
         {
             x264_frame_t *frame = h->fref[0][j];
-            int width = frame->i_width[0] + 2*PADH;
+            int width = frame->i_width[0] + PADH2;
             int i_padv = PADV << PARAM_INTERLACED;
             int offset, height;
-            pixel *src = frame->filtered[0][0] - frame->i_stride[0]*i_padv - PADH;
+            pixel *src = frame->filtered[0][0] - frame->i_stride[0]*i_padv - PADH_ALIGN;
             height = X264_MIN( 16 + end + i_padv, h->fref[0][j]->i_lines[0] + i_padv*2 ) - h->fenc->i_lines_weighted;
             offset = h->fenc->i_lines_weighted*frame->i_stride[0];
             h->fenc->i_lines_weighted += height;
@@ -234,7 +234,7 @@ void x264_analyse_weight_frame( x264_t *h, int end )
                 for( int k = j; k < h->i_ref[0]; k++ )
                     if( h->sh.weight[k][0].weightfn )
                     {
-                        pixel *dst = h->fenc->weighted[k] - h->fenc->i_stride[0]*i_padv - PADH;
+                        pixel *dst = h->fenc->weighted[k] - h->fenc->i_stride[0]*i_padv - PADH_ALIGN;
                         x264_weight_scale_plane( h, dst + offset, frame->i_stride[0],
                                                  src + offset, frame->i_stride[0],
                                                  width, height, &h->sh.weight[k][0] );

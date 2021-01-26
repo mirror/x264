@@ -749,15 +749,15 @@ void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )
         int stride = frame->i_stride[0];
         if( start < 0 )
         {
-            memset( frame->integral - PADV * stride - PADH, 0, stride * sizeof(uint16_t) );
+            memset( frame->integral - PADV * stride - PADH_ALIGN, 0, stride * sizeof(uint16_t) );
             start = -PADV;
         }
         if( b_end )
             height += PADV-9;
         for( int y = start; y < height; y++ )
         {
-            pixel    *pix  = frame->plane[0] + y * stride - PADH;
-            uint16_t *sum8 = frame->integral + (y+1) * stride - PADH;
+            pixel    *pix  = frame->plane[0] + y * stride - PADH_ALIGN;
+            uint16_t *sum8 = frame->integral + (y+1) * stride - PADH_ALIGN;
             uint16_t *sum4;
             if( h->frames.b_have_sub8x8_esa )
             {
