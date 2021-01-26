@@ -112,7 +112,6 @@ static NOINLINE void weight_cost_init_chroma( x264_t *h, x264_frame_t *fenc, x26
 {
     int ref0_distance = fenc->i_frame - ref->i_frame - 1;
     int i_stride = fenc->i_stride[1];
-    int i_offset = i_stride / 2;
     int i_lines = fenc->i_lines[1];
     int i_width = fenc->i_width[1];
     int v_shift = CHROMA_V_SHIFT;
@@ -136,7 +135,7 @@ static NOINLINE void weight_cost_init_chroma( x264_t *h, x264_frame_t *fenc, x26
     }
     else
         h->mc.plane_copy_deinterleave( dstu, i_stride, dstv, i_stride, ref->plane[1], i_stride, cw, ch );
-    h->mc.plane_copy_deinterleave( dstu+i_offset, i_stride, dstv+i_offset, i_stride, fenc->plane[1], i_stride, cw, ch );
+    h->mc.plane_copy_deinterleave( dstu+i_width, i_stride, dstv+i_width, i_stride, fenc->plane[1], i_stride, cw, ch );
     x264_emms();
 }
 
@@ -228,7 +227,7 @@ static NOINLINE unsigned int weight_cost_chroma( x264_t *h, x264_frame_t *fenc, 
     int i_stride = fenc->i_stride[1];
     int i_lines = fenc->i_lines[1];
     int i_width = fenc->i_width[1];
-    pixel *src = ref + (i_stride >> 1);
+    pixel *src = ref + i_width;
     ALIGNED_ARRAY_16( pixel, buf, [8*16] );
     int pixoff = 0;
     int height = 16 >> CHROMA_V_SHIFT;
