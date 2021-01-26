@@ -414,7 +414,7 @@ endif
 install-bashcompletion:
 ifneq ($(BASHCOMPLETIONSDIR),)
 	$(INSTALL) -d $(DESTDIR)$(BASHCOMPLETIONSDIR)
-	$(INSTALL) -m 644 -T $(SRCPATH)/tools/bash-autocomplete.sh $(DESTDIR)$(BASHCOMPLETIONSDIR)/x264
+	$(INSTALL) -m 644 $(SRCPATH)/tools/bash-autocomplete.sh $(DESTDIR)$(BASHCOMPLETIONSDIR)/x264
 endif
 
 uninstall:
