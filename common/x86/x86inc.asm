@@ -1139,7 +1139,7 @@ INIT_XMM
     %endif
     %xdefine %%tmp %%f %+ 0
     %ifnum %%tmp
-        RESET_MM_PERMUTATION
+        DEFINE_MMREGS mmtype
         %assign %%i 0
         %rep num_mmregs
             %xdefine %%tmp %%f %+ %%i
