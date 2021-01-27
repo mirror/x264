@@ -490,7 +490,7 @@ void x264_weights_analyse( x264_t *h, x264_frame_t *fenc, x264_frame_t *ref, int
     if( weights[0].weightfn && b_lookahead )
     {
         //scale lowres in lookahead for slicetype_frame_cost
-        pixel *src = ref->buffer_lowres;
+        pixel *src = ref->lowres[0] - (PADH + ref->i_stride_lowres * PADV);
         pixel *dst = h->mb.p_weight_buf[0];
         int width = ref->i_width_lowres + PADH2;
         int height = ref->i_lines_lowres + PADV*2;
