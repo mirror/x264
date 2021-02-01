@@ -2350,7 +2350,10 @@ static double clip_qscale( x264_t *h, int pict_type, double q )
                 bframe_cpb_duration += h->fenc->f_planned_cpb_duration[i];
 
             if( bbits * nb > bframe_cpb_duration * rcc->vbv_max_rate )
+            {
                 nb = 0;
+                bframe_cpb_duration = 0;
+            }
             pbbits += nb * bbits;
 
             minigop_cpb_duration = bframe_cpb_duration + fenc_cpb_duration;
