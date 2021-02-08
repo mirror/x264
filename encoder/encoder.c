@@ -4275,14 +4275,14 @@ void    x264_encoder_close  ( x264_t *h )
         int64_t i_i8x8 = SUM3b( h->stat.i_mb_count, I_8x8 );
         int64_t i_intra = i_i8x8 + SUM3b( h->stat.i_mb_count, I_4x4 )
                                  + SUM3b( h->stat.i_mb_count, I_16x16 );
-        int64_t i_all_intra = i_intra + SUM3b( h->stat.i_mb_count, I_PCM);
+        int64_t i_all_intra = i_intra + SUM3b( h->stat.i_mb_count, I_PCM );
         int64_t i_skip = SUM3b( h->stat.i_mb_count, P_SKIP )
                        + SUM3b( h->stat.i_mb_count, B_SKIP );
         const int i_count = h->stat.i_frame_count[SLICE_TYPE_I] +
                             h->stat.i_frame_count[SLICE_TYPE_P] +
                             h->stat.i_frame_count[SLICE_TYPE_B];
         int64_t i_mb_count = (int64_t)i_count * h->mb.i_mb_count;
-        int64_t i_inter = i_mb_count - i_skip - i_intra;
+        int64_t i_inter = i_mb_count - i_skip - i_all_intra;
         const double duration = h->stat.f_frame_duration[SLICE_TYPE_I] +
                                 h->stat.f_frame_duration[SLICE_TYPE_P] +
                                 h->stat.f_frame_duration[SLICE_TYPE_B];
@@ -4297,7 +4297,7 @@ void    x264_encoder_close  ( x264_t *h )
             if( i_skip )
                 fieldstats += sprintf( fieldstats, " skip:%.1f%%", h->stat.i_mb_field[2] * 100.0 / i_skip );
             x264_log( h, X264_LOG_INFO, "field mbs: intra: %.1f%%%s\n",
-                      h->stat.i_mb_field[0] * 100.0 / i_intra, buf );
+                      h->stat.i_mb_field[0] * 100.0 / i_all_intra, buf );
         }
 
         if( h->pps->b_transform_8x8_mode )
@@ -4305,7 +4305,7 @@ void    x264_encoder_close  ( x264_t *h )
             buf[0] = 0;
             if( h->stat.i_mb_count_8x8dct[0] )
                 sprintf( buf, " inter:%.1f%%", 100. * h->stat.i_mb_count_8x8dct[1] / h->stat.i_mb_count_8x8dct[0] );
-            x264_log( h, X264_LOG_INFO, "8x8 transform intra:%.1f%%%s\n", 100. * i_i8x8 / i_intra, buf );
+            x264_log( h, X264_LOG_INFO, "8x8 transform intra:%.1f%%%s\n", 100. * i_i8x8 / X264_MAX( i_intra, 1 ), buf );
         }
 
         if( (h->param.analyse.i_direct_mv_pred == X264_DIRECT_PRED_AUTO ||

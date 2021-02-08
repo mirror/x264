@@ -450,7 +450,7 @@ static void mb_analyse_init( x264_t *h, x264_mb_analysis_t *a, int qp )
                 IS_INTRA( h->mb.i_mb_type_topleft ) ||
                 IS_INTRA( h->mb.i_mb_type_topright ) ||
                 (h->sh.i_type == SLICE_TYPE_P && IS_INTRA( h->fref[0][0]->mb_type[h->mb.i_mb_xy] )) ||
-                (h->mb.i_mb_xy - h->sh.i_first_mb < 3*(h->stat.frame.i_mb_count[I_4x4] + h->stat.frame.i_mb_count[I_8x8] + h->stat.frame.i_mb_count[I_16x16])) )
+                (h->mb.i_mb_xy - h->sh.i_first_mb < 3*(h->stat.frame.i_mb_count[I_4x4] + h->stat.frame.i_mb_count[I_8x8] + h->stat.frame.i_mb_count[I_16x16] + h->stat.frame.i_mb_count[I_PCM])) )
             { /* intra is likely */ }
             else
             {
