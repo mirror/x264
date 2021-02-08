@@ -39,7 +39,7 @@ stages:
     _TRIPLET: "x86_64-apple-darwin19"
     _PLATFORMSUFFIX: ""
     _WRAPPER: ""
-    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/macos/"
+    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/macos-x86_64/"
 
 .build:
     stage: build
