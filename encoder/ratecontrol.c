@@ -1829,9 +1829,9 @@ int x264_ratecontrol_end( x264_t *h, int bits, int *filler )
     x264_emms();
 
     h->stat.frame.i_mb_count_skip = mbs[P_SKIP] + mbs[B_SKIP];
-    h->stat.frame.i_mb_count_i = mbs[I_16x16] + mbs[I_8x8] + mbs[I_4x4];
+    h->stat.frame.i_mb_count_i = mbs[I_16x16] + mbs[I_8x8] + mbs[I_4x4] + mbs[I_PCM];
     h->stat.frame.i_mb_count_p = mbs[P_L0] + mbs[P_8x8];
-    for( int i = B_DIRECT; i < B_8x8; i++ )
+    for( int i = B_DIRECT; i <= B_8x8; i++ )
         h->stat.frame.i_mb_count_p += mbs[i];
 
     h->fdec->f_qp_avg_rc = rc->qpa_rc /= h->mb.i_mb_count;
