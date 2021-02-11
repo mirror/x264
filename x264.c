@@ -66,7 +66,7 @@
 #endif
 
 #if HAVE_GPAC
-#include <gpac/version.h>
+#include <gpac/isomedia.h>
 #endif
 
 #if HAVE_LSMASH
