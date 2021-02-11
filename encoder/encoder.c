@@ -1787,11 +1787,12 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
                           h->sps->i_profile_idc == PROFILE_HIGH422 ?
                               (h->sps->b_constraint_set3 ? "High 4:2:2 Intra" : "High 4:2:2") :
                           h->sps->b_constraint_set3 ? "High 4:4:4 Intra" : "High 4:4:4 Predictive";
-    char level[4];
-    snprintf( level, sizeof(level), "%d.%d", h->sps->i_level_idc/10, h->sps->i_level_idc%10 );
+    char level[16];
     if( h->sps->i_level_idc == 9 || ( h->sps->i_level_idc == 11 && h->sps->b_constraint_set3 &&
         (h->sps->i_profile_idc == PROFILE_BASELINE || h->sps->i_profile_idc == PROFILE_MAIN) ) )
         strcpy( level, "1b" );
+    else
+        snprintf( level, sizeof(level), "%d.%d", h->sps->i_level_idc / 10, h->sps->i_level_idc % 10 );
 
     static const char * const subsampling[4] = { "4:0:0", "4:2:0", "4:2:2", "4:4:4" };
     x264_log( h, X264_LOG_INFO, "profile %s, level %s, %s, %d-bit\n",
