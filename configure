@@ -828,6 +828,11 @@ case $host_cpu in
         if [ "$SYS" = MACOSX ] ; then
             AS="${AS-${CC}}"
             ASFLAGS="$ASFLAGS -DPREFIX -DPIC"
+            if cc_check '' "-arch arm64"; then
+                CFLAGS="$CFLAGS -arch arm64"
+                LDFLAGS="$LDFLAGS -arch arm64"
+                ASFLAGS="$ASFLAGS -arch arm64"
+            fi
         elif [ "$SYS" = WINDOWS ] && [ "$compiler" = CL ] ; then
             AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch aarch64 -as-type armasm -- armasm64 -nologo}"
         else
