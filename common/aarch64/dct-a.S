@@ -707,7 +707,7 @@ function zigzag_interleave_8x8_cavlc_neon, export=1
     umaxp      v16.8h, v16.8h, v18.8h
     st1        {v2.8h}, [x0],  #16
     st1        {v6.8h}, [x0],  #16
-    cmhi       v16.4s, v16.4s, v31.4s
+    cmhs       v16.4s, v16.4s, v31.4s
     st1        {v3.8h}, [x0],  #16
     and        v16.16b, v16.16b, v31.16b
     st1        {v7.8h}, [x0],  #16
