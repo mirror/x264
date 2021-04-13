@@ -35,11 +35,21 @@ stages:
     _PLATFORMSUFFIX: ".exe"
     _WRAPPER: ""
 
-.variables-macos: &variables-macos
+.variables-macos-x86_64: &variables-macos-x86_64
     _TRIPLET: "x86_64-apple-darwin19"
     _PLATFORMSUFFIX: ""
     _WRAPPER: ""
     _CONTRIB_URL: "https://artifacts.videolan.org/vlc/macos-x86_64/"
+    _XCFLAGS: "-arch x86_64"
+    _XLDFLAGS: "-arch x86_64"
+
+.variables-macos-arm64: &variables-macos-arm64
+    _TRIPLET: "aarch64-apple-darwin19"
+    _PLATFORMSUFFIX: ""
+    _WRAPPER: ""
+    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/macos-arm64/"
+    _XCFLAGS: "-arch arm64"
+    _XLDFLAGS: "-arch arm64"
 
 .build:
     stage: build
@@ -133,11 +143,8 @@ build-llvm-mingw-aarch64:
     extends: .build-llvm-mingw
     variables: *variables-win-aarch64
 
-build-macos:
+.build-macos:
     extends: .build
-    tags:
-        - amd64
-        - catalina
     script: |
         set -x
         LOCAL_INSTALL_DIR=`pwd`/${_TRIPLET}
@@ -150,13 +157,26 @@ build-macos:
         sed -i.bak -e "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
         git clone --depth 1 --branch master https://github.com/l-smash/l-smash.git lsmash
         cd lsmash
-        ./configure --prefix="${LOCAL_INSTALL_DIR}"
+        ./configure --prefix="${LOCAL_INSTALL_DIR}" --target-os="${_TRIPLET}" --extra-cflags="${_XCFLAGS}" --extra-ldflags="${_XLDFLAGS}"
         make -j$(getconf _NPROCESSORS_ONLN)
         make -j$(getconf _NPROCESSORS_ONLN) install
         cd ..
-        ./configure --enable-pic --enable-strip
+        ./configure --host="${_TRIPLET}" --enable-pic --enable-strip
         make -j$(getconf _NPROCESSORS_ONLN) x264 checkasm
-    variables: *variables-macos
+
+build-macos-x86_64:
+    extends: .build-macos
+    tags:
+        - amd64
+        - catalina
+    variables: *variables-macos-x86_64
+
+build-macos-arm64:
+    extends: .build-macos
+    tags:
+        - amd64
+        - catalina
+    variables: *variables-macos-arm64
 
 .test: &test
     stage: test
@@ -195,12 +215,12 @@ test-win64:
         - build-win64
     variables: *variables-win64
 
-test-macos:
+test-macos-x86_64:
     <<: *test
-    extends: build-macos
+    extends: build-macos-x86_64
     dependencies:
-        - build-macos
-    variables: *variables-macos
+        - build-macos-x86_64
+    variables: *variables-macos-x86_64
 
 .release: &release
     stage: release
@@ -246,9 +266,16 @@ release-win64:
         - build-win64
     variables: *variables-win64
 
-release-macos:
+release-macos-x86_64:
     <<: *release
-    extends: build-macos
+    extends: build-macos-x86_64
     dependencies:
-        - build-macos
-    variables: *variables-macos
+        - build-macos-x86_64
+    variables: *variables-macos-x86_64
+
+release-macos-arm64:
+    <<: *release
+    extends: build-macos-arm64
+    dependencies:
+        - build-macos-arm64
+    variables: *variables-macos-arm64
