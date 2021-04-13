@@ -124,6 +124,7 @@ cl_ldflags() {
         arg=${arg/pthreadGC/pthreadVC}
         [ "$arg" = avifil32.lib ] && arg=vfw32.lib
         [ "$arg" = gpac_static.lib ] && arg=libgpac_static.lib
+        [ "$arg" = gpac.lib ] && arg=libgpac.lib
         [ "$arg" = x264.lib ] && arg=libx264.lib
 
         [ -n "$arg" ] && echo -n "$arg "
@@ -1244,15 +1245,32 @@ fi
 
 if [ "$gpac" = "auto" -a "$lsmash" != "yes" ] ; then
     gpac="no"
-    GPAC_LIBS="-lgpac_static"
-    cc_check "" -lz && GPAC_LIBS="$GPAC_LIBS -lz"
-    cc_check "" -ldl && GPAC_LIBS="$GPAC_LIBS -ldl"
-    if [ "$SYS" = "WINDOWS" ] ; then
-        cc_check "" -lws2_32 && GPAC_LIBS="$GPAC_LIBS -lws2_32"
-        cc_check "" -lwinmm && GPAC_LIBS="$GPAC_LIBS -lwinmm"
+    if pkg_check gpac ; then
+        GPAC_LIBS_TMP="$GPAC_LIBS $($PKGCONFIG --libs gpac)"
+        GPAC_CFLAGS_TMP="$GPAC_CFLAGS $($PKGCONFIG --cflags gpac)"
+        if cc_check gpac/isomedia.h "$GPAC_CFLAGS_TMP $GPAC_LIBS_TMP" "gf_isom_close(0);" ; then
+            GPAC_LIBS="$GPAC_LIBS_TMP"
+            GPAC_CFLAGS="$GPAC_CFLAGS_TMP"
+        else
+            GPAC_LIBS_TMP="$GPAC_LIBS $($PKGCONFIG --static --libs gpac | sed 's/-lgpac //')"
+            GPAC_CFLAGS_TMP="$GPAC_CFLAGS $($PKGCONFIG --static --cflags gpac)"
+            if cc_check gpac/isomedia.h "$GPAC_CFLAGS_TMP $GPAC_LIBS_TMP" "gf_isom_close(0);" ; then
+                GPAC_LIBS="$GPAC_LIBS_TMP"
+                GPAC_CFLAGS="$GPAC_CFLAGS_TMP"
+            fi
+        fi
     fi
-    if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_close(0);" ; then
-        if cc_check gpac/isomedia.h "$GPAC_LIBS" "gf_isom_set_pixel_aspect_ratio(0,0,0,0,0,0);" ; then
+    if [ -z "$GPAC_LIBS" ] ; then
+        GPAC_LIBS="-lgpac_static"
+        cc_check "" -lz && GPAC_LIBS="$GPAC_LIBS -lz"
+        cc_check "" -ldl && GPAC_LIBS="$GPAC_LIBS -ldl"
+        if [ "$SYS" = "WINDOWS" ] ; then
+            cc_check "" -lws2_32 && GPAC_LIBS="$GPAC_LIBS -lws2_32"
+            cc_check "" -lwinmm && GPAC_LIBS="$GPAC_LIBS -lwinmm"
+        fi
+    fi
+    if cc_check gpac/isomedia.h "$GPAC_CFLAGS $GPAC_LIBS" "gf_isom_close(0);" ; then
+        if cc_check gpac/isomedia.h "$GPAC_CFLAGS $GPAC_LIBS" "gf_isom_set_pixel_aspect_ratio(0,0,0,0,0,0);" ; then
             gpac="yes"
         else
             echo "Warning: gpac is too old, update to v0.8.0 or later"
@@ -1268,6 +1286,7 @@ if [ "$lsmash" = "yes" ] ; then
 elif [ "$gpac" = "yes" ] ; then
     mp4="gpac"
     LDFLAGSCLI="$GPAC_LIBS $LDFLAGSCLI"
+    CFLAGS="$CFLAGS $GPAC_CFLAGS"
     define HAVE_GPAC
 fi
 
