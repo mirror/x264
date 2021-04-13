@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 162
+#define X264_BUILD 163
 
 #ifdef _WIN32
 #   define X264_DLL_IMPORT __declspec(dllimport)
@@ -501,6 +501,14 @@ typedef struct x264_param_t
         int64_t i_display_max;
         int64_t i_display_min;
     } mastering_display;
+
+    /* content light level SEI */
+    struct
+    {
+        int b_cll;                  /* enable writing this SEI */
+        int i_max_cll;
+        int i_max_fall;
+    } content_light_level;
 
     /* alternative transfer SEI */
     int i_alternative_transfer;

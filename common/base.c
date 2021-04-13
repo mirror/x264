@@ -1028,6 +1028,17 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         else
             p->mastering_display.b_mastering_display = 0;
     }
+    OPT("cll")
+    {
+        if( strcasecmp( value, "undef" ) )
+        {
+            b_error |= sscanf( value, "%d,%d",
+                               &p->content_light_level.i_max_cll, &p->content_light_level.i_max_fall ) != 2;
+            p->content_light_level.b_cll = !b_error;
+        }
+        else
+            p->content_light_level.b_cll = 0;
+    }
     OPT("alternative-transfer")
         b_error |= parse_enum( value, x264_transfer_names, &p->i_alternative_transfer );
     OPT("fps")
@@ -1520,6 +1531,9 @@ char *x264_param2string( x264_param_t *p, int b_res )
                       p->mastering_display.i_red_x, p->mastering_display.i_red_y,
                       p->mastering_display.i_white_x, p->mastering_display.i_white_y,
                       p->mastering_display.i_display_max, p->mastering_display.i_display_min );
+    if( p->content_light_level.b_cll )
+        s += sprintf( s, " cll=%d,%d",
+                      p->content_light_level.i_max_cll, p->content_light_level.i_max_fall );
     if( p->i_frame_packing >= 0 )
         s += sprintf( s, " frame-packing=%d", p->i_frame_packing );
 

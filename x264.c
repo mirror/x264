@@ -876,6 +876,8 @@ static void help( x264_param_t *defaults, int longhelp )
                                        defaults->vui.i_chroma_loc );
     H2( "      --mastering-display <string> Specify 'G(x,y)B(x,y)R(x,y)WP(x,y)L(max,min)'\n"
         "                              for primaries, white point, and display brightness\n" );
+    H2( "      --cll <string>          Specify 'max_content,max_frame_average' content\n"
+        "                              light levels\n" );
     H2( "      --alternative-transfer <string> Specify an alternative transfer\n"
         "                              characteristics [\"%s\"]\n"
         "                                  - same values as --transfer\n",
@@ -1163,6 +1165,7 @@ static struct option long_options[] =
     { "fake-interlaced",   no_argument, NULL, 0 },
     { "frame-packing",     required_argument, NULL, 0 },
     { "mastering-display", required_argument, NULL, 0 },
+    { "cll",         required_argument, NULL, 0 },
     { "alternative-transfer", required_argument, NULL, 0 },
     { "vf",          required_argument, NULL, OPT_VIDEO_FILTER },
     { "video-filter", required_argument, NULL, OPT_VIDEO_FILTER },
