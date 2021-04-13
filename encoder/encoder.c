@@ -769,8 +769,8 @@ static int validate_parameters( x264_t *h, int b_open )
 
         if( !h->param.b_repeat_headers )
         {
-            x264_log( h, X264_LOG_ERROR, "Separate headers not supported in AVC-Intra mode\n" );
-            return -1;
+            x264_log( h, X264_LOG_INFO, "Separate headers are not supported in AVC-Intra mode and will be ignored\n" );
+            h->param.b_repeat_headers = 1;
         }
 
         int i;
@@ -2057,12 +2057,15 @@ int x264_encoder_headers( x264_t *h, x264_nal_t **pp_nal, int *pi_nal )
     if( nal_end( h ) )
         return -1;
 
-    /* identify ourselves */
-    nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
-    if( x264_sei_version_write( h, &h->out.bs ) )
-        return -1;
-    if( nal_end( h ) )
-        return -1;
+    /* identify ourselves unless in AVC-Intra mode */
+    if( !h->param.i_avcintra_class )
+    {
+        nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
+        if( x264_sei_version_write( h, &h->out.bs ) )
+            return -1;
+        if( nal_end( h ) )
+            return -1;
+    }
 
     frame_size = encoder_encapsulate_nals( h, 0 );
     if( frame_size < 0 )
