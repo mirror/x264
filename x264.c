@@ -415,7 +415,7 @@ REALIGN_STACK int main( int argc, char **argv )
 static char const *strtable_lookup( const char * const table[], int idx )
 {
     int i = 0; while( table[i] ) i++;
-    return ( ( idx >= 0 && idx < i ) ? table[ idx ] : "???" );
+    return ( idx >= 0 && idx < i && *table[idx] ) ? table[idx] : "???";
 }
 
 static char *stringify_names( char *buf, const char * const names[] )
@@ -423,11 +423,12 @@ static char *stringify_names( char *buf, const char * const names[] )
     int i = 0;
     char *p = buf;
     for( p[0] = 0; names[i]; i++ )
-    {
-        p += sprintf( p, "%s", names[i] );
-        if( names[i+1] )
-            p += sprintf( p, ", " );
-    }
+        if( *names[i] )
+        {
+            if( p != buf )
+                p += sprintf( p, ", " );
+            p += sprintf( p, "%s", names[i] );
+        }
     return buf;
 }
 
@@ -478,7 +479,7 @@ static void print_csp_names( int longhelp )
 
 static void help( x264_param_t *defaults, int longhelp )
 {
-    char buf[50];
+    char buf[200];
 #define H0 printf
 #define H1 if( longhelp >= 1 ) printf
 #define H2 if( longhelp == 2 ) printf
@@ -711,7 +712,7 @@ static void help( x264_param_t *defaults, int longhelp )
     H0( "      --bff                   Enable interlaced mode (bottom field first)\n" );
     H2( "      --constrained-intra     Enable constrained intra prediction.\n" );
     H0( "      --pulldown <string>     Use soft pulldown to change frame rate\n"
-        "                                  - none, 22, 32, 64, double, triple, euro (requires cfr input)\n" );
+        "                                  - %s (requires cfr input)\n", stringify_names( buf, x264_pulldown_names ) );
     H2( "      --fake-interlaced       Flag stream as interlaced but encode progressive.\n"
         "                              Makes it possible to encode 25p and 30p Blu-Ray\n"
         "                              streams. Ignored in interlaced mode.\n" );
@@ -1357,7 +1358,7 @@ static int init_vid_filters( char *sequence, hnd_t *handle, video_info_t *info, 
 static int parse_enum_name( const char *arg, const char * const *names, const char **dst )
 {
     for( int i = 0; names[i]; i++ )
-        if( !strcasecmp( arg, names[i] ) )
+        if( *names[i] && !strcasecmp( arg, names[i] ) )
         {
             *dst = names[i];
             return 0;
@@ -1368,7 +1369,7 @@ static int parse_enum_name( const char *arg, const char * const *names, const ch
 static int parse_enum_value( const char *arg, const char * const *names, int *dst )
 {
     for( int i = 0; names[i]; i++ )
-        if( !strcasecmp( arg, names[i] ) )
+        if( *names[i] && !strcasecmp( arg, names[i] ) )
         {
             *dst = i;
             return 0;
