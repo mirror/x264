@@ -42,9 +42,8 @@ typedef struct
 } y4m_hnd_t;
 
 #define Y4M_MAGIC "YUV4MPEG2"
-#define MAX_YUV4_HEADER 80
 #define Y4M_FRAME_MAGIC "FRAME"
-#define MAX_FRAME_HEADER 80
+#define Y4M_MAX_HEADER 256
 
 static int parse_csp_and_depth( char *csp_name, int *bit_depth )
 {
@@ -73,7 +72,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
     y4m_hnd_t *h = calloc( 1, sizeof(y4m_hnd_t) );
     int i;
     uint32_t n, d;
-    char header[MAX_YUV4_HEADER+10];
+    char header[Y4M_MAX_HEADER+10];
     char *tokend, *header_end;
     int colorspace = X264_CSP_NONE;
     int alt_colorspace = X264_CSP_NONE;
@@ -91,7 +90,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         return -1;
 
     /* Read header */
-    for( i = 0; i < MAX_YUV4_HEADER; i++ )
+    for( i = 0; i < Y4M_MAX_HEADER; i++ )
     {
         header[i] = fgetc( h->fh );
         if( header[i] == '\n' )
@@ -104,7 +103,7 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         }
     }
     FAIL_IF_ERROR( strncmp( header, Y4M_MAGIC, sizeof(Y4M_MAGIC)-1 ), "bad sequence header magic\n" );
-    FAIL_IF_ERROR( i == MAX_YUV4_HEADER, "bad sequence header length\n" );
+    FAIL_IF_ERROR( i == Y4M_MAX_HEADER, "bad sequence header length\n" );
 
     /* Scan properties */
     header_end = &header[i+1]; /* Include space */
@@ -173,6 +172,15 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
                     tokstart += 6;
                     alt_colorspace = parse_csp_and_depth( tokstart, &alt_bit_depth );
                 }
+                else if( !strncmp( "COLORRANGE=", tokstart, 11 ) )
+                {
+                    /* ffmpeg's color range extension */
+                    tokstart += 11;
+                    if( !strncmp( "FULL", tokstart, 4 ) )
+                        info->fullrange = 1;
+                    else if( !strncmp( "LIMITED", tokstart, 7 ) )
+                        info->fullrange = 0;
+                }
                 tokstart = strchr( tokstart, 0x20 );
                 break;
         }
@@ -217,9 +225,9 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
 
         /* Find out the length of the frame header */
         size_t len = 1;
-        while( len <= MAX_FRAME_HEADER && fgetc( h->fh ) != '\n' )
+        while( len <= Y4M_MAX_HEADER && fgetc( h->fh ) != '\n' )
             len++;
-        FAIL_IF_ERROR( len > MAX_FRAME_HEADER || len < sizeof(Y4M_FRAME_MAGIC), "bad frame header length\n" );
+        FAIL_IF_ERROR( len > Y4M_MAX_HEADER || len < sizeof(Y4M_FRAME_MAGIC), "bad frame header length\n" );
         h->frame_header_len = len;
         h->frame_size += len;
 
@@ -264,9 +272,9 @@ static int read_frame_internal( cli_pic_t *pic, y4m_hnd_t *h, int bit_depth_uc )
         header = header_buf;
         if( fread( header, 1, slen, h->fh ) != slen )
             return -1;
-        while( i <= MAX_FRAME_HEADER && fgetc( h->fh ) != '\n' )
+        while( i <= Y4M_MAX_HEADER && fgetc( h->fh ) != '\n' )
             i++;
-        FAIL_IF_ERROR( i > MAX_FRAME_HEADER, "bad frame header length\n" );
+        FAIL_IF_ERROR( i > Y4M_MAX_HEADER, "bad frame header length\n" );
     }
     FAIL_IF_ERROR( memcmp( header, Y4M_FRAME_MAGIC, slen ), "bad frame header magic\n" );
 
