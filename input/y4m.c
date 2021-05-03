@@ -172,6 +172,15 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
                     tokstart += 6;
                     alt_colorspace = parse_csp_and_depth( tokstart, &alt_bit_depth );
                 }
+                else if( !strncmp( "COLORRANGE=", tokstart, 11 ) )
+                {
+                    /* ffmpeg's color range extension */
+                    tokstart += 11;
+                    if( !strncmp( "FULL", tokstart, 4 ) )
+                        info->fullrange = 1;
+                    else if( !strncmp( "LIMITED", tokstart, 7 ) )
+                        info->fullrange = 0;
+                }
                 tokstart = strchr( tokstart, 0x20 );
                 break;
         }
