@@ -640,6 +640,41 @@ static int validate_parameters( x264_t *h, int b_open )
         return -1;
     }
 
+    if( h->param.mastering_display.b_mastering_display )
+    {
+        if( h->param.mastering_display.i_green_x > UINT16_MAX || h->param.mastering_display.i_green_x < 0 ||
+            h->param.mastering_display.i_green_y > UINT16_MAX || h->param.mastering_display.i_green_y < 0 ||
+            h->param.mastering_display.i_blue_x > UINT16_MAX || h->param.mastering_display.i_blue_x < 0 ||
+            h->param.mastering_display.i_blue_y > UINT16_MAX || h->param.mastering_display.i_blue_y < 0 ||
+            h->param.mastering_display.i_red_x > UINT16_MAX || h->param.mastering_display.i_red_x < 0 ||
+            h->param.mastering_display.i_red_y > UINT16_MAX || h->param.mastering_display.i_red_y < 0 ||
+            h->param.mastering_display.i_white_x > UINT16_MAX || h->param.mastering_display.i_white_x < 0 ||
+            h->param.mastering_display.i_white_y > UINT16_MAX || h->param.mastering_display.i_white_y < 0 )
+        {
+            x264_log( h, X264_LOG_ERROR, "mastering display xy coordinates out of range [0,%u]\n", UINT16_MAX );
+            return -1;
+        }
+        if( h->param.mastering_display.i_display_max > UINT32_MAX || h->param.mastering_display.i_display_max < 0 ||
+            h->param.mastering_display.i_display_min > UINT32_MAX || h->param.mastering_display.i_display_min < 0 )
+        {
+            x264_log( h, X264_LOG_ERROR, "mastering display brightness out of range [0,%u]\n", UINT32_MAX );
+            return -1;
+        }
+        if( h->param.mastering_display.i_display_min == 50000 && h->param.mastering_display.i_display_max == 50000 )
+        {
+            x264_log( h, X264_LOG_ERROR, "mastering display min and max brightness cannot both be 50000\n" );
+            return -1;
+        }
+    }
+
+    if( h->param.content_light_level.b_cll &&
+        (h->param.content_light_level.i_max_cll > UINT16_MAX || h->param.content_light_level.i_max_cll < 0 ||
+         h->param.content_light_level.i_max_fall > UINT16_MAX || h->param.content_light_level.i_max_fall < 0) )
+    {
+        x264_log( h, X264_LOG_ERROR, "content light levels out of range [0,%u]\n", UINT16_MAX );
+        return -1;
+    }
+
     /* Detect default ffmpeg settings and terminate with an error. */
     if( b_open )
     {
@@ -1818,6 +1853,9 @@ static int encoder_try_reconfig( x264_t *h, x264_param_t *param, int *rc_reconfi
     COPY( i_deblocking_filter_alphac0 );
     COPY( i_deblocking_filter_beta );
     COPY( i_frame_packing );
+    COPY( mastering_display );
+    COPY( content_light_level );
+    COPY( i_alternative_transfer );
     COPY( analyse.inter );
     COPY( analyse.intra );
     COPY( analyse.i_direct_mv_pred );
@@ -3691,21 +3729,39 @@ int     x264_encoder_encode( x264_t *h,
                 return -1;
             overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;
         }
+
+        if( h->param.mastering_display.b_mastering_display )
+        {
+            nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
+            x264_sei_mastering_display_write( h, &h->out.bs );
+            if( nal_end( h ) )
+                return -1;
+            overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;
+        }
+
+        if( h->param.content_light_level.b_cll )
+        {
+            nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
+            x264_sei_content_light_level_write( h, &h->out.bs );
+            if( nal_end( h ) )
+                return -1;
+            overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;
+        }
+
+        if( h->param.i_alternative_transfer != 2 )
+        {
+            nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
+            x264_sei_alternative_transfer_write( h, &h->out.bs );
+            if( nal_end( h ) )
+                return -1;
+            overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;
+        }
     }
 
     if( h->param.i_frame_packing >= 0 && (h->fenc->b_keyframe || h->param.i_frame_packing == 5) )
     {
         nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
         x264_sei_frame_packing_write( h, &h->out.bs );
-        if( nal_end( h ) )
-            return -1;
-        overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;
-    }
-
-    if( h->param.i_alternative_transfer != 2 )
-    {
-        nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
-        x264_sei_alternative_transfer_write( h, &h->out.bs );
         if( nal_end( h ) )
             return -1;
         overhead += h->out.nal[h->out.i_nal-1].i_payload + SEI_OVERHEAD;

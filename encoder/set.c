@@ -703,6 +703,48 @@ void x264_sei_frame_packing_write( x264_t *h, bs_t *s )
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_FRAME_PACKING );
 }
 
+void x264_sei_mastering_display_write( x264_t *h, bs_t *s )
+{
+    bs_t q;
+    ALIGNED_4( uint8_t tmp_buf[100] );
+    M32( tmp_buf ) = 0; // shut up gcc
+    bs_init( &q, tmp_buf, 100 );
+
+    bs_realign( &q );
+
+    bs_write( &q, 16, h->param.mastering_display.i_green_x );
+    bs_write( &q, 16, h->param.mastering_display.i_green_y );
+    bs_write( &q, 16, h->param.mastering_display.i_blue_x );
+    bs_write( &q, 16, h->param.mastering_display.i_blue_y );
+    bs_write( &q, 16, h->param.mastering_display.i_red_x );
+    bs_write( &q, 16, h->param.mastering_display.i_red_y );
+    bs_write( &q, 16, h->param.mastering_display.i_white_x );
+    bs_write( &q, 16, h->param.mastering_display.i_white_y );
+    bs_write32( &q, h->param.mastering_display.i_display_max );
+    bs_write32( &q, h->param.mastering_display.i_display_min );
+
+    bs_align_10( &q );
+
+    x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_MASTERING_DISPLAY );
+}
+
+void x264_sei_content_light_level_write( x264_t *h, bs_t *s )
+{
+    bs_t q;
+    ALIGNED_4( uint8_t tmp_buf[100] );
+    M32( tmp_buf ) = 0; // shut up gcc
+    bs_init( &q, tmp_buf, 100 );
+
+    bs_realign( &q );
+
+    bs_write( &q, 16, h->param.content_light_level.i_max_cll );
+    bs_write( &q, 16, h->param.content_light_level.i_max_fall );
+
+    bs_align_10( &q );
+
+    x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_CONTENT_LIGHT_LEVEL );
+}
+
 void x264_sei_alternative_transfer_write( x264_t *h, bs_t *s )
 {
     bs_t q;

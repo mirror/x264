@@ -115,6 +115,8 @@ static const char * const opts_nosuggest[] =
     "--ipratio",
     "--keyint", "-I",
     "--lookahead-threads",
+    "--mastering-display",
+    "--cll",
     "--merange",
     "--min-keyint", "-i",
     "--mvrange",
