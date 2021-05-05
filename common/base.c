@@ -814,7 +814,7 @@ REALIGN_STACK int x264_param_apply_profile( x264_param_t *param, const char *pro
 static int parse_enum( const char *arg, const char * const *names, int *dst )
 {
     for( int i = 0; names[i]; i++ )
-        if( !strcasecmp( arg, names[i] ) )
+        if( *names[i] && !strcasecmp( arg, names[i] ) )
         {
             *dst = i;
             return 0;
