@@ -116,7 +116,7 @@ static void weight_cache( x264_t *h, x264_weight_t *w )
 static void mc_weight( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i_src_stride,
                        const x264_weight_t *weight, int i_width, int i_height )
 {
-    int offset = weight->i_offset << (BIT_DEPTH-8);
+    int offset = weight->i_offset * (1 << (BIT_DEPTH-8));
     int scale = weight->i_scale;
     int denom = weight->i_denom;
     if( denom >= 1 )

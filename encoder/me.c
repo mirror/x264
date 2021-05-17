@@ -58,7 +58,7 @@ static const int8_t square1[9][2] = {{0,0}, {0,-1}, {0,1}, {-1,0}, {1,0}, {-1,-1
 static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_iters, int *p_halfpel_thresh, int b_refine_qpel );
 
 #define BITS_MVD( mx, my )\
-    (p_cost_mvx[(mx)<<2] + p_cost_mvy[(my)<<2])
+    (p_cost_mvx[(mx)*4] + p_cost_mvy[(my)*4])
 
 #define COST_MV( mx, my )\
 do\
@@ -132,9 +132,9 @@ do\
         p_fref_w + (m1x) + (m1y)*stride,\
         p_fref_w + (m2x) + (m2y)*stride,\
         stride, costs );\
-    costs[0] += p_cost_mvx[(m0x)<<2]; /* no cost_mvy */\
-    costs[1] += p_cost_mvx[(m1x)<<2];\
-    costs[2] += p_cost_mvx[(m2x)<<2];\
+    costs[0] += p_cost_mvx[(m0x)*4]; /* no cost_mvy */\
+    costs[1] += p_cost_mvx[(m1x)*4];\
+    costs[2] += p_cost_mvx[(m2x)*4];\
     COPY3_IF_LT( bcost, costs[0], bmx, m0x, bmy, m0y );\
     COPY3_IF_LT( bcost, costs[1], bmx, m1x, bmy, m1y );\
     COPY3_IF_LT( bcost, costs[2], bmx, m2x, bmy, m2y );\
@@ -176,7 +176,7 @@ do\
 }
 
 #define FPEL(mv) (((mv)+2)>>2) /* Convert subpel MV to fullpel with rounding... */
-#define SPEL(mv) ((mv)<<2)     /* ... and the reverse. */
+#define SPEL(mv) ((mv)*4)      /* ... and the reverse. */
 #define SPELx2(mv) (SPEL(mv)&0xFFFCFFFC) /* for two packed MVs */
 
 void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, int *p_halfpel_thresh )
@@ -201,7 +201,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
     int mv_x_max = h->mb.mv_limit_fpel[1][0];
     int mv_y_max = h->mb.mv_limit_fpel[1][1];
 /* Special version of pack to allow shortcuts in CHECK_MVRANGE */
-#define pack16to32_mask2(mx,my) ((mx<<16)|(my&0x7FFF))
+#define pack16to32_mask2(mx,my) (((uint32_t)(mx)<<16)|((uint32_t)(my)&0x7FFF))
     uint32_t mv_min = pack16to32_mask2( -mv_x_min, -mv_y_min );
     uint32_t mv_max = pack16to32_mask2( mv_x_max, mv_y_max )|0x8000;
     uint32_t pmv, bpred_mv = 0;
@@ -333,8 +333,8 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
                 COPY1_IF_LT( bcost, (costs[3]<<4)+12 );
                 if( !(bcost&15) )
                     break;
-                bmx -= (bcost<<28)>>30;
-                bmy -= (bcost<<30)>>30;
+                bmx -= (int32_t)((uint32_t)bcost<<28)>>30;
+                bmy -= (int32_t)((uint32_t)bcost<<30)>>30;
                 bcost &= ~15;
             } while( --i && CHECK_MVRANGE(bmx, bmy) );
             bcost >>= 4;
@@ -606,7 +606,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
                     if( dir )
                     {
                         bmx = omx + i*(dir>>4);
-                        bmy = omy + i*((dir<<28)>>28);
+                        bmy = omy + i*((int32_t)((uint32_t)dir<<28)>>28);
                     }
                 }
             } while( ++i <= i_me_range>>2 );
@@ -661,7 +661,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
                 for( int my = min_y; my <= max_y; my++ )
                 {
                     int i;
-                    int ycost = p_cost_mvy[my<<2];
+                    int ycost = p_cost_mvy[my*4];
                     if( bsad <= ycost )
                         continue;
                     bsad -= ycost;
@@ -753,7 +753,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
                 for( int my = min_y; my <= max_y; my++ )
                 {
                     int i;
-                    int ycost = p_cost_mvy[my<<2];
+                    int ycost = p_cost_mvy[my*4];
                     if( bcost <= ycost )
                         continue;
                     bcost -= ycost;
@@ -776,7 +776,7 @@ void x264_me_search_ref( x264_t *h, x264_me_t *m, int16_t (*mvc)[2], int i_mvc, 
     uint32_t bmv_spel = SPELx2(bmv);
     if( h->mb.i_subpel_refine < 3 )
     {
-        m->cost_mv = p_cost_mvx[bmx<<2] + p_cost_mvy[bmy<<2];
+        m->cost_mv = p_cost_mvx[bmx*4] + p_cost_mvy[bmy*4];
         m->cost = bcost;
         /* compute the real cost */
         if( bmv == pmv ) m->cost += m->cost_mv;
@@ -915,8 +915,8 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
             COPY1_IF_LT( bcost, (costs[3]<<6)+48 );
             if( !(bcost&63) )
                 break;
-            bmx -= (bcost<<26)>>29;
-            bmy -= (bcost<<29)>>29;
+            bmx -= (int32_t)((uint32_t)bcost<<26)>>29;
+            bmy -= (int32_t)((uint32_t)bcost<<29)>>29;
             bcost &= ~63;
         }
         bcost >>= 6;
@@ -980,8 +980,8 @@ static void refine_subpel( x264_t *h, x264_me_t *m, int hpel_iters, int qpel_ite
         COPY1_IF_LT( bcost, (costs[1]<<4)+3 );
         COPY1_IF_LT( bcost, (costs[2]<<4)+4 );
         COPY1_IF_LT( bcost, (costs[3]<<4)+12 );
-        bmx -= (bcost<<28)>>30;
-        bmy -= (bcost<<30)>>30;
+        bmx -= (int32_t)((uint32_t)bcost<<28)>>30;
+        bmy -= (int32_t)((uint32_t)bcost<<30)>>30;
         bcost >>= 4;
     }
 

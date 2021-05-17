@@ -499,13 +499,13 @@ static void weight_cache_mmx2( x264_t *h, x264_weight_t *w )
         else
             w->weightfn = h->mc.offsetadd;
         for( int i = 0; i < 8; i++ )
-            w->cachea[i] = abs(w->i_offset<<(BIT_DEPTH-8));
+            w->cachea[i] = abs(w->i_offset * (1 << (BIT_DEPTH-8)));
         return;
     }
     w->weightfn = h->mc.weight;
     int den1 = 1<<w->i_denom;
     int den2 = w->i_scale<<1;
-    int den3 = 1+(w->i_offset<<(BIT_DEPTH-8+1));
+    int den3 = 1+(w->i_offset * (1 << (BIT_DEPTH-8+1)));
     for( int i = 0; i < 8; i++ )
     {
         w->cachea[i] = den1;
@@ -537,7 +537,7 @@ static void weight_cache_mmx2( x264_t *h, x264_weight_t *w )
         return;
     }
     w->weightfn = h->mc.weight;
-    den1 = w->i_offset << w->i_denom | (w->i_denom ? 1 << (w->i_denom - 1) : 0);
+    den1 = (w->i_offset * (1<<w->i_denom)) | (w->i_denom ? 1 << (w->i_denom - 1) : 0);
     for( i = 0; i < 8; i++ )
     {
         w->cachea[i] = w->i_scale;

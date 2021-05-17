@@ -1044,7 +1044,7 @@ static ALWAYS_INLINE int macroblock_probe_skip_internal( x264_t *h, int b_bidir,
             if( M32( mvp ) )
                 h->mc.mc_chroma( h->mb.pic.p_fdec[1], h->mb.pic.p_fdec[2], FDEC_STRIDE,
                                  h->mb.pic.p_fref[0][0][4], h->mb.pic.i_stride[1],
-                                 mvp[0], mvp[1]<<chroma422, 8, chroma422?16:8 );
+                                 mvp[0], mvp[1] * (1<<chroma422), 8, chroma422?16:8 );
             else
                 h->mc.load_deinterleave_chroma_fdec( h->mb.pic.p_fdec[1], h->mb.pic.p_fref[0][0][4],
                                                      h->mb.pic.i_stride[1], chroma422?16:8 );

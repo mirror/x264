@@ -206,8 +206,8 @@ static void slice_header_init( x264_t *h, x264_slice_header_t *sh,
         sh->i_disable_deblocking_filter_idc = param->b_sliced_threads ? 2 : 0;
     else
         sh->i_disable_deblocking_filter_idc = 1;
-    sh->i_alpha_c0_offset = param->i_deblocking_filter_alphac0 << 1;
-    sh->i_beta_offset = param->i_deblocking_filter_beta << 1;
+    sh->i_alpha_c0_offset = param->i_deblocking_filter_alphac0 * 2;
+    sh->i_beta_offset = param->i_deblocking_filter_beta * 2;
 }
 
 static void slice_header_write( bs_t *s, x264_slice_header_t *sh, int i_nal_ref_idc )

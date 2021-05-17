@@ -1249,7 +1249,7 @@ static ALWAYS_INLINE void macroblock_cache_load( x264_t *h, int mb_x, int mb_y, 
                 if( h->mb.cache.varref[l][index] >= 0 )\
                 {\
                     h->mb.cache.varref[l][index] >>= 1;\
-                    h->mb.cache.varmv[l][index][1] <<= 1;\
+                    h->mb.cache.varmv[l][index][1] *= 2;\
                     h->mb.cache.mvd[l][index][1] <<= 1;\
                 }
                 MAP_MVS
