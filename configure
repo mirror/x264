@@ -852,7 +852,7 @@ case $host_cpu in
         elif [ "$SYS" = WINDOWS ] && [ "$compiler" = CL ] ; then
             AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type armasm -force-thumb -- armasm -nologo -ignore 4509}"
         elif [ "$SYS" = WINDOWS ] ; then
-            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type clang -force-thumb -- ${CC} -mimplicit-it=always}"
+            AS="${AS-${SRCPATH}/tools/gas-preprocessor.pl -arch arm -as-type clang -force-thumb -- ${CC} -Wa,-mimplicit-it=always}"
         else
             AS="${AS-${CC}}"
         fi
