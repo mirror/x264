@@ -100,8 +100,9 @@ static int parse_tcfile( FILE *tcfile_in, timecode_hnd_t *h, video_info_t *info 
     double *timecodes = NULL;
     double *fpss = NULL;
 
-    ret = fscanf( tcfile_in, "# timecode format v%d", &tcfv );
-    FAIL_IF_ERROR( ret != 1 || (tcfv != 1 && tcfv != 2), "unsupported timecode format\n" );
+    ret = fgets( buff, sizeof(buff), tcfile_in ) != NULL && 
+          (sscanf( buff, "# timecode format v%d", &tcfv ) == 1 || sscanf( buff, "# timestamp format v%d", &tcfv ) == 1);
+    FAIL_IF_ERROR( !ret || (tcfv != 1 && tcfv != 2), "unsupported timecode format\n" );
 #define NO_TIMECODE_LINE (buff[0] == '#' || buff[0] == '\n' || buff[0] == '\r')
     if( tcfv == 1 )
     {
