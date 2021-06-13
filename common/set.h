@@ -140,7 +140,8 @@ typedef struct
     int b_qpprime_y_zero_transform_bypass;
     int i_chroma_format_idc;
 
-    int b_avcintra;
+    int b_avcintra_hd;
+    int b_avcintra_4k;
     int i_cqm_preset;
     const uint8_t *scaling_list[8]; /* could be 12, but we don't allow separate Cb/Cr lists */
 
