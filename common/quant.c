@@ -101,7 +101,7 @@ static int quant_2x2_dc( dctcoef dct[4], int mf, int bias )
 }
 
 #define DEQUANT_SHL( x ) \
-    dct[x] = ( dct[x] * dequant_mf[i_mf][x] ) << i_qbits
+    dct[x] = ( dct[x] * dequant_mf[i_mf][x] ) * (1 << i_qbits)
 
 #define DEQUANT_SHR( x ) \
     dct[x] = ( dct[x] * dequant_mf[i_mf][x] + f ) >> (-i_qbits)

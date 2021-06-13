@@ -207,7 +207,7 @@ typedef struct {
     void *ptr[];
 } strdup_buffer;
 
-#define BUFFER_OFFSET offsetof(strdup_buffer, ptr)
+#define BUFFER_OFFSET (int)offsetof(strdup_buffer, ptr)
 #define BUFFER_DEFAULT_SIZE 16
 
 char *x264_param_strdup( x264_param_t *param, const char *src )
@@ -922,7 +922,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     if( 0 );
     OPT("asm")
     {
-        p->cpu = isdigit(value[0]) ? atoi(value) :
+        p->cpu = isdigit(value[0]) ? (uint32_t)atoi(value) :
                  !strcasecmp(value, "auto") || atobool(value) ? x264_cpu_detect() : 0;
         if( b_error )
         {

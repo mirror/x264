@@ -2383,7 +2383,7 @@ static int check_quant( uint32_t cpu_ref, uint32_t cpu_new )
         { \
             int nnz = 0; \
             int max = rand() & (size-1); \
-            memset( dct1, 0, size*sizeof(dctcoef) ); \
+            memset( dct1, 0, 64*sizeof(dctcoef) ); \
             for( int idx = ac; idx < max; idx++ ) \
                 nnz |= dct1[idx] = !(rand()&3) + (!(rand()&15))*rand(); \
             if( !nnz ) \
@@ -2417,7 +2417,7 @@ static int check_quant( uint32_t cpu_ref, uint32_t cpu_new )
             x264_run_level_t runlevel_c, runlevel_a; \
             int nnz = 0; \
             int max = rand() & (size-1); \
-            memset( dct1, 0, size*sizeof(dctcoef) ); \
+            memset( dct1, 0, 64*sizeof(dctcoef) ); \
             memcpy( &runlevel_a, buf1+i, sizeof(x264_run_level_t) ); \
             memcpy( &runlevel_c, buf1+i, sizeof(x264_run_level_t) ); \
             for( int idx = ac; idx < max; idx++ ) \
