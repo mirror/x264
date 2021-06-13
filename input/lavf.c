@@ -28,6 +28,7 @@
 
 #undef DECLARE_ALIGNED
 #include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 #include <libavutil/dict.h>
 #include <libavutil/error.h>
 #include <libavutil/mem.h>
