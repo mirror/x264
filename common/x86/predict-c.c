@@ -62,7 +62,7 @@ ALIGNED_8( static const int8_t pb_m32101234[8] ) = {-3,-2,-1,0,1,2,3,4};
     int b = ( 5 * H + 32 ) >> 6;\
     int c = ( 5 * V + 32 ) >> 6;\
     int i00 = a - b * 7 - c * 7 + 16;\
-    /* b*15 + c*15 can overflow: it's easier to just branch away in this rare case
+    /* b*15 + c*15 can overflow: it's easier to just branch away in this rare case\
      * than to try to consider it in the asm. */\
     if( BIT_DEPTH > 8 && (i00 > 0x7fff || abs(b) > 1092 || abs(c) > 1092) )\
         x264_predict_16x16_p_c( src );\
