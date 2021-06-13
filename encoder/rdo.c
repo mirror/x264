@@ -767,7 +767,7 @@ int quant_trellis_cabac( x264_t *h, dctcoef *dct,
         if( !quant_coefs[i] )\
         {\
             /* no need to calculate ssd of 0s: it's the same in all nodes.\
-             * no need to modify level_tree for ctx=0: it starts with an infinite loop of 0s.
+             * no need to modify level_tree for ctx=0: it starts with an infinite loop of 0s.\
              * subtracting from one score is equivalent to adding to the rest. */\
             if( !ctx_hi )\
             {\
