@@ -133,6 +133,16 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     /* Never set constraint_set2, it is not necessary and not used in real world. */
     sps->b_constraint_set2  = 0;
     sps->b_constraint_set3  = 0;
+    if( param->b_new_constraint_sets )
+    {
+        sps->b_constraint_set4 = sps->i_profile_idc >= PROFILE_MAIN && sps->i_profile_idc <= PROFILE_HIGH10 && sps->b_frame_mbs_only;
+        sps->b_constraint_set5 = (sps->i_profile_idc == PROFILE_MAIN || sps->i_profile_idc == PROFILE_HIGH) && param->i_bframe == 0;
+    }
+    else
+    {
+        sps->b_constraint_set4 = 0;
+        sps->b_constraint_set5 = 0;
+    }
 
     sps->i_level_idc = param->i_level_idc;
     if( param->i_level_idc == 9 && ( sps->i_profile_idc == PROFILE_BASELINE || sps->i_profile_idc == PROFILE_MAIN ) )
@@ -310,8 +320,10 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
     bs_write1( s, sps->b_constraint_set1 );
     bs_write1( s, sps->b_constraint_set2 );
     bs_write1( s, sps->b_constraint_set3 );
+    bs_write1( s, sps->b_constraint_set4 );
+    bs_write1( s, sps->b_constraint_set5 );
 
-    bs_write( s, 4, 0 );    /* reserved */
+    bs_write( s, 2, 0 );    /* reserved */
 
     bs_write( s, 8, sps->i_level_idc );
 

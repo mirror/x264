@@ -469,6 +469,7 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->b_repeat_headers = 1;
     param->b_annexb = 1;
     param->b_aud = 0;
+    param->b_new_constraint_sets = 0;
     param->b_vfr_input = 1;
     param->i_nal_hrd = X264_NAL_HRD_NONE;
     param->b_tff = 1;
@@ -1364,6 +1365,8 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         p->analyse.b_ssim = atobool(value);
     OPT("aud")
         p->b_aud = atobool(value);
+    OPT("new-constraint-sets")
+        p->b_new_constraint_sets = atobool(value);
     OPT("sps-id")
         p->i_sps_id = atoi(value);
     OPT("global-header")

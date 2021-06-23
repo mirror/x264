@@ -45,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 164
+#define X264_BUILD 165
 
 #ifdef _WIN32
 #   define X264_DLL_IMPORT __declspec(dllimport)
@@ -514,6 +514,7 @@ typedef struct x264_param_t
     int i_alternative_transfer;
 
     /* Muxing parameters */
+    int b_new_constraint_sets;  /* write constraint_set4_flag and constraint_set5_flag bits */
     int b_aud;                  /* generate access unit delimiters */
     int b_repeat_headers;       /* put SPS/PPS before each keyframe */
     int b_annexb;               /* if set, place start codes (4 bytes) before NAL units,
