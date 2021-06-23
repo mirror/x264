@@ -952,6 +952,7 @@ static void help( x264_param_t *defaults, int longhelp )
     H2( "      --dump-yuv <string>     Save reconstructed frames\n" );
     H2( "      --sps-id <integer>      Set SPS and PPS id numbers [%d]\n", defaults->i_sps_id );
     H2( "      --aud                   Use access unit delimiters\n" );
+    H2( "      --new-constraint-sets   Write constraint_set4_flag and constraint_set4_flag bits in the SPS.\n" );
     H2( "      --force-cfr             Force constant framerate timestamp generation\n" );
     H2( "      --tcfile-in <string>    Force timestamp generation with timecode file\n" );
     H2( "      --tcfile-out <string>   Output timecode v2 file from input timestamps\n" );
@@ -1134,6 +1135,7 @@ static struct option long_options[] =
     { "dump-yuv",             required_argument, NULL, 0 },
     { "sps-id",               required_argument, NULL, 0 },
     { "aud",                  no_argument,       NULL, 0 },
+    { "new-constraint-sets",  no_argument,       NULL, 0 },
     { "nr",                   required_argument, NULL, 0 },
     { "cqm",                  required_argument, NULL, 0 },
     { "cqmfile",              required_argument, NULL, 0 },
