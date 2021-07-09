@@ -521,7 +521,7 @@ typedef struct x264_param_t
     int i_sps_id;               /* SPS and PPS id number */
     int b_vfr_input;            /* VFR input.  If 1, use timebase and timestamps for ratecontrol purposes.
                                  * If 0, use fps only. */
-    int b_pulldown;             /* use explicity set timebase for CFR */
+    int b_pulldown;             /* use explicitly set timebase for CFR */
     uint32_t i_fps_num;
     uint32_t i_fps_den;
     uint32_t i_timebase_num;    /* Timebase numerator */

@@ -289,7 +289,7 @@ static inline int x264_is_regular_file( FILE *filehandle )
 #define ALIGNED_8( var )  DECLARE_ALIGNED( var, 8 )
 #define ALIGNED_16( var ) DECLARE_ALIGNED( var, 16 )
 
-// ARM compiliers don't reliably align stack variables
+// ARM compilers don't reliably align stack variables
 // - EABI requires only 8 byte stack alignment to be maintained
 // - gcc can't align stack variables to more even if the stack were to be correctly aligned outside the function
 // - armcc can't either, but is nice enough to actually tell you so

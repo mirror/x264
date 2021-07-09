@@ -128,7 +128,7 @@ static uint32_t convert_method_to_flag( const char *name )
         flag = SWS_AREA;
     else if( !strcasecmp( name, "bicublin" ) )
         flag = SWS_BICUBLIN;
-    else if( !strcasecmp( name, "guass" ) )
+    else if( !strcasecmp( name, "gauss" ) )
         flag = SWS_GAUSS;
     else if( !strcasecmp( name, "sinc" ) )
         flag = SWS_SINC;
