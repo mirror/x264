@@ -141,7 +141,8 @@ static inline int ssd_plane( x264_t *h, int size, int p, int x, int y )
             int dc = h->pixf.sad[size]( fdec, FDEC_STRIDE, (pixel*)x264_zero, 0 ) >> 1;
             satd = abs(h->pixf.satd[size]( fdec, FDEC_STRIDE, (pixel*)x264_zero, 0 ) - dc - cached_satd( h, size, x, y ));
         }
-        satd = (satd * h->mb.i_psy_rd * h->mb.i_psy_rd_lambda + 128) >> 8;
+        int64_t tmp = ((int64_t)satd * h->mb.i_psy_rd * h->mb.i_psy_rd_lambda + 128) >> 8;
+        satd = X264_MIN( tmp, COST_MAX );
     }
     return h->pixf.ssd[size](fenc, FENC_STRIDE, fdec, FDEC_STRIDE) + satd;
 }
