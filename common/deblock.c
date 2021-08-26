@@ -655,11 +655,11 @@ void x264_macroblock_deblock( x264_t *h )
     } while( 0 )
 
     if( !transform_8x8 ) FILTER( 0, 1 );
-                         FILTER( 0, 2 );
+    FILTER( 0, 2 );
     if( !transform_8x8 ) FILTER( 0, 3 );
 
     if( !transform_8x8 ) FILTER( 1, 1 );
-                         FILTER( 1, 2 );
+    FILTER( 1, 2 );
     if( !transform_8x8 ) FILTER( 1, 3 );
 
     #undef FILTER

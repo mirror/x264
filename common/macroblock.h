@@ -361,7 +361,7 @@ int x264_mb_predict_mv_direct16x16( x264_t *h, int *b_changed );
  *      uses all neighbors, even those that didn't end up using this ref.
  *      h->mb. need only valid values from other blocks */
 #define x264_mb_predict_mv_ref16x16 x264_template(mb_predict_mv_ref16x16)
-void x264_mb_predict_mv_ref16x16( x264_t *h, int i_list, int i_ref, int16_t mvc[8][2], int *i_mvc );
+void x264_mb_predict_mv_ref16x16( x264_t *h, int i_list, int i_ref, int16_t (*mvc)[2], int *i_mvc );
 
 #define x264_mb_mc x264_template(mb_mc)
 void x264_mb_mc( x264_t *h );
