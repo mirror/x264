@@ -61,8 +61,8 @@ static void mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, int16_t
             if( !(lowres_costs[i] & (1 << (list+LOWRES_COST_SHIFT))) )\
                 continue;\
 \
-            unsigned mbx = current[0];\
-            unsigned mby = current[1];\
+            unsigned mbx = (unsigned)current[0];\
+            unsigned mby = (unsigned)current[1];\
             unsigned idx0 = mbx + mby * stride;\
             unsigned idx2 = idx0 + stride;\
 \

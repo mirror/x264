@@ -171,8 +171,8 @@ void x264_mb_predict_mv_pskip( x264_t *h, int16_t mv[2] )
     int16_t *mv_b  = h->mb.cache.mv[0][X264_SCAN8_0 - 8];
 
     if( i_refa == -2 || i_refb == -2 ||
-        !( i_refa | M32( mv_a ) ) ||
-        !( i_refb | M32( mv_b ) ) )
+        !( (uint32_t)i_refa | M32( mv_a ) ) ||
+        !( (uint32_t)i_refb | M32( mv_b ) ) )
     {
         M32( mv ) = 0;
     }
@@ -304,7 +304,7 @@ static ALWAYS_INLINE int mb_predict_mv_direct16x16_spatial( x264_t *h, int b_int
             mv_c   = h->mb.cache.mv[i_list][X264_SCAN8_0 - 8 - 1];
         }
 
-        int i_ref = X264_MIN3( (unsigned)i_refa, (unsigned)i_refb, (unsigned)i_refc );
+        int i_ref = (int)X264_MIN3( (unsigned)i_refa, (unsigned)i_refb, (unsigned)i_refc );
         if( i_ref < 0 )
         {
             i_ref = -1;

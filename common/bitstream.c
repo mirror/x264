@@ -92,10 +92,10 @@ void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal )
     {
         /* Size doesn't include the size of the header we're writing now. */
         int chunk_size = size - 4;
-        orig_dst[0] = chunk_size >> 24;
-        orig_dst[1] = chunk_size >> 16;
-        orig_dst[2] = chunk_size >> 8;
-        orig_dst[3] = chunk_size >> 0;
+        orig_dst[0] = (uint8_t)(chunk_size >> 24);
+        orig_dst[1] = (uint8_t)(chunk_size >> 16);
+        orig_dst[2] = (uint8_t)(chunk_size >> 8);
+        orig_dst[3] = (uint8_t)(chunk_size >> 0);
     }
 
     nal->i_payload = size;
