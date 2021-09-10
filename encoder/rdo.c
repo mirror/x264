@@ -927,7 +927,7 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
     ALIGNED_ARRAY_16( dctcoef, coefs,[16] );
     const uint32_t *coef_weight1 = b_8x8 ? x264_dct8_weight_tab : x264_dct4_weight_tab;
     const uint32_t *coef_weight2 = b_8x8 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
-    int delta_distortion[16];
+    int64_t delta_distortion[16];
     int64_t score = 1ULL<<62;
     int i, j;
     const int f = 1<<15;
@@ -954,7 +954,7 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
 
     /* Find last non-zero coefficient. */
     for( i = end; i >= start; i -= step )
-        if( (unsigned)(dct[zigzag[i]] * (dc?quant_mf[0]>>1:quant_mf[zigzag[i]]) + f-1) >= 2*f )
+        if( abs(dct[zigzag[i]]) * (dc?quant_mf[0]>>1:quant_mf[zigzag[i]]) >= f )
             break;
 
     if( i < start )
@@ -987,7 +987,7 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
             int unquant0 = (((dc?unquant_mf[0]<<1:unquant_mf[zigzag[j]]) * (nearest_quant-1) + 128) >> 8);
             int d1 = abs_coef - unquant1;
             int d0 = abs_coef - unquant0;
-            delta_distortion[i] = (d0*d0 - d1*d1) * (dc?256:coef_weight2[zigzag[j]]);
+            delta_distortion[i] = (int64_t)(d0*d0 - d1*d1) * (dc?256:coef_weight2[zigzag[j]]);
 
             /* Psy trellis: bias in favor of higher AC coefficients in the reconstructed frame. */
             if( h->mb.i_psy_trellis && j && !dc && !b_chroma )
@@ -1025,7 +1025,7 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
     while( 1 )
     {
         int64_t iter_score = score;
-        int iter_distortion_delta = 0;
+        int64_t iter_distortion_delta = 0;
         int iter_coef = -1;
         int iter_mask = coef_mask;
         int iter_round = round_mask;
@@ -1040,7 +1040,7 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
             int old_coef = coefs[i];
             int new_coef = quant_coefs[round_change][i];
             int cur_mask = (coef_mask&~(1 << i))|(!!new_coef << i);
-            int cur_distortion_delta = delta_distortion[i] * (round_change ? -1 : 1);
+            int64_t cur_distortion_delta = delta_distortion[i] * (round_change ? -1 : 1);
             int64_t cur_score = cur_distortion_delta;
             coefs[i] = new_coef;
 
