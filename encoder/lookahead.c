@@ -89,9 +89,14 @@ static void lookahead_slicetype_decide( x264_t *h )
 
 REALIGN_STACK static void *lookahead_thread( x264_t *h )
 {
-    while( !h->lookahead->b_exit_thread )
+    while( 1 )
     {
         x264_pthread_mutex_lock( &h->lookahead->ifbuf.mutex );
+        if( h->lookahead->b_exit_thread )
+        {
+            x264_pthread_mutex_unlock( &h->lookahead->ifbuf.mutex );
+            break;
+        }
         x264_pthread_mutex_lock( &h->lookahead->next.mutex );
         int shift = X264_MIN( h->lookahead->next.i_max_size - h->lookahead->next.i_size, h->lookahead->ifbuf.i_size );
         lookahead_shift( &h->lookahead->next, &h->lookahead->ifbuf, shift );
