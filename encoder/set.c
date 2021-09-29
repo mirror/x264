@@ -865,6 +865,7 @@ int x264_sei_avcintra_vanc_write( x264_t *h, bs_t *s, int len )
     return 0;
 }
 
+#undef ERROR
 #define ERROR(...)\
 {\
     if( verbose )\
