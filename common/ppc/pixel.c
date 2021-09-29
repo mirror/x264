@@ -1262,7 +1262,7 @@ static int pixel_sa8d_8x8_core_altivec( uint8_t *pix1, intptr_t i_pix1,
     SA8D_1D_ALTIVEC(sa8d0v, sa8d1v, sa8d2v, sa8d3v,
                     sa8d4v, sa8d5v, sa8d6v, sa8d7v );
 
-    /* accumulation of the absolute value of all elements of the resulting bloc */
+    /* accumulation of the absolute value of all elements of the resulting block */
     vec_s16_t abs0v = VEC_ABS(sa8d0v);
     vec_s16_t abs1v = VEC_ABS(sa8d1v);
     vec_s16_t sum01v = vec_add(abs0v, abs1v);

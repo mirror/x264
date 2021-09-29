@@ -34,7 +34,7 @@ SECTION .text
 ;-----------------------------------------------------------------------------
 %macro NAL_LOOP 2
 %%escape:
-    ; Detect false positive to avoid unneccessary escape loop
+    ; Detect false positive to avoid unnecessary escape loop
     xor      r3d, r3d
     cmp byte [r0+r1-1], 0
     setnz    r3b

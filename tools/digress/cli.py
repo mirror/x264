@@ -139,7 +139,7 @@ class Dispatcher(object):
         args = self.optparse.parse_args()[1] # arguments may require reparsing after pre_dispatch; see test_x264.py
 
         if len(args) == 0:
-            print >>sys.stderr, "error: no comamnd specified\n"
+            print >>sys.stderr, "error: no command specified\n"
             self.optparse.print_help()
             return
 

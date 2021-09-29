@@ -33,7 +33,7 @@ I enabled the various components of slicing one at a time, and measured the port
     * 16% reset cabac contexts
     * 6% deblocking between slices (you don't strictly have to turn this off just for standard compliance, but you do if you want to use slices for decoder multithreading)
     * 2% cabac neighbors (cbp, skip, etc)
-The proportional cost of redundant headers should certainly depend on bitrate (since the header size is constant and everything else depends on bitrate). Deblocking should too (due to varing deblock strength).
+The proportional cost of redundant headers should certainly depend on bitrate (since the header size is constant and everything else depends on bitrate). Deblocking should too (due to varying deblock strength).
 But none of the proportions should depend strongly on the number of slices: some are triggered per slice while some are triggered per macroblock-that's-on-the-edge-of-a-slice, but as long as there's no more than 1 slice per row, the relative frequency of those two conditions is determined solely by the image width.
 
 

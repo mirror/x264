@@ -1302,7 +1302,7 @@ static int init_vid_filters( char *sequence, hnd_t *handle, video_info_t *info, 
 {
     x264_register_vid_filters();
 
-    /* intialize baseline filters */
+    /* initialize baseline filters */
     if( x264_init_vid_filter( "source", handle, &filter, info, param, NULL ) ) /* wrap demuxer into a filter */
         return -1;
     if( x264_init_vid_filter( "resize", handle, &filter, info, param, "normcsp" ) ) /* normalize csps to be of a known/supported format */
