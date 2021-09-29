@@ -2958,7 +2958,7 @@ REALIGN_STACK int main( int argc, char **argv )
         argv++;
     }
 
-    int seed = ( argc > 1 ) ? atoi(argv[1]) : x264_mdate();
+    unsigned seed = ( argc > 1 ) ? strtoul(argv[1], NULL, 0) : x264_mdate();
     fprintf( stderr, "x264: using random seed %u\n", seed );
     srand( seed );
 
