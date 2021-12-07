@@ -81,7 +81,7 @@ stages:
 
 build-debian-amd64:
     extends: .build
-    image: registry.videolan.org/x264-debian-unstable:20190404162201
+    image: registry.videolan.org/x264-debian-unstable:20211206140856
     tags:
         - docker
         - amd64
@@ -89,7 +89,7 @@ build-debian-amd64:
 
 build-debian-aarch64:
     extends: .build
-    image: registry.videolan.org/x264-debian-unstable-aarch64:20190716192245
+    image: registry.videolan.org/x264-debian-unstable-aarch64:20211206141032
     tags:
         - docker
         - aarch64
@@ -126,7 +126,7 @@ build-win64:
 
 .build-llvm-mingw:
     extends: .build
-    image: registry.videolan.org/vlc-debian-llvm-mingw:20200703084018
+    image: registry.videolan.org/vlc-debian-llvm-mingw:20211020094514
     tags:
         - docker
         - amd64
