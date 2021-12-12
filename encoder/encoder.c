@@ -412,14 +412,6 @@ static int bitstream_check_buffer_filler( x264_t *h, int filler )
     return bitstream_check_buffer_internal( h, filler, 0, -1 );
 }
 
-#if HAVE_THREAD
-static void encoder_thread_init( x264_t *h )
-{
-    if( h->param.i_sync_lookahead )
-        x264_lower_thread_priority( 10 );
-}
-#endif
-
 /****************************************************************************
  *
  ****************************************************************************
@@ -1743,10 +1735,10 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     CHECKED_MALLOC( h->reconfig_h, sizeof(x264_t) );
 
     if( h->param.i_threads > 1 &&
-        x264_threadpool_init( &h->threadpool, h->param.i_threads, (void*)encoder_thread_init, h ) )
+        x264_threadpool_init( &h->threadpool, h->param.i_threads ) )
         goto fail;
     if( h->param.i_lookahead_threads > 1 &&
-        x264_threadpool_init( &h->lookaheadpool, h->param.i_lookahead_threads, NULL, NULL ) )
+        x264_threadpool_init( &h->lookaheadpool, h->param.i_lookahead_threads ) )
         goto fail;
 
 #if HAVE_OPENCL

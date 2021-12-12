@@ -552,29 +552,4 @@ static ALWAYS_INLINE void x264_prefetch( void *p )
 #define x264_prefetch(x)
 #endif
 
-#if HAVE_POSIXTHREAD
-#if SYS_WINDOWS
-#define x264_lower_thread_priority(p)\
-{\
-    x264_pthread_t handle = pthread_self();\
-    struct sched_param sp;\
-    int policy = SCHED_OTHER;\
-    pthread_getschedparam( handle, &policy, &sp );\
-    sp.sched_priority -= p;\
-    pthread_setschedparam( handle, policy, &sp );\
-}
-#elif SYS_HAIKU
-#include <OS.h>
-#define x264_lower_thread_priority(p)\
-    { UNUSED status_t nice_ret = set_thread_priority( find_thread( NULL ), B_LOW_PRIORITY ); }
-#else
-#include <unistd.h>
-#define x264_lower_thread_priority(p) { UNUSED int nice_ret = nice(p); }
-#endif /* SYS_WINDOWS */
-#elif HAVE_WIN32THREAD
-#define x264_lower_thread_priority(p) SetThreadPriority( GetCurrentThread(), X264_MAX( -2, -p ) )
-#else
-#define x264_lower_thread_priority(p)
-#endif
-
 #endif /* X264_OSDEP_H */
