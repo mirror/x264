@@ -921,7 +921,7 @@ if [ $compiler_style = GNU ]; then
     fi
 fi
 
-if [ $shared = yes -a \( $ARCH = "X86_64" -o $ARCH = "PPC" -o $ARCH = "ALPHA" -o $ARCH = "ARM" -o $ARCH = "IA64" -o $ARCH = "PARISC" -o $ARCH = "MIPS" -o $ARCH = "AARCH64" \) ] ; then
+if [ $shared = yes ] ; then
     pic="yes"
 fi
 
