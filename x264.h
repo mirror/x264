@@ -48,8 +48,13 @@ extern "C" {
 #define X264_BUILD 164
 
 #ifdef _WIN32
-#   define X264_DLL_IMPORT __declspec(dllimport)
-#   define X264_DLL_EXPORT __declspec(dllexport)
+#   ifdef X264_STATIC
+#       define X264_DLL_IMPORT
+#       define X264_DLL_EXPORT
+#   else
+#       define X264_DLL_IMPORT __declspec(dllimport)
+#       define X264_DLL_EXPORT __declspec(dllexport)
+#   endif
 #else
 #   if defined(__GNUC__) && (__GNUC__ >= 4)
 #       define X264_DLL_IMPORT
