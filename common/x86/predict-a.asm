@@ -1,7 +1,7 @@
 ;*****************************************************************************
 ;* predict-a.asm: x86 intra prediction
 ;*****************************************************************************
-;* Copyright (C) 2005-2021 x264 project
+;* Copyright (C) 2005-2022 x264 project
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
 ;*          Holger Lubitz <holger@lubitz.org>

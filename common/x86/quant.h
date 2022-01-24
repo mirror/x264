@@ -1,7 +1,7 @@
 /*****************************************************************************
  * quant.h: x86 quantization and level-run
  *****************************************************************************
- * Copyright (C) 2005-2021 x264 project
+ * Copyright (C) 2005-2022 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Fiona Glaser <fiona@x264.com>

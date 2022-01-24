@@ -1,7 +1,7 @@
 /*****************************************************************************
  * autocomplete: x264cli shell autocomplete
  *****************************************************************************
- * Copyright (C) 2018-2021 x264 project
+ * Copyright (C) 2018-2022 x264 project
  *
  * Authors: Henrik Gramner <henrik@gramner.com>
  *

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * bitstream-a.S: aarch64 bitstream functions
  *****************************************************************************
- * Copyright (C) 2014-2021 x264 project
+ * Copyright (C) 2014-2022 x264 project
  *
  * Authors: Janne Grunau <janne-x264@jannau.net>
  *

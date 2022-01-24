@@ -1,7 +1,7 @@
 /*****************************************************************************
  * api.c: bit depth independent interface
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Vittorio Giovara <vittorio.giovara@gmail.com>
  *          Luca Barbato <lu_zero@gentoo.org>
