@@ -1893,7 +1893,7 @@ static int check_mc( uint32_t cpu_ref, uint32_t cpu_new )
         for( size_t size = 16; size < 512; size += 16 )
         {
             for( size_t i = 0; i < size; i++ )
-                buf1[i] = rand();
+                buf1[i] = (uint8_t)rand();
             memset( buf4-1, 0xAA, size + 2 );
             call_c( mc_c.memcpy_aligned, buf3, buf1, size );
             call_a( mc_a.memcpy_aligned, buf4, buf1, size );
@@ -2815,7 +2815,7 @@ static int check_bitstream( uint32_t cpu_ref, uint32_t cpu_new )
             int test_size = i < 10 ? i+1 : rand() & 0x3fff;
             /* Test 8 different probability distributions of zeros */
             for( int j = 0; j < test_size+32; j++ )
-                input[j] = (rand()&((1 << ((i&7)+1)) - 1)) * rand();
+                input[j] = (uint8_t)((rand()&((1 << ((i&7)+1)) - 1)) * rand());
             uint8_t *end_c = (uint8_t*)call_c1( bs_c.nal_escape, output1, input, input+test_size );
             uint8_t *end_a = (uint8_t*)call_a1( bs_a.nal_escape, output2, input, input+test_size );
             int size_c = end_c-output1;
@@ -2828,7 +2828,7 @@ static int check_bitstream( uint32_t cpu_ref, uint32_t cpu_new )
             }
         }
         for( int j = 0; j < size+32; j++ )
-            input[j] = rand();
+            input[j] = (uint8_t)rand();
         call_c2( bs_c.nal_escape, output1, input, input+size );
         call_a2( bs_a.nal_escape, output2, input, input+size );
         free(input);
@@ -3001,7 +3001,7 @@ REALIGN_STACK int main( int argc, char **argv )
         argv++;
     }
 
-    unsigned seed = ( argc > 1 ) ? strtoul(argv[1], NULL, 0) : x264_mdate();
+    unsigned seed = ( argc > 1 ) ? strtoul(argv[1], NULL, 0) : (unsigned)x264_mdate();
     fprintf( stderr, "x264: using random seed %u\n", seed );
     srand( seed );
 

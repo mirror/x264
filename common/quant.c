@@ -47,9 +47,9 @@
 #define QUANT_ONE( coef, mf, f ) \
 { \
     if( (coef) > 0 ) \
-        (coef) = (f + (coef)) * (mf) >> 16; \
+        (coef) = ((f) + (uint32_t)(coef)) * (mf) >> 16; \
     else \
-        (coef) = - ((f - (coef)) * (mf) >> 16); \
+        (coef) = -(int32_t)(((f) + (uint32_t)(-coef)) * (mf) >> 16); \
     nz |= (coef); \
 }
 

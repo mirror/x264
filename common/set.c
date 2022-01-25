@@ -168,7 +168,8 @@ int x264_cqm_init( x264_t *h )
             for( int i = 0; i < 16; i++ )
             {
                 h->unquant4_mf[i_list][q][i] = (1ULL << (q/6 + 15 + 8)) / quant4_mf[i_list][q%6][i];
-                h->quant4_mf[i_list][q][i] = j = SHIFT(quant4_mf[i_list][q%6][i], q/6 - 1);
+                j = SHIFT(quant4_mf[i_list][q%6][i], q/6 - 1);
+                h->quant4_mf[i_list][q][i] = (uint16_t)j;
                 if( !j )
                 {
                     min_qp_err = X264_MIN( min_qp_err, q );
