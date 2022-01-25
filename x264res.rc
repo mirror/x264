@@ -1,7 +1,7 @@
 /*****************************************************************************
  * x264res.rc: windows resource file
  *****************************************************************************
- * Copyright (C) 2012-2021 x264 project
+ * Copyright (C) 2012-2022 x264 project
  *
  * Authors: Henrik Gramner <henrik@gramner.com>
  *
@@ -68,7 +68,7 @@ BEGIN
 #endif
             VALUE "FileVersion",      X264_POINTVER
             VALUE "InternalName",     "x264"
-            VALUE "LegalCopyright",   "Copyright (C) 2003-2021 x264 project"
+            VALUE "LegalCopyright",   "Copyright (C) 2003-2022 x264 project"
 #ifdef DLL
             VALUE "OriginalFilename", "libx264-" xstr(X264_BUILD) ".dll"
 #else

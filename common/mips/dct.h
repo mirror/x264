@@ -1,7 +1,7 @@
 /*****************************************************************************
  * dct.h: msa transform and zigzag
  *****************************************************************************
- * Copyright (C) 2015-2021 x264 project
+ * Copyright (C) 2015-2022 x264 project
  *
  * Authors: Rishikesh More <rishikesh.more@imgtec.com>
  *

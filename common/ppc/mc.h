@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc.h: ppc motion compensation
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Eric Petit <eric.petit@lapsus.org>
  *
