@@ -48,6 +48,12 @@ static pixel *pbuf1, *pbuf2;
 /* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
 static pixel *pbuf3, *pbuf4;
 
+#if BIT_DEPTH > 8
+#define FMT_PIXEL "%04x"
+#else
+#define FMT_PIXEL "%02x"
+#endif
+
 static int quiet = 0;
 
 #define report( name ) { \
@@ -651,10 +657,10 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
                 ok = 0; \
                 fprintf( stderr, #name" [FAILED]\n" ); \
                 for( int j=0; j<16; j++ ) \
-                    fprintf( stderr, "%02x ", fdec1[(j&3)+(j>>2)*FDEC_STRIDE] ); \
+                    fprintf( stderr, FMT_PIXEL" ", fdec1[(j&3)+(j>>2)*FDEC_STRIDE] ); \
                 fprintf( stderr, "\n" ); \
                 for( int j=0; j<16; j++ ) \
-                    fprintf( stderr, "%02x ", fdec2[(j&3)+(j>>2)*FDEC_STRIDE] ); \
+                    fprintf( stderr, FMT_PIXEL" ", fdec2[(j&3)+(j>>2)*FDEC_STRIDE] ); \
                 fprintf( stderr, "\n" ); \
                 break; \
             } \
@@ -711,14 +717,14 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
                 for( int j=0; j<8; j++ ) \
                 { \
                     for( int k=0; k<8; k++ ) \
-                        fprintf( stderr, "%02x ", fdec1[k+j*FDEC_STRIDE] ); \
+                        fprintf( stderr, FMT_PIXEL" ", fdec1[k+j*FDEC_STRIDE] ); \
                     fprintf( stderr, "\n" ); \
                 } \
                 fprintf( stderr, "\n" ); \
                 for( int j=0; j<8; j++ ) \
                 { \
                     for( int k=0; k<8; k++ ) \
-                        fprintf( stderr, "%02x ", fdec2[k+j*FDEC_STRIDE] ); \
+                        fprintf( stderr, FMT_PIXEL" ", fdec2[k+j*FDEC_STRIDE] ); \
                     fprintf( stderr, "\n" ); \
                 } \
                 fprintf( stderr, "\n" ); \
@@ -840,14 +846,14 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
             if( mvn_c != mvn_a || memcmp( mvs_c, mvs_a, mvn_c*sizeof(*mvs_c) ) )
             {
                 ok = 0;
-                printf( "thresh: %d\n", thresh );
-                printf( "c%d: ", i&3 );
+                fprintf( stderr, "thresh: %d\n", thresh );
+                fprintf( stderr, "c%d: ", i&3 );
                 for( int j = 0; j < mvn_c; j++ )
-                    printf( "%d ", mvs_c[j] );
-                printf( "\na%d: ", i&3 );
+                    fprintf( stderr, "%d ", mvs_c[j] );
+                fprintf( stderr, "\na%d: ", i&3 );
                 for( int j = 0; j < mvn_a; j++ )
-                    printf( "%d ", mvs_a[j] );
-                printf( "\n\n" );
+                    fprintf( stderr, "%d ", mvs_a[j] );
+                fprintf( stderr, "\n\n" );
             }
         }
     report( "esa ads:" );
@@ -923,11 +929,11 @@ static int check_dct( uint32_t cpu_ref, uint32_t cpu_new )
                 ok = 0; \
                 fprintf( stderr, #name " [FAILED]\n" ); \
                 for( int k = 0; k < size; k++ )\
-                    printf( "%d ", ((dctcoef*)t1)[k] );\
-                printf("\n");\
+                    fprintf( stderr, "%d ", ((dctcoef*)t1)[k] );\
+                fprintf( stderr, "\n" );\
                 for( int k = 0; k < size; k++ )\
-                    printf( "%d ", ((dctcoef*)t2)[k] );\
-                printf("\n");\
+                    fprintf( stderr, "%d ", ((dctcoef*)t2)[k] );\
+                fprintf( stderr, "\n" );\
                 break; \
             } \
             call_c( dct_c.name, t1, enc, dec ); \
@@ -1160,7 +1166,9 @@ static int check_dct( uint32_t cpu_ref, uint32_t cpu_new )
             call_a( zigzag_asm[interlace].name, t2, dct, buf4 ); \
             if( memcmp( t1, t2, size*sizeof(dctcoef) ) || memcmp( buf3, buf4, 10 ) ) \
             { \
-                ok = 0; printf("%d: %d %d %d %d\n%d %d %d %d\n\n",memcmp( t1, t2, size*sizeof(dctcoef) ),buf3[0], buf3[1], buf3[8], buf3[9], buf4[0], buf4[1], buf4[8], buf4[9]);break;\
+                ok = 0; \
+                fprintf( stderr, "%d: %d %d %d %d\n%d %d %d %d\n\n", memcmp( t1, t2, size*sizeof(dctcoef) ), buf3[0], buf3[1], buf3[8], buf3[9], buf4[0], buf4[1], buf4[8], buf4[9] ); \
+                break; \
             } \
         } \
     }
@@ -1668,11 +1676,11 @@ static int check_mc( uint32_t cpu_ref, uint32_t cpu_new )
                     ok = 0;
                     fprintf( stderr, "hpel filter differs at plane %c line %d\n", "hvc"[i], j );
                     for( int k = 0; k < 48; k++ )
-                        printf( "%02x%s", dstc[i][j*64+k], (k+1)&3 ? "" : " " );
-                    printf( "\n" );
+                        fprintf( stderr, FMT_PIXEL"%s", dstc[i][j*64+k], (k+1)&3 ? "" : " " );
+                    fprintf( stderr, "\n" );
                     for( int k = 0; k < 48; k++ )
-                        printf( "%02x%s", dsta[i][j*64+k], (k+1)&3 ? "" : " " );
-                    printf( "\n" );
+                        fprintf( stderr, FMT_PIXEL"%s", dsta[i][j*64+k], (k+1)&3 ? "" : " " );
+                    fprintf( stderr, "\n" );
                     break;
                 }
         report( "hpel filter :" );
@@ -1698,11 +1706,11 @@ static int check_mc( uint32_t cpu_ref, uint32_t cpu_new )
                         ok = 0;
                         fprintf( stderr, "frame_init_lowres differs at plane %d line %d\n", j, i );
                         for( int k = 0; k < w; k++ )
-                            printf( "%d ", dstc[j][k+i*stride_lowres] );
-                        printf( "\n" );
+                            fprintf( stderr, "%d ", dstc[j][k+i*stride_lowres] );
+                        fprintf( stderr, "\n" );
                         for( int k = 0; k < w; k++ )
-                            printf( "%d ", dsta[j][k+i*stride_lowres] );
-                        printf( "\n" );
+                            fprintf( stderr, "%d ", dsta[j][k+i*stride_lowres] );
+                        fprintf( stderr, "\n" );
                         break;
                     }
             }
@@ -2019,10 +2027,10 @@ static int check_deblock( uint32_t cpu_ref, uint32_t cpu_new )
                         for( int l = 0; l < 4; l++ )
                         {
                             for( int m = 0; m < 4; m++ )
-                                printf("%d ",bs[j][k][l][m]);
-                            printf("\n");
+                                fprintf( stderr, "%d ",bs[j][k][l][m] );
+                            fprintf( stderr, "\n" );
                         }
-                    printf("\n");
+                    fprintf( stderr, "\n" );
                 }
                 break;
             }
@@ -2538,25 +2546,25 @@ static int check_intra( uint32_t cpu_ref, uint32_t cpu_new )
                 if( ip_c.name == (void *)ip_c.predict_8x8 )\
                 {\
                     for( int k = -1; k < 16; k++ )\
-                        printf( "%2x ", edge[16+k] );\
-                    printf( "\n" );\
+                        fprintf( stderr, FMT_PIXEL" ", edge[16+k] );\
+                    fprintf( stderr, "\n" );\
                 }\
                 for( int j = 0; j < h; j++ )\
                 {\
                     if( ip_c.name == (void *)ip_c.predict_8x8 )\
-                        printf( "%2x ", edge[14-j] );\
+                        fprintf( stderr, FMT_PIXEL" ", edge[14-j] );\
                     for( int k = 0; k < w; k++ )\
-                        printf( "%2x ", pbuf4[48+k+j*FDEC_STRIDE] );\
-                    printf( "\n" );\
+                        fprintf( stderr, FMT_PIXEL" ", pbuf4[48+k+j*FDEC_STRIDE] );\
+                    fprintf( stderr, "\n" );\
                 }\
-                printf( "\n" );\
+                fprintf( stderr, "\n" );\
                 for( int j = 0; j < h; j++ )\
                 {\
                     if( ip_c.name == (void *)ip_c.predict_8x8 )\
-                        printf( "   " );\
+                        fprintf( stderr, "   " );\
                     for( int k = 0; k < w; k++ )\
-                        printf( "%2x ", pbuf3[48+k+j*FDEC_STRIDE] );\
-                    printf( "\n" );\
+                        fprintf( stderr, FMT_PIXEL" ", pbuf3[48+k+j*FDEC_STRIDE] );\
+                    fprintf( stderr, "\n" );\
                 }\
                 break;\
             }\
