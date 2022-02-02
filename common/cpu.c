@@ -38,6 +38,7 @@
 #include <sys/sysctl.h>
 #endif
 #if SYS_OPENBSD
+#include <unistd.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <machine/cpu.h>
