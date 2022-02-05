@@ -27,8 +27,15 @@
 
 #include "base.h"
 
-#if HAVE_POSIXTHREAD && SYS_LINUX
+#if SYS_CYGWIN || SYS_SunOS || SYS_OPENBSD
+#include <unistd.h>
+#endif
+#if SYS_LINUX
+#ifdef __ANDROID__
+#include <unistd.h>
+#else
 #include <sched.h>
+#endif
 #endif
 #if SYS_BEOS
 #include <kernel/OS.h>
