@@ -40,13 +40,11 @@
 #if SYS_BEOS
 #include <kernel/OS.h>
 #endif
-#if SYS_MACOSX || SYS_FREEBSD
+#if SYS_MACOSX || SYS_OPENBSD || SYS_FREEBSD
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
 #if SYS_OPENBSD
-#include <sys/param.h>
-#include <sys/sysctl.h>
 #include <machine/cpu.h>
 #endif
 
@@ -308,7 +306,7 @@ uint32_t x264_cpu_detect( void )
 #elif HAVE_ALTIVEC
 
 #if SYS_MACOSX || SYS_OPENBSD || SYS_FREEBSD
-#include <sys/sysctl.h>
+
 uint32_t x264_cpu_detect( void )
 {
     /* Thank you VLC */
