@@ -93,6 +93,9 @@ const x264_cpu_name_t x264_cpu_names[] =
     {"NEON",            X264_CPU_NEON},
 #elif ARCH_MIPS
     {"MSA",             X264_CPU_MSA},
+#elif ARCH_LOONGARCH
+    {"LSX",             X264_CPU_LSX},
+    {"LASX",            X264_CPU_LASX},
 #endif
     {"", 0},
 };
@@ -414,6 +417,36 @@ uint32_t x264_cpu_detect( void )
 uint32_t x264_cpu_detect( void )
 {
     return X264_CPU_MSA;
+}
+
+#elif ARCH_LOONGARCH
+
+#define LOONGARCH_CFG2    0x02
+#define LOONGARCH_LSX     ( 1 << 6 )
+#define LOONGARCH_LASX    ( 1 << 7 )
+
+uint32_t x264_cpu_detect( void )
+{
+    uint32_t flags = 0;
+    uint32_t cfg = LOONGARCH_CFG2;
+    uint32_t reg;
+
+    __asm__ volatile(
+        "cpucfg %0, %1 \n\t"
+        : "+&r"(reg)
+        : "r"(cfg)
+    );
+
+#if HAVE_LSX
+    if ( reg & LOONGARCH_LSX )
+        flags |= X264_CPU_LSX;
+#endif
+#if HAVE_LASX
+    if ( reg & LOONGARCH_LASX )
+        flags |= X264_CPU_LASX;
+#endif
+
+    return flags;
 }
 
 #else
