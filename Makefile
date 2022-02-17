@@ -200,7 +200,12 @@ endif
 # LOONGARCH optimization
 ifeq ($(SYS_ARCH),LOONGARCH)
 ifneq ($(findstring HAVE_LASX 1, $(CONFIG)),)
-SRCS_X +=
+SRCS_X += common/loongarch/pixel-c.c \
+          common/loongarch/predict-c.c \
+          common/loongarch/quant-c.c \
+          common/loongarch/dct-c.c \
+          common/loongarch/mc-c.c \
+          common/loongarch/deblock-c.c
 endif
 endif
 
