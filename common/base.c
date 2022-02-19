@@ -35,6 +35,8 @@
 #include <sys/mman.h>
 #endif
 
+#define X264_ISDIGIT(x) isdigit((unsigned char)(x))
+
 /****************************************************************************
  * x264_reduce_fraction:
  ****************************************************************************/
@@ -922,7 +924,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     if( 0 );
     OPT("asm")
     {
-        p->cpu = isdigit(value[0]) ? (uint32_t)atoi(value) :
+        p->cpu = X264_ISDIGIT(value[0]) ? (uint32_t)atoi(value) :
                  !strcasecmp(value, "auto") || atobool(value) ? x264_cpu_detect() : 0;
         if( b_error )
         {
