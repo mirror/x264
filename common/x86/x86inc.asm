@@ -1448,8 +1448,8 @@ AVX_INSTR andpd, sse2, 1, 0, 1
 AVX_INSTR andps, sse, 1, 0, 1
 AVX_INSTR blendpd, sse4, 1, 1, 0
 AVX_INSTR blendps, sse4, 1, 1, 0
-AVX_INSTR blendvpd, sse4 ; can't be emulated
-AVX_INSTR blendvps, sse4 ; can't be emulated
+AVX_INSTR blendvpd, sse4, 1, 1, 0 ; last operand must be xmm0 with legacy encoding
+AVX_INSTR blendvps, sse4, 1, 1, 0 ; last operand must be xmm0 with legacy encoding
 AVX_INSTR cmpeqpd, sse2, 1, 0, 1
 AVX_INSTR cmpeqps, sse, 1, 0, 1
 AVX_INSTR cmpeqsd, sse2, 1, 0, 0
@@ -1582,7 +1582,7 @@ AVX_INSTR pand, mmx, 0, 0, 1
 AVX_INSTR pandn, mmx, 0, 0, 0
 AVX_INSTR pavgb, mmx2, 0, 0, 1
 AVX_INSTR pavgw, mmx2, 0, 0, 1
-AVX_INSTR pblendvb, sse4 ; can't be emulated
+AVX_INSTR pblendvb, sse4, 0, 1, 0 ; last operand must be xmm0 with legacy encoding
 AVX_INSTR pblendw, sse4, 0, 1, 0
 AVX_INSTR pclmulqdq, fnord, 0, 1, 0
 AVX_INSTR pclmulhqhqdq, fnord, 0, 0, 0
