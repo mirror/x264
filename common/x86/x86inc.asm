@@ -1342,7 +1342,20 @@ INIT_XMM
             %1 %6, __src2
         %endif
     %elif %0 >= 9
-        __instr %6, %7, %8, %9
+        %if avx_enabled && __sizeofreg >= 16 && %4 == 1
+            %ifnnum regnumof%7
+                %if %3
+                    vmovaps %6, %7
+                %else
+                    vmovdqa %6, %7
+                %endif
+                __instr %6, %6, %8, %9
+            %else
+                __instr %6, %7, %8, %9
+            %endif
+        %else
+            __instr %6, %7, %8, %9
+        %endif
     %elif %0 == 8
         %if avx_enabled && __sizeofreg >= 16 && %4 == 0
             %xdefine __src1 %7
@@ -1379,7 +1392,7 @@ INIT_XMM
                 %else
                     vmovdqa %6, %7
                 %endif
-                __instr %6, %8
+                __instr %6, %6, %8
             %else
                 __instr %6, __src1, __src2
             %endif
