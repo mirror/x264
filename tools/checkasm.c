@@ -54,6 +54,8 @@ static pixel *pbuf3, *pbuf4;
 #define FMT_PIXEL "%02x"
 #endif
 
+#define X264_ISDIGIT(x) isdigit((unsigned char)(x))
+
 static int quiet = 0;
 
 #define report( name ) { \
@@ -148,8 +150,8 @@ static int cmp_bench( const void *a, const void *b )
     {
         if( !*sa && !*sb )
             return 0;
-        if( isdigit( *sa ) && isdigit( *sb ) && isdigit( sa[1] ) != isdigit( sb[1] ) )
-            return isdigit( sa[1] ) - isdigit( sb[1] );
+        if( X264_ISDIGIT( *sa ) && X264_ISDIGIT( *sb ) && X264_ISDIGIT( sa[1] ) != X264_ISDIGIT( sb[1] ) )
+            return X264_ISDIGIT( sa[1] ) - X264_ISDIGIT( sb[1] );
         if( *sa != *sb )
             return *sa - *sb;
     }
