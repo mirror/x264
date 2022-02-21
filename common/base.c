@@ -995,8 +995,8 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         b_error |= parse_enum( value, x264_avcintra_flavor_names, &p->i_avcintra_flavor );
     OPT("sar")
     {
-        b_error = ( 2 != sscanf( value, "%d:%d", &p->vui.i_sar_width, &p->vui.i_sar_height ) &&
-                    2 != sscanf( value, "%d/%d", &p->vui.i_sar_width, &p->vui.i_sar_height ) );
+        b_error |= ( 2 != sscanf( value, "%d:%d", &p->vui.i_sar_width, &p->vui.i_sar_height ) &&
+                     2 != sscanf( value, "%d/%d", &p->vui.i_sar_width, &p->vui.i_sar_height ) );
     }
     OPT("overscan")
         b_error |= parse_enum( value, x264_overscan_names, &p->vui.i_overscan );
@@ -1013,7 +1013,7 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
     OPT("chromaloc")
     {
         p->vui.i_chroma_loc = atoi(value);
-        b_error = ( p->vui.i_chroma_loc < 0 || p->vui.i_chroma_loc > 5 );
+        b_error |= ( p->vui.i_chroma_loc < 0 || p->vui.i_chroma_loc > 5 );
     }
     OPT("mastering-display")
     {
@@ -1045,10 +1045,20 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         b_error |= parse_enum( value, x264_transfer_names, &p->i_alternative_transfer );
     OPT("fps")
     {
-        if( sscanf( value, "%u/%u", &p->i_fps_num, &p->i_fps_den ) != 2 )
+        int64_t i_fps_num;
+        int64_t i_fps_den;
+        if( sscanf( value, "%"SCNd64"/%"SCNd64, &i_fps_num, &i_fps_den ) == 2 )
+        {
+            p->i_fps_num = i_fps_num;
+            p->i_fps_den = i_fps_den;
+            b_error |= i_fps_num < 1 || i_fps_num > UINT32_MAX || i_fps_den < 1 || i_fps_den > UINT32_MAX;
+        }
+        else
         {
             double fps = atof(value);
-            if( fps > 0.0 && fps <= INT_MAX/1000.0 )
+            if( fps < 0.0005 || fps > INT_MAX )
+                b_error = 1;
+            else if( fps <= INT_MAX/1000.0 )
             {
                 p->i_fps_num = (int)(fps * 1000.0 + .5);
                 p->i_fps_den = 1000;
