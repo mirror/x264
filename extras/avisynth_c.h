@@ -106,8 +106,6 @@
 #   define AVS_RISCV
 #elif defined(__sparc_v9__)
 #   define AVS_SPARC
-#else
-#   error Unsupported CPU architecture.
 #endif
 
 //                VC++  LLVM-Clang-cl   MinGW-Gnu
@@ -122,27 +120,12 @@
 #   define AVS_CLANG
 #if defined(_MSC_VER)
 #   define AVS_MSVC
-#   define AVS_FORCEINLINE __attribute__((always_inline))
-#else
-#   define AVS_FORCEINLINE __attribute__((always_inline)) inline
 #endif
-#elif   defined(_MSC_VER)
+#elif defined(_MSC_VER)
 #   define AVS_MSVC
 #   define AVS_MSVC_PURE
-#   define AVS_FORCEINLINE __forceinline
 #elif defined(__GNUC__)
 #   define AVS_GCC
-#   define AVS_FORCEINLINE __attribute__((always_inline)) inline
-#elif defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
-// Intel C++ Compilers with MSVC command line interface will not appear here rather at _MSC_VER
-#   define AVS_FORCEINLINE inline
-#   undef __forceinline
-#   define __forceinline inline
-#else
-#   error Unsupported compiler.
-#   define AVS_FORCEINLINE inline
-#   undef __forceinline
-#   define __forceinline inline
 #endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -159,8 +142,6 @@
 #elif defined(__HAIKU__)
 #   define AVS_HAIKU
 #   define AVS_POSIX
-#else
-#   error Operating system unsupported.
 #endif
 
 #ifndef AVS_MSVC
