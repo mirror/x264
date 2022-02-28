@@ -1676,9 +1676,9 @@ static inline uint32_t sad_4width_lasx( uint8_t *p_src, int32_t i_src_stride,
     __m256i ref0, ref1, ref2, ref3, ref4, ref5, ref6, ref7;
     __m256i diff;
     __m256i sad = __lasx_xvldi( 0 );
-    int32_t i_src_stride_x2 = FENC_STRIDE << 1;
+    int32_t i_src_stride_x2 = i_src_stride << 1;
     int32_t i_ref_stride_x2 = i_ref_stride << 1;
-    int32_t i_src_stride_x3 = FENC_STRIDE + i_src_stride_x2;
+    int32_t i_src_stride_x3 = i_src_stride + i_src_stride_x2;
     int32_t i_ref_stride_x3 = i_ref_stride + i_ref_stride_x2;
     int32_t i_src_stride_x4 = i_src_stride_x2 << 1;
     int32_t i_ref_stride_x4 = i_ref_stride_x2 << 1;
@@ -1687,12 +1687,12 @@ static inline uint32_t sad_4width_lasx( uint8_t *p_src, int32_t i_src_stride,
     for( i_ht_cnt = ( i_height >> 3 ); i_ht_cnt--; )
     {
         src0 = __lasx_xvld( p_src, 0 );
-        src1 = __lasx_xvld( p_src, FENC_STRIDE );
+        src1 = __lasx_xvldx( p_src, i_src_stride );
         src2 = __lasx_xvldx( p_src, i_src_stride_x2 );
         src3 = __lasx_xvldx( p_src, i_src_stride_x3 );
         p_src2 = p_src + i_src_stride_x4;
         src4 = __lasx_xvld( p_src2, 0 );
-        src5 = __lasx_xvld( p_src2, FENC_STRIDE );
+        src5 = __lasx_xvldx( p_src2, i_src_stride );
         src6 = __lasx_xvldx( p_src2, i_src_stride_x2 );
         src7 = __lasx_xvldx( p_src2, i_src_stride_x3 );
         p_src += i_src_stride_x8;
@@ -2007,13 +2007,13 @@ int32_t x264_pixel_sad_8x4_lasx( uint8_t *p_src, intptr_t i_src_stride,
     __m256i ref0, ref1, ref2, ref3;
     __m256i diff;
     int32_t result;
-    intptr_t i_src_stride_x2 = FENC_STRIDE << 1;
-    intptr_t i_src_stride_x3 = i_src_stride_x2 + FENC_STRIDE;
+    intptr_t i_src_stride_x2 = i_src_stride << 1;
+    intptr_t i_src_stride_x3 = i_src_stride_x2 + i_src_stride;
     intptr_t i_ref_stride_x2 = i_ref_stride << 1;
     intptr_t i_ref_stride_x3 = i_ref_stride + i_ref_stride_x2;
 
     src0 = __lasx_xvld( p_src, 0 );
-    src1 = __lasx_xvld( p_src, FENC_STRIDE );
+    src1 = __lasx_xvldx( p_src, i_src_stride );
     src2 = __lasx_xvldx( p_src, i_src_stride_x2 );
     src3 = __lasx_xvldx( p_src, i_src_stride_x3 );
     src0 = __lasx_xvilvl_d( src1, src0 );
@@ -2048,20 +2048,21 @@ int32_t x264_pixel_sad_4x8_lasx( uint8_t *p_src, intptr_t i_src_stride,
     return sad_4width_lasx( p_src, i_src_stride, p_ref, i_ref_stride, 8 );
 }
 
-int32_t x264_pixel_sad_4x4_lasx( uint8_t *p_src, intptr_t i_src_stride,
+int32_t __attribute__ ((noinline)) x264_pixel_sad_4x4_lasx(
+                                 uint8_t *p_src, intptr_t i_src_stride,
                                  uint8_t *p_ref, intptr_t i_ref_stride )
 {
     __m256i src0, src1, src2, src3;
     __m256i ref0, ref1, ref2, ref3;
     __m256i diff;
     int32_t result;
-    intptr_t i_src_stride_x2 = FENC_STRIDE << 1;
-    intptr_t i_src_stride_x3 = i_src_stride_x2 + FENC_STRIDE;
+    intptr_t i_src_stride_x2 = i_src_stride << 1;
+    intptr_t i_src_stride_x3 = i_src_stride_x2 + i_src_stride;
     intptr_t i_ref_stride_x2 = i_ref_stride << 1;
     intptr_t i_ref_stride_x3 = i_ref_stride + i_ref_stride_x2;
 
     src0 = __lasx_xvld( p_src, 0);
-    src1 = __lasx_xvld( p_src, FENC_STRIDE );
+    src1 = __lasx_xvldx( p_src, i_src_stride );
     src2 = __lasx_xvldx( p_src, i_src_stride_x2 );
     src3 = __lasx_xvldx( p_src, i_src_stride_x3 );
     src0 = __lasx_xvilvl_w( src1, src0 );

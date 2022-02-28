@@ -773,9 +773,10 @@ static void avc_biwgt_opscale_4x2_nw_lasx( uint8_t *p_src1,
 
     src0 = __lasx_xvilvl_b( src0, src2 );
 
-    src0 = __lasx_xvdp2_h_bu( src0, wgt );
+    src2 = __lasx_xvmulwev_h_bu_b(src0, wgt);
+    src0 = __lasx_xvmaddwod_h_bu_b(src2, src0, wgt);
     src0 = __lasx_xvmaxi_h( src0, 0 );
-    src0 = __lasx_xvssrln_bu_h(src0, denom);
+    src0 = __lasx_xvssrlrn_bu_h(src0, denom);
 
     __lasx_xvstelm_w(src0, p_dst, 0, 0);
     __lasx_xvstelm_w(src0, p_dst + i_dst_stride, 0, 1);
@@ -834,9 +835,10 @@ static void avc_biwgt_opscale_4x4multiple_nw_lasx( uint8_t *p_src1,
 
         src0 = __lasx_xvilvl_b( src0, tmp0 );
 
-        src0 = __lasx_xvdp2_h_bu( src0, wgt );
+        src2 = __lasx_xvmulwev_h_bu_b(src0, wgt);
+        src0 = __lasx_xvmaddwod_h_bu_b(src2, src0, wgt);
         src0 = __lasx_xvmaxi_h( src0, 0 );
-        src0 = __lasx_xvssrln_bu_h(src0, denom);
+        src0 = __lasx_xvssrlrn_bu_h(src0, denom);
 
         __lasx_xvstelm_w(src0, p_dst, 0, 0);
         __lasx_xvstelm_w(src0, p_dst + i_dst_stride, 0, 1);
@@ -914,9 +916,10 @@ static void avc_biwgt_opscale_8width_nw_lasx( uint8_t *p_src1,
     src1 = __lasx_xvpermi_q( src2, src3, 0x02 );         \
     src0 = __lasx_xvilvl_b( src1, src0 );                \
                                                          \
-    src0 = __lasx_xvdp2_h_bu( src0, wgt );               \
+    src2 = __lasx_xvmulwev_h_bu_b(src0, wgt);            \
+    src0 = __lasx_xvmaddwod_h_bu_b(src2, src0, wgt);     \
     src0 = __lasx_xvmaxi_h( src0, 0 );                   \
-    src0 = __lasx_xvssrln_bu_h(src0, denom);             \
+    src0 = __lasx_xvssrlrn_bu_h(src0, denom);            \
                                                          \
     __lasx_xvstelm_d(src0, p_dst, 0, 0);                 \
     __lasx_xvstelm_d(src0, p_dst + i_dst_stride, 0, 2);  \
@@ -959,17 +962,18 @@ static void avc_biwgt_opscale_16width_nw_lasx( uint8_t *p_src1,
 
     wgt = __lasx_xvpackev_b( src2_wgt, src1_wgt );
 
-#define BIWGT_OPSCALE_16W_NW( srcA, srcB )       \
-    srcA = __lasx_xvpermi_d( srcA, 0x50 );       \
-    srcB = __lasx_xvpermi_d( srcB, 0x50 );       \
-    srcA = __lasx_xvilvl_b( srcB, srcA );        \
-                                                 \
-    srcA = __lasx_xvdp2_h_b( srcA, wgt );        \
-    srcA = __lasx_xvmaxi_h( srcA, 0 );           \
-    srcA = __lasx_xvssrln_bu_h(srcA, denom);     \
-                                                 \
-    __lasx_xvstelm_d(srcA, p_dst, 0, 0);         \
-    __lasx_xvstelm_d(srcA, p_dst + 8, 0, 2);     \
+#define BIWGT_OPSCALE_16W_NW( srcA, srcB )           \
+    srcA = __lasx_xvpermi_d( srcA, 0x50 );           \
+    srcB = __lasx_xvpermi_d( srcB, 0x50 );           \
+    srcA = __lasx_xvilvl_b( srcB, srcA );            \
+                                                     \
+    srcB = __lasx_xvmulwev_h_bu_b(srcA, wgt);        \
+    srcA = __lasx_xvmaddwod_h_bu_b(srcB, srcA, wgt); \
+    srcA = __lasx_xvmaxi_h( srcA, 0 );               \
+    srcA = __lasx_xvssrlrn_bu_h(srcA, denom);        \
+                                                     \
+    __lasx_xvstelm_d(srcA, p_dst, 0, 0);             \
+    __lasx_xvstelm_d(srcA, p_dst + 8, 0, 2);         \
     p_dst += i_dst_stride;
 
     for( u_cnt = ( i_height >> 2 ); u_cnt--; )
@@ -3018,32 +3022,55 @@ static void avc_luma_vt_16w_lasx( uint8_t *p_src, int32_t i_src_stride,
         src4 = src8;
     }
 
-    for( u_loop_cnt = u_h4w; u_loop_cnt--; )
-    {
+    if (u_h4w >= 2) {
         src5 = __lasx_xvld( p_src, 0 );
-        p_src += i_src_stride;
+        src6 = __lasx_xvldx (p_src, i_src_stride);
+        p_src += i_src_stride_x2;
         src5 = __lasx_xvxori_b( src5, 128 );
-        src54_h = __lasx_xvilvl_b( src5, src4 );
-        src54_l = __lasx_xvilvh_b( src5, src4 );
-        out10_h = __lasx_xvdp2_h_b( src10_h, filt0 );
-        out10_h = __lasx_xvdp2add_h_b( out10_h, src32_h, filt1 );
-        out10_h = __lasx_xvdp2add_h_b( out10_h, src54_h, filt2 );
-
-        out10_l = __lasx_xvdp2_h_b( src10_l, filt0 );
-        out10_l = __lasx_xvdp2add_h_b( out10_l, src32_l, filt1 );
-        out10_l = __lasx_xvdp2add_h_b( out10_l, src54_l, filt2 );
+        src6 = __lasx_xvxori_b( src6, 128 );
+        src54_l = __lasx_xvilvl_b( src5, src4 );
+        src54_h = __lasx_xvilvh_b( src5, src4 );
+        src65_l = __lasx_xvilvl_b( src6, src5 );
+        src65_h = __lasx_xvilvh_b( src6, src5 );
+        tmp10_h = __lasx_xvpermi_q( src65_h, src54_h, 0x20 );
+        tmp10_l = __lasx_xvpermi_q( src65_l, src54_l, 0x20 );
+        out10_h = __lasx_xvdp2_h_b( res10_h, filt0 );
+        out10_h = __lasx_xvdp2add_h_b( out10_h, res32_h, filt1 );
+        out10_h = __lasx_xvdp2add_h_b( out10_h, tmp10_h, filt2 );
+        out10_l = __lasx_xvdp2_h_b( res10_l, filt0 );
+        out10_l = __lasx_xvdp2add_h_b( out10_l, res32_l, filt1 );
+        out10_l = __lasx_xvdp2add_h_b( out10_l, tmp10_l, filt2 );
         out10_l = __lasx_xvssrarni_b_h(out10_h, out10_l, 5);
         out10_l = __lasx_xvxori_b( out10_l, 128 );
         __lasx_xvstelm_d( out10_l, p_dst, 0, 0 );
         __lasx_xvstelm_d( out10_l, p_dst, 8, 1 );
         p_dst += i_dst_stride;
+        __lasx_xvstelm_d( out10_l, p_dst, 0, 2 );
+        __lasx_xvstelm_d( out10_l, p_dst, 8, 3 );
+        p_dst += i_dst_stride;
+        u_h4w -= 2;
+        res10_l = res32_l;
+        res32_l = tmp10_l;
+        res10_h = res32_h;
+        res32_h = tmp10_h;
+        src4 = src6;
+    }
 
-        src10_h = src21_h;
-        src32_h = src43_h;
-        src10_l = src21_l;
-        src32_l = src43_l;
+    if (u_h4w > 0) {
+        src5 = __lasx_xvld( p_src, 0 );
+        src54_l = __lasx_xvilvl_b( src5, src4 );
+        src54_h = __lasx_xvilvh_b( src5, src4 );
+        out10_h = __lasx_xvdp2_h_b( res10_h, filt0 );
+        out10_h = __lasx_xvdp2add_h_b( out10_h, res32_h, filt1 );
+        out10_h = __lasx_xvdp2add_h_b( out10_h, src54_h, filt2 );
 
-        src4 = src5;
+        out10_l = __lasx_xvdp2_h_b( res10_l, filt0 );
+        out10_l = __lasx_xvdp2add_h_b( out10_l, res32_l, filt1 );
+        out10_l = __lasx_xvdp2add_h_b( out10_l, src54_l, filt2 );
+        out10_l = __lasx_xvssrarni_b_h(out10_h, out10_l, 5);
+        out10_l = __lasx_xvxori_b( out10_l, 128 );
+        __lasx_xvstelm_d( out10_l, p_dst, 0, 0 );
+        __lasx_xvstelm_d( out10_l, p_dst, 8, 1 );
     }
 }
 
@@ -3382,11 +3409,13 @@ static inline void core_frame_init_lowres_core_lasx( uint8_t *p_src,
             p_dst3 += 16;
         }
 
-        for( i_loop_width = i_w16_mul; i_loop_width < i_width;
-             i_loop_width += 8 )
+        if (i_w16_mul < i_width)
         {
             src3  = __lasx_xvld( p_src, 0 );
             DUP2_ARG2( __lasx_xvldx, p_src, i_src_stride, p_src, i_src_stride_x2, src4, src5 );
+            src6 = __lasx_xvpermi_q( src3, src3, 0x11 );
+            src7 = __lasx_xvpermi_q( src4, src4, 0x11 );
+            src8 = __lasx_xvpermi_q( src5, src5, 0x11 );
             p_src += 16;
 
             pckev_vec0 = __lasx_xvpickev_b( src3, src0 );
@@ -3395,26 +3424,26 @@ static inline void core_frame_init_lowres_core_lasx( uint8_t *p_src,
             pckod_vec1 = __lasx_xvpickod_b( src4, src1 );
             pckev_vec2 = __lasx_xvpickev_b( src5, src2 );
             pckod_vec2 = __lasx_xvpickod_b( src5, src2 );
-            DUP4_ARG2( __lasx_xvhsubw_hu_bu, pckev_vec1, pckev_vec0, pckod_vec1,
+            DUP4_ARG2( __lasx_xvavgr_bu, pckev_vec1, pckev_vec0, pckod_vec1,
                        pckod_vec0, pckev_vec2, pckev_vec1, pckod_vec2, pckod_vec1,
                        tmp0, tmp1, tmp2, tmp3 );
-            DUP2_ARG2( __lasx_xvhsubw_hu_bu, tmp1, tmp0, tmp3, tmp2, tmp0, tmp1 );
+            DUP2_ARG2( __lasx_xvavgr_bu, tmp1, tmp0, tmp3, tmp2, tmp0, tmp1 );
             __lasx_xvstelm_d( tmp0, p_dst0, 0, 0 );
             __lasx_xvstelm_d( tmp1, p_dst2, 0, 0 );
 
-            DUP2_ARG3( __lasx_xvshuf_b, src3, src0, src4, src1, mask,
+            DUP2_ARG3( __lasx_xvshuf_b, src3, src0, mask, src4, src1,
                        mask, sld1_vec0, sld1_vec1 );
-            DUP2_ARG3( __lasx_xvshuf_b, src5, src2, src3, src3, mask,
+            DUP2_ARG3( __lasx_xvshuf_b, src5, src2, mask, src6, src3,
                        mask, sld1_vec2, sld1_vec3 );
-            DUP2_ARG3( __lasx_xvshuf_b, src4, src4, src5, src5, mask,
+            DUP2_ARG3( __lasx_xvshuf_b, src7, src4, mask, src8, src5,
                        mask, sld1_vec4, sld1_vec5 );
             pckev_vec0 = __lasx_xvpickod_b( sld1_vec3, sld1_vec0 );
             pckev_vec1 = __lasx_xvpickod_b( sld1_vec4, sld1_vec1 );
             pckev_vec2 = __lasx_xvpickod_b( sld1_vec5, sld1_vec2 );
-            DUP4_ARG2( __lasx_xvhsubw_hu_bu, pckev_vec1, pckev_vec0, pckod_vec1,
-                       pckod_vec0, pckev_vec2, pckev_vec1, pckod_vec2, pckod_vec1,
-                       tmp0, tmp1, tmp2, tmp3 );
-            DUP2_ARG2( __lasx_xvhsubw_hu_bu, tmp1, tmp0, tmp3, tmp2, tmp0, tmp1 );
+            DUP4_ARG2( __lasx_xvavgr_bu, pckev_vec1, pckev_vec0, pckod_vec1, pckod_vec0,
+                       pckev_vec2, pckev_vec1, pckod_vec2, pckod_vec1, tmp0, tmp1, tmp2,
+                       tmp3 );
+            DUP2_ARG2( __lasx_xvavgr_bu, tmp1, tmp0, tmp3, tmp2, tmp0, tmp1 );
             __lasx_xvstelm_d( tmp0, p_dst1, 0, 0 );
             __lasx_xvstelm_d( tmp1, p_dst3, 0, 0 );
             p_dst0 += 8;
@@ -3912,14 +3941,14 @@ static void core_plane_copy_interleave_lasx( uint8_t *p_src0,
             __lasx_xvstelm_d( vec_ilv_l0, p_dst, 0, 0 );
             __lasx_xvstelm_d( vec_ilv_l0, p_dst, 8, 1 );
             p_dst_t = p_dst + i_dst_stride;
-            __lasx_xvstelm_d( vec_ilv_l1, p_dst, 0, 0 );
-            __lasx_xvstelm_d( vec_ilv_l1, p_dst, 8, 1 );
+            __lasx_xvstelm_d( vec_ilv_l1, p_dst_t, 0, 0 );
+            __lasx_xvstelm_d( vec_ilv_l1, p_dst_t, 8, 1 );
             p_dst_t = p_dst_t + i_dst_stride;
-            __lasx_xvstelm_d( vec_ilv_l2, p_dst, 0, 0 );
-            __lasx_xvstelm_d( vec_ilv_l2, p_dst, 8, 1 );
+            __lasx_xvstelm_d( vec_ilv_l2, p_dst_t, 0, 0 );
+            __lasx_xvstelm_d( vec_ilv_l2, p_dst_t, 8, 1 );
             p_dst_t = p_dst_t + i_dst_stride;
-            __lasx_xvstelm_d( vec_ilv_l3, p_dst, 0, 0 );
-            __lasx_xvstelm_d( vec_ilv_l3, p_dst, 8, 1 );
+            __lasx_xvstelm_d( vec_ilv_l3, p_dst_t, 0, 0 );
+            __lasx_xvstelm_d( vec_ilv_l3, p_dst_t, 8, 1 );
 
             p_src0 += 8;
             p_src1 += 8;
@@ -3965,13 +3994,13 @@ static void core_plane_copy_interleave_lasx( uint8_t *p_src0,
         {
             src0 = __lasx_xvld( p_src0, 0 );
             src4 = __lasx_xvld( p_src1, 0 );
-            vec_ilv_h0 = __lasx_xvilvl_b( src4, src0 );
-            vec_ilv_l0 = __lasx_xvilvh_b( src4, src0 );
+            vec_ilv_l0 = __lasx_xvilvl_b( src4, src0 );
+            vec_ilv_h0 = __lasx_xvilvh_b( src4, src0 );
 
             src0 = __lasx_xvpermi_q( vec_ilv_l0, vec_ilv_h0, 0x02 );
             src1 = __lasx_xvpermi_q( vec_ilv_l0, vec_ilv_h0, 0x13 );
             __lasx_xvst( src0, p_dst, 0 );
-            __lasx_xvst( src0, p_dst, 32 );
+            __lasx_xvst( src1, p_dst, 32 );
 
             p_src0 += 32;
             p_src1 += 32;
@@ -3982,8 +4011,8 @@ static void core_plane_copy_interleave_lasx( uint8_t *p_src0,
         {
             src0 = __lasx_xvld( p_src0, 0 );
             src4 = __lasx_xvld( p_src1, 0 );
-            vec_ilv_h0 = __lasx_xvilvl_b( src4, src0 );
-            vec_ilv_l0 = __lasx_xvilvh_b( src4, src0 );
+            vec_ilv_l0 = __lasx_xvilvl_b( src4, src0 );
+            vec_ilv_h0 = __lasx_xvilvh_b( src4, src0 );
 
             vec_ilv_l0 = __lasx_xvpermi_q( vec_ilv_l0, vec_ilv_h0, 0x02 );
             __lasx_xvst( vec_ilv_l0, p_dst, 0 );
