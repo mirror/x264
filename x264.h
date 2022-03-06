@@ -842,11 +842,11 @@ typedef struct x264_image_properties_t
     #define X264_MBINFO_CONSTANT   (1U<<0)
     /* More flags may be added in the future. */
 
-    /* Out: SSIM of the the frame luma (if x264_param_t.b_ssim is set) */
+    /* Out: SSIM of the the frame luma (if x264_param_t.analyse.b_ssim is set) */
     double f_ssim;
-    /* Out: Average PSNR of the frame (if x264_param_t.b_psnr is set) */
+    /* Out: Average PSNR of the frame (if x264_param_t.analyse.b_psnr is set) */
     double f_psnr_avg;
-    /* Out: PSNR of Y, U, and V (if x264_param_t.b_psnr is set) */
+    /* Out: PSNR of Y, U, and V (if x264_param_t.analyse.b_psnr is set) */
     double f_psnr[3];
 
     /* Out: Average effective CRF of the encoded frame */
