@@ -1,7 +1,7 @@
 ;*****************************************************************************
 ;* bitstream-a.asm: x86 bitstream functions
 ;*****************************************************************************
-;* Copyright (C) 2010-2021 x264 project
+;* Copyright (C) 2010-2022 x264 project
 ;*
 ;* Authors: Fiona Glaser <fiona@x264.com>
 ;*          Henrik Gramner <henrik@gramner.com>
@@ -34,7 +34,7 @@ SECTION .text
 ;-----------------------------------------------------------------------------
 %macro NAL_LOOP 2
 %%escape:
-    ; Detect false positive to avoid unneccessary escape loop
+    ; Detect false positive to avoid unnecessary escape loop
     xor      r3d, r3d
     cmp byte [r0+r1-1], 0
     setnz    r3b

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * deblock.c: deblocking
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -655,11 +655,11 @@ void x264_macroblock_deblock( x264_t *h )
     } while( 0 )
 
     if( !transform_8x8 ) FILTER( 0, 1 );
-                         FILTER( 0, 2 );
+    FILTER( 0, 2 );
     if( !transform_8x8 ) FILTER( 0, 3 );
 
     if( !transform_8x8 ) FILTER( 1, 1 );
-                         FILTER( 1, 2 );
+    FILTER( 1, 2 );
     if( !transform_8x8 ) FILTER( 1, 3 );
 
     #undef FILTER

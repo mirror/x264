@@ -1,7 +1,7 @@
 /*****************************************************************************
  * ratecontrol.c: ratecontrol
  *****************************************************************************
- * Copyright (C) 2005-2021 x264 project
+ * Copyright (C) 2005-2022 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Michael Niedermayer <michaelni@gmx.at>
@@ -608,7 +608,7 @@ int x264_reference_build_list_optimal( x264_t *h )
             COPY2_IF_GT( max, refcount[i], bestref, i );
 
         /* FIXME: If there are duplicates from frames other than ref0 then it is possible
-         * that the optimal ordering doesnt place every duplicate. */
+         * that the optimal ordering doesn't place every duplicate. */
 
         refcount[bestref] = -1;
         h->fref[0][ref] = frames[bestref];
@@ -1661,7 +1661,7 @@ int x264_ratecontrol_mb( x264_t *h, int bits )
         float b1 = bits_so_far + predict_row_size_to_end( h, y, rc->qpm ) + size_of_other_slices;
         float trust_coeff = x264_clip3f( bits_so_far / slice_size_planned, 0.0, 1.0 );
 
-        /* Don't increase the row QPs until a sufficent amount of the bits of the frame have been processed, in case a flat */
+        /* Don't increase the row QPs until a sufficient amount of the bits of the frame have been processed, in case a flat */
         /* area at the top of the frame was measured inaccurately. */
         if( trust_coeff < 0.05f )
             qp_max = qp_absolute_max = prev_row_qp;

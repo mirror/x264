@@ -1,7 +1,7 @@
 /*****************************************************************************
  * deblock.h: msa deblocking
  *****************************************************************************
- * Copyright (C) 2017-2021 x264 project
+ * Copyright (C) 2017-2022 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *

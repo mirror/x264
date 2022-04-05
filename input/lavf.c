@@ -1,7 +1,7 @@
 /*****************************************************************************
  * lavf.c: libavformat input
  *****************************************************************************
- * Copyright (C) 2009-2021 x264 project
+ * Copyright (C) 2009-2022 x264 project
  *
  * Authors: Mike Gurlitz <mike.gurlitz@gmail.com>
  *          Steven Walters <kemuri9@gmail.com>
@@ -41,6 +41,7 @@ typedef struct
     AVFormatContext *lavf;
     AVCodecContext *lavc;
     AVFrame *frame;
+    AVPacket *pkt;
     int stream_id;
     int next_frame;
     int vfr_input;
@@ -96,10 +97,7 @@ static int read_frame_internal( cli_pic_t *p_pic, lavf_hnd_t *h, int i_frame, vi
             return 0;
     }
 
-    AVPacket pkt;
-    av_init_packet( &pkt );
-    pkt.data = NULL;
-    pkt.size = 0;
+    AVPacket *pkt = h->pkt;
 
     while( i_frame >= h->next_frame )
     {
@@ -109,15 +107,15 @@ static int read_frame_internal( cli_pic_t *p_pic, lavf_hnd_t *h, int i_frame, vi
         {
             if( ret == AVERROR(EAGAIN) )
             {
-                while( !(ret = av_read_frame( h->lavf, &pkt )) && pkt.stream_index != h->stream_id )
-                    av_packet_unref( &pkt );
+                while( !(ret = av_read_frame( h->lavf, pkt )) && pkt->stream_index != h->stream_id )
+                    av_packet_unref( pkt );
 
                 if( ret )
                     ret = avcodec_send_packet( h->lavc, NULL );
                 else
                 {
-                    ret = avcodec_send_packet( h->lavc, &pkt );
-                    av_packet_unref( &pkt );
+                    ret = avcodec_send_packet( h->lavc, pkt );
+                    av_packet_unref( pkt );
                 }
             }
             else if( ret == AVERROR_EOF )
@@ -174,6 +172,9 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
 
     h->frame = av_frame_alloc();
     if( !h->frame )
+        return -1;
+    h->pkt = av_packet_alloc();
+    if( !h->pkt )
         return -1;
 
     /* if resolution was passed in, place it and colorspace into options. this allows raw video support */
@@ -264,6 +265,7 @@ static int close_file( hnd_t handle )
     lavf_hnd_t *h = handle;
     avcodec_free_context( &h->lavc );
     avformat_close_input( &h->lavf );
+    av_packet_free( &h->pkt );
     av_frame_free( &h->frame );
     free( h );
     return 0;

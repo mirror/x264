@@ -391,7 +391,8 @@ install-cli: cli
 	$(INSTALL) x264$(EXE) $(DESTDIR)$(bindir)
 
 install-lib-dev:
-	$(INSTALL) -d $(DESTDIR)$(includedir) $(DESTDIR)$(libdir)/pkgconfig
+	$(INSTALL) -d $(DESTDIR)$(includedir)
+	$(INSTALL) -d $(DESTDIR)$(libdir)/pkgconfig
 	$(INSTALL) -m 644 $(SRCPATH)/x264.h x264_config.h $(DESTDIR)$(includedir)
 	$(INSTALL) -m 644 x264.pc $(DESTDIR)$(libdir)/pkgconfig
 

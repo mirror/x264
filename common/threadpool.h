@@ -1,7 +1,7 @@
 /*****************************************************************************
  * threadpool.h: thread pooling
  *****************************************************************************
- * Copyright (C) 2010-2021 x264 project
+ * Copyright (C) 2010-2022 x264 project
  *
  * Authors: Steven Walters <kemuri9@gmail.com>
  *
@@ -30,8 +30,7 @@ typedef struct x264_threadpool_t x264_threadpool_t;
 
 #if HAVE_THREAD
 #define x264_threadpool_init x264_template(threadpool_init)
-X264_API int   x264_threadpool_init( x264_threadpool_t **p_pool, int threads,
-                                     void (*init_func)(void *), void *init_arg );
+X264_API int   x264_threadpool_init( x264_threadpool_t **p_pool, int threads );
 #define x264_threadpool_run x264_template(threadpool_run)
 X264_API void  x264_threadpool_run( x264_threadpool_t *pool, void *(*func)(void *), void *arg );
 #define x264_threadpool_wait x264_template(threadpool_wait)
@@ -39,7 +38,7 @@ X264_API void *x264_threadpool_wait( x264_threadpool_t *pool, void *arg );
 #define x264_threadpool_delete x264_template(threadpool_delete)
 X264_API void  x264_threadpool_delete( x264_threadpool_t *pool );
 #else
-#define x264_threadpool_init(p,t,f,a) -1
+#define x264_threadpool_init(p,t) -1
 #define x264_threadpool_run(p,f,a)
 #define x264_threadpool_wait(p,a)     NULL
 #define x264_threadpool_delete(p)

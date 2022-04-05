@@ -1,7 +1,7 @@
 /*****************************************************************************
  * mc-c.c: aarch64 motion compensation
  *****************************************************************************
- * Copyright (C) 2009-2021 x264 project
+ * Copyright (C) 2009-2022 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *          Janne Grunau <janne-x264@jannau.net>
@@ -210,7 +210,7 @@ static void mc_luma_neon( uint8_t *dst,    intptr_t i_dst_stride,
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     intptr_t offset = (mvy>>2)*i_src_stride + (mvx>>2);
     uint8_t *src1 = src[x264_hpel_ref0[qpel_idx]] + offset;
-    if( (mvy&3) == 3 )             // explict if() to force conditional add
+    if( (mvy&3) == 3 )             // explicit if() to force conditional add
         src1 += i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
@@ -236,7 +236,7 @@ static uint8_t *get_ref_neon( uint8_t *dst,   intptr_t *i_dst_stride,
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     intptr_t offset = (mvy>>2)*i_src_stride + (mvx>>2);
     uint8_t *src1 = src[x264_hpel_ref0[qpel_idx]] + offset;
-    if( (mvy&3) == 3 )             // explict if() to force conditional add
+    if( (mvy&3) == 3 )             // explicit if() to force conditional add
         src1 += i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */

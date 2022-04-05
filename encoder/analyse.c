@@ -1,7 +1,7 @@
 /*****************************************************************************
  * analyse.c: macroblock analysis
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -1346,7 +1346,7 @@ static void mb_analyse_inter_p8x8_mixed_ref( x264_t *h, x264_mb_analysis_t *a )
             i_maxref = ref;\
     }
 
-    /* early termination: if 16x16 chose ref 0, then evalute no refs older
+    /* early termination: if 16x16 chose ref 0, then evaluate no refs older
      * than those used by the neighbors */
     if( a->b_early_terminate && (i_maxref > 0 && (a->l0.me16x16.i_ref == 0 || a->l0.me16x16.i_ref == h->mb.ref_blind_dupe) &&
         h->mb.i_mb_type_top > 0 && h->mb.i_mb_type_left[0] > 0) )
@@ -2173,7 +2173,7 @@ static void mb_analyse_inter_b8x8_mixed_ref( x264_t *h, x264_mb_analysis_t *a )
     ALIGNED_ARRAY_16( pixel, pix,[2],[8*8] );
     int i_maxref[2] = {h->mb.pic.i_fref[0]-1, h->mb.pic.i_fref[1]-1};
 
-    /* early termination: if 16x16 chose ref 0, then evalute no refs older
+    /* early termination: if 16x16 chose ref 0, then evaluate no refs older
      * than those used by the neighbors */
     #define CHECK_NEIGHBOUR(i)\
     {\

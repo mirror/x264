@@ -1,7 +1,7 @@
 ;*****************************************************************************
 ;* x86inc.asm: x264asm abstraction layer
 ;*****************************************************************************
-;* Copyright (C) 2005-2021 x264 project
+;* Copyright (C) 2005-2022 x264 project
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
 ;*          Henrik Gramner <henrik@gramner.com>
@@ -84,6 +84,11 @@
     %define mangle(x) _ %+ x
 %else
     %define mangle(x) x
+%endif
+
+; Use VEX-encoding even in non-AVX functions
+%ifndef FORCE_VEX_ENCODING
+    %define FORCE_VEX_ENCODING 0
 %endif
 
 %macro SECTION_RODATA 0-1 16
@@ -238,6 +243,16 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
 %else
     mov %1, %2
 %endif
+%endmacro
+
+; Repeats an instruction/operation for multiple arguments.
+; Example usage: "REPX {psrlw x, 8}, m0, m1, m2, m3"
+%macro REPX 2-* ; operation, args
+    %xdefine %%f(x) %1
+    %rep %0 - 1
+        %rotate 1
+        %%f(%1)
+    %endrep
 %endmacro
 
 %macro PUSH 1
@@ -1014,7 +1029,7 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
 %endmacro
 
 %macro INIT_XMM 0-1+
-    %assign avx_enabled 0
+    %assign avx_enabled FORCE_VEX_ENCODING
     %define RESET_MM_PERMUTATION INIT_XMM %1
     %define mmsize 16
     %define mova movdqa
@@ -1337,28 +1352,65 @@ INIT_XMM
             %1 %6, __src2
         %endif
     %elif %0 >= 9
-        __instr %6, %7, %8, %9
+        %if avx_enabled && __sizeofreg >= 16 && %4 == 1
+            %ifnnum regnumof%7
+                %if %3
+                    vmovaps %6, %7
+                %else
+                    vmovdqa %6, %7
+                %endif
+                __instr %6, %6, %8, %9
+            %else
+                __instr %6, %7, %8, %9
+            %endif
+        %else
+            __instr %6, %7, %8, %9
+        %endif
     %elif %0 == 8
-        %if avx_enabled && %5
+        %if avx_enabled && __sizeofreg >= 16 && %4 == 0
             %xdefine __src1 %7
             %xdefine __src2 %8
-            %ifnum regnumof%7
-                %ifnum regnumof%8
-                    %if regnumof%7 < 8 && regnumof%8 >= 8 && regnumof%8 < 16 && sizeof%8 <= 32
-                        ; Most VEX-encoded instructions require an additional byte to encode when
-                        ; src2 is a high register (e.g. m8..15). If the instruction is commutative
-                        ; we can swap src1 and src2 when doing so reduces the instruction length.
-                        %xdefine __src1 %8
-                        %xdefine __src2 %7
+            %if %5
+                %ifnum regnumof%7
+                    %ifnum regnumof%8
+                        %if regnumof%7 < 8 && regnumof%8 >= 8 && regnumof%8 < 16 && sizeof%8 <= 32
+                            ; Most VEX-encoded instructions require an additional byte to encode when
+                            ; src2 is a high register (e.g. m8..15). If the instruction is commutative
+                            ; we can swap src1 and src2 when doing so reduces the instruction length.
+                            %xdefine __src1 %8
+                            %xdefine __src2 %7
+                        %endif
                     %endif
+                %elifnum regnumof%8 ; put memory operands in src2 when possible
+                    %xdefine __src1 %8
+                    %xdefine __src2 %7
+                %else
+                    %assign __emulate_avx 1
+                %endif
+            %elifnnum regnumof%7
+                ; EVEX allows imm8 shift instructions to be used with memory operands,
+                ; but VEX does not. This handles those special cases.
+                %ifnnum %8
+                    %assign __emulate_avx 1
+                %elif notcpuflag(avx512)
+                    %assign __emulate_avx 1
                 %endif
             %endif
-            __instr %6, __src1, __src2
+            %if __emulate_avx ; a separate load is required
+                %if %3
+                    vmovaps %6, %7
+                %else
+                    vmovdqa %6, %7
+                %endif
+                __instr %6, %6, %8
+            %else
+                __instr %6, __src1, __src2
+            %endif
         %else
             __instr %6, %7, %8
         %endif
     %elif %0 == 7
-        %if avx_enabled && %5
+        %if avx_enabled && __sizeofreg >= 16 && %5
             %xdefine __src1 %6
             %xdefine __src2 %7
             %ifnum regnumof%6
@@ -1419,8 +1471,8 @@ AVX_INSTR andpd, sse2, 1, 0, 1
 AVX_INSTR andps, sse, 1, 0, 1
 AVX_INSTR blendpd, sse4, 1, 1, 0
 AVX_INSTR blendps, sse4, 1, 1, 0
-AVX_INSTR blendvpd, sse4 ; can't be emulated
-AVX_INSTR blendvps, sse4 ; can't be emulated
+AVX_INSTR blendvpd, sse4, 1, 1, 0 ; last operand must be xmm0 with legacy encoding
+AVX_INSTR blendvps, sse4, 1, 1, 0 ; last operand must be xmm0 with legacy encoding
 AVX_INSTR cmpeqpd, sse2, 1, 0, 1
 AVX_INSTR cmpeqps, sse, 1, 0, 1
 AVX_INSTR cmpeqsd, sse2, 1, 0, 0
@@ -1553,7 +1605,7 @@ AVX_INSTR pand, mmx, 0, 0, 1
 AVX_INSTR pandn, mmx, 0, 0, 0
 AVX_INSTR pavgb, mmx2, 0, 0, 1
 AVX_INSTR pavgw, mmx2, 0, 0, 1
-AVX_INSTR pblendvb, sse4 ; can't be emulated
+AVX_INSTR pblendvb, sse4, 0, 1, 0 ; last operand must be xmm0 with legacy encoding
 AVX_INSTR pblendw, sse4, 0, 1, 0
 AVX_INSTR pclmulqdq, fnord, 0, 1, 0
 AVX_INSTR pclmulhqhqdq, fnord, 0, 0, 0

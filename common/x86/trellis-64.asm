@@ -1,7 +1,7 @@
 ;*****************************************************************************
 ;* trellis-64.asm: x86_64 trellis quantization
 ;*****************************************************************************
-;* Copyright (C) 2012-2021 x264 project
+;* Copyright (C) 2012-2022 x264 project
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
 ;*
@@ -158,7 +158,7 @@ cglobal %1, 4,15,9
     %define cost_siglast   stack+80
     %define level_tree     stack+96
 
-    ; trellis_node_t is layed out differently than C.
+    ; trellis_node_t is laid out differently than C.
     ; struct-of-arrays rather than array-of-structs, for simd.
     %define nodes_curq r7
     %define nodes_prevq r8

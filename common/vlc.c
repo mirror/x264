@@ -1,7 +1,7 @@
 /*****************************************************************************
  * vlc.c : vlc tables
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Fiona Glaser <fiona@x264.com>
@@ -37,7 +37,7 @@ void x264_cavlc_init( x264_t *h )
         {
             int mask = level >> 15;
             int abs_level = (level^mask)-mask;
-            int i_level_code = abs_level*2-mask-2;
+            int i_level_code = abs_level ? abs_level*2-mask-2 : 0;
             int i_next = i_suffix;
             vlc_large_t *vlc = &x264_level_token[i_suffix][level+LEVEL_TABLE_SIZE/2];
 

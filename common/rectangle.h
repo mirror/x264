@@ -1,7 +1,7 @@
 /*****************************************************************************
  * rectangle.h: rectangle filling
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Fiona Glaser <fiona@x264.com>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -28,8 +28,8 @@
 static ALWAYS_INLINE void x264_macroblock_cache_rect( void *dst, int w, int h, int s, uint32_t v )
 {
     uint8_t *d = dst;
-    uint16_t v2 = s == 2 ? v : v * 0x101;
-    uint32_t v4 = s == 4 ? v : s == 2 ? v * 0x10001 : v * 0x1010101;
+    uint16_t v2 = s >= 2 ? v : v * 0x101;
+    uint32_t v4 = s >= 4 ? v : s >= 2 ? v * 0x10001 : v * 0x1010101;
     uint64_t v8 = v4 + ((uint64_t)v4 << 32);
     s *= 8;
 
@@ -142,13 +142,13 @@ static ALWAYS_INLINE void x264_macroblock_cache_mvd( x264_t *h, int x, int y, in
     else
         x264_macroblock_cache_rect( mvd_cache, width*2, height, 2, mvd );
 }
-static ALWAYS_INLINE void x264_macroblock_cache_ref( x264_t *h, int x, int y, int width, int height, int i_list, uint8_t ref )
+static ALWAYS_INLINE void x264_macroblock_cache_ref( x264_t *h, int x, int y, int width, int height, int i_list, int8_t ref )
 {
     void *ref_cache = &h->mb.cache.ref[i_list][X264_SCAN8_0+x+8*y];
     if( x264_nonconstant_p( width ) || x264_nonconstant_p( height ) )
-        x264_cache_ref_func_table[width + (height<<1)-3]( ref_cache, ref );
+        x264_cache_ref_func_table[width + (height<<1)-3]( ref_cache, (uint8_t)ref );
     else
-        x264_macroblock_cache_rect( ref_cache, width, height, 1, ref );
+        x264_macroblock_cache_rect( ref_cache, width, height, 1, (uint8_t)ref );
 }
 static ALWAYS_INLINE void x264_macroblock_cache_skip( x264_t *h, int x, int y, int width, int height, int b_skip )
 {

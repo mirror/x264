@@ -1,7 +1,7 @@
 /*****************************************************************************
  * quant.c: quantization and level-run
  *****************************************************************************
- * Copyright (C) 2005-2021 x264 project
+ * Copyright (C) 2005-2022 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Fiona Glaser <fiona@x264.com>
@@ -47,9 +47,9 @@
 #define QUANT_ONE( coef, mf, f ) \
 { \
     if( (coef) > 0 ) \
-        (coef) = (f + (coef)) * (mf) >> 16; \
+        (coef) = ((f) + (uint32_t)(coef)) * (mf) >> 16; \
     else \
-        (coef) = - ((f - (coef)) * (mf) >> 16); \
+        (coef) = -(int32_t)(((f) + (uint32_t)(-coef)) * (mf) >> 16); \
     nz |= (coef); \
 }
 

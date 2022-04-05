@@ -1,7 +1,7 @@
 ;*****************************************************************************
 ;* quant-a.asm: x86 quantization and level-run
 ;*****************************************************************************
-;* Copyright (C) 2005-2021 x264 project
+;* Copyright (C) 2005-2022 x264 project
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
 ;*          Fiona Glaser <fiona@x264.com>
@@ -167,7 +167,7 @@ cextern popcnt_table
     ABSD        m1, m0
     paddd       m1, %3
     pmulld      m1, %2
-    psrad       m1, 16
+    psrld       m1, 16
 %else ; !sse4
     mova        m0, [%1]
     ABSD        m1, m0
@@ -195,8 +195,8 @@ cextern popcnt_table
     paddd       m3, %3
     pmulld      m2, %2
     pmulld      m3, %2
-    psrad       m2, 16
-    psrad       m3, 16
+    psrld       m2, 16
+    psrld       m3, 16
     PSIGND      m2, m0
     PSIGND      m3, m1
     mova [%1       ], m2
@@ -222,7 +222,7 @@ cextern popcnt_table
     pmuludq     m3, m4
     psllq       m3, 32
     paddd       m1, m3
-    psrad       m1, 16
+    psrld       m1, 16
     PSIGND      m1, m0
     mova      [%1], m1
     ACCUM      por, %5, 1, %4
@@ -238,8 +238,8 @@ cextern popcnt_table
     paddd       m3, [%3+mmsize]
     pmulld      m2, [%2       ]
     pmulld      m3, [%2+mmsize]
-    psrad       m2, 16
-    psrad       m3, 16
+    psrld       m2, 16
+    psrld       m3, 16
     PSIGND      m2, m0
     PSIGND      m3, m1
     mova [%1       ], m2

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * avs.c: avisynth input
  *****************************************************************************
- * Copyright (C) 2009-2021 x264 project
+ * Copyright (C) 2009-2022 x264 project
  *
  * Authors: Steven Walters <kemuri9@gmail.com>
  *          Anton Mitrofanov <BugMaster@narod.ru>
@@ -26,28 +26,25 @@
 
 #include "input.h"
 
-#if USE_AVXSYNTH
-#include <dlfcn.h>
-#if SYS_MACOSX
-#define avs_open() dlopen( "libavxsynth.dylib", RTLD_NOW )
-#else
-#define avs_open() dlopen( "libavxsynth.so", RTLD_NOW )
-#endif
-#define avs_close dlclose
-#define avs_address dlsym
-#else
+#if SYS_WINDOWS || SYS_CYGWIN
+#include <windows.h>
 #define avs_open() LoadLibraryW( L"avisynth" )
 #define avs_close FreeLibrary
 #define avs_address GetProcAddress
+#else
+#include <dlfcn.h>
+#if SYS_MACOSX
+#define avs_open() dlopen( "libavisynth.dylib", RTLD_NOW )
+#else
+#define avs_open() dlopen( "libavisynth.so", RTLD_NOW )
+#endif
+#define avs_close dlclose
+#define avs_address dlsym
 #endif
 
 #define AVSC_NO_DECLSPEC
 #undef EXTERN_C
-#if USE_AVXSYNTH
-#include "extras/avxsynth_c.h"
-#else
 #include "extras/avisynth_c.h"
-#endif
 #define AVSC_DECLARE_FUNC(name) name##_func name
 
 #define FAIL_IF_ERROR( cond, ... ) FAIL_IF_ERR( cond, "avs", __VA_ARGS__ )
@@ -98,7 +95,13 @@ typedef struct
         AVSC_DECLARE_FUNC( avs_release_value );
         AVSC_DECLARE_FUNC( avs_release_video_frame );
         AVSC_DECLARE_FUNC( avs_take_clip );
-#if !USE_AVXSYNTH
+        AVSC_DECLARE_FUNC( avs_is_yv24 );
+        AVSC_DECLARE_FUNC( avs_is_yv16 );
+        AVSC_DECLARE_FUNC( avs_is_yv12 );
+        AVSC_DECLARE_FUNC( avs_is_yv411 );
+        AVSC_DECLARE_FUNC( avs_is_y8 );
+        AVSC_DECLARE_FUNC( avs_get_pitch_p );
+        AVSC_DECLARE_FUNC( avs_get_read_ptr_p );
         // AviSynth+ extension
         AVSC_DECLARE_FUNC( avs_is_rgb48 );
         AVSC_DECLARE_FUNC( avs_is_rgb64 );
@@ -106,21 +109,10 @@ typedef struct
         AVSC_DECLARE_FUNC( avs_is_yuv422p16 );
         AVSC_DECLARE_FUNC( avs_is_yuv420p16 );
         AVSC_DECLARE_FUNC( avs_is_y16 );
-        AVSC_DECLARE_FUNC( avs_is_yuv444ps );
-        AVSC_DECLARE_FUNC( avs_is_yuv422ps );
-        AVSC_DECLARE_FUNC( avs_is_yuv420ps );
-        AVSC_DECLARE_FUNC( avs_is_y32 );
         AVSC_DECLARE_FUNC( avs_is_444 );
         AVSC_DECLARE_FUNC( avs_is_422 );
         AVSC_DECLARE_FUNC( avs_is_420 );
         AVSC_DECLARE_FUNC( avs_is_y );
-        AVSC_DECLARE_FUNC( avs_is_yuva );
-        AVSC_DECLARE_FUNC( avs_is_planar_rgb );
-        AVSC_DECLARE_FUNC( avs_is_planar_rgba );
-        AVSC_DECLARE_FUNC( avs_num_components );
-        AVSC_DECLARE_FUNC( avs_component_size );
-        AVSC_DECLARE_FUNC( avs_bits_per_component );
-#endif
     } func;
 } avs_hnd_t;
 
@@ -142,7 +134,13 @@ static int custom_avs_load_library( avs_hnd_t *h )
     LOAD_AVS_FUNC( avs_release_value, 0 );
     LOAD_AVS_FUNC( avs_release_video_frame, 0 );
     LOAD_AVS_FUNC( avs_take_clip, 0 );
-#if !USE_AVXSYNTH
+    LOAD_AVS_FUNC( avs_is_yv24, 1 );
+    LOAD_AVS_FUNC( avs_is_yv16, 1 );
+    LOAD_AVS_FUNC( avs_is_yv12, 1 );
+    LOAD_AVS_FUNC( avs_is_yv411, 1 );
+    LOAD_AVS_FUNC( avs_is_y8, 1 );
+    LOAD_AVS_FUNC( avs_get_pitch_p, 1 );
+    LOAD_AVS_FUNC( avs_get_read_ptr_p, 1 );
     // AviSynth+ extension
     LOAD_AVS_FUNC( avs_is_rgb48, 1 );
     LOAD_AVS_FUNC_ALIAS( avs_is_rgb48, "_avs_is_rgb48@4", 1 );
@@ -152,21 +150,10 @@ static int custom_avs_load_library( avs_hnd_t *h )
     LOAD_AVS_FUNC( avs_is_yuv422p16, 1 );
     LOAD_AVS_FUNC( avs_is_yuv420p16, 1 );
     LOAD_AVS_FUNC( avs_is_y16, 1 );
-    LOAD_AVS_FUNC( avs_is_yuv444ps, 1 );
-    LOAD_AVS_FUNC( avs_is_yuv422ps, 1 );
-    LOAD_AVS_FUNC( avs_is_yuv420ps, 1 );
-    LOAD_AVS_FUNC( avs_is_y32, 1 );
     LOAD_AVS_FUNC( avs_is_444, 1 );
     LOAD_AVS_FUNC( avs_is_422, 1 );
     LOAD_AVS_FUNC( avs_is_420, 1 );
     LOAD_AVS_FUNC( avs_is_y, 1 );
-    LOAD_AVS_FUNC( avs_is_yuva, 1 );
-    LOAD_AVS_FUNC( avs_is_planar_rgb, 1 );
-    LOAD_AVS_FUNC( avs_is_planar_rgba, 1 );
-    LOAD_AVS_FUNC( avs_num_components, 1 );
-    LOAD_AVS_FUNC( avs_component_size, 1 );
-    LOAD_AVS_FUNC( avs_bits_per_component, 1 );
-#endif
     return 0;
 fail:
     avs_close( h->library );
@@ -174,45 +161,31 @@ fail:
     return -1;
 }
 
-/* AvxSynth doesn't have yv24, yv16, yv411, or y8, so disable them. */
-#if USE_AVXSYNTH
-#define avs_is_yv24( vi ) (0)
-#define avs_is_yv16( vi ) (0)
-#define avs_is_yv411( vi ) (0)
-#define avs_is_y8( vi ) (0)
-/* AvxSynth doesn't support AviSynth+ pixel types. */
-#define AVS_IS_AVISYNTHPLUS (0)
-#define AVS_IS_420( vi ) (0)
-#define AVS_IS_422( vi ) (0)
-#define AVS_IS_444( vi ) (0)
-#define AVS_IS_RGB48( vi ) (0)
-#define AVS_IS_RGB64( vi ) (0)
-#define AVS_IS_YUV420P16( vi ) (0)
-#define AVS_IS_YUV422P16( vi ) (0)
-#define AVS_IS_YUV444P16( vi ) (0)
-#define AVS_IS_Y( vi ) (0)
-#define AVS_IS_Y16( vi ) (0)
-#else
+#define AVS_IS_YV24( vi ) (h->func.avs_is_yv24 ? h->func.avs_is_yv24( vi ) : avs_is_yv24( vi ))
+#define AVS_IS_YV16( vi ) (h->func.avs_is_yv16 ? h->func.avs_is_yv16( vi ) : avs_is_yv16( vi ))
+#define AVS_IS_YV12( vi ) (h->func.avs_is_yv12 ? h->func.avs_is_yv12( vi ) : avs_is_yv12( vi ))
+#define AVS_IS_YV411( vi ) (h->func.avs_is_yv411 ? h->func.avs_is_yv411( vi ) : avs_is_yv411( vi ))
+#define AVS_IS_Y8( vi ) (h->func.avs_is_y8 ? h->func.avs_is_y8( vi ) : avs_is_y8( vi ))
+#define AVS_GET_PITCH_P( p, plane ) (h->func.avs_get_pitch_p ? h->func.avs_get_pitch_p( p, plane ) : avs_get_pitch_p( p, plane ))
+#define AVS_GET_READ_PTR_P( p, plane ) (h->func.avs_get_read_ptr_p ? h->func.avs_get_read_ptr_p( p, plane ) : avs_get_read_ptr_p( p, plane ))
+
 #define AVS_IS_AVISYNTHPLUS (h->func.avs_is_420 && h->func.avs_is_422 && h->func.avs_is_444)
-#define AVS_IS_420( vi ) (h->func.avs_is_420 ? h->func.avs_is_420( vi ) : avs_is_yv12( vi ))
-#define AVS_IS_422( vi ) (h->func.avs_is_422 ? h->func.avs_is_422( vi ) : avs_is_yv16( vi ))
-#define AVS_IS_444( vi ) (h->func.avs_is_444 ? h->func.avs_is_444( vi ) : avs_is_yv24( vi ))
+#define AVS_IS_420( vi ) (h->func.avs_is_420 ? h->func.avs_is_420( vi ) : AVS_IS_YV12( vi ))
+#define AVS_IS_422( vi ) (h->func.avs_is_422 ? h->func.avs_is_422( vi ) : AVS_IS_YV16( vi ))
+#define AVS_IS_444( vi ) (h->func.avs_is_444 ? h->func.avs_is_444( vi ) : AVS_IS_YV24( vi ))
 #define AVS_IS_RGB48( vi ) (h->func.avs_is_rgb48 && h->func.avs_is_rgb48( vi ))
 #define AVS_IS_RGB64( vi ) (h->func.avs_is_rgb64 && h->func.avs_is_rgb64( vi ))
 #define AVS_IS_YUV420P16( vi ) (h->func.avs_is_yuv420p16 && h->func.avs_is_yuv420p16( vi ))
 #define AVS_IS_YUV422P16( vi ) (h->func.avs_is_yuv422p16 && h->func.avs_is_yuv422p16( vi ))
 #define AVS_IS_YUV444P16( vi ) (h->func.avs_is_yuv444p16 && h->func.avs_is_yuv444p16( vi ))
-#define AVS_IS_Y( vi ) (h->func.avs_is_y ? h->func.avs_is_y( vi ) : avs_is_y8( vi ))
+#define AVS_IS_Y( vi ) (h->func.avs_is_y ? h->func.avs_is_y( vi ) : AVS_IS_Y8( vi ))
 #define AVS_IS_Y16( vi ) (h->func.avs_is_y16 && h->func.avs_is_y16( vi ))
-#endif
 
 /* generate a filter sequence to try based on the filename extension */
 static void avs_build_filter_sequence( char *filename_ext, const char *filter[AVS_MAX_SEQUENCE+1] )
 {
     int i = 0;
-#if USE_AVXSYNTH
-    const char *all_purpose[] = { "FFVideoSource", 0 };
-#else
+#if SYS_WINDOWS || SYS_CYGWIN
     const char *all_purpose[] = { "FFmpegSource2", "DSS2", "DirectShowSource", 0 };
     if( !strcasecmp( filename_ext, "avi" ) )
         filter[i++] = "AVISource";
@@ -220,6 +193,8 @@ static void avs_build_filter_sequence( char *filename_ext, const char *filter[AV
         filter[i++] = "MPEG2Source";
     if( !strcasecmp( filename_ext, "dga" ) )
         filter[i++] = "AVCSource";
+#else
+    const char *all_purpose[] = { "FFVideoSource", 0 };
 #endif
     for( int j = 0; all_purpose[j] && i < AVS_MAX_SEQUENCE; j++ )
         filter[i++] = all_purpose[j];
@@ -236,13 +211,6 @@ static AVS_Value update_clip( avs_hnd_t *h, const AVS_VideoInfo **vi, AVS_Value 
 
 static float get_avs_version( avs_hnd_t *h )
 {
-/* AvxSynth has its version defined starting at 4.0, even though it's based on
-   AviSynth 2.5.8. This is troublesome for get_avs_version and working around
-   the new colorspaces in 2.6.  So if AvxSynth is detected, explicitly define
-   the version as 2.58. */
-#if USE_AVXSYNTH
-    return 2.58f;
-#else
     FAIL_IF_ERROR( !h->func.avs_function_exists( h->env, "VersionNumber" ), "VersionNumber does not exist\n" );
     AVS_Value ver = h->func.avs_invoke( h->env, "VersionNumber", avs_new_value_array( NULL, 0 ), NULL );
     FAIL_IF_ERROR( avs_is_error( ver ), "unable to determine avisynth version: %s\n", avs_as_error( ver ) );
@@ -250,7 +218,6 @@ static float get_avs_version( avs_hnd_t *h )
     float ret = avs_as_float( ver );
     h->func.avs_release_value( ver );
     return ret;
-#endif
 }
 
 #ifdef _WIN32
@@ -502,24 +469,24 @@ static int open_file( char *psz_filename, hnd_t *p_handle, video_info_t *info, c
         info->csp = X264_CSP_BGR | X264_CSP_VFLIP;
     else if( AVS_IS_YUV444P16( vi ) )
         info->csp = X264_CSP_I444 | X264_CSP_HIGH_DEPTH;
-    else if( avs_is_yv24( vi ) )
+    else if( AVS_IS_YV24( vi ) )
         info->csp = X264_CSP_I444;
     else if( AVS_IS_YUV422P16( vi ) )
         info->csp = X264_CSP_I422 | X264_CSP_HIGH_DEPTH;
-    else if( avs_is_yv16( vi ) )
+    else if( AVS_IS_YV16( vi ) )
         info->csp = X264_CSP_I422;
     else if( AVS_IS_YUV420P16( vi ) )
         info->csp = X264_CSP_I420 | X264_CSP_HIGH_DEPTH;
-    else if( avs_is_yv12( vi ) )
+    else if( AVS_IS_YV12( vi ) )
         info->csp = X264_CSP_I420;
     else if( AVS_IS_Y16( vi ) )
         info->csp = X264_CSP_I400 | X264_CSP_HIGH_DEPTH;
-    else if( avs_is_y8( vi ) )
+    else if( AVS_IS_Y8( vi ) )
         info->csp = X264_CSP_I400;
     else if( avs_is_yuy2( vi ) )
         info->csp = X264_CSP_YUYV;
 #if HAVE_SWSCALE
-    else if( avs_is_yv411( vi ) )
+    else if( AVS_IS_YV411( vi ) )
         info->csp = AV_PIX_FMT_YUV411P | X264_CSP_OTHER;
 #endif
     else
@@ -563,8 +530,8 @@ static int read_frame( cli_pic_t *pic, hnd_t handle, int i_frame )
     for( int i = 0; i < pic->img.planes; i++ )
     {
         /* explicitly cast away the const attribute to avoid a warning */
-        pic->img.plane[i] = (uint8_t*)avs_get_read_ptr_p( frm, plane[i] );
-        pic->img.stride[i] = avs_get_pitch_p( frm, plane[i] );
+        pic->img.plane[i] = (uint8_t*)AVS_GET_READ_PTR_P( frm, plane[i] );
+        pic->img.stride[i] = AVS_GET_PITCH_P( frm, plane[i] );
     }
     return 0;
 }

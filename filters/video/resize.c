@@ -1,7 +1,7 @@
 /*****************************************************************************
  * resize.c: resize video filter
  *****************************************************************************
- * Copyright (C) 2010-2021 x264 project
+ * Copyright (C) 2010-2022 x264 project
  *
  * Authors: Steven Walters <kemuri9@gmail.com>
  *
@@ -128,7 +128,7 @@ static uint32_t convert_method_to_flag( const char *name )
         flag = SWS_AREA;
     else if( !strcasecmp( name, "bicublin" ) )
         flag = SWS_BICUBLIN;
-    else if( !strcasecmp( name, "guass" ) )
+    else if( !strcasecmp( name, "gauss" ) )
         flag = SWS_GAUSS;
     else if( !strcasecmp( name, "sinc" ) )
         flag = SWS_SINC;

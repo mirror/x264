@@ -1,7 +1,7 @@
 /*****************************************************************************
  * checkasm.c: assembly check tool
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -47,6 +47,14 @@ static uint8_t *buf3, *buf4;
 static pixel *pbuf1, *pbuf2;
 /* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
 static pixel *pbuf3, *pbuf4;
+
+#if BIT_DEPTH > 8
+#define FMT_PIXEL "%04x"
+#else
+#define FMT_PIXEL "%02x"
+#endif
+
+#define X264_ISDIGIT(x) isdigit((unsigned char)(x))
 
 static int quiet = 0;
 
@@ -142,8 +150,8 @@ static int cmp_bench( const void *a, const void *b )
     {
         if( !*sa && !*sb )
             return 0;
-        if( isdigit( *sa ) && isdigit( *sb ) && isdigit( sa[1] ) != isdigit( sb[1] ) )
-            return isdigit( sa[1] ) - isdigit( sb[1] );
+        if( X264_ISDIGIT( *sa ) && X264_ISDIGIT( *sb ) && X264_ISDIGIT( sa[1] ) != X264_ISDIGIT( sb[1] ) )
+            return X264_ISDIGIT( sa[1] ) - X264_ISDIGIT( sb[1] );
         if( *sa != *sb )
             return *sa - *sb;
     }
@@ -262,7 +270,7 @@ intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checka
  * assembly function through x264_checkasm_call with added dummy arguments which forces all
  * real arguments to be passed on the stack and not in registers. For 32-bit argument the
  * upper half of the 64-bit register location on the stack will now contain junk. Note that
- * this is dependant on compiler behaviour and that interrupts etc. at the wrong time may
+ * this is dependent on compiler behaviour and that interrupts etc. at the wrong time may
  * overwrite the junk written to the stack so there's no guarantee that it will always
  * detect all functions that assumes zero-extension.
  */
@@ -651,10 +659,10 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
                 ok = 0; \
                 fprintf( stderr, #name" [FAILED]\n" ); \
                 for( int j=0; j<16; j++ ) \
-                    fprintf( stderr, "%02x ", fdec1[(j&3)+(j>>2)*FDEC_STRIDE] ); \
+                    fprintf( stderr, FMT_PIXEL" ", fdec1[(j&3)+(j>>2)*FDEC_STRIDE] ); \
                 fprintf( stderr, "\n" ); \
                 for( int j=0; j<16; j++ ) \
-                    fprintf( stderr, "%02x ", fdec2[(j&3)+(j>>2)*FDEC_STRIDE] ); \
+                    fprintf( stderr, FMT_PIXEL" ", fdec2[(j&3)+(j>>2)*FDEC_STRIDE] ); \
                 fprintf( stderr, "\n" ); \
                 break; \
             } \
@@ -711,14 +719,14 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
                 for( int j=0; j<8; j++ ) \
                 { \
                     for( int k=0; k<8; k++ ) \
-                        fprintf( stderr, "%02x ", fdec1[k+j*FDEC_STRIDE] ); \
+                        fprintf( stderr, FMT_PIXEL" ", fdec1[k+j*FDEC_STRIDE] ); \
                     fprintf( stderr, "\n" ); \
                 } \
                 fprintf( stderr, "\n" ); \
                 for( int j=0; j<8; j++ ) \
                 { \
                     for( int k=0; k<8; k++ ) \
-                        fprintf( stderr, "%02x ", fdec2[k+j*FDEC_STRIDE] ); \
+                        fprintf( stderr, FMT_PIXEL" ", fdec2[k+j*FDEC_STRIDE] ); \
                     fprintf( stderr, "\n" ); \
                 } \
                 fprintf( stderr, "\n" ); \
@@ -840,14 +848,14 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
             if( mvn_c != mvn_a || memcmp( mvs_c, mvs_a, mvn_c*sizeof(*mvs_c) ) )
             {
                 ok = 0;
-                printf( "thresh: %d\n", thresh );
-                printf( "c%d: ", i&3 );
+                fprintf( stderr, "thresh: %d\n", thresh );
+                fprintf( stderr, "c%d: ", i&3 );
                 for( int j = 0; j < mvn_c; j++ )
-                    printf( "%d ", mvs_c[j] );
-                printf( "\na%d: ", i&3 );
+                    fprintf( stderr, "%d ", mvs_c[j] );
+                fprintf( stderr, "\na%d: ", i&3 );
                 for( int j = 0; j < mvn_a; j++ )
-                    printf( "%d ", mvs_a[j] );
-                printf( "\n\n" );
+                    fprintf( stderr, "%d ", mvs_a[j] );
+                fprintf( stderr, "\n\n" );
             }
         }
     report( "esa ads:" );
@@ -881,7 +889,7 @@ static int check_dct( uint32_t cpu_ref, uint32_t cpu_new )
     h->param.analyse.i_luma_deadzone[0] = 0;
     h->param.analyse.i_luma_deadzone[1] = 0;
     h->param.analyse.b_transform_8x8 = 1;
-    for( int i = 0; i < 6; i++ )
+    for( int i = 0; i < 8; i++ )
         h->sps->scaling_list[i] = x264_cqm_flat16;
     x264_cqm_init( h );
     x264_quant_init( h, 0, &qf );
@@ -923,11 +931,11 @@ static int check_dct( uint32_t cpu_ref, uint32_t cpu_new )
                 ok = 0; \
                 fprintf( stderr, #name " [FAILED]\n" ); \
                 for( int k = 0; k < size; k++ )\
-                    printf( "%d ", ((dctcoef*)t1)[k] );\
-                printf("\n");\
+                    fprintf( stderr, "%d ", ((dctcoef*)t1)[k] );\
+                fprintf( stderr, "\n" );\
                 for( int k = 0; k < size; k++ )\
-                    printf( "%d ", ((dctcoef*)t2)[k] );\
-                printf("\n");\
+                    fprintf( stderr, "%d ", ((dctcoef*)t2)[k] );\
+                fprintf( stderr, "\n" );\
                 break; \
             } \
             call_c( dct_c.name, t1, enc, dec ); \
@@ -1160,7 +1168,9 @@ static int check_dct( uint32_t cpu_ref, uint32_t cpu_new )
             call_a( zigzag_asm[interlace].name, t2, dct, buf4 ); \
             if( memcmp( t1, t2, size*sizeof(dctcoef) ) || memcmp( buf3, buf4, 10 ) ) \
             { \
-                ok = 0; printf("%d: %d %d %d %d\n%d %d %d %d\n\n",memcmp( t1, t2, size*sizeof(dctcoef) ),buf3[0], buf3[1], buf3[8], buf3[9], buf4[0], buf4[1], buf4[8], buf4[9]);break;\
+                ok = 0; \
+                fprintf( stderr, "%d: %d %d %d %d\n%d %d %d %d\n\n", memcmp( t1, t2, size*sizeof(dctcoef) ), buf3[0], buf3[1], buf3[8], buf3[9], buf4[0], buf4[1], buf4[8], buf4[9] ); \
+                break; \
             } \
         } \
     }
@@ -1668,11 +1678,11 @@ static int check_mc( uint32_t cpu_ref, uint32_t cpu_new )
                     ok = 0;
                     fprintf( stderr, "hpel filter differs at plane %c line %d\n", "hvc"[i], j );
                     for( int k = 0; k < 48; k++ )
-                        printf( "%02x%s", dstc[i][j*64+k], (k+1)&3 ? "" : " " );
-                    printf( "\n" );
+                        fprintf( stderr, FMT_PIXEL"%s", dstc[i][j*64+k], (k+1)&3 ? "" : " " );
+                    fprintf( stderr, "\n" );
                     for( int k = 0; k < 48; k++ )
-                        printf( "%02x%s", dsta[i][j*64+k], (k+1)&3 ? "" : " " );
-                    printf( "\n" );
+                        fprintf( stderr, FMT_PIXEL"%s", dsta[i][j*64+k], (k+1)&3 ? "" : " " );
+                    fprintf( stderr, "\n" );
                     break;
                 }
         report( "hpel filter :" );
@@ -1698,11 +1708,11 @@ static int check_mc( uint32_t cpu_ref, uint32_t cpu_new )
                         ok = 0;
                         fprintf( stderr, "frame_init_lowres differs at plane %d line %d\n", j, i );
                         for( int k = 0; k < w; k++ )
-                            printf( "%d ", dstc[j][k+i*stride_lowres] );
-                        printf( "\n" );
+                            fprintf( stderr, "%d ", dstc[j][k+i*stride_lowres] );
+                        fprintf( stderr, "\n" );
                         for( int k = 0; k < w; k++ )
-                            printf( "%d ", dsta[j][k+i*stride_lowres] );
-                        printf( "\n" );
+                            fprintf( stderr, "%d ", dsta[j][k+i*stride_lowres] );
+                        fprintf( stderr, "\n" );
                         break;
                     }
             }
@@ -1885,7 +1895,7 @@ static int check_mc( uint32_t cpu_ref, uint32_t cpu_new )
         for( size_t size = 16; size < 512; size += 16 )
         {
             for( size_t i = 0; i < size; i++ )
-                buf1[i] = rand();
+                buf1[i] = (uint8_t)rand();
             memset( buf4-1, 0xAA, size + 2 );
             call_c( mc_c.memcpy_aligned, buf3, buf1, size );
             call_a( mc_a.memcpy_aligned, buf4, buf1, size );
@@ -2019,10 +2029,10 @@ static int check_deblock( uint32_t cpu_ref, uint32_t cpu_new )
                         for( int l = 0; l < 4; l++ )
                         {
                             for( int m = 0; m < 4; m++ )
-                                printf("%d ",bs[j][k][l][m]);
-                            printf("\n");
+                                fprintf( stderr, "%d ",bs[j][k][l][m] );
+                            fprintf( stderr, "\n" );
                         }
-                    printf("\n");
+                    fprintf( stderr, "\n" );
                 }
                 break;
             }
@@ -2054,30 +2064,65 @@ static int check_quant( uint32_t cpu_ref, uint32_t cpu_new )
     h->chroma_qp_table = i_chroma_qp_table + 12;
     h->param.analyse.b_transform_8x8 = 1;
 
-    for( int i_cqm = 0; i_cqm < 4; i_cqm++ )
+    static const uint8_t cqm_test4[16] =
+    {
+        6,4,6,4,
+        4,3,4,3,
+        6,4,6,4,
+        4,3,4,3
+    };
+    static const uint8_t cqm_test8[64] =
+    {
+        3,3,4,3,3,3,4,3,
+        3,3,4,3,3,3,4,3,
+        4,4,5,4,4,4,5,4,
+        3,3,4,3,3,3,4,3,
+        3,3,4,3,3,3,4,3,
+        3,3,4,3,3,3,4,3,
+        4,4,5,4,4,4,5,4,
+        3,3,4,3,3,3,4,3
+    };
+
+    for( int i_cqm = 0; i_cqm < 6; i_cqm++ )
     {
         if( i_cqm == 0 )
         {
-            for( int i = 0; i < 6; i++ )
+            for( int i = 0; i < 8; i++ )
                 h->sps->scaling_list[i] = x264_cqm_flat16;
             h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_FLAT;
         }
         else if( i_cqm == 1 )
         {
-            for( int i = 0; i < 6; i++ )
+            for( int i = 0; i < 8; i++ )
                 h->sps->scaling_list[i] = x264_cqm_jvt[i];
             h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_JVT;
+        }
+        else if( i_cqm == 2 )
+        {
+            for( int i = 0; i < 4; i++ )
+                h->sps->scaling_list[i] = cqm_test4;
+            for( int i = 4; i < 8; i++ )
+                h->sps->scaling_list[i] = x264_cqm_flat16;
+            h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_CUSTOM;
+        }
+        else if( i_cqm == 3 )
+        {
+            for( int i = 0; i < 4; i++ )
+                h->sps->scaling_list[i] = x264_cqm_flat16;
+            for( int i = 4; i < 8; i++ )
+                h->sps->scaling_list[i] = cqm_test8;
+            h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_CUSTOM;
         }
         else
         {
             int max_scale = BIT_DEPTH < 10 ? 255 : 228;
-            if( i_cqm == 2 )
+            if( i_cqm == 4 )
                 for( int i = 0; i < 64; i++ )
                     cqm_buf[i] = 10 + rand() % (max_scale - 9);
             else
                 for( int i = 0; i < 64; i++ )
                     cqm_buf[i] = 1;
-            for( int i = 0; i < 6; i++ )
+            for( int i = 0; i < 8; i++ )
                 h->sps->scaling_list[i] = cqm_buf;
             h->param.i_cqm_preset = h->sps->i_cqm_preset = X264_CQM_CUSTOM;
         }
@@ -2094,8 +2139,8 @@ static int check_quant( uint32_t cpu_ref, uint32_t cpu_new )
             static const int scale1d[8] = {32,31,24,31,32,31,24,31}; \
             for( int i = 0; i < max; i++ ) \
             { \
-                unsigned int scale = (255*scale1d[(i>>3)&7]*scale1d[i&7])/16; \
-                dct1[i] = dct2[i] = (j>>(i>>6))&1 ? (rand()%(2*scale+1))-scale : 0; \
+                int scale = (PIXEL_MAX*scale1d[(i>>3)&7]*scale1d[i&7])/16; \
+                dct1[i] = dct2[i] = (j>>(i>>6))&1 ? (rand30()%(2*scale+1))-scale : 0; \
             } \
         }
 
@@ -2104,8 +2149,8 @@ static int check_quant( uint32_t cpu_ref, uint32_t cpu_new )
             static const int scale1d[4] = {4,6,4,6}; \
             for( int i = 0; i < max; i++ ) \
             { \
-                unsigned int scale = 255*scale1d[(i>>2)&3]*scale1d[i&3]; \
-                dct1[i] = dct2[i] = (j>>(i>>4))&1 ? (rand()%(2*scale+1))-scale : 0; \
+                int scale = PIXEL_MAX*scale1d[(i>>2)&3]*scale1d[i&3]; \
+                dct1[i] = dct2[i] = (j>>(i>>4))&1 ? (rand30()%(2*scale+1))-scale : 0; \
             } \
         }
 
@@ -2503,25 +2548,25 @@ static int check_intra( uint32_t cpu_ref, uint32_t cpu_new )
                 if( ip_c.name == (void *)ip_c.predict_8x8 )\
                 {\
                     for( int k = -1; k < 16; k++ )\
-                        printf( "%2x ", edge[16+k] );\
-                    printf( "\n" );\
+                        fprintf( stderr, FMT_PIXEL" ", edge[16+k] );\
+                    fprintf( stderr, "\n" );\
                 }\
                 for( int j = 0; j < h; j++ )\
                 {\
                     if( ip_c.name == (void *)ip_c.predict_8x8 )\
-                        printf( "%2x ", edge[14-j] );\
+                        fprintf( stderr, FMT_PIXEL" ", edge[14-j] );\
                     for( int k = 0; k < w; k++ )\
-                        printf( "%2x ", pbuf4[48+k+j*FDEC_STRIDE] );\
-                    printf( "\n" );\
+                        fprintf( stderr, FMT_PIXEL" ", pbuf4[48+k+j*FDEC_STRIDE] );\
+                    fprintf( stderr, "\n" );\
                 }\
-                printf( "\n" );\
+                fprintf( stderr, "\n" );\
                 for( int j = 0; j < h; j++ )\
                 {\
                     if( ip_c.name == (void *)ip_c.predict_8x8 )\
-                        printf( "   " );\
+                        fprintf( stderr, "   " );\
                     for( int k = 0; k < w; k++ )\
-                        printf( "%2x ", pbuf3[48+k+j*FDEC_STRIDE] );\
-                    printf( "\n" );\
+                        fprintf( stderr, FMT_PIXEL" ", pbuf3[48+k+j*FDEC_STRIDE] );\
+                    fprintf( stderr, "\n" );\
                 }\
                 break;\
             }\
@@ -2772,7 +2817,7 @@ static int check_bitstream( uint32_t cpu_ref, uint32_t cpu_new )
             int test_size = i < 10 ? i+1 : rand() & 0x3fff;
             /* Test 8 different probability distributions of zeros */
             for( int j = 0; j < test_size+32; j++ )
-                input[j] = (rand()&((1 << ((i&7)+1)) - 1)) * rand();
+                input[j] = (uint8_t)((rand()&((1 << ((i&7)+1)) - 1)) * rand());
             uint8_t *end_c = (uint8_t*)call_c1( bs_c.nal_escape, output1, input, input+test_size );
             uint8_t *end_a = (uint8_t*)call_a1( bs_a.nal_escape, output2, input, input+test_size );
             int size_c = end_c-output1;
@@ -2785,7 +2830,7 @@ static int check_bitstream( uint32_t cpu_ref, uint32_t cpu_new )
             }
         }
         for( int j = 0; j < size+32; j++ )
-            input[j] = rand();
+            input[j] = (uint8_t)rand();
         call_c2( bs_c.nal_escape, output1, input, input+size );
         call_a2( bs_a.nal_escape, output2, input, input+size );
         free(input);
@@ -2958,7 +3003,7 @@ REALIGN_STACK int main( int argc, char **argv )
         argv++;
     }
 
-    int seed = ( argc > 1 ) ? atoi(argv[1]) : x264_mdate();
+    unsigned seed = ( argc > 1 ) ? strtoul(argv[1], NULL, 0) : (unsigned)x264_mdate();
     fprintf( stderr, "x264: using random seed %u\n", seed );
     srand( seed );
 

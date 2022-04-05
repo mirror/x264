@@ -1,7 +1,7 @@
 /*****************************************************************************
  * matroska_ebml.c: matroska muxer utilities
  *****************************************************************************
- * Copyright (C) 2005-2021 x264 project
+ * Copyright (C) 2005-2022 x264 project
  *
  * Authors: Mike Matsnev <mike@haali.su>
  *
@@ -60,7 +60,7 @@ struct mk_writer
     int64_t cluster_tc_scaled;
     int64_t frame_tc, max_frame_tc;
 
-    char wrote_header, in_frame, keyframe, skippable;
+    int8_t wrote_header, in_frame, keyframe, skippable;
 };
 
 static mk_context *mk_create_context( mk_writer *w, mk_context *parent, unsigned id )
@@ -111,7 +111,7 @@ static int mk_append_context_data( mk_context *c, const void *data, unsigned siz
         c->d_max = dn;
     }
 
-    memcpy( (char*)c->data + c->d_cur, data, size );
+    memcpy( (uint8_t*)c->data + c->d_cur, data, size );
 
     c->d_cur = ns;
 
@@ -120,7 +120,7 @@ static int mk_append_context_data( mk_context *c, const void *data, unsigned siz
 
 static int mk_write_id( mk_context *c, unsigned id )
 {
-    unsigned char c_id[4] = { id >> 24, id >> 16, id >> 8, id };
+    uint8_t c_id[4] = { id >> 24, id >> 16, id >> 8, id };
 
     if( c_id[0] )
         return mk_append_context_data( c, c_id, 4 );
@@ -133,7 +133,7 @@ static int mk_write_id( mk_context *c, unsigned id )
 
 static int mk_write_size( mk_context *c, unsigned size )
 {
-    unsigned char c_size[5] = { 0x08, size >> 24, size >> 16, size >> 8, size };
+    uint8_t c_size[5] = { 0x08, size >> 24, size >> 16, size >> 8, size };
 
     if( size < 0x7f )
     {
@@ -160,7 +160,7 @@ static int mk_write_size( mk_context *c, unsigned size )
 
 static int mk_flush_context_id( mk_context *c )
 {
-    unsigned char ff = 0xff;
+    uint8_t ff = 0xff;
 
     if( !c->id )
         return 0;
@@ -249,9 +249,9 @@ static int mk_write_bin( mk_context *c, unsigned id, const void *data, unsigned 
     return 0;
 }
 
-static int mk_write_uint( mk_context *c, unsigned id, int64_t ui )
+static int mk_write_uint( mk_context *c, unsigned id, uint64_t ui )
 {
-    unsigned char c_ui[8] = { ui >> 56, ui >> 48, ui >> 40, ui >> 32, ui >> 24, ui >> 16, ui >> 8, ui };
+    uint8_t c_ui[8] = { ui >> 56, ui >> 48, ui >> 40, ui >> 32, ui >> 24, ui >> 16, ui >> 8, ui };
     unsigned i = 0;
 
     CHECK( mk_write_id( c, id ) );
@@ -267,9 +267,9 @@ static int mk_write_float_raw( mk_context *c, float f )
     union
     {
         float f;
-        unsigned u;
+        uint32_t u;
     } u;
-    unsigned char c_f[4];
+    uint8_t c_f[4];
 
     u.f = f;
     c_f[0] = u.u >> 24;
@@ -408,7 +408,7 @@ static int mk_flush_frame( mk_writer *w )
 {
     int64_t delta;
     unsigned fsize;
-    unsigned char c_delta_flags[3];
+    uint8_t c_delta_flags[3];
 
     if( !w->in_frame )
         return 0;
@@ -435,8 +435,8 @@ static int mk_flush_frame( mk_writer *w )
     CHECK( mk_write_size( w->cluster, fsize + 4 ) ); // Size
     CHECK( mk_write_size( w->cluster, 1 ) ); // TrackNumber
 
-    c_delta_flags[0] = delta >> 8;
-    c_delta_flags[1] = delta;
+    c_delta_flags[0] = (uint8_t)(delta >> 8);
+    c_delta_flags[1] = (uint8_t)delta;
     c_delta_flags[2] = (w->keyframe << 7) | w->skippable;
     CHECK( mk_append_context_data( w->cluster, c_delta_flags, 3 ) ); // Timecode, Flags
     if( w->frame )

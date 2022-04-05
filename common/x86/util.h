@@ -1,7 +1,7 @@
 /*****************************************************************************
  * util.h: x86 inline asm
  *****************************************************************************
- * Copyright (C) 2008-2021 x264 project
+ * Copyright (C) 2008-2022 x264 project
  *
  * Authors: Fiona Glaser <fiona@x264.com>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -121,7 +121,7 @@ static ALWAYS_INLINE uint16_t x264_cabac_mvd_sum_mmx2(uint8_t *mvdleft, uint8_t 
          "m"(pb_2),"m"(pb_32),"m"(pb_33)
         :"mm0", "mm1", "mm2"
     );
-    return amvd;
+    return (uint16_t)amvd;
 }
 
 #define x264_predictor_clip x264_predictor_clip_mmx2

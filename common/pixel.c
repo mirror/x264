@@ -1,7 +1,7 @@
 /*****************************************************************************
  * pixel.c: pixel metrics
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -267,11 +267,11 @@ static NOINLINE int x264_pixel_satd_4x4( pixel *pix1, intptr_t i_pix1, pixel *pi
     sum2_t sum = 0;
     for( int i = 0; i < 4; i++, pix1 += i_pix1, pix2 += i_pix2 )
     {
-        a0 = pix1[0] - pix2[0];
-        a1 = pix1[1] - pix2[1];
+        a0 = (sum2_t)(pix1[0] - pix2[0]);
+        a1 = (sum2_t)(pix1[1] - pix2[1]);
         b0 = (a0+a1) + ((a0-a1)<<BITS_PER_SUM);
-        a2 = pix1[2] - pix2[2];
-        a3 = pix1[3] - pix2[3];
+        a2 = (sum2_t)(pix1[2] - pix2[2]);
+        a3 = (sum2_t)(pix1[3] - pix2[3]);
         b1 = (a2+a3) + ((a2-a3)<<BITS_PER_SUM);
         tmp[i][0] = b0 + b1;
         tmp[i][1] = b0 - b1;
@@ -292,10 +292,10 @@ static NOINLINE int x264_pixel_satd_8x4( pixel *pix1, intptr_t i_pix1, pixel *pi
     sum2_t sum = 0;
     for( int i = 0; i < 4; i++, pix1 += i_pix1, pix2 += i_pix2 )
     {
-        a0 = (pix1[0] - pix2[0]) + ((sum2_t)(pix1[4] - pix2[4]) << BITS_PER_SUM);
-        a1 = (pix1[1] - pix2[1]) + ((sum2_t)(pix1[5] - pix2[5]) << BITS_PER_SUM);
-        a2 = (pix1[2] - pix2[2]) + ((sum2_t)(pix1[6] - pix2[6]) << BITS_PER_SUM);
-        a3 = (pix1[3] - pix2[3]) + ((sum2_t)(pix1[7] - pix2[7]) << BITS_PER_SUM);
+        a0 = (sum2_t)(pix1[0] - pix2[0]) + ((sum2_t)(pix1[4] - pix2[4]) << BITS_PER_SUM);
+        a1 = (sum2_t)(pix1[1] - pix2[1]) + ((sum2_t)(pix1[5] - pix2[5]) << BITS_PER_SUM);
+        a2 = (sum2_t)(pix1[2] - pix2[2]) + ((sum2_t)(pix1[6] - pix2[6]) << BITS_PER_SUM);
+        a3 = (sum2_t)(pix1[3] - pix2[3]) + ((sum2_t)(pix1[7] - pix2[7]) << BITS_PER_SUM);
         HADAMARD4( tmp[i][0], tmp[i][1], tmp[i][2], tmp[i][3], a0,a1,a2,a3 );
     }
     for( int i = 0; i < 4; i++ )
@@ -336,17 +336,17 @@ static NOINLINE int sa8d_8x8( pixel *pix1, intptr_t i_pix1, pixel *pix2, intptr_
     sum2_t sum = 0;
     for( int i = 0; i < 8; i++, pix1 += i_pix1, pix2 += i_pix2 )
     {
-        a0 = pix1[0] - pix2[0];
-        a1 = pix1[1] - pix2[1];
+        a0 = (sum2_t)(pix1[0] - pix2[0]);
+        a1 = (sum2_t)(pix1[1] - pix2[1]);
         b0 = (a0+a1) + ((a0-a1)<<BITS_PER_SUM);
-        a2 = pix1[2] - pix2[2];
-        a3 = pix1[3] - pix2[3];
+        a2 = (sum2_t)(pix1[2] - pix2[2]);
+        a3 = (sum2_t)(pix1[3] - pix2[3]);
         b1 = (a2+a3) + ((a2-a3)<<BITS_PER_SUM);
-        a4 = pix1[4] - pix2[4];
-        a5 = pix1[5] - pix2[5];
+        a4 = (sum2_t)(pix1[4] - pix2[4]);
+        a5 = (sum2_t)(pix1[5] - pix2[5]);
         b2 = (a4+a5) + ((a4-a5)<<BITS_PER_SUM);
-        a6 = pix1[6] - pix2[6];
-        a7 = pix1[7] - pix2[7];
+        a6 = (sum2_t)(pix1[6] - pix2[6]);
+        a7 = (sum2_t)(pix1[7] - pix2[7]);
         b3 = (a6+a7) + ((a6-a7)<<BITS_PER_SUM);
         HADAMARD4( tmp[i][0], tmp[i][1], tmp[i][2], tmp[i][3], b0,b1,b2,b3 );
     }

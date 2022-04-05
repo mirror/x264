@@ -1,7 +1,7 @@
 /*****************************************************************************
  * osdep.h: platform-specific code
  *****************************************************************************
- * Copyright (C) 2007-2021 x264 project
+ * Copyright (C) 2007-2022 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>
@@ -289,7 +289,7 @@ static inline int x264_is_regular_file( FILE *filehandle )
 #define ALIGNED_8( var )  DECLARE_ALIGNED( var, 8 )
 #define ALIGNED_16( var ) DECLARE_ALIGNED( var, 16 )
 
-// ARM compiliers don't reliably align stack variables
+// ARM compilers don't reliably align stack variables
 // - EABI requires only 8 byte stack alignment to be maintained
 // - gcc can't align stack variables to more even if the stack were to be correctly aligned outside the function
 // - armcc can't either, but is nice enough to actually tell you so
@@ -496,7 +496,7 @@ static ALWAYS_INLINE uintptr_t endian_fix( uintptr_t x )
 }
 static ALWAYS_INLINE uint16_t endian_fix16( uint16_t x )
 {
-    return (x<<8)|(x>>8);
+    return (uint16_t)((x<<8)|(x>>8));
 }
 #endif
 
@@ -550,31 +550,6 @@ static ALWAYS_INLINE void x264_prefetch( void *p )
 #define x264_prefetch(x) __builtin_prefetch(x)
 #else
 #define x264_prefetch(x)
-#endif
-
-#if HAVE_POSIXTHREAD
-#if SYS_WINDOWS
-#define x264_lower_thread_priority(p)\
-{\
-    x264_pthread_t handle = pthread_self();\
-    struct sched_param sp;\
-    int policy = SCHED_OTHER;\
-    pthread_getschedparam( handle, &policy, &sp );\
-    sp.sched_priority -= p;\
-    pthread_setschedparam( handle, policy, &sp );\
-}
-#elif SYS_HAIKU
-#include <OS.h>
-#define x264_lower_thread_priority(p)\
-    { UNUSED status_t nice_ret = set_thread_priority( find_thread( NULL ), B_LOW_PRIORITY ); }
-#else
-#include <unistd.h>
-#define x264_lower_thread_priority(p) { UNUSED int nice_ret = nice(p); }
-#endif /* SYS_WINDOWS */
-#elif HAVE_WIN32THREAD
-#define x264_lower_thread_priority(p) SetThreadPriority( GetCurrentThread(), X264_MAX( -2, -p ) )
-#else
-#define x264_lower_thread_priority(p)
 #endif
 
 #endif /* X264_OSDEP_H */
