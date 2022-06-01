@@ -106,7 +106,7 @@ build-debian-aarch64:
         curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 ${_CONTRIB_URL}${CONTRIB_NAME}
         bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
         tar xvf vlc-contrib-${_TRIPLET}-latest.tar
-        sed -i.bak -e "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
+        perl -pi -e "s'@@CONTRIB_PREFIX@@'$(sed -e "s/'/\\\\'/g" <<< "${LOCAL_INSTALL_DIR}")'g" ${PKG_CONFIG_LIBDIR}/*.pc
         git clone --depth 1 --branch master https://github.com/l-smash/l-smash.git lsmash
         cd lsmash
         ./configure --prefix="${LOCAL_INSTALL_DIR}" --target-os="${_TRIPLET}" --cross-prefix="${_TRIPLET}-"
@@ -154,7 +154,7 @@ build-llvm-mingw-aarch64:
         curl -f -o vlc-contrib-${_TRIPLET}-latest.tar.bz2 ${_CONTRIB_URL}${CONTRIB_NAME}
         bunzip2 vlc-contrib-${_TRIPLET}-latest.tar.bz2
         tar xvf vlc-contrib-${_TRIPLET}-latest.tar
-        sed -i.bak -e "s#@@CONTRIB_PREFIX@@#${LOCAL_INSTALL_DIR}#g" ${PKG_CONFIG_LIBDIR}/*.pc
+        perl -pi -e "s'@@CONTRIB_PREFIX@@'$(sed -e "s/'/\\\\'/g" <<< "${LOCAL_INSTALL_DIR}")'g" ${PKG_CONFIG_LIBDIR}/*.pc
         git clone --depth 1 --branch master https://github.com/l-smash/l-smash.git lsmash
         cd lsmash
         ./configure --prefix="${LOCAL_INSTALL_DIR}" --target-os="${_TRIPLET}" --extra-cflags="${_XCFLAGS}" --extra-ldflags="${_XLDFLAGS}"
