@@ -129,12 +129,25 @@ endif
 
 # AltiVec optims
 ifeq ($(SYS_ARCH),PPC)
+SRCASM_X += common/ppc/dct-a.S \
+            common/ppc/deblock-a.S \
+            common/ppc/mc-a.S \
+            common/ppc/pixel-a.S \
+            common/ppc/predict-a.S \
+            common/ppc/quant-a.S
 SRCS_X += common/ppc/dct.c \
           common/ppc/deblock.c \
           common/ppc/mc.c \
           common/ppc/pixel.c \
           common/ppc/predict.c \
           common/ppc/quant.c
+
+ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
+OBJASM += $(SRCASM_X:%.S=%-8.o)
+endif
+ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
+OBJASM += $(SRCASM_X:%.S=%-10.o)
+endif
 endif
 
 # NEON optims

@@ -171,6 +171,8 @@ typedef struct x264_nal_t
 
 /* PowerPC */
 #define X264_CPU_ALTIVEC         0x0000001U
+#define X264_CPU_PPC64           0x0000002U
+#define X264_CPU_ARCH_2_07       0x0000004U
 
 /* ARM and AArch64 */
 #define X264_CPU_ARMV6           0x0000001U

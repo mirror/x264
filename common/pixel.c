@@ -1501,10 +1501,7 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
 
 #endif // HIGH_BIT_DEPTH
 #if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC )
-    {
-        x264_pixel_init_altivec( pixf );
-    }
+    x264_pixel_init_altivec( cpu, pixf );
 #endif
 
     pixf->ads[PIXEL_8x16] =
