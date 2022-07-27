@@ -27,6 +27,18 @@
 #ifndef X264_TABLES_H
 #define X264_TABLES_H
 
+#ifdef __GNUC__
+#    define X264_GCC_VERSION_AT_LEAST(x,y) (__GNUC__ > (x) || __GNUC__ == (x) && __GNUC_MINOR__ >= (y))
+#else
+#    define X264_GCC_VERSION_AT_LEAST(x,y) 0
+#endif
+
+#if (X264_GCC_VERSION_AT_LEAST(4,0) || defined(__clang__)) && (defined(__ELF__) || defined(__MACH__))
+#    define attribute_visibility_hidden __attribute__((visibility("hidden")))
+#else
+#    define attribute_visibility_hidden
+#endif
+
 typedef struct
 {
     uint8_t i_bits;
@@ -67,8 +79,8 @@ extern const uint8_t x264_cqm_avci300_2160p_4iy[16];
 extern const uint8_t x264_cqm_avci300_2160p_4ic[16];
 extern const uint8_t x264_cqm_avci300_2160p_8iy[64];
 
-extern const uint8_t x264_decimate_table4[16];
-extern const uint8_t x264_decimate_table8[64];
+extern const uint8_t attribute_visibility_hidden x264_decimate_table4[16];
+extern const uint8_t attribute_visibility_hidden x264_decimate_table8[64];
 
 extern const uint32_t x264_dct4_weight_tab[16];
 extern const uint32_t x264_dct8_weight_tab[64];
@@ -77,10 +89,10 @@ extern const uint32_t x264_dct8_weight2_tab[64];
 
 extern const int8_t   x264_cabac_context_init_I[1024][2];
 extern const int8_t   x264_cabac_context_init_PB[3][1024][2];
-extern const uint8_t  x264_cabac_range_lps[64][4];
-extern const uint8_t  x264_cabac_transition[128][2];
-extern const uint8_t  x264_cabac_renorm_shift[64];
-extern const uint16_t x264_cabac_entropy[128];
+extern const uint8_t attribute_visibility_hidden  x264_cabac_range_lps[64][4];
+extern const uint8_t attribute_visibility_hidden  x264_cabac_transition[128][2];
+extern const uint8_t attribute_visibility_hidden  x264_cabac_renorm_shift[64];
+extern const uint16_t attribute_visibility_hidden x264_cabac_entropy[128];
 
 extern const uint8_t  x264_significant_coeff_flag_offset_8x8[2][64];
 extern const uint8_t  x264_last_coeff_flag_offset_8x8[63];
