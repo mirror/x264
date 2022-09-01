@@ -42,6 +42,7 @@ stages:
     _CONTRIB_URL: "https://artifacts.videolan.org/vlc/macos-x86_64/"
     _XCFLAGS: "-arch x86_64"
     _XLDFLAGS: "-arch x86_64"
+    _BIN_PATH: /Users/videolanci/sandbox/bin
 
 .variables-macos-arm64: &variables-macos-arm64
     _TRIPLET: "aarch64-apple-darwin19"
@@ -50,6 +51,7 @@ stages:
     _CONTRIB_URL: "https://artifacts.videolan.org/vlc/macos-arm64/"
     _XCFLAGS: "-arch arm64"
     _XLDFLAGS: "-arch arm64"
+    _BIN_PATH: /Users/videolanci/sandbox/bin
 
 .build:
     stage: build
@@ -147,6 +149,7 @@ build-llvm-mingw-aarch64:
     extends: .build
     script: |
         set -x
+        export PATH="${_BIN_PATH}:$PATH"
         LOCAL_INSTALL_DIR=`pwd`/${_TRIPLET}
         export PKG_CONFIG_LIBDIR=${LOCAL_INSTALL_DIR}/lib/pkgconfig
         curl -f -o vlc-contrib.txt ${_CONTRIB_URL}
