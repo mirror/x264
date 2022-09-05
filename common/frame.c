@@ -211,24 +211,25 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
             for( int j = 0; j <= !!h->param.i_bframe; j++ )
                 for( int i = 0; i <= h->param.i_bframe; i++ )
                 {
-                    PREALLOC( frame->lowres_mvs[j][i], 2*h->mb.i_mb_count*sizeof(int16_t) );
-                    PREALLOC( frame->lowres_mv_costs[j][i], h->mb.i_mb_count*sizeof(int) );
+                    PREALLOC( frame->lowres_mvs[j][i], 2*i_mb_count*sizeof(int16_t) );
+                    PREALLOC( frame->lowres_mv_costs[j][i], i_mb_count*sizeof(int) );
                 }
             PREALLOC( frame->i_propagate_cost, i_mb_count * sizeof(uint16_t) );
             for( int j = 0; j <= h->param.i_bframe+1; j++ )
                 for( int i = 0; i <= h->param.i_bframe+1; i++ )
                     PREALLOC( frame->lowres_costs[j][i], i_mb_count * sizeof(uint16_t) );
-
-            /* mbtree asm can overread the input buffers, make sure we don't read outside of allocated memory. */
-            prealloc_size += NATIVE_ALIGN;
         }
         if( h->param.rc.i_aq_mode )
         {
-            PREALLOC( frame->f_qp_offset, h->mb.i_mb_count * sizeof(float) );
-            PREALLOC( frame->f_qp_offset_aq, h->mb.i_mb_count * sizeof(float) );
+            PREALLOC( frame->f_qp_offset, i_mb_count * sizeof(float) );
+            PREALLOC( frame->f_qp_offset_aq, i_mb_count * sizeof(float) );
             if( h->frames.b_have_lowres )
-                PREALLOC( frame->i_inv_qscale_factor, (h->mb.i_mb_count+3) * sizeof(uint16_t) );
+                PREALLOC( frame->i_inv_qscale_factor, i_mb_count * sizeof(uint16_t) );
         }
+
+        /* mbtree asm can overread the input buffers, make sure we don't read outside of allocated memory. */
+        if( h->frames.b_have_lowres )
+            prealloc_size += NATIVE_ALIGN;
     }
 
     PREALLOC_END( frame->base );
@@ -281,14 +282,14 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
 
             for( int j = 0; j <= !!h->param.i_bframe; j++ )
                 for( int i = 0; i <= h->param.i_bframe; i++ )
-                    memset( frame->lowres_mvs[j][i], 0, 2*h->mb.i_mb_count*sizeof(int16_t) );
+                    memset( frame->lowres_mvs[j][i], 0, 2*i_mb_count*sizeof(int16_t) );
 
             frame->i_intra_cost = frame->lowres_costs[0][0];
-            memset( frame->i_intra_cost, -1, (i_mb_count+3) * sizeof(uint16_t) );
+            memset( frame->i_intra_cost, -1, i_mb_count * sizeof(uint16_t) );
 
             if( h->param.rc.i_aq_mode )
                 /* shouldn't really be initialized, just silences a valgrind false-positive in x264_mbtree_propagate_cost_sse2 */
-                memset( frame->i_inv_qscale_factor, 0, (h->mb.i_mb_count+3) * sizeof(uint16_t) );
+                memset( frame->i_inv_qscale_factor, 0, i_mb_count * sizeof(uint16_t) );
         }
     }
 
