@@ -242,12 +242,12 @@ cli: x264$(EXE)
 lib-static: $(LIBX264)
 lib-shared: $(SONAME)
 
-$(LIBX264): $(GENERATED) .depend $(OBJS) $(OBJASM)
+$(LIBX264): $(OBJS) $(OBJASM)
 	rm -f $(LIBX264)
 	$(AR)$@ $(OBJS) $(OBJASM)
 	$(if $(RANLIB), $(RANLIB) $@)
 
-$(SONAME): $(GENERATED) .depend $(OBJS) $(OBJASM) $(OBJSO)
+$(SONAME): $(OBJS) $(OBJASM) $(OBJSO)
 	$(LD)$@ $(OBJS) $(OBJASM) $(OBJSO) $(SOFLAGS) $(LDFLAGS)
 
 $(IMPLIBNAME): $(SONAME)
@@ -260,16 +260,16 @@ checkasm10: checkasm10$(EXE)
 example: example$(EXE)
 endif
 
-x264$(EXE): $(GENERATED) .depend $(OBJCLI) $(CLI_LIBX264)
+x264$(EXE): $(OBJCLI) $(CLI_LIBX264)
 	$(LD)$@ $(OBJCLI) $(CLI_LIBX264) $(LDFLAGSCLI) $(LDFLAGS)
 
-checkasm8$(EXE): $(GENERATED) .depend $(OBJCHK) $(OBJCHK_8) $(LIBX264)
+checkasm8$(EXE): $(OBJCHK) $(OBJCHK_8) $(LIBX264)
 	$(LD)$@ $(OBJCHK) $(OBJCHK_8) $(LIBX264) $(LDFLAGS)
 
-checkasm10$(EXE): $(GENERATED) .depend $(OBJCHK) $(OBJCHK_10) $(LIBX264)
+checkasm10$(EXE): $(OBJCHK) $(OBJCHK_10) $(LIBX264)
 	$(LD)$@ $(OBJCHK) $(OBJCHK_10) $(LIBX264) $(LDFLAGS)
 
-example$(EXE): $(GENERATED) .depend $(OBJEXAMPLE) $(LIBX264)
+example$(EXE): $(OBJEXAMPLE) $(LIBX264)
 	$(LD)$@ $(OBJEXAMPLE) $(LIBX264) $(LDFLAGS)
 
 $(OBJS) $(OBJSO): CFLAGS += $(CFLAGSSO)
@@ -316,7 +316,7 @@ $(OBJS) $(OBJASM) $(OBJSO) $(OBJCLI) $(OBJCHK) $(OBJCHK_8) $(OBJCHK_10) $(OBJEXA
 %.o: %.rc x264.h x264res.manifest
 	$(RC) $(RCFLAGS)$@ $<
 
-.depend: config.mak
+.depend: config.mak $(GENERATED)
 	@rm -f .depend
 	@echo 'dependency file generation...'
 ifeq ($(COMPILER),CL)
