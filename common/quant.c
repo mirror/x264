@@ -43,6 +43,9 @@
 #if HAVE_MSA
 #   include "mips/quant.h"
 #endif
+#if HAVE_LSX || HAVE_LASX
+#   include "loongarch/quant.h"
+#endif
 
 #define QUANT_ONE( coef, mf, f ) \
 { \
@@ -801,6 +804,27 @@ void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
         pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_msa;
     }
 #endif
+
+#if HAVE_LASX
+    if( cpu&X264_CPU_LASX )
+    {
+        pf->quant_2x2_dc   = x264_quant_2x2_dc_lsx;
+        pf->quant_4x4      = x264_quant_4x4_lasx;
+        pf->quant_4x4_dc   = x264_quant_4x4_dc_lasx;
+        pf->quant_4x4x4    = x264_quant_4x4x4_lasx;
+        pf->quant_8x8      = x264_quant_8x8_lasx;
+        pf->dequant_4x4    = x264_dequant_4x4_lasx;
+        pf->dequant_8x8    = x264_dequant_8x8_lasx;
+        pf->dequant_4x4_dc = x264_dequant_4x4_dc_lasx;
+        pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_lasx;
+        pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_lasx;
+        pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_lasx;
+        pf->decimate_score15 = x264_decimate_score15_lasx;
+        pf->decimate_score16 = x264_decimate_score16_lasx;
+        pf->decimate_score64 = x264_decimate_score64_lasx;
+    }
+#endif
+
 #endif // HIGH_BIT_DEPTH
     pf->coeff_last[DCT_LUMA_DC]     = pf->coeff_last[DCT_CHROMAU_DC]  = pf->coeff_last[DCT_CHROMAV_DC] =
     pf->coeff_last[DCT_CHROMAU_4x4] = pf->coeff_last[DCT_CHROMAV_4x4] = pf->coeff_last[DCT_LUMA_4x4];
