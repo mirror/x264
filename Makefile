@@ -200,7 +200,8 @@ endif
 # LOONGARCH optimization
 ifeq ($(SYS_ARCH),LOONGARCH)
 ifneq ($(findstring HAVE_LASX 1, $(CONFIG)),)
-SRCASM_X += common/loongarch/deblock-a.S
+SRCASM_X += common/loongarch/deblock-a.S \
+            common/loongarch/sad-a.S
 
 SRCS_X +=
 
