@@ -45,6 +45,9 @@
 #if HAVE_MSA
 #   include "mips/pixel.h"
 #endif
+#if HAVE_LASX
+#   include "loongarch/pixel.h"
+#endif
 
 
 /****************************************************************************
@@ -1498,6 +1501,36 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
         pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_msa;
     }
 #endif // HAVE_MSA
+
+#if HAVE_LASX
+    if( cpu&X264_CPU_LASX )
+    {
+        INIT8( sad, _lasx );
+        INIT8_NAME( sad_aligned, sad, _lasx );
+        INIT8( ssd, _lasx );
+        INIT7( sad_x3, _lasx );
+        INIT7( sad_x4, _lasx );
+        INIT8( satd, _lasx );
+        INIT4( hadamard_ac, _lasx );
+
+        pixf->intra_sad_x3_4x4   = x264_intra_sad_x3_4x4_lasx;
+        pixf->intra_sad_x3_8x8   = x264_intra_sad_x3_8x8_lasx;
+        pixf->intra_sad_x3_8x8c  = x264_intra_sad_x3_8x8c_lasx;
+        pixf->intra_sad_x3_16x16 = x264_intra_sad_x3_16x16_lasx;
+        pixf->intra_satd_x3_4x4   = x264_intra_satd_x3_4x4_lasx;
+        pixf->intra_satd_x3_16x16 = x264_intra_satd_x3_16x16_lasx;
+        pixf->intra_satd_x3_8x8c  = x264_intra_satd_x3_8x8c_lasx;
+        pixf->intra_sa8d_x3_8x8   = x264_intra_sa8d_x3_8x8_lasx;
+
+        pixf->var[PIXEL_16x16] = x264_pixel_var_16x16_lasx;
+        pixf->var[PIXEL_8x16]  = x264_pixel_var_8x16_lasx;
+        pixf->var[PIXEL_8x8]   = x264_pixel_var_8x8_lasx;
+        pixf->var2[PIXEL_8x16]  = x264_pixel_var2_8x16_lasx;
+        pixf->var2[PIXEL_8x8]   = x264_pixel_var2_8x8_lasx;
+        pixf->sa8d[PIXEL_16x16] = x264_pixel_sa8d_16x16_lasx;
+        pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_lasx;
+    }
+#endif // HAVE_LASX
 
 #endif // HIGH_BIT_DEPTH
 #if HAVE_ALTIVEC
