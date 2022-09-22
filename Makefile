@@ -204,7 +204,8 @@ SRCASM_X += common/loongarch/deblock-a.S \
             common/loongarch/sad-a.S     \
             common/loongarch/predict-a.S \
             common/loongarch/quant-a.S   \
-            common/loongarch/mc-a.S
+            common/loongarch/mc-a.S      \
+            common/loongarch/dct-a.S
 
 SRCS_X += common/loongarch/predict-c.c   \
           common/loongarch/mc-c.c
