@@ -27,6 +27,31 @@
 #ifndef X264_LOONGARCH_PIXEL_H
 #define X264_LOONGARCH_PIXEL_H
 
+#define x264_pixel_satd_4x4_lasx x264_template(pixel_satd_4x4_lasx)
+int32_t x264_pixel_satd_4x4_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                  uint8_t *p_pix2, intptr_t i_stride2 );
+#define x264_pixel_satd_4x8_lasx x264_template(pixel_satd_4x8_lasx)
+int32_t x264_pixel_satd_4x8_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                  uint8_t *p_pix2, intptr_t i_stride2 );
+#define x264_pixel_satd_4x16_lasx x264_template(pixel_satd_4x16_lasx)
+int32_t x264_pixel_satd_4x16_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                   uint8_t *p_pix2, intptr_t i_stride2 );
+#define x264_pixel_satd_8x4_lasx x264_template(pixel_satd_8x4_lasx)
+int32_t x264_pixel_satd_8x4_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                  uint8_t *p_pix2, intptr_t i_stride2 );
+#define x264_pixel_satd_8x8_lasx x264_template(pixel_satd_8x8_lasx)
+int32_t x264_pixel_satd_8x8_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                  uint8_t *p_pix2, intptr_t i_stride2 );
+#define x264_pixel_satd_8x16_lasx x264_template(pixel_satd_8x16_lasx)
+int32_t x264_pixel_satd_8x16_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                   uint8_t *p_pix2, intptr_t i_stride2 );
+#define x264_pixel_satd_16x8_lasx x264_template(pixel_satd_16x8_lasx)
+int32_t x264_pixel_satd_16x8_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                   uint8_t *p_pix2, intptr_t i_stride2 );
+#define x264_pixel_satd_16x16_lasx x264_template(pixel_satd_16x16_lasx)
+int32_t x264_pixel_satd_16x16_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                    uint8_t *p_pix2, intptr_t i_stride2 );
+
 #define x264_pixel_sad_x4_16x16_lasx x264_template(pixel_sad_x4_16x16_lasx)
 void x264_pixel_sad_x4_16x16_lasx( uint8_t *p_src, uint8_t *p_ref0,
                                    uint8_t *p_ref1, uint8_t *p_ref2,
@@ -123,5 +148,87 @@ int32_t x264_pixel_sad_4x8_lasx( uint8_t *p_src, intptr_t i_src_stride,
 #define x264_pixel_sad_4x4_lasx x264_template(pixel_sad_4x4_lasx)
 int32_t x264_pixel_sad_4x4_lasx( uint8_t *p_src, intptr_t i_src_stride,
                                  uint8_t *p_ref, intptr_t i_ref_stride );
+
+#define x264_hadamard_ac_8x8_lasx x264_template(hadamard_ac_8x8_lasx)
+uint64_t x264_hadamard_ac_8x8_lasx( uint8_t *p_pix, intptr_t i_stride );
+#define x264_pixel_hadamard_ac_8x8_lasx x264_template(pixel_hadamard_ac_8x8_lasx)
+uint64_t x264_pixel_hadamard_ac_8x8_lasx( uint8_t *p_pix, intptr_t i_stride );
+#define x264_pixel_hadamard_ac_8x16_lasx x264_template(pixel_hadamard_ac_8x16_lasx)
+uint64_t x264_pixel_hadamard_ac_8x16_lasx( uint8_t *p_pix, intptr_t i_stride );
+#define x264_pixel_hadamard_ac_16x8_lasx x264_template(pixel_hadamard_ac_16x8_lasx)
+uint64_t x264_pixel_hadamard_ac_16x8_lasx( uint8_t *p_pix, intptr_t i_stride );
+#define x264_pixel_hadamard_ac_16x16_lasx x264_template(pixel_hadamard_ac_16x16_lasx)
+uint64_t x264_pixel_hadamard_ac_16x16_lasx( uint8_t *p_pix, intptr_t i_stride );
+
+#define x264_intra_satd_x3_4x4_lasx x264_template(intra_satd_x3_4x4_lasx)
+void x264_intra_satd_x3_4x4_lasx( uint8_t *p_enc, uint8_t *p_dec,
+                                  int32_t p_sad_array[3] );
+#define x264_intra_satd_x3_16x16_lasx x264_template(intra_satd_x3_16x16_lasx)
+void x264_intra_satd_x3_16x16_lasx( uint8_t *p_enc, uint8_t *p_dec,
+                                    int32_t p_sad_array[3] );
+#define x264_intra_satd_x3_8x8c_lasx x264_template(intra_satd_x3_8x8c_lasx)
+void x264_intra_satd_x3_8x8c_lasx( uint8_t *p_enc, uint8_t *p_dec,
+                                   int32_t p_sad_array[3] );
+
+#define x264_pixel_ssd_16x16_lasx x264_template(pixel_ssd_16x16_lasx)
+int32_t x264_pixel_ssd_16x16_lasx( uint8_t *p_src, intptr_t i_src_stride,
+                                   uint8_t *p_ref, intptr_t i_ref_stride );
+#define x264_pixel_ssd_16x8_lasx x264_template(pixel_ssd_16x8_lasx)
+int32_t x264_pixel_ssd_16x8_lasx( uint8_t *p_src, intptr_t i_src_stride,
+                                  uint8_t *p_ref, intptr_t i_ref_stride );
+#define x264_pixel_ssd_8x16_lasx x264_template(pixel_ssd_8x16_lasx)
+int32_t x264_pixel_ssd_8x16_lasx( uint8_t *p_src, intptr_t i_src_stride,
+                                  uint8_t *p_ref, intptr_t i_ref_stride );
+#define x264_pixel_ssd_8x8_lasx x264_template(pixel_ssd_8x8_lasx)
+int32_t x264_pixel_ssd_8x8_lasx( uint8_t *p_src, intptr_t i_src_stride,
+                                 uint8_t *p_ref, intptr_t i_ref_stride );
+#define x264_pixel_ssd_8x4_lasx x264_template(pixel_ssd_8x4_lasx)
+int32_t x264_pixel_ssd_8x4_lasx( uint8_t *p_src, intptr_t i_src_stride,
+                                 uint8_t *p_ref, intptr_t i_ref_stride );
+#define x264_pixel_ssd_4x16_lasx x264_template(pixel_ssd_4x16_lasx)
+int32_t x264_pixel_ssd_4x16_lasx( uint8_t *p_src, intptr_t i_src_stride,
+                                  uint8_t *p_ref, intptr_t i_ref_stride );
+#define x264_pixel_ssd_4x8_lasx x264_template(pixel_ssd_4x8_lasx)
+int32_t x264_pixel_ssd_4x8_lasx( uint8_t *p_src, intptr_t i_src_stride,
+                                 uint8_t *p_ref, intptr_t i_ref_stride );
+#define x264_pixel_ssd_4x4_lasx x264_template(pixel_ssd_4x4_lasx)
+int32_t x264_pixel_ssd_4x4_lasx( uint8_t *p_src, intptr_t i_src_stride,
+                                 uint8_t *p_ref, intptr_t i_ref_stride );
+
+#define x264_pixel_var_16x16_lasx x264_template(pixel_var_16x16_lasx)
+uint64_t x264_pixel_var_16x16_lasx( uint8_t *p_pix, intptr_t i_stride );
+#define x264_pixel_var_8x16_lasx x264_template(pixel_var_8x16_lasx)
+uint64_t x264_pixel_var_8x16_lasx( uint8_t *p_pix, intptr_t i_stride );
+#define x264_pixel_var_8x8_lasx x264_template(pixel_var_8x8_lasx)
+uint64_t x264_pixel_var_8x8_lasx( uint8_t *p_pix, intptr_t i_stride );
+#define x264_pixel_var2_8x16_lasx x264_template(pixel_var2_8x16_lasx)
+int32_t x264_pixel_var2_8x16_lasx( uint8_t *p_pix1, uint8_t *p_pix2,
+                                   int32_t ssd[2] );
+#define x264_pixel_var2_8x8_lasx x264_template(pixel_var2_8x8_lasx)
+int32_t x264_pixel_var2_8x8_lasx( uint8_t *p_pix1, uint8_t *p_pix2,
+                                  int32_t ssd[2] );
+
+#define x264_intra_sa8d_x3_8x8_lasx x264_template(intra_sa8d_x3_8x8_lasx)
+void x264_intra_sa8d_x3_8x8_lasx( uint8_t *p_enc, uint8_t p_edge[36],
+                                  int32_t p_sad_array[3] );
+#define x264_pixel_sa8d_8x8_lasx x264_template(pixel_sa8d_8x8_lasx)
+int32_t x264_pixel_sa8d_8x8_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                  uint8_t *p_pix2, intptr_t i_stride2 );
+#define x264_pixel_sa8d_16x16_lasx x264_template(pixel_sa8d_16x16_lasx)
+int32_t x264_pixel_sa8d_16x16_lasx( uint8_t *p_pix1, intptr_t i_stride,
+                                    uint8_t *p_pix2, intptr_t i_stride2 );
+
+#define x264_intra_sad_x3_4x4_lasx x264_template(intra_sad_x3_4x4_lasx)
+void x264_intra_sad_x3_4x4_lasx( uint8_t *p_enc, uint8_t *p_dec,
+                                 int32_t p_sad_array[3] );
+#define x264_intra_sad_x3_16x16_lasx x264_template(intra_sad_x3_16x16_lasx)
+void x264_intra_sad_x3_16x16_lasx( uint8_t *p_enc, uint8_t *p_dec,
+                                   int32_t p_sad_array[3] );
+#define x264_intra_sad_x3_8x8_lasx x264_template(intra_sad_x3_8x8_lasx)
+void x264_intra_sad_x3_8x8_lasx( uint8_t *p_enc, uint8_t p_edge[36],
+                                 int32_t p_sad_array[3] );
+#define x264_intra_sad_x3_8x8c_lasx x264_template(intra_sad_x3_8x8c_lasx)
+void x264_intra_sad_x3_8x8c_lasx( uint8_t *p_enc, uint8_t *p_dec,
+                                  int32_t p_sad_array[3] );
 
 #endif
