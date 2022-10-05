@@ -190,6 +190,10 @@ static int read_frame( cli_pic_t *pic, hnd_t handle, int i_frame )
 
     memcpy( pic->img.stride, frame->Linesize, sizeof(pic->img.stride) );
     memcpy( pic->img.plane, frame->Data, sizeof(pic->img.plane) );
+    int is_fullrange = 0;
+    pic->img.width   = frame->EncodedWidth;
+    pic->img.height  = frame->EncodedHeight;
+    pic->img.csp     = handle_jpeg( frame->EncodedPixelFormat, &is_fullrange ) | X264_CSP_OTHER;
 
     if( h->vfr_input )
     {
