@@ -1062,6 +1062,10 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
         pixf->vsad = x264_pixel_vsad_neon;
         pixf->asd8 = x264_pixel_asd8_neon;
         INIT8(ssd, _neon);
+        pixf->satd[PIXEL_8x4] = x264_pixel_satd_8x4_neon;
+        pixf->satd[PIXEL_4x8] = x264_pixel_satd_4x8_neon;
+        pixf->satd[PIXEL_4x4] = x264_pixel_satd_4x4_neon;
+        pixf->satd[PIXEL_4x16] = x264_pixel_satd_4x16_neon;
     }
 #endif // HAVE_AARCH64
 
