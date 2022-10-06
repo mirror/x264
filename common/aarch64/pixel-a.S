@@ -40,6 +40,7 @@ const mask_ac_4_8
 .short 0, -1, -1, -1, -1, -1, -1, -1
 endconst
 
+#if BIT_DEPTH == 8
 .macro SAD_START_4
     ld1        {v1.s}[0], [x2], x3
     ld1        {v0.s}[0], [x0], x1
@@ -111,6 +112,110 @@ function pixel_sad\name\()_\w\()x\h\()_neon, export=1
     ret
 endfunc
 .endm
+
+#else /* BIT_DEPTH == 8 */
+
+.macro SAD_START_4
+    lsl        x1, x1, #1
+    lsl        x3, x3, #1
+    ld1        {v1.d}[0], [x2], x3
+    ld1        {v0.d}[0], [x0], x1
+    ld1        {v1.d}[1], [x2], x3
+    ld1        {v0.d}[1], [x0], x1
+    uabdl       v16.4s,  v0.4h,  v1.4h
+    uabdl2      v18.4s,  v0.8h,  v1.8h
+.endm
+
+.macro SAD_4
+    ld1        {v1.d}[0], [x2], x3
+    ld1        {v0.d}[0], [x0], x1
+    ld1        {v1.d}[1], [x2], x3
+    ld1        {v0.d}[1], [x0], x1
+    uabal       v16.4s,  v0.4h,  v1.4h
+    uabal2      v18.4s,  v0.8h,  v1.8h
+.endm
+
+.macro SAD_START_8
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v0.8h}, [x0], x1
+    ld1         {v3.8h}, [x2], x3
+    ld1         {v2.8h}, [x0], x1
+    uabdl       v16.4s,  v0.4h,  v1.4h
+    uabdl2      v17.4s,  v0.8h,  v1.8h
+    uabdl       v18.4s,  v2.4h,  v3.4h
+    uabdl2      v19.4s,  v2.8h,  v3.8h
+.endm
+
+.macro SAD_8
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v0.8h}, [x0], x1
+    ld1         {v3.8h}, [x2], x3
+    ld1         {v2.8h}, [x0], x1
+    uabal       v16.4s,  v0.4h,  v1.4h
+    uabal2      v17.4s,  v0.8h,  v1.8h
+    uabal       v18.4s,  v2.4h,  v3.4h
+    uabal2      v19.4s,  v2.8h,  v3.8h
+.endm
+
+.macro SAD_START_16
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    ld2         {v0.8h, v1.8h}, [x2], x3
+    ld2         {v2.8h, v3.8h}, [x0], x1
+    ld2         {v4.8h, v5.8h}, [x2], x3
+    ld2         {v6.8h, v7.8h}, [x0], x1
+    uabdl       v16.4s,  v0.4h,  v2.4h
+    uabdl2      v17.4s,  v0.8h,  v2.8h
+    uabdl       v20.4s,  v1.4h,  v3.4h
+    uabdl2      v21.4s,  v1.8h,  v3.8h
+    uabdl       v18.4s,  v4.4h,  v6.4h
+    uabdl2      v19.4s,  v4.8h,  v6.8h
+    uabdl       v22.4s,  v5.4h,  v7.4h
+    uabdl2      v23.4s,  v5.8h,  v7.8h
+.endm
+
+.macro SAD_16
+    ld2         {v0.8h, v1.8h}, [x2], x3
+    ld2         {v2.8h, v3.8h}, [x0], x1
+    ld2         {v4.8h, v5.8h}, [x2], x3
+    ld2         {v6.8h, v7.8h}, [x0], x1
+    uabal       v16.4s,  v0.4h,  v2.4h
+    uabal2      v17.4s,  v0.8h,  v2.8h
+    uabal       v20.4s,  v1.4h,  v3.4h
+    uabal2      v21.4s,  v1.8h,  v3.8h
+    uabal       v18.4s,  v4.4h,  v6.4h
+    uabal2      v19.4s,  v4.8h,  v6.8h
+    uabal       v22.4s,  v5.4h,  v7.4h
+    uabal2      v23.4s,  v5.8h,  v7.8h
+.endm
+
+.macro SAD_FUNC w, h, name
+function pixel_sad\name\()_\w\()x\h\()_neon, export=1
+    SAD_START_\w
+
+.rept \h / 2 - 1
+    SAD_\w
+.endr
+.if \w > 8
+    add         v20.4s,  v20.4s,  v21.4s
+    add         v16.4s,  v16.4s,  v20.4s
+    add         v22.4s,  v22.4s,  v23.4s
+    add         v18.4s,  v18.4s,  v22.4s
+.endif
+.if \w > 4
+    add         v16.4s,  v16.4s,  v17.4s
+    add         v18.4s,  v18.4s,  v19.4s
+.endif
+    add         v16.4s,  v16.4s,  v18.4s
+    uaddlv      s0,  v16.8h
+    fmov        w0,  s0
+    ret
+endfunc
+.endm
+
+#endif /* BIT_DEPTH == 8 */
 
 SAD_FUNC  4,  4
 SAD_FUNC  4,  8
