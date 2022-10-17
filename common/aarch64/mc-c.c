@@ -126,12 +126,10 @@ static void (* mc##func##_wtab_neon[6])( pixel *, intptr_t, pixel *, intptr_t, c
     x264_mc_weight_w20##func##_neon,\
 };
 
-#if !HIGH_BIT_DEPTH
 MC_WEIGHT()
 MC_WEIGHT(_nodenom)
 MC_WEIGHT(_offsetadd)
 MC_WEIGHT(_offsetsub)
-#endif
 
 #define x264_mc_copy_w4_neon x264_template(mc_copy_w4_neon)
 void x264_mc_copy_w4_neon ( pixel *, intptr_t, pixel *, intptr_t, int );
@@ -180,7 +178,6 @@ static void (* const mc_copy_wtab_neon[5])( pixel *, intptr_t, pixel *, intptr_t
     x264_mc_copy_w16_neon,
 };
 
-#if !HIGH_BIT_DEPTH
 static void weight_cache_neon( x264_t *h, x264_weight_t *w )
 {
     if( w->i_scale == 1<<w->i_denom )
@@ -201,6 +198,8 @@ static void weight_cache_neon( x264_t *h, x264_weight_t *w )
     else
         w->weightfn = mc_wtab_neon;
 }
+
+#if !HIGH_BIT_DEPTH
 
 static void mc_luma_neon( pixel *dst,    intptr_t i_dst_stride,
                           pixel *src[4], intptr_t i_src_stride,
@@ -308,6 +307,11 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->copy[PIXEL_8x8]      = x264_mc_copy_w8_neon;
     pf->copy[PIXEL_4x4]      = x264_mc_copy_w4_neon;
 
+    pf->weight       = mc_wtab_neon;
+    pf->offsetadd    = mc_offsetadd_wtab_neon;
+    pf->offsetsub    = mc_offsetsub_wtab_neon;
+    pf->weight_cache = weight_cache_neon;
+
 #if !HIGH_BIT_DEPTH
 
     pf->plane_copy                  = plane_copy_neon;
@@ -319,11 +323,6 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_neon;
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_neon;
     pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
-
-    pf->weight       = mc_wtab_neon;
-    pf->offsetadd    = mc_offsetadd_wtab_neon;
-    pf->offsetsub    = mc_offsetsub_wtab_neon;
-    pf->weight_cache = weight_cache_neon;
 
     pf->mc_chroma = x264_mc_chroma_neon;
     pf->mc_luma = mc_luma_neon;

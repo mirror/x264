@@ -2166,4 +2166,508 @@ function mc_copy_w16_neon, export=1
     ret
 endfunc
 
+.macro weight_prologue type
+    mov         w9, w5                  // height
+.ifc \type, full
+    ldr         w12, [x4, #32]          // denom
+.endif
+    ldp         w4, w5, [x4, #32+4]     // scale, offset
+    dup         v0.8h, w4
+    lsl         w5, w5, #2
+    dup         v1.4s, w5
+.ifc \type, full
+    neg         w12, w12
+    dup         v2.4s, w12
+.endif
+.endm
+
+// void mc_weight( pixel *src, intptr_t src_stride, pixel *dst,
+//                 intptr_t dst_stride, const x264_weight_t *weight, int h )
+function mc_weight_w20_neon, export=1
+    weight_prologue full
+    lsl         x3, x3, #1
+    lsl         x1, x1, #1
+    sub         x1, x1, #32
+1:
+    subs        w9, w9, #2
+    ld1         {v16.8h, v17.8h, v18.8h}, [x2], x3
+    ld1         {v19.8h, v20.8h, v21.8h}, [x2], x3
+
+    umull       v22.4s, v16.4h, v0.4h
+    umull2      v23.4s, v16.8h, v0.8h
+    umull       v24.4s, v17.4h, v0.4h
+    umull2      v25.4s, v17.8h, v0.8h
+    umull       v26.4s, v18.4h, v0.4h
+    umull       v27.4s, v21.4h, v0.4h
+
+    srshl       v22.4s, v22.4s, v2.4s
+    srshl       v23.4s, v23.4s, v2.4s
+    srshl       v24.4s, v24.4s, v2.4s
+    srshl       v25.4s, v25.4s, v2.4s
+    srshl       v26.4s, v26.4s, v2.4s
+    srshl       v27.4s, v27.4s, v2.4s
+    add         v22.4s, v22.4s, v1.4s
+    add         v23.4s, v23.4s, v1.4s
+    add         v24.4s, v24.4s, v1.4s
+    add         v25.4s, v25.4s, v1.4s
+    add         v26.4s, v26.4s, v1.4s
+    add         v27.4s, v27.4s, v1.4s
+
+    sqxtun       v22.4h, v22.4s
+    sqxtun2      v22.8h, v23.4s
+    sqxtun       v23.4h, v24.4s
+    sqxtun2      v23.8h, v25.4s
+    sqxtun       v24.4h, v26.4s
+    sqxtun2      v24.8h, v27.4s
+
+    umull       v16.4s, v19.4h, v0.4h
+    umull2      v17.4s, v19.8h, v0.8h
+    umull       v18.4s, v20.4h, v0.4h
+    umull2      v19.4s, v20.8h, v0.8h
+
+    srshl       v16.4s, v16.4s, v2.4s
+    srshl       v17.4s, v17.4s, v2.4s
+    srshl       v18.4s, v18.4s, v2.4s
+    srshl       v19.4s, v19.4s, v2.4s
+    add         v16.4s, v16.4s, v1.4s
+    add         v17.4s, v17.4s, v1.4s
+    add         v18.4s, v18.4s, v1.4s
+    add         v19.4s, v19.4s, v1.4s
+
+    sqxtun       v16.4h, v16.4s
+    sqxtun2      v16.8h, v17.4s
+    sqxtun       v17.4h, v18.4s
+    sqxtun2      v17.8h, v19.4s
+
+    mvni        v31.8h, #0xfc, lsl #8
+
+    umin        v22.8h, v22.8h, v31.8h
+    umin        v23.8h, v23.8h, v31.8h
+    umin        v24.8h, v24.8h, v31.8h
+    umin        v16.8h, v16.8h, v31.8h
+    umin        v17.8h, v17.8h, v31.8h
+
+    st1         {v22.8h, v23.8h}, [x0], #32
+    st1         {v24.d}[0], [x0], x1
+    st1         {v16.8h, v17.8h}, [x0], #32
+    st1         {v24.d}[1], [x0], x1
+
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w16_neon, export=1
+    weight_prologue full
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w9, w9, #2
+    ld1         {v4.8h, v5.8h}, [x2], x3
+    ld1         {v6.8h, v7.8h}, [x2], x3
+
+    umull       v22.4s, v4.4h, v0.4h
+    umull2      v23.4s, v4.8h, v0.8h
+    umull       v24.4s, v5.4h, v0.4h
+    umull2      v25.4s, v5.8h, v0.8h
+
+    srshl       v22.4s, v22.4s, v2.4s
+    srshl       v23.4s, v23.4s, v2.4s
+    srshl       v24.4s, v24.4s, v2.4s
+    srshl       v25.4s, v25.4s, v2.4s
+
+    add         v22.4s, v22.4s, v1.4s
+    add         v23.4s, v23.4s, v1.4s
+    add         v24.4s, v24.4s, v1.4s
+    add         v25.4s, v25.4s, v1.4s
+
+    sqxtun       v22.4h, v22.4s
+    sqxtun2      v22.8h, v23.4s
+    sqxtun       v23.4h, v24.4s
+    sqxtun2      v23.8h, v25.4s
+
+    umull       v26.4s, v6.4h, v0.4h
+    umull2      v27.4s, v6.8h, v0.8h
+    umull       v28.4s, v7.4h, v0.4h
+    umull2      v29.4s, v7.8h, v0.8h
+
+    srshl       v26.4s, v26.4s, v2.4s
+    srshl       v27.4s, v27.4s, v2.4s
+    srshl       v28.4s, v28.4s, v2.4s
+    srshl       v29.4s, v29.4s, v2.4s
+
+    add         v26.4s, v26.4s, v1.4s
+    add         v27.4s, v27.4s, v1.4s
+    add         v28.4s, v28.4s, v1.4s
+    add         v29.4s, v29.4s, v1.4s
+
+    sqxtun       v26.4h, v26.4s
+    sqxtun2      v26.8h, v27.4s
+    sqxtun       v27.4h, v28.4s
+    sqxtun2      v27.8h, v29.4s
+
+    mvni        v31.8h, 0xfc, lsl #8
+
+    umin        v22.8h, v22.8h, v31.8h
+    umin        v23.8h, v23.8h, v31.8h
+    umin        v26.8h, v26.8h, v31.8h
+    umin        v27.8h, v27.8h, v31.8h
+
+    st1         {v22.8h, v23.8h}, [x0], x1
+    st1         {v26.8h, v27.8h}, [x0], x1
+
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w8_neon, export=1
+    weight_prologue full
+    lsl         x3, x3, #1
+    lsl         x1, x1, #1
+1:
+    subs        w9, w9, #2
+    ld1         {v16.8h}, [x2], x3
+    ld1         {v17.8h}, [x2], x3
+
+    umull       v4.4s, v16.4h, v0.4h
+    umull2      v5.4s, v16.8h, v0.8h
+    umull       v6.4s, v17.4h, v0.4h
+    umull2      v7.4s, v17.8h, v0.8h
+
+    srshl       v4.4s, v4.4s, v2.4s
+    srshl       v5.4s, v5.4s, v2.4s
+    srshl       v6.4s, v6.4s, v2.4s
+    srshl       v7.4s, v7.4s, v2.4s
+
+    add         v4.4s, v4.4s, v1.4s
+    add         v5.4s, v5.4s, v1.4s
+    add         v6.4s, v6.4s, v1.4s
+    add         v7.4s, v7.4s, v1.4s
+
+    sqxtun       v16.4h, v4.4s
+    sqxtun2      v16.8h, v5.4s
+    sqxtun       v17.4h, v6.4s
+    sqxtun2      v17.8h, v7.4s
+
+    mvni        v28.8h, #0xfc, lsl #8
+
+    umin        v16.8h, v16.8h, v28.8h
+    umin        v17.8h, v17.8h, v28.8h
+
+    st1         {v16.8h}, [x0], x1
+    st1         {v17.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w4_neon, export=1
+    weight_prologue full
+    lsl         x3, x3, #1
+    lsl         x1, x1, #1
+1:
+    subs        w9, w9, #2
+    ld1         {v16.d}[0], [x2], x3
+    ld1         {v16.d}[1], [x2], x3
+    umull       v4.4s, v16.4h, v0.4h
+    umull2      v5.4s, v16.8h, v0.8h
+    srshl       v4.4s, v4.4s, v2.4s
+    srshl       v5.4s, v5.4s, v2.4s
+    add         v4.4s, v4.4s, v1.4s
+    add         v5.4s, v5.4s, v1.4s
+
+    sqxtun       v16.4h, v4.4s
+    sqxtun2      v16.8h, v5.4s
+
+    mvni        v28.8h, #0xfc, lsl #8
+
+    umin        v16.8h, v16.8h, v28.8h
+
+    st1         {v16.d}[0], [x0], x1
+    st1         {v16.d}[1], [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w20_nodenom_neon, export=1
+    weight_prologue nodenom
+    lsl         x3, x3, #1
+    lsl         x1, x1, #1
+    sub         x1, x1, #32
+1:
+    subs        w9, w9, #2
+    ld1         {v16.8h, v17.8h, v18.8h}, [x2], x3
+    mov         v20.16b, v1.16b
+    mov         v21.16b, v1.16b
+    mov         v22.16b, v1.16b
+    mov         v23.16b, v1.16b
+    mov         v24.16b, v1.16b
+    mov         v25.16b, v1.16b
+    ld1         {v2.8h, v3.8h, v4.8h}, [x2], x3
+    mov         v26.16b, v1.16b
+    mov         v27.16b, v1.16b
+    mov         v28.16b, v1.16b
+    mov         v29.16b, v1.16b
+
+    umlal       v20.4s, v16.4h, v0.4h
+    umlal2      v21.4s, v16.8h, v0.8h
+    umlal       v22.4s, v17.4h, v0.4h
+    umlal2      v23.4s, v17.8h, v0.8h
+    umlal       v24.4s, v18.4h, v0.4h
+    umlal       v25.4s, v4.4h, v0.4h
+    umlal       v26.4s, v2.4h, v0.4h
+    umlal2      v27.4s, v2.8h, v0.8h
+    umlal       v28.4s, v3.4h, v0.4h
+    umlal2      v29.4s, v3.8h, v0.8h
+
+    sqxtun       v2.4h, v20.4s
+    sqxtun2      v2.8h, v21.4s
+    sqxtun       v3.4h, v22.4s
+    sqxtun2      v3.8h, v23.4s
+    sqxtun       v4.4h, v24.4s
+    sqxtun2      v4.8h, v25.4s
+    sqxtun       v5.4h, v26.4s
+    sqxtun2      v5.8h, v27.4s
+    sqxtun       v6.4h, v28.4s
+    sqxtun2      v6.8h, v29.4s
+
+    mvni        v31.8h, 0xfc, lsl #8
+
+    umin        v2.8h, v2.8h, v31.8h
+    umin        v3.8h, v3.8h, v31.8h
+    umin        v4.8h, v4.8h, v31.8h
+    umin        v5.8h, v5.8h, v31.8h
+    umin        v6.8h, v6.8h, v31.8h
+
+    st1         {v2.8h, v3.8h}, [x0], #32
+    st1         {v4.d}[0], [x0], x1
+    st1         {v5.8h, v6.8h}, [x0], #32
+    st1         {v4.d}[1], [x0], x1
+
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w16_nodenom_neon, export=1
+    weight_prologue nodenom
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w9, w9, #2
+    ld1         {v2.8h, v3.8h}, [x2], x3
+    mov         v27.16b, v1.16b
+    mov         v28.16b, v1.16b
+    mov         v29.16b, v1.16b
+    mov         v30.16b, v1.16b
+    ld1         {v4.8h, v5.8h}, [x2], x3
+    mov         v20.16b, v1.16b
+    mov         v21.16b, v1.16b
+    mov         v22.16b, v1.16b
+    mov         v23.16b, v1.16b
+
+    umlal       v27.4s, v2.4h, v0.4h
+    umlal2      v28.4s, v2.8h, v0.8h
+    umlal       v29.4s, v3.4h, v0.4h
+    umlal2      v30.4s, v3.8h, v0.8h
+
+    umlal       v20.4s, v4.4h, v0.4h
+    umlal2      v21.4s, v4.8h, v0.8h
+    umlal       v22.4s, v5.4h, v0.4h
+    umlal2      v23.4s, v5.8h, v0.8h
+
+    sqxtun       v2.4h, v27.4s
+    sqxtun2      v2.8h, v28.4s
+    sqxtun       v3.4h, v29.4s
+    sqxtun2      v3.8h, v30.4s
+
+    sqxtun       v4.4h, v20.4s
+    sqxtun2      v4.8h, v21.4s
+    sqxtun       v5.4h, v22.4s
+    sqxtun2      v5.8h, v23.4s
+
+    mvni        v31.8h, 0xfc, lsl #8
+
+    umin        v2.8h, v2.8h, v31.8h
+    umin        v3.8h, v3.8h, v31.8h
+    umin        v4.8h, v4.8h, v31.8h
+    umin        v5.8h, v5.8h, v31.8h
+
+    st1         {v2.8h, v3.8h}, [x0], x1
+    st1         {v4.8h, v5.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w8_nodenom_neon, export=1
+    weight_prologue nodenom
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w9, w9, #2
+    ld1         {v16.8h}, [x2], x3
+    mov         v27.16b, v1.16b
+    ld1         {v17.8h}, [x2], x3
+    mov         v28.16b, v1.16b
+    mov         v29.16b, v1.16b
+    mov         v30.16b, v1.16b
+
+    umlal       v27.4s, v16.4h, v0.4h
+    umlal2      v28.4s, v16.8h, v0.8h
+    umlal       v29.4s, v17.4h, v0.4h
+    umlal2      v30.4s, v17.8h, v0.8h
+
+    sqxtun       v4.4h, v27.4s
+    sqxtun2      v4.8h, v28.4s
+    sqxtun       v5.4h, v29.4s
+    sqxtun2      v5.8h, v30.4s
+
+    mvni        v31.8h, 0xfc, lsl #8
+
+    umin        v4.8h, v4.8h, v31.8h
+    umin        v5.8h, v5.8h, v31.8h
+
+    st1         {v4.8h}, [x0], x1
+    st1         {v5.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w4_nodenom_neon, export=1
+    weight_prologue nodenom
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w9, w9, #2
+    ld1         {v16.d}[0], [x2], x3
+    ld1         {v16.d}[1], [x2], x3
+    mov         v27.16b, v1.16b
+    mov         v28.16b, v1.16b
+    umlal       v27.4s, v16.4h, v0.4h
+    umlal2      v28.4s, v16.8h, v0.8h
+
+    sqxtun       v4.4h, v27.4s
+    sqxtun2      v4.8h, v28.4s
+
+    mvni        v31.8h, 0xfc, lsl #8
+
+    umin        v4.8h, v4.8h, v31.8h
+
+    st1         {v4.d}[0], [x0], x1
+    st1         {v4.d}[1], [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+.macro weight_simple_prologue
+    ldr         w6, [x4]               // offset
+    lsl         w6, w6, #2
+    dup         v1.8h, w6
+.endm
+
+.macro weight_simple name op
+function mc_weight_w20_\name\()_neon, export=1
+    weight_simple_prologue
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    sub         x1, x1, #32
+1:
+    subs        w5, w5, #2
+    ld1         {v2.8h, v3.8h, v4.8h}, [x2], x3
+    ld1         {v5.8h, v6.8h, v7.8h}, [x2], x3
+
+    zip1        v4.2d, v4.2d, v7.2d
+
+    \op         v2.8h, v2.8h, v1.8h
+    \op         v3.8h, v3.8h, v1.8h
+    \op         v4.8h, v4.8h, v1.8h
+    \op         v5.8h, v5.8h, v1.8h
+    \op         v6.8h, v6.8h, v1.8h
+
+    mvni        v31.8h, #0xfc, lsl #8
+
+    umin        v2.8h, v2.8h, v28.8h
+    umin        v3.8h, v3.8h, v28.8h
+    umin        v4.8h, v4.8h, v28.8h
+    umin        v5.8h, v5.8h, v28.8h
+    umin        v6.8h, v6.8h, v28.8h
+
+    st1         {v2.8h, v3.8h}, [x0], #32
+    st1         {v4.d}[0], [x0], x1
+    st1         {v5.8h, v6.8h}, [x0], #32
+    st1         {v4.d}[1], [x0], x1
+
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w16_\name\()_neon, export=1
+    weight_simple_prologue
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w5, w5, #2
+    ld1         {v16.8h, v17.8h}, [x2], x3
+    ld1         {v18.8h, v19.8h}, [x2], x3
+
+    \op         v16.8h, v16.8h, v1.8h
+    \op         v17.8h, v17.8h, v1.8h
+    \op         v18.8h, v18.8h, v1.8h
+    \op         v19.8h, v19.8h, v1.8h
+
+    mvni        v28.8h, #0xfc, lsl #8
+
+    umin        v16.8h, v16.8h, v28.8h
+    umin        v17.8h, v17.8h, v28.8h
+    umin        v18.8h, v18.8h, v28.8h
+    umin        v19.8h, v19.8h, v28.8h
+
+    st1         {v16.8h, v17.8h}, [x0], x1
+    st1         {v18.8h, v19.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w8_\name\()_neon, export=1
+    weight_simple_prologue
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w5, w5, #2
+    ld1         {v16.8h}, [x2], x3
+    ld1         {v17.8h}, [x2], x3
+    \op         v16.8h, v16.8h, v1.8h
+    \op         v17.8h, v17.8h, v1.8h
+
+    mvni        v28.8h, 0xfc, lsl #8
+
+    umin        v16.8h, v16.8h, v28.8h
+    umin        v17.8h, v17.8h, v28.8h
+
+    st1         {v16.8h}, [x0], x1
+    st1         {v17.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function mc_weight_w4_\name\()_neon, export=1
+    weight_simple_prologue
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w5, w5, #2
+    ld1         {v16.d}[0], [x2], x3
+    ld1         {v16.d}[1], [x2], x3
+    \op         v16.8h, v16.8h, v1.8h
+    mvni        v28.8h, 0xfc, lsl #8
+
+    umin        v16.8h, v16.8h, v28.8h
+
+    st1         {v16.d}[0], [x0], x1
+    st1         {v16.d}[1], [x0], x1
+    b.gt        1b
+    ret
+endfunc
+.endm
+
+weight_simple offsetadd, uqadd
+weight_simple offsetsub, uqsub
+
 #endif
