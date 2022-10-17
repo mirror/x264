@@ -1758,4 +1758,279 @@ endfunc
 
 #else // BIT_DEPTH == 8
 
+// void pixel_avg( pixel *dst,  intptr_t dst_stride,
+//                 pixel *src1, intptr_t src1_stride,
+//                 pixel *src2, intptr_t src2_stride, int weight );
+.macro AVGH w h
+function pixel_avg_\w\()x\h\()_neon, export=1
+    mov         w10, #64
+    cmp         w6, #32
+    mov         w9, #\h
+    b.eq        pixel_avg_w\w\()_neon
+    subs        w7, w10, w6
+    b.lt        pixel_avg_weight_w\w\()_add_sub_neon     // weight > 64
+    cmp         w6, #0
+    b.ge        pixel_avg_weight_w\w\()_add_add_neon
+    b           pixel_avg_weight_w\w\()_sub_add_neon     // weight < 0
+endfunc
+.endm
+
+AVGH  4, 2
+AVGH  4, 4
+AVGH  4, 8
+AVGH  4, 16
+AVGH  8, 4
+AVGH  8, 8
+AVGH  8, 16
+AVGH 16, 8
+AVGH 16, 16
+
+// 0 < weight < 64
+.macro load_weights_add_add
+    mov         w6, w6
+.endm
+.macro weight_add_add dst, s1, s2, h=
+.ifc \h, 2
+    umull2      \dst, \s1, v30.8h
+    umlal2      \dst, \s2, v31.8h
+.else
+    umull       \dst, \s1, v30.4h
+    umlal       \dst, \s2, v31.4h
+.endif
+.endm
+
+// weight > 64
+.macro load_weights_add_sub
+    neg         w7, w7
+.endm
+.macro weight_add_sub dst, s1, s2, h=
+.ifc \h, 2
+    umull2      \dst, \s1, v30.8h
+    umlsl2      \dst, \s2, v31.8h
+.else
+    umull       \dst, \s1, v30.4h
+    umlsl       \dst, \s2, v31.4h
+.endif
+.endm
+
+// weight < 0
+.macro load_weights_sub_add
+    neg         w6, w6
+.endm
+.macro weight_sub_add dst, s1, s2, h=
+.ifc \h, 2
+    umull2      \dst, \s2, v31.8h
+    umlsl2      \dst, \s1, v30.8h
+.else
+    umull       \dst, \s2, v31.4h
+    umlsl       \dst, \s1, v30.4h
+.endif
+.endm
+
+.macro AVG_WEIGHT ext
+function pixel_avg_weight_w4_\ext\()_neon
+    load_weights_\ext
+    dup         v30.8h, w6
+    dup         v31.8h, w7
+    lsl         x3, x3, #1
+    lsl         x5, x5, #1
+    lsl         x1, x1, #1
+1:  // height loop
+    subs        w9, w9, #2
+    ld1         {v0.d}[0], [x2], x3
+    ld1         {v1.d}[0], [x4], x5
+    weight_\ext v4.4s, v0.4h, v1.4h
+    ld1         {v2.d}[0], [x2], x3
+    ld1         {v3.d}[0], [x4], x5
+
+    mvni        v28.8h, #0xfc, lsl #8
+
+    sqrshrun    v4.4h, v4.4s, #6
+    weight_\ext v5.4s, v2.4h, v3.4h
+    smin        v4.4h, v4.4h, v28.4h
+    sqrshrun    v5.4h, v5.4s, #6
+
+    st1         {v4.d}[0], [x0], x1
+
+    smin        v5.4h, v5.4h, v28.4h
+
+    st1         {v5.d}[0], [x0], x1
+
+    b.gt        1b
+    ret
+endfunc
+
+function pixel_avg_weight_w8_\ext\()_neon
+    load_weights_\ext
+    dup         v30.8h, w6
+    dup         v31.8h, w7
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    lsl         x5, x5, #1
+1:  // height loop
+    subs        w9, w9, #4
+    ld1         {v0.8h}, [x2], x3
+    ld1         {v1.8h}, [x4], x5
+    weight_\ext v16.4s, v0.4h, v1.4h
+    weight_\ext v17.4s, v0.8h, v1.8h, 2
+    ld1         {v2.8h}, [x2], x3
+    ld1         {v3.8h}, [x4], x5
+    weight_\ext v18.4s, v2.4h, v3.4h
+    weight_\ext v19.4s, v2.8h, v3.8h, 2
+    ld1         {v4.8h}, [x2], x3
+    ld1         {v5.8h}, [x4], x5
+    weight_\ext v20.4s, v4.4h, v5.4h
+    weight_\ext v21.4s, v4.8h, v5.8h, 2
+    ld1         {v6.8h}, [x2], x3
+    ld1         {v7.8h}, [x4], x5
+    weight_\ext v22.4s, v6.4h, v7.4h
+    weight_\ext v23.4s, v6.8h, v7.8h, 2
+
+    mvni        v28.8h, #0xfc, lsl #8
+
+    sqrshrun    v0.4h, v16.4s, #6
+    sqrshrun    v2.4h, v18.4s, #6
+    sqrshrun    v4.4h, v20.4s, #6
+    sqrshrun2   v0.8h, v17.4s, #6
+    sqrshrun    v6.4h, v22.4s, #6
+    sqrshrun2   v2.8h, v19.4s, #6
+    sqrshrun2   v4.8h, v21.4s, #6
+    smin        v0.8h, v0.8h, v28.8h
+    smin        v2.8h, v2.8h, v28.8h
+    sqrshrun2   v6.8h, v23.4s, #6
+    smin        v4.8h, v4.8h, v28.8h
+    smin        v6.8h, v6.8h, v28.8h
+
+    st1        {v0.8h}, [x0], x1
+    st1        {v2.8h}, [x0], x1
+    st1        {v4.8h}, [x0], x1
+    st1        {v6.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function pixel_avg_weight_w16_\ext\()_neon
+    load_weights_\ext
+    dup         v30.8h, w6
+    dup         v31.8h, w7
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    lsl         x5, x5, #1
+1:  // height loop
+    subs        w9, w9, #2
+
+    ld1         {v0.8h, v1.8h}, [x2], x3
+    ld1         {v2.8h, v3.8h}, [x4], x5
+    ld1         {v4.8h, v5.8h}, [x2], x3
+    ld1         {v6.8h, v7.8h}, [x4], x5
+
+    weight_\ext v16.4s, v0.4h, v2.4h
+    weight_\ext v17.4s, v0.8h, v2.8h, 2
+    weight_\ext v18.4s, v1.4h, v3.4h
+    weight_\ext v19.4s, v1.8h, v3.8h, 2
+    weight_\ext v20.4s, v4.4h, v6.4h
+    weight_\ext v21.4s, v4.8h, v6.8h, 2
+    weight_\ext v22.4s, v5.4h, v7.4h
+    weight_\ext v23.4s, v5.8h, v7.8h, 2
+
+    mvni        v28.8h, #0xfc, lsl #8
+
+    sqrshrun    v0.4h, v16.4s, #6
+    sqrshrun    v1.4h, v18.4s, #6
+    sqrshrun    v2.4h, v20.4s, #6
+    sqrshrun2   v0.8h, v17.4s, #6
+    sqrshrun2   v1.8h, v19.4s, #6
+    sqrshrun2   v2.8h, v21.4s, #6
+    smin        v0.8h, v0.8h, v28.8h
+    smin        v1.8h, v1.8h, v28.8h
+    sqrshrun    v3.4h, v22.4s, #6
+    smin        v2.8h, v2.8h, v28.8h
+    sqrshrun2   v3.8h, v23.4s, #6
+    smin        v3.8h, v3.8h, v28.8h
+
+    st1        {v0.8h, v1.8h}, [x0], x1
+    st1        {v2.8h, v3.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+.endm
+
+AVG_WEIGHT add_add
+AVG_WEIGHT add_sub
+AVG_WEIGHT sub_add
+
+function pixel_avg_w4_neon
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    lsl         x5, x5, #1
+
+1:  subs        w9, w9, #2
+    ld1         {v0.d}[0], [x2], x3
+    ld1         {v2.d}[0], [x4], x5
+    ld1         {v0.d}[1], [x2], x3
+    ld1         {v2.d}[1], [x4], x5
+    urhadd      v0.8h, v0.8h, v2.8h
+    st1         {v0.d}[0], [x0], x1
+    st1         {v0.d}[1], [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function pixel_avg_w8_neon
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    lsl         x5, x5, #1
+1:  subs        w9, w9, #4
+    ld1         {v0.8h}, [x2], x3
+    ld1         {v1.8h}, [x4], x5
+    ld1         {v2.8h}, [x2], x3
+    urhadd      v0.8h, v0.8h, v1.8h
+    ld1         {v3.8h}, [x4], x5
+    st1         {v0.8h}, [x0], x1
+    ld1         {v4.8h}, [x2], x3
+    urhadd      v1.8h, v2.8h, v3.8h
+    ld1         {v5.8h}, [x4], x5
+    st1         {v1.8h}, [x0], x1
+    ld1         {v6.8h}, [x2], x3
+    ld1         {v7.8h}, [x4], x5
+    urhadd      v2.8h, v4.8h, v5.8h
+    urhadd      v3.8h, v6.8h, v7.8h
+    st1         {v2.8h}, [x0], x1
+    st1         {v3.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function pixel_avg_w16_neon
+    lsl        x1, x1, #1
+    lsl        x3, x3, #1
+    lsl        x5, x5, #1
+
+1:  subs       w9, w9, #4
+
+    ld1        {v0.8h, v1.8h}, [x2], x3
+    ld1        {v2.8h, v3.8h}, [x4], x5
+    ld1        {v4.8h, v5.8h}, [x2], x3
+    urhadd     v0.8h, v0.8h, v2.8h
+    urhadd     v1.8h, v1.8h, v3.8h
+    ld1        {v6.8h, v7.8h}, [x4], x5
+    ld1        {v20.8h, v21.8h}, [x2], x3
+    st1        {v0.8h, v1.8h}, [x0], x1
+    urhadd     v4.8h, v4.8h, v6.8h
+    urhadd     v5.8h, v5.8h, v7.8h
+    ld1        {v22.8h, v23.8h}, [x4], x5
+    ld1        {v24.8h, v25.8h}, [x2], x3
+    st1        {v4.8h, v5.8h}, [x0], x1
+    ld1        {v26.8h, v27.8h}, [x4], x5
+    urhadd     v20.8h, v20.8h, v22.8h
+    urhadd     v21.8h, v21.8h, v23.8h
+    urhadd     v24.8h, v24.8h, v26.8h
+    urhadd     v25.8h, v25.8h, v27.8h
+    st1        {v20.8h, v21.8h}, [x0], x1
+    st1        {v24.8h, v25.8h}, [x0], x1
+
+    b.gt        1b
+    ret
+endfunc
+
 #endif
