@@ -2116,4 +2116,54 @@ function pixel_avg2_w20_neon, export=1
     ret
 endfunc
 
+// void mc_copy( pixel *dst, intptr_t dst_stride, pixel *src, intptr_t src_stride, int height )
+function mc_copy_w4_neon, export=1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w4, w4, #4
+    ld1         {v0.d}[0], [x2], x3
+    ld1         {v1.d}[0], [x2], x3
+    ld1         {v2.d}[0], [x2], x3
+    ld1         {v3.d}[0], [x2], x3
+    st1         {v0.d}[0], [x0], x1
+    st1         {v1.d}[0], [x0], x1
+    st1         {v2.d}[0], [x0], x1
+    st1         {v3.d}[0], [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function mc_copy_w8_neon, export=1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:  subs        w4, w4, #4
+    ld1         {v0.8h}, [x2], x3
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v2.8h}, [x2], x3
+    ld1         {v3.8h}, [x2], x3
+    st1         {v0.8h}, [x0], x1
+    st1         {v1.8h}, [x0], x1
+    st1         {v2.8h}, [x0], x1
+    st1         {v3.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function mc_copy_w16_neon, export=1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:  subs        w4, w4, #4
+    ld1         {v0.8h, v1.8h}, [x2], x3
+    ld1         {v2.8h, v3.8h}, [x2], x3
+    ld1         {v4.8h, v5.8h}, [x2], x3
+    ld1         {v6.8h, v7.8h}, [x2], x3
+    st1         {v0.8h, v1.8h}, [x0], x1
+    st1         {v2.8h, v3.8h}, [x0], x1
+    st1         {v4.8h, v5.8h}, [x0], x1
+    st1         {v6.8h, v7.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
 #endif
