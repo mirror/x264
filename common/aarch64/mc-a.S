@@ -2670,4 +2670,359 @@ endfunc
 weight_simple offsetadd, uqadd
 weight_simple offsetsub, uqsub
 
+// void mc_chroma( pixel *dst_u, pixel *dst_v,
+//                 intptr_t i_dst_stride,
+//                 pixel *src, intptr_t i_src_stride,
+//                 int dx, int dy, int i_width, int i_height );
+function mc_chroma_neon, export=1
+    ldr         w15, [sp]               // height
+    sbfx        x12, x6, #3, #29        // asr(3) and sign extend
+    sbfx        x11, x5, #3, #29        // asr(3) and sign extend
+    cmp         w7, #4
+    lsl         x4, x4, #1
+    mul         x12, x12, x4
+    add         x3, x3, x11, lsl #2
+
+    and         w5, w5, #7
+    and         w6, w6, #7
+
+    add         x3, x3, x12
+
+    b.gt        mc_chroma_w8_neon
+    b.eq        mc_chroma_w4_neon
+endfunc
+
+.macro CHROMA_MC_START r00, r01, r10, r11
+    mul         w12, w5, w6             // cD = d8x    *d8y
+    lsl         w13, w5, #3
+    add         w9, w12, #64
+    lsl         w14, w6, #3
+    tst         w12, w12
+    sub         w9, w9, w13
+    sub         w10, w13, w12           // cB = d8x    *(8-d8y);
+    sub         w11, w14, w12           // cC = (8-d8x)*d8y
+    sub         w9, w9, w14             // cA = (8-d8x)*(8-d8y);
+.endm
+
+.macro CHROMA_MC width, vsize
+function mc_chroma_w\width\()_neon
+    lsl         x2, x2, #1
+// since the element size varies, there's a different index for the 2nd store
+.if \width == 4
+    .set idx2, 1
+.else
+    .set idx2, 2
+.endif
+    CHROMA_MC_START
+    b.eq        2f
+
+    ld2         {v28.8h, v29.8h}, [x3], x4
+    dup         v0.8h, w9               // cA
+    dup         v1.8h, w10              // cB
+
+    ext         v6.16b, v28.16b, v28.16b, #2
+    ext         v7.16b, v29.16b, v29.16b, #2
+
+    ld2         {v30.8h, v31.8h}, [x3], x4
+    dup         v2.8h, w11              // cC
+    dup         v3.8h, w12              // cD
+
+    ext         v22.16b, v30.16b, v30.16b, #2
+    ext         v23.16b, v31.16b, v31.16b, #2
+
+    trn1        v0.2d, v0.2d, v1.2d
+    trn1        v2.2d, v2.2d, v3.2d
+
+    trn1        v4.2d, v28.2d, v6.2d
+    trn1        v5.2d, v29.2d, v7.2d
+    trn1        v20.2d, v30.2d, v22.2d
+    trn1        v21.2d, v31.2d, v23.2d
+1:  // height loop, interpolate xy
+    subs        w15, w15, #2
+
+    mul         v16.8h, v4.8h, v0.8h
+    mul         v17.8h, v5.8h, v0.8h
+    mla         v16.8h, v20.8h, v2.8h
+    mla         v17.8h, v21.8h, v2.8h
+
+    ld2         {v28.8h, v29.8h}, [x3], x4
+    transpose   v24.2d, v25.2d, v16.2d, v17.2d
+
+    ext         v6.16b, v28.16b, v28.16b, #2
+    ext         v7.16b, v29.16b, v29.16b, #2
+    trn1        v4.2d, v28.2d, v6.2d
+    trn1        v5.2d, v29.2d, v7.2d
+
+    add         v16.8h, v24.8h, v25.8h
+    urshr       v16.8h, v16.8h, #6
+
+    mul         v18.8h, v20.8h, v0.8h
+    mul         v19.8h, v21.8h, v0.8h
+    mla         v18.8h, v4.8h, v2.8h
+    mla         v19.8h, v5.8h, v2.8h
+
+    ld2         {v30.8h, v31.8h}, [x3], x4
+
+    transpose   v26.2d, v27.2d, v18.2d, v19.2d
+    add         v18.8h, v26.8h, v27.8h
+    urshr       v18.8h, v18.8h, #6
+
+    ext         v22.16b, v30.16b, v30.16b, #2
+    ext         v23.16b, v31.16b, v31.16b, #2
+    trn1        v20.2d, v30.2d, v22.2d
+    trn1        v21.2d, v31.2d, v23.2d
+
+    st1         {v16.\vsize}[0], [x0], x2
+    st1         {v16.\vsize}[idx2], [x1], x2
+    st1         {v18.\vsize}[0], [x0], x2
+    st1         {v18.\vsize}[idx2], [x1], x2
+    b.gt        1b
+
+    ret
+2:  // dx or dy are 0
+    tst         w11, w11
+    add         w10, w10, w11
+    dup         v0.8h, w9
+    dup         v1.8h, w10
+
+    b.eq        4f
+
+    ld1         {v4.8h}, [x3], x4
+    ld1         {v6.8h}, [x3], x4
+3:  // vertical interpolation loop
+    subs        w15, w15, #2
+
+    mul         v16.8h, v4.8h, v0.8h
+    mla         v16.8h, v6.8h, v1.8h
+    ld1         {v4.8h}, [x3], x4
+    mul         v17.8h, v6.8h, v0.8h
+    mla         v17.8h, v4.8h, v1.8h
+    ld1         {v6.8h}, [x3], x4
+
+    urshr       v16.8h, v16.8h, #6
+    urshr       v17.8h, v17.8h, #6
+
+    uzp1        v18.8h, v16.8h, v17.8h  // d16=uuuu|uuuu, d17=vvvv|vvvv
+    uzp2        v19.8h, v16.8h, v17.8h  // d16=uuuu|uuuu, d17=vvvv|vvvv
+
+    st1         {v18.\vsize}[0], [x0], x2
+    st1         {v18.\vsize}[idx2], [x0], x2
+    st1         {v19.\vsize}[0], [x1], x2
+    st1         {v19.\vsize}[idx2], [x1], x2
+    b.gt        3b
+
+    ret
+
+4:  // dy is 0
+    ld1         {v4.8h, v5.8h}, [x3], x4
+    ld1         {v6.8h, v7.8h}, [x3], x4
+
+    ext         v5.16b, v4.16b, v5.16b, #4
+    ext         v7.16b, v6.16b, v7.16b, #4
+5:  // horizontal interpolation loop
+    subs        w15, w15, #2
+
+    mul         v16.8h, v4.8h, v0.8h
+    mla         v16.8h, v5.8h, v1.8h
+    mul         v17.8h, v6.8h, v0.8h
+    mla         v17.8h, v7.8h, v1.8h
+
+    ld1         {v4.8h, v5.8h}, [x3], x4
+    ld1         {v6.8h, v7.8h}, [x3], x4
+
+    urshr       v16.8h, v16.8h, #6
+    urshr       v17.8h, v17.8h, #6
+
+    ext         v5.16b, v4.16b, v5.16b, #4
+    ext         v7.16b, v6.16b, v7.16b, #4
+    uzp1        v18.8h, v16.8h, v17.8h  // d16=uuuu|uuuu, d17=vvvv|vvvv
+    uzp2        v19.8h, v16.8h, v17.8h  // d16=uuuu|uuuu, d17=vvvv|vvvv
+
+    st1         {v18.\vsize}[0], [x0], x2
+    st1         {v18.\vsize}[idx2], [x0], x2
+    st1         {v19.\vsize}[0], [x1], x2
+    st1         {v19.\vsize}[idx2], [x1], x2
+    b.gt        5b
+
+    ret
+endfunc
+.endm
+
+    CHROMA_MC 2, s
+    CHROMA_MC 4, d
+
+function mc_chroma_w8_neon
+    lsl         x2, x2, #1
+    CHROMA_MC_START
+
+    b.eq        2f
+    sub         x4, x4, #32
+    ld2         {v4.8h, v5.8h}, [x3], #32
+    ld2         {v6.8h, v7.8h}, [x3], x4
+
+    ld2         {v20.8h, v21.8h}, [x3], #32
+    ld2         {v22.8h, v23.8h}, [x3], x4
+
+    dup         v0.8h, w9               // cA
+    dup         v1.8h, w10              // cB
+
+    ext         v24.16b, v4.16b, v6.16b, #2
+    ext         v26.16b, v6.16b, v4.16b, #2
+    ext         v28.16b, v20.16b, v22.16b, #2
+    ext         v30.16b, v22.16b, v20.16b, #2
+
+    ext         v25.16b, v5.16b, v7.16b, #2
+    ext         v27.16b, v7.16b, v5.16b, #2
+    ext         v29.16b, v21.16b, v23.16b, #2
+    ext         v31.16b, v23.16b, v21.16b, #2
+
+    dup         v2.8h, w11              // cC
+    dup         v3.8h, w12              // cD
+
+1:  // height loop, interpolate xy
+    subs        w15, w15, #2
+
+    mul         v16.8h, v4.8h, v0.8h
+    mul         v17.8h, v5.8h, v0.8h
+    mla         v16.8h, v24.8h, v1.8h
+    mla         v17.8h, v25.8h, v1.8h
+    mla         v16.8h, v20.8h, v2.8h
+    mla         v17.8h, v21.8h, v2.8h
+    mla         v16.8h, v28.8h, v3.8h
+    mla         v17.8h, v29.8h, v3.8h
+
+    urshr       v16.8h, v16.8h, #6
+    urshr       v17.8h, v17.8h, #6
+
+    st1         {v16.8h}, [x0], x2
+    st1         {v17.8h}, [x1], x2
+
+    ld2         {v4.8h, v5.8h}, [x3], #32
+    ld2         {v6.8h, v7.8h}, [x3], x4
+
+    mul         v16.8h, v20.8h, v0.8h
+    mul         v17.8h, v21.8h, v0.8h
+    ext         v24.16b, v4.16b, v6.16b, #2
+    ext         v26.16b, v6.16b, v4.16b, #2
+    mla         v16.8h, v28.8h, v1.8h
+    mla         v17.8h, v29.8h, v1.8h
+    ext         v25.16b, v5.16b, v7.16b, #2
+    ext         v27.16b, v7.16b, v5.16b, #2
+    mla         v16.8h, v4.8h, v2.8h
+    mla         v17.8h, v5.8h, v2.8h
+    mla         v16.8h, v24.8h, v3.8h
+    mla         v17.8h, v25.8h, v3.8h
+
+    urshr       v16.8h, v16.8h, #6
+    urshr       v17.8h, v17.8h, #6
+
+    ld2         {v20.8h, v21.8h}, [x3], #32
+    ld2         {v22.8h, v23.8h}, [x3], x4
+    ext         v28.16b, v20.16b, v22.16b, #2
+    ext         v30.16b, v22.16b, v20.16b, #2
+    ext         v29.16b, v21.16b, v23.16b, #2
+    ext         v31.16b, v23.16b, v21.16b, #2
+
+    st1         {v16.8h}, [x0], x2
+    st1         {v17.8h}, [x1], x2
+    b.gt        1b
+
+    ret
+2:  // dx or dy are 0
+    tst         w11, w11
+    add         w10, w10, w11
+    dup         v0.8h, w9
+    dup         v1.8h, w10
+
+    b.eq        4f
+
+    ld2         {v4.8h, v5.8h}, [x3], x4
+    ld2         {v6.8h, v7.8h}, [x3], x4
+3:  // vertical interpolation loop
+    subs        w15, w15, #2
+
+    mul         v16.8h, v4.8h, v0.8h
+    mul         v17.8h, v5.8h, v0.8h
+    mla         v16.8h, v6.8h, v1.8h
+    mla         v17.8h, v7.8h, v1.8h
+    urshr       v16.8h, v16.8h, #6
+    urshr       v17.8h, v17.8h, #6
+
+    st1         {v16.8h}, [x0], x2
+    st1         {v17.8h}, [x1], x2
+
+    ld2         {v4.8h, v5.8h}, [x3], x4
+
+    mul         v16.8h, v6.8h, v0.8h
+    mul         v17.8h, v7.8h, v0.8h
+    ld2         {v6.8h, v7.8h}, [x3], x4
+    mla         v16.8h, v4.8h, v1.8h
+    mla         v17.8h, v5.8h, v1.8h
+    urshr       v16.8h, v16.8h, #6
+    urshr       v17.8h, v17.8h, #6
+
+    st1         {v16.8h}, [x0], x2
+    st1         {v17.8h}, [x1], x2
+    b.gt        3b
+
+    ret
+4:  // dy is 0
+    sub         x4, x4, #32
+
+    ld2         {v4.8h, v5.8h}, [x3], #32
+    ld2         {v6.8h, v7.8h}, [x3], x4
+    ext         v24.16b, v4.16b, v6.16b, #2
+    ext         v26.16b, v6.16b, v4.16b, #2
+    ld2         {v20.8h, v21.8h}, [x3], #32
+    ld2         {v22.8h, v23.8h}, [x3], x4
+    ext         v28.16b, v20.16b, v22.16b, #2
+    ext         v30.16b, v22.16b, v20.16b, #2
+
+    ext         v25.16b, v5.16b, v7.16b, #2
+    ext         v27.16b, v7.16b, v5.16b, #2
+    ext         v29.16b, v21.16b, v23.16b, #2
+    ext         v31.16b, v23.16b, v21.16b, #2
+
+5:  // horizontal interpolation loop
+    subs        w15, w15, #2
+
+    mul         v16.8h, v4.8h, v0.8h
+    mul         v17.8h, v5.8h, v0.8h
+    mla         v16.8h, v24.8h, v1.8h
+    mla         v17.8h, v25.8h, v1.8h
+
+    urshr       v16.8h, v16.8h, #6
+    urshr       v17.8h, v17.8h, #6
+
+    st1         {v16.8h}, [x0], x2
+    st1         {v17.8h}, [x1], x2
+
+    mul         v16.8h, v20.8h, v0.8h
+    mul         v17.8h, v21.8h, v0.8h
+    ld2         {v4.8h, v5.8h}, [x3], #32
+    ld2         {v6.8h, v7.8h}, [x3], x4
+    mla         v16.8h, v28.8h, v1.8h
+    mla         v17.8h, v29.8h, v1.8h
+    ld2         {v20.8h,v21.8h}, [x3], #32
+    ld2         {v22.8h,v23.8h}, [x3], x4
+
+    urshr       v16.8h, v16.8h, #6
+    urshr       v17.8h, v17.8h, #6
+
+    ext         v24.16b, v4.16b, v6.16b, #2
+    ext         v26.16b, v6.16b, v4.16b, #2
+    ext         v28.16b, v20.16b, v22.16b, #2
+    ext         v30.16b, v22.16b, v20.16b, #2
+    ext         v29.16b, v21.16b, v23.16b, #2
+    ext         v31.16b, v23.16b, v21.16b, #2
+    ext         v25.16b, v5.16b, v7.16b, #2
+    ext         v27.16b, v7.16b, v5.16b, #2
+
+    st1         {v16.8h}, [x0], x2
+    st1         {v17.8h}, [x1], x2
+    b.gt        5b
+
+    ret
+endfunc
+
 #endif

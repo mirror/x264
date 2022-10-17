@@ -312,6 +312,7 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->offsetsub    = mc_offsetsub_wtab_neon;
     pf->weight_cache = weight_cache_neon;
 
+    pf->mc_chroma = x264_mc_chroma_neon;
     pf->mc_luma = mc_luma_neon;
     pf->get_ref = get_ref_neon;
 
@@ -327,7 +328,6 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_neon;
     pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
 
-    pf->mc_chroma = x264_mc_chroma_neon;
     pf->hpel_filter = x264_hpel_filter_neon;
     pf->frame_init_lowres_core = x264_frame_init_lowres_core_neon;
 
