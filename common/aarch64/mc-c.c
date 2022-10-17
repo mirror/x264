@@ -161,6 +161,17 @@ void x264_mbtree_fix8_pack_neon( uint16_t *dst, float *src, int count );
 #define x264_mbtree_fix8_unpack_neon x264_template(mbtree_fix8_unpack_neon)
 void x264_mbtree_fix8_unpack_neon( float *dst, uint16_t *src, int count );
 
+static void (* const pixel_avg_wtab_neon[6])( pixel *, intptr_t, pixel *, intptr_t, pixel *, int ) =
+{
+    NULL,
+    x264_pixel_avg2_w4_neon,
+    x264_pixel_avg2_w8_neon,
+    x264_pixel_avg2_w16_neon,   // no slower than w12, so no point in a separate function
+    x264_pixel_avg2_w16_neon,
+    x264_pixel_avg2_w20_neon,
+};
+
+
 #if !HIGH_BIT_DEPTH
 static void weight_cache_neon( x264_t *h, x264_weight_t *w )
 {
@@ -182,16 +193,6 @@ static void weight_cache_neon( x264_t *h, x264_weight_t *w )
     else
         w->weightfn = mc_wtab_neon;
 }
-
-static void (* const pixel_avg_wtab_neon[6])( pixel *, intptr_t, pixel *, intptr_t, pixel *, int ) =
-{
-    NULL,
-    x264_pixel_avg2_w4_neon,
-    x264_pixel_avg2_w8_neon,
-    x264_pixel_avg2_w16_neon,   // no slower than w12, so no point in a separate function
-    x264_pixel_avg2_w16_neon,
-    x264_pixel_avg2_w20_neon,
-};
 
 static void (* const mc_copy_wtab_neon[5])( pixel *, intptr_t, pixel *, intptr_t, int ) =
 {

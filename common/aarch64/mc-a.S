@@ -2033,4 +2033,87 @@ function pixel_avg_w16_neon
     ret
 endfunc
 
+function pixel_avg2_w4_neon, export=1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w5, w5, #2
+    ld1         {v0.4h}, [x2], x3
+    ld1         {v2.4h}, [x4], x3
+    ld1         {v1.4h}, [x2], x3
+    ld1         {v3.4h}, [x4], x3
+    urhadd      v0.4h, v0.4h, v2.4h
+    urhadd      v1.4h, v1.4h, v3.4h
+
+    st1         {v0.4h}, [x0], x1
+    st1         {v1.4h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function pixel_avg2_w8_neon, export=1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w5, w5, #2
+    ld1         {v0.8h}, [x2], x3
+    ld1         {v2.8h}, [x4], x3
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v3.8h}, [x4], x3
+    urhadd      v0.8h, v0.8h, v2.8h
+    urhadd      v1.8h, v1.8h, v3.8h
+
+    st1         {v0.8h}, [x0], x1
+    st1         {v1.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function pixel_avg2_w16_neon, export=1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    subs        w5, w5, #2
+    ld1         {v0.8h, v1.8h}, [x2], x3
+    ld1         {v2.8h, v3.8h}, [x4], x3
+    ld1         {v4.8h, v5.8h}, [x2], x3
+    ld1         {v6.8h, v7.8h}, [x4], x3
+    urhadd      v0.8h, v0.8h, v2.8h
+    urhadd      v1.8h, v1.8h, v3.8h
+    urhadd      v4.8h, v4.8h, v6.8h
+    urhadd      v5.8h, v5.8h, v7.8h
+
+    st1         {v0.8h, v1.8h}, [x0], x1
+    st1         {v4.8h, v5.8h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
+function pixel_avg2_w20_neon, export=1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    sub         x1, x1, #32
+1:
+    subs        w5, w5, #2
+
+    ld1         {v0.8h, v1.8h, v2.8h}, [x2], x3
+    ld1         {v3.8h, v4.8h, v5.8h}, [x4], x3
+    ld1         {v20.8h, v21.8h, v22.8h}, [x2], x3
+    ld1         {v23.8h, v24.8h, v25.8h}, [x4], x3
+
+    urhadd      v0.8h, v0.8h, v3.8h
+    urhadd      v1.8h, v1.8h, v4.8h
+    urhadd      v2.4h, v2.4h, v5.4h
+    urhadd      v20.8h, v20.8h, v23.8h
+    urhadd      v21.8h, v21.8h, v24.8h
+    urhadd      v22.4h, v22.4h, v25.4h
+
+    st1         {v0.8h, v1.8h}, [x0], #32
+    st1         {v2.4h}, [x0], x1
+    st1         {v20.8h, v21.8h}, [x0], #32
+    st1         {v22.4h}, [x0], x1
+    b.gt        1b
+    ret
+endfunc
+
 #endif
