@@ -28,11 +28,11 @@
 #include "mc.h"
 
 #define x264_prefetch_ref_aarch64 x264_template(prefetch_ref_aarch64)
-void x264_prefetch_ref_aarch64( uint8_t *, intptr_t, int );
+void x264_prefetch_ref_aarch64( pixel *, intptr_t, int );
 #define x264_prefetch_fenc_420_aarch64 x264_template(prefetch_fenc_420_aarch64)
-void x264_prefetch_fenc_420_aarch64( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_prefetch_fenc_420_aarch64( pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_prefetch_fenc_422_aarch64 x264_template(prefetch_fenc_422_aarch64)
-void x264_prefetch_fenc_422_aarch64( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_prefetch_fenc_422_aarch64( pixel *, intptr_t, pixel *, intptr_t, int );
 
 #define x264_memcpy_aligned_neon x264_template(memcpy_aligned_neon)
 void *x264_memcpy_aligned_neon( void *dst, const void *src, size_t n );
@@ -265,16 +265,16 @@ static uint8_t *get_ref_neon( uint8_t *dst,   intptr_t *i_dst_stride,
 void x264_hpel_filter_neon( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc,
                             uint8_t *src, intptr_t stride, int width,
                             int height, int16_t *buf );
+#endif // !HIGH_BIT_DEPTH
 
 PLANE_COPY(16, neon)
 PLANE_COPY_SWAP(16, neon)
 PLANE_INTERLEAVE(neon)
 PROPAGATE_LIST(neon)
-#endif // !HIGH_BIT_DEPTH
 
 void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
 {
-#if !HIGH_BIT_DEPTH
+
     if( cpu&X264_CPU_ARMV8 )
     {
         pf->prefetch_fenc_420 = x264_prefetch_fenc_420_aarch64;
@@ -284,6 +284,16 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
 
     if( !(cpu&X264_CPU_NEON) )
         return;
+
+    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
+    pf->mbtree_propagate_list = mbtree_propagate_list_neon;
+    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_neon;
+    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_neon;
+
+    pf->memcpy_aligned  = x264_memcpy_aligned_neon;
+    pf->memzero_aligned = x264_memzero_aligned_neon;
+
+#if !HIGH_BIT_DEPTH
 
     pf->copy_16x16_unaligned = x264_mc_copy_w16_neon;
     pf->copy[PIXEL_16x16]    = x264_mc_copy_w16_neon;
@@ -326,12 +336,5 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->integral_init4v = x264_integral_init4v_neon;
     pf->integral_init8v = x264_integral_init8v_neon;
 
-    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
-    pf->mbtree_propagate_list = mbtree_propagate_list_neon;
-    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_neon;
-    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_neon;
-
-    pf->memcpy_aligned  = x264_memcpy_aligned_neon;
-    pf->memzero_aligned = x264_memzero_aligned_neon;
 #endif // !HIGH_BIT_DEPTH
 }
