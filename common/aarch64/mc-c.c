@@ -171,6 +171,14 @@ static void (* const pixel_avg_wtab_neon[6])( pixel *, intptr_t, pixel *, intptr
     x264_pixel_avg2_w20_neon,
 };
 
+static void (* const mc_copy_wtab_neon[5])( pixel *, intptr_t, pixel *, intptr_t, int ) =
+{
+    NULL,
+    x264_mc_copy_w4_neon,
+    x264_mc_copy_w8_neon,
+    NULL,
+    x264_mc_copy_w16_neon,
+};
 
 #if !HIGH_BIT_DEPTH
 static void weight_cache_neon( x264_t *h, x264_weight_t *w )
@@ -193,15 +201,6 @@ static void weight_cache_neon( x264_t *h, x264_weight_t *w )
     else
         w->weightfn = mc_wtab_neon;
 }
-
-static void (* const mc_copy_wtab_neon[5])( pixel *, intptr_t, pixel *, intptr_t, int ) =
-{
-    NULL,
-    x264_mc_copy_w4_neon,
-    x264_mc_copy_w8_neon,
-    NULL,
-    x264_mc_copy_w16_neon,
-};
 
 static void mc_luma_neon( pixel *dst,    intptr_t i_dst_stride,
                           pixel *src[4], intptr_t i_src_stride,
@@ -304,12 +303,12 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_neon;
     pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_neon;
 
-#if !HIGH_BIT_DEPTH
-
     pf->copy_16x16_unaligned = x264_mc_copy_w16_neon;
     pf->copy[PIXEL_16x16]    = x264_mc_copy_w16_neon;
     pf->copy[PIXEL_8x8]      = x264_mc_copy_w8_neon;
     pf->copy[PIXEL_4x4]      = x264_mc_copy_w4_neon;
+
+#if !HIGH_BIT_DEPTH
 
     pf->plane_copy                  = plane_copy_neon;
     pf->plane_copy_swap             = plane_copy_swap_neon;
