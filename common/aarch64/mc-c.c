@@ -293,6 +293,16 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->memcpy_aligned  = x264_memcpy_aligned_neon;
     pf->memzero_aligned = x264_memzero_aligned_neon;
 
+    pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_neon;
+    pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_neon;
+    pf->avg[PIXEL_8x16]  = x264_pixel_avg_8x16_neon;
+    pf->avg[PIXEL_8x8]   = x264_pixel_avg_8x8_neon;
+    pf->avg[PIXEL_8x4]   = x264_pixel_avg_8x4_neon;
+    pf->avg[PIXEL_4x16]  = x264_pixel_avg_4x16_neon;
+    pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_neon;
+    pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_neon;
+    pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_neon;
+
 #if !HIGH_BIT_DEPTH
 
     pf->copy_16x16_unaligned = x264_mc_copy_w16_neon;
@@ -309,16 +319,6 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_neon;
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_neon;
     pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
-
-    pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_neon;
-    pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_neon;
-    pf->avg[PIXEL_8x16]  = x264_pixel_avg_8x16_neon;
-    pf->avg[PIXEL_8x8]   = x264_pixel_avg_8x8_neon;
-    pf->avg[PIXEL_8x4]   = x264_pixel_avg_8x4_neon;
-    pf->avg[PIXEL_4x16]  = x264_pixel_avg_4x16_neon;
-    pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_neon;
-    pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_neon;
-    pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_neon;
 
     pf->weight       = mc_wtab_neon;
     pf->offsetadd    = mc_offsetadd_wtab_neon;
