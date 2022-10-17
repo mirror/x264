@@ -40,32 +40,32 @@ void *x264_memcpy_aligned_neon( void *dst, const void *src, size_t n );
 void x264_memzero_aligned_neon( void *dst, size_t n );
 
 #define x264_pixel_avg_16x16_neon x264_template(pixel_avg_16x16_neon)
-void x264_pixel_avg_16x16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_16x16_neon( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_pixel_avg_16x8_neon x264_template(pixel_avg_16x8_neon)
-void x264_pixel_avg_16x8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_16x8_neon ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_pixel_avg_8x16_neon x264_template(pixel_avg_8x16_neon)
-void x264_pixel_avg_8x16_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_8x16_neon ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_pixel_avg_8x8_neon x264_template(pixel_avg_8x8_neon)
-void x264_pixel_avg_8x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_8x8_neon  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_pixel_avg_8x4_neon x264_template(pixel_avg_8x4_neon)
-void x264_pixel_avg_8x4_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_8x4_neon  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_pixel_avg_4x16_neon x264_template(pixel_avg_4x16_neon)
-void x264_pixel_avg_4x16_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_4x16_neon ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_pixel_avg_4x8_neon x264_template(pixel_avg_4x8_neon)
-void x264_pixel_avg_4x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_4x8_neon  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_pixel_avg_4x4_neon x264_template(pixel_avg_4x4_neon)
-void x264_pixel_avg_4x4_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_4x4_neon  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_pixel_avg_4x2_neon x264_template(pixel_avg_4x2_neon)
-void x264_pixel_avg_4x2_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_pixel_avg_4x2_neon  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 
 #define x264_pixel_avg2_w4_neon x264_template(pixel_avg2_w4_neon)
-void x264_pixel_avg2_w4_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
+void x264_pixel_avg2_w4_neon ( pixel *, intptr_t, pixel *, intptr_t, pixel *, int );
 #define x264_pixel_avg2_w8_neon x264_template(pixel_avg2_w8_neon)
-void x264_pixel_avg2_w8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
+void x264_pixel_avg2_w8_neon ( pixel *, intptr_t, pixel *, intptr_t, pixel *, int );
 #define x264_pixel_avg2_w16_neon x264_template(pixel_avg2_w16_neon)
-void x264_pixel_avg2_w16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
+void x264_pixel_avg2_w16_neon( pixel *, intptr_t, pixel *, intptr_t, pixel *, int );
 #define x264_pixel_avg2_w20_neon x264_template(pixel_avg2_w20_neon)
-void x264_pixel_avg2_w20_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int );
+void x264_pixel_avg2_w20_neon( pixel *, intptr_t, pixel *, intptr_t, pixel *, int );
 
 #define x264_plane_copy_core_neon x264_template(plane_copy_core_neon)
 void x264_plane_copy_core_neon( pixel *dst, intptr_t i_dst,
@@ -111,12 +111,12 @@ void x264_load_deinterleave_chroma_fenc_neon( pixel *dst, pixel *src, intptr_t i
 #define x264_mc_weight_w8_offsetadd_neon x264_template(mc_weight_w8_offsetadd_neon)
 #define x264_mc_weight_w8_offsetsub_neon x264_template(mc_weight_w8_offsetsub_neon)
 #define MC_WEIGHT(func)\
-void x264_mc_weight_w20##func##_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
-void x264_mc_weight_w16##func##_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
-void x264_mc_weight_w8##func##_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
-void x264_mc_weight_w4##func##_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
+void x264_mc_weight_w20##func##_neon( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int );\
+void x264_mc_weight_w16##func##_neon( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int );\
+void x264_mc_weight_w8##func##_neon ( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int );\
+void x264_mc_weight_w4##func##_neon ( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int );\
 \
-static void (* mc##func##_wtab_neon[6])( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int ) =\
+static void (* mc##func##_wtab_neon[6])( pixel *, intptr_t, pixel *, intptr_t, const x264_weight_t *, int ) =\
 {\
     x264_mc_weight_w4##func##_neon,\
     x264_mc_weight_w4##func##_neon,\
@@ -134,24 +134,24 @@ MC_WEIGHT(_offsetsub)
 #endif
 
 #define x264_mc_copy_w4_neon x264_template(mc_copy_w4_neon)
-void x264_mc_copy_w4_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_mc_copy_w4_neon ( pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_mc_copy_w8_neon x264_template(mc_copy_w8_neon)
-void x264_mc_copy_w8_neon ( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_mc_copy_w8_neon ( pixel *, intptr_t, pixel *, intptr_t, int );
 #define x264_mc_copy_w16_neon x264_template(mc_copy_w16_neon)
-void x264_mc_copy_w16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+void x264_mc_copy_w16_neon( pixel *, intptr_t, pixel *, intptr_t, int );
 
 #define x264_mc_chroma_neon x264_template(mc_chroma_neon)
-void x264_mc_chroma_neon( uint8_t *, uint8_t *, intptr_t, uint8_t *, intptr_t, int, int, int, int );
+void x264_mc_chroma_neon( pixel *, pixel *, intptr_t, pixel *, intptr_t, int, int, int, int );
 #define x264_integral_init4h_neon x264_template(integral_init4h_neon)
-void x264_integral_init4h_neon( uint16_t *, uint8_t *, intptr_t );
+void x264_integral_init4h_neon( uint16_t *, pixel *, intptr_t );
 #define x264_integral_init4v_neon x264_template(integral_init4v_neon)
 void x264_integral_init4v_neon( uint16_t *, uint16_t *, intptr_t );
 #define x264_integral_init8h_neon x264_template(integral_init8h_neon)
-void x264_integral_init8h_neon( uint16_t *, uint8_t *, intptr_t );
+void x264_integral_init8h_neon( uint16_t *, pixel *, intptr_t );
 #define x264_integral_init8v_neon x264_template(integral_init8v_neon)
 void x264_integral_init8v_neon( uint16_t *, intptr_t );
 #define x264_frame_init_lowres_core_neon x264_template(frame_init_lowres_core_neon)
-void x264_frame_init_lowres_core_neon( uint8_t *, uint8_t *, uint8_t *, uint8_t *, uint8_t *, intptr_t, intptr_t, int, int );
+void x264_frame_init_lowres_core_neon( pixel *, pixel *, pixel *, pixel *, pixel *, intptr_t, intptr_t, int, int );
 
 #define x264_mbtree_propagate_cost_neon x264_template(mbtree_propagate_cost_neon)
 void x264_mbtree_propagate_cost_neon( int16_t *, uint16_t *, uint16_t *, uint16_t *, uint16_t *, float *, int );
@@ -183,7 +183,7 @@ static void weight_cache_neon( x264_t *h, x264_weight_t *w )
         w->weightfn = mc_wtab_neon;
 }
 
-static void (* const pixel_avg_wtab_neon[6])( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, int ) =
+static void (* const pixel_avg_wtab_neon[6])( pixel *, intptr_t, pixel *, intptr_t, pixel *, int ) =
 {
     NULL,
     x264_pixel_avg2_w4_neon,
@@ -193,7 +193,7 @@ static void (* const pixel_avg_wtab_neon[6])( uint8_t *, intptr_t, uint8_t *, in
     x264_pixel_avg2_w20_neon,
 };
 
-static void (* const mc_copy_wtab_neon[5])( uint8_t *, intptr_t, uint8_t *, intptr_t, int ) =
+static void (* const mc_copy_wtab_neon[5])( pixel *, intptr_t, pixel *, intptr_t, int ) =
 {
     NULL,
     x264_mc_copy_w4_neon,
@@ -202,20 +202,20 @@ static void (* const mc_copy_wtab_neon[5])( uint8_t *, intptr_t, uint8_t *, intp
     x264_mc_copy_w16_neon,
 };
 
-static void mc_luma_neon( uint8_t *dst,    intptr_t i_dst_stride,
-                          uint8_t *src[4], intptr_t i_src_stride,
+static void mc_luma_neon( pixel *dst,    intptr_t i_dst_stride,
+                          pixel *src[4], intptr_t i_src_stride,
                           int mvx, int mvy,
                           int i_width, int i_height, const x264_weight_t *weight )
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     intptr_t offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    uint8_t *src1 = src[x264_hpel_ref0[qpel_idx]] + offset;
+    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset;
     if( (mvy&3) == 3 )             // explicit if() to force conditional add
         src1 += i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        uint8_t *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         pixel_avg_wtab_neon[i_width>>2](
                 dst, i_dst_stride, src1, i_src_stride,
                 src2, i_height );
@@ -228,20 +228,20 @@ static void mc_luma_neon( uint8_t *dst,    intptr_t i_dst_stride,
         mc_copy_wtab_neon[i_width>>2]( dst, i_dst_stride, src1, i_src_stride, i_height );
 }
 
-static uint8_t *get_ref_neon( uint8_t *dst,   intptr_t *i_dst_stride,
-                              uint8_t *src[4], intptr_t i_src_stride,
+static pixel *get_ref_neon( pixel *dst,   intptr_t *i_dst_stride,
+                              pixel *src[4], intptr_t i_src_stride,
                               int mvx, int mvy,
                               int i_width, int i_height, const x264_weight_t *weight )
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     intptr_t offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    uint8_t *src1 = src[x264_hpel_ref0[qpel_idx]] + offset;
+    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset;
     if( (mvy&3) == 3 )             // explicit if() to force conditional add
         src1 += i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        uint8_t *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         pixel_avg_wtab_neon[i_width>>2](
                 dst, *i_dst_stride, src1, i_src_stride,
                 src2, i_height );
@@ -262,8 +262,8 @@ static uint8_t *get_ref_neon( uint8_t *dst,   intptr_t *i_dst_stride,
 }
 
 #define x264_hpel_filter_neon x264_template(hpel_filter_neon)
-void x264_hpel_filter_neon( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc,
-                            uint8_t *src, intptr_t stride, int width,
+void x264_hpel_filter_neon( pixel *dsth, pixel *dstv, pixel *dstc,
+                            pixel *src, intptr_t stride, int width,
                             int height, int16_t *buf );
 #endif // !HIGH_BIT_DEPTH
 
