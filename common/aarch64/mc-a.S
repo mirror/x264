@@ -3150,4 +3150,140 @@ function integral_init8v_neon, export=1
     ret
 endfunc
 
+// frame_init_lowres_core( pixel *src0, pixel *dst0, pixel *dsth,
+//                         pixel *dstv, pixel *dstc, intptr_t src_stride,
+//                         intptr_t dst_stride, int width, int height )
+function frame_init_lowres_core_neon, export=1
+    ldr         w8, [sp]
+    lsl         x5, x5, #1
+    sub         x10, x6, w7, uxtw       // dst_stride - width
+    lsl         x10, x10, #1
+    and         x10, x10, #~31
+
+    stp         d8, d9, [sp, #-0x40]!
+    stp         d10, d11, [sp, #0x10]
+    stp         d12, d13, [sp, #0x20]
+    stp         d14, d15, [sp, #0x30]
+
+1:
+    mov         w9, w7                  // width
+    mov         x11, x0                 // src0
+    add         x12, x0, x5             // src1 = src0 + src_stride
+    add         x13, x0, x5, lsl #1     // src2 = src1 + src_stride
+
+    ld2         {v0.8h, v1.8h}, [x11], #32
+    ld2         {v2.8h, v3.8h}, [x11], #32
+    ld2         {v4.8h, v5.8h}, [x12], #32
+    ld2         {v6.8h, v7.8h}, [x12], #32
+    ld2         {v28.8h, v29.8h}, [x13], #32
+    ld2         {v30.8h, v31.8h}, [x13], #32
+
+    urhadd      v20.8h, v0.8h, v4.8h
+    urhadd      v21.8h, v2.8h, v6.8h
+    urhadd      v22.8h, v4.8h, v28.8h
+    urhadd      v23.8h, v6.8h, v30.8h
+2:
+    subs        w9, w9, #16
+
+    urhadd      v24.8h, v1.8h, v5.8h
+    urhadd      v25.8h, v3.8h, v7.8h
+    urhadd      v26.8h, v5.8h, v29.8h
+    urhadd      v27.8h, v7.8h, v31.8h
+
+    ld2         {v0.8h, v1.8h}, [x11], #32
+    ld2         {v2.8h, v3.8h}, [x11], #32
+    ld2         {v4.8h, v5.8h}, [x12], #32
+    ld2         {v6.8h, v7.8h}, [x12], #32
+    ld2         {v28.8h, v29.8h}, [x13], #32
+    ld2         {v30.8h, v31.8h}, [x13], #32
+
+    urhadd      v16.8h, v0.8h, v4.8h
+    urhadd      v17.8h, v2.8h, v6.8h
+    urhadd      v18.8h, v4.8h, v28.8h
+    urhadd      v19.8h, v6.8h, v30.8h
+
+    ext         v8.16b, v20.16b, v21.16b, #2
+    ext         v9.16b, v21.16b, v16.16b, #2
+    ext         v10.16b, v22.16b, v23.16b, #2
+    ext         v11.16b, v23.16b, v18.16b, #2
+
+    urhadd      v12.8h, v20.8h, v24.8h
+    urhadd      v8.8h, v24.8h, v8.8h
+
+    urhadd      v24.8h, v21.8h, v25.8h
+    urhadd      v22.8h, v22.8h, v26.8h
+    urhadd      v10.8h, v26.8h, v10.8h
+    urhadd      v26.8h, v23.8h, v27.8h
+    urhadd      v9.8h, v25.8h, v9.8h
+    urhadd      v11.8h, v27.8h, v11.8h
+
+    st1         {v12.8h}, [x1], #16
+    st1         {v24.8h}, [x1], #16
+    st1         {v22.8h}, [x3], #16
+    st1         {v26.8h}, [x3], #16
+    st1         {v8.8h, v9.8h}, [x2], #32
+    st1         {v10.8h, v11.8h}, [x4], #32
+
+    b.le        3f
+
+    subs        w9,  w9,  #16
+
+    urhadd      v24.8h, v1.8h, v5.8h
+    urhadd      v25.8h, v3.8h, v7.8h
+    urhadd      v26.8h, v5.8h, v29.8h
+    urhadd      v27.8h, v7.8h, v31.8h
+
+    ld2         {v0.8h, v1.8h}, [x11], #32
+    ld2         {v2.8h, v3.8h}, [x11], #32
+    ld2         {v4.8h, v5.8h}, [x12], #32
+    ld2         {v6.8h, v7.8h}, [x12], #32
+    ld2         {v28.8h, v29.8h}, [x13], #32
+    ld2         {v30.8h, v31.8h}, [x13], #32
+
+    urhadd      v20.8h, v0.8h, v4.8h
+    urhadd      v21.8h, v2.8h, v6.8h
+    urhadd      v22.8h, v4.8h, v28.8h
+    urhadd      v23.8h, v6.8h, v30.8h
+
+    ext         v8.16b, v16.16b, v17.16b, #2
+    ext         v9.16b, v17.16b, v20.16b, #2
+    ext         v10.16b, v18.16b, v19.16b, #2
+    ext         v11.16b, v19.16b, v22.16b, #2
+
+    urhadd      v12.8h, v16.8h, v24.8h
+    urhadd      v13.8h, v17.8h, v25.8h
+
+    urhadd      v14.8h, v18.8h, v26.8h
+    urhadd      v15.8h, v19.8h, v27.8h
+
+    urhadd      v16.8h, v24.8h, v8.8h
+    urhadd      v17.8h, v25.8h, v9.8h
+
+    urhadd      v18.8h, v26.8h, v10.8h
+    urhadd      v19.8h, v27.8h, v11.8h
+
+    st1         {v12.8h, v13.8h}, [x1], #32
+    st1         {v14.8h, v15.8h}, [x3], #32
+    st1         {v16.8h, v17.8h}, [x2], #32
+    st1         {v18.8h, v19.8h}, [x4], #32
+    b.gt        2b
+3:
+    subs        w8, w8, #1
+    add         x0, x0, x5, lsl #1
+    add         x1, x1, x10
+    add         x2, x2, x10
+    add         x3, x3, x10
+    add         x4, x4, x10
+    b.gt        1b
+
+    ldp         d8, d9, [sp]
+    ldp         d10, d11, [sp, #0x10]
+    ldp         d12, d13, [sp, #0x20]
+    ldp         d14, d15, [sp, #0x30]
+
+    add         sp, sp, #0x40
+
+    ret
+endfunc
+
 #endif

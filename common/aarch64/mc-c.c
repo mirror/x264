@@ -321,6 +321,8 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->integral_init4v = x264_integral_init4v_neon;
     pf->integral_init8v = x264_integral_init8v_neon;
 
+    pf->frame_init_lowres_core = x264_frame_init_lowres_core_neon;
+
 #if !HIGH_BIT_DEPTH
 
     pf->plane_copy                  = plane_copy_neon;
@@ -334,8 +336,6 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
 
     pf->hpel_filter = x264_hpel_filter_neon;
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_neon;
-
 
 #endif // !HIGH_BIT_DEPTH
 }
