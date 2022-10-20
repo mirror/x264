@@ -328,14 +328,14 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
 
     pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
 
-
-#if !HIGH_BIT_DEPTH
-
     pf->plane_copy                  = plane_copy_neon;
     pf->plane_copy_swap             = plane_copy_swap_neon;
     pf->plane_copy_deinterleave     = x264_plane_copy_deinterleave_neon;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_neon;
     pf->plane_copy_interleave       = plane_copy_interleave_neon;
+
+#if !HIGH_BIT_DEPTH
+
 
     pf->hpel_filter = x264_hpel_filter_neon;
 

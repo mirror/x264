@@ -3332,4 +3332,183 @@ function store_interleave_chroma_neon, export=1
     ret
 endfunc
 
+function plane_copy_core_neon, export=1
+    add         w8, w4, #31 // 32-bit write clears the upper 32-bit the register
+    and         w4, w8, #~31
+    // safe use of the full reg since negative width makes no sense
+    sub         x1, x1, x4
+    sub         x3, x3, x4
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    mov         w8, w4
+16:
+    tst         w8, #16
+    b.eq        32f
+    subs        w8, w8, #16
+    ldp         q0, q1, [x2], #32
+    stp         q0, q1, [x0], #32
+    b.eq        0f
+32:
+    subs        w8, w8, #32
+    ldp         q0, q1, [x2], #32
+    ldp         q2, q3, [x2], #32
+    stp         q0, q1, [x0], #32
+    stp         q2, q3, [x0], #32
+    b.gt        32b
+0:
+    subs        w5, w5, #1
+    add         x2, x2, x3
+    add         x0, x0, x1
+    b.gt        1b
+
+    ret
+endfunc
+
+function plane_copy_swap_core_neon, export=1
+    lsl         w4, w4, #1
+    add         w8, w4, #31 // 32-bit write clears the upper 32-bit the register
+    and         w4, w8, #~31
+    sub         x1, x1, x4
+    sub         x3, x3, x4
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+1:
+    mov         w8, w4
+    tbz         w4, #4, 32f
+    subs        w8, w8, #16
+    ld1         {v0.8h, v1.8h}, [x2], #32
+    rev32       v0.8h, v0.8h
+    rev32       v1.8h, v1.8h
+    st1         {v0.8h, v1.8h}, [x0], #32
+    b.eq        0f
+32:
+    subs        w8, w8, #32
+    ld1         {v0.8h ,v1.8h, v2.8h, v3.8h}, [x2], #64
+    rev32       v20.8h, v0.8h
+    rev32       v21.8h, v1.8h
+    rev32       v22.8h, v2.8h
+    rev32       v23.8h, v3.8h
+    st1         {v20.8h, v21.8h, v22.8h, v23.8h}, [x0], #64
+    b.gt        32b
+0:
+    subs        w5, w5, #1
+    add         x2, x2, x3
+    add         x0, x0, x1
+    b.gt        1b
+
+    ret
+endfunc
+
+function plane_copy_deinterleave_neon, export=1
+    add         w9, w6, #15
+    and         w9, w9, #~15
+    sub         x1, x1, x9
+    sub         x3, x3, x9
+    sub         x5, x5, x9, lsl #1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    lsl         x5, x5, #1
+1:
+    ld2         {v0.8h, v1.8h}, [x4], #32
+    ld2         {v2.8h, v3.8h}, [x4], #32
+    subs        w9, w9, #16
+    st1         {v0.8h}, [x0], #16
+    st1         {v2.8h}, [x0], #16
+    st1         {v1.8h}, [x2], #16
+    st1         {v3.8h}, [x2], #16
+    b.gt        1b
+
+    add         x4, x4, x5
+    subs        w7, w7, #1
+    add         x0, x0, x1
+    add         x2, x2, x3
+    mov         w9, w6
+    b.gt       1b
+
+    ret
+endfunc
+
+function plane_copy_interleave_core_neon, export=1
+    add         w9, w6, #15
+    and         w9, w9, #0xfffffff0
+    sub         x1, x1, x9,  lsl #1
+    sub         x3, x3, x9
+    sub         x5, x5, x9
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    lsl         x5, x5, #1
+1:
+    ld1         {v0.8h}, [x2], #16
+    ld1         {v1.8h}, [x4], #16
+    ld1         {v2.8h}, [x2], #16
+    ld1         {v3.8h}, [x4], #16
+    subs        w9, w9, #16
+    st2         {v0.8h, v1.8h}, [x0], #32
+    st2         {v2.8h, v3.8h}, [x0], #32
+    b.gt        1b
+
+    subs        w7, w7, #1
+    add         x0, x0, x1
+    add         x2, x2, x3
+    add         x4, x4, x5
+    mov         w9, w6
+    b.gt        1b
+
+    ret
+endfunc
+
+.macro deinterleave_rgb
+    subs            x11, x11, #8
+    st1             {v0.8h}, [x0], #16
+    st1             {v1.8h}, [x2], #16
+    st1             {v2.8h}, [x4], #16
+    b.gt            1b
+
+    subs            w10, w10, #1
+    add             x0, x0, x1
+    add             x2, x2, x3
+    add             x4, x4, x5
+    add             x6, x6, x7
+    mov             x11, x9
+    b.gt            1b
+.endm
+
+function plane_copy_deinterleave_rgb_neon, export=1
+#if SYS_MACOSX
+    ldr             w8, [sp]
+    ldp             w9, w10, [sp, #4]
+#else
+    ldr             x8, [sp]
+    ldp             x9, x10, [sp, #8]
+#endif
+    cmp             w8, #3
+    uxtw            x9, w9
+    add             x11, x9, #7
+    and             x11, x11, #~7
+    sub             x1, x1, x11
+    sub             x3, x3, x11
+    sub             x5, x5, x11
+    lsl             x1, x1, #1
+    lsl             x3, x3, #1
+    lsl             x5, x5, #1
+    b.ne            4f
+    sub             x7, x7, x11, lsl #1
+    sub             x7, x7, x11
+    lsl             x7, x7, #1
+1:
+    ld3            {v0.8h, v1.8h, v2.8h}, [x6], #48
+    deinterleave_rgb
+
+    ret
+4:
+    sub             x7, x7, x11, lsl #2
+    lsl             x7, x7, #1
+1:
+    ld4            {v0.8h, v1.8h, v2.8h, v3.8h}, [x6], #64
+    deinterleave_rgb
+
+    ret
+endfunc
+
 #endif
