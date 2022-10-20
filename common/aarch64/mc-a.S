@@ -3286,4 +3286,28 @@ function frame_init_lowres_core_neon, export=1
     ret
 endfunc
 
+function load_deinterleave_chroma_fenc_neon, export=1
+    mov         x4, #FENC_STRIDE/2
+    lsl         x4, x4, #1
+    lsl         x2, x2, #1
+    b           load_deinterleave_chroma
+endfunc
+
+function load_deinterleave_chroma_fdec_neon, export=1
+    mov         x4, #FDEC_STRIDE/2
+    lsl         x4, x4, #1
+    lsl         x2, x2, #1
+load_deinterleave_chroma:
+    ld2         {v0.8h, v1.8h}, [x1], x2
+    ld2         {v2.8h, v3.8h}, [x1], x2
+    subs        w3, w3, #2
+    st1         {v0.8h}, [x0], x4
+    st1         {v1.8h}, [x0], x4
+    st1         {v2.8h}, [x0], x4
+    st1         {v3.8h}, [x0], x4
+    b.gt        load_deinterleave_chroma
+
+    ret
+endfunc
+
 #endif
