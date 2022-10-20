@@ -3310,4 +3310,26 @@ load_deinterleave_chroma:
     ret
 endfunc
 
+function store_interleave_chroma_neon, export=1
+    mov         x5, #FDEC_STRIDE
+    lsl         x5, x5, #1
+    lsl         x1, x1, #1
+1:
+    ld1         {v0.8h}, [x2], x5
+    ld1         {v1.8h}, [x3], x5
+    ld1         {v2.8h}, [x2], x5
+    ld1         {v3.8h}, [x3], x5
+    subs        w4, w4, #2
+    zip1        v4.8h, v0.8h, v1.8h
+    zip1        v6.8h, v2.8h, v3.8h
+    zip2        v5.8h, v0.8h, v1.8h
+    zip2        v7.8h, v2.8h, v3.8h
+
+    st1         {v4.8h, v5.8h}, [x0], x1
+    st1         {v6.8h, v7.8h}, [x0], x1
+    b.gt        1b
+
+    ret
+endfunc
+
 #endif
