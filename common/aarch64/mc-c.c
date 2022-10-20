@@ -326,6 +326,9 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_neon;
     pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_neon;
 
+    pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
+
+
 #if !HIGH_BIT_DEPTH
 
     pf->plane_copy                  = plane_copy_neon;
@@ -333,9 +336,6 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->plane_copy_deinterleave     = x264_plane_copy_deinterleave_neon;
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_neon;
     pf->plane_copy_interleave       = plane_copy_interleave_neon;
-
-
-    pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
 
     pf->hpel_filter = x264_hpel_filter_neon;
 
