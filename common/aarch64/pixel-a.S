@@ -113,119 +113,6 @@ function pixel_sad\name\()_\w\()x\h\()_neon, export=1
 endfunc
 .endm
 
-#else /* BIT_DEPTH == 8 */
-
-.macro SAD_START_4
-    lsl        x1, x1, #1
-    lsl        x3, x3, #1
-    ld1        {v1.d}[0], [x2], x3
-    ld1        {v0.d}[0], [x0], x1
-    ld1        {v1.d}[1], [x2], x3
-    ld1        {v0.d}[1], [x0], x1
-    uabdl       v16.4s,  v0.4h,  v1.4h
-    uabdl2      v18.4s,  v0.8h,  v1.8h
-.endm
-
-.macro SAD_4
-    ld1        {v1.d}[0], [x2], x3
-    ld1        {v0.d}[0], [x0], x1
-    ld1        {v1.d}[1], [x2], x3
-    ld1        {v0.d}[1], [x0], x1
-    uabal       v16.4s,  v0.4h,  v1.4h
-    uabal2      v18.4s,  v0.8h,  v1.8h
-.endm
-
-.macro SAD_START_8
-    lsl         x1, x1, #1
-    lsl         x3, x3, #1
-    ld1         {v1.8h}, [x2], x3
-    ld1         {v0.8h}, [x0], x1
-    ld1         {v3.8h}, [x2], x3
-    ld1         {v2.8h}, [x0], x1
-    uabdl       v16.4s,  v0.4h,  v1.4h
-    uabdl2      v17.4s,  v0.8h,  v1.8h
-    uabdl       v18.4s,  v2.4h,  v3.4h
-    uabdl2      v19.4s,  v2.8h,  v3.8h
-.endm
-
-.macro SAD_8
-    ld1         {v1.8h}, [x2], x3
-    ld1         {v0.8h}, [x0], x1
-    ld1         {v3.8h}, [x2], x3
-    ld1         {v2.8h}, [x0], x1
-    uabal       v16.4s,  v0.4h,  v1.4h
-    uabal2      v17.4s,  v0.8h,  v1.8h
-    uabal       v18.4s,  v2.4h,  v3.4h
-    uabal2      v19.4s,  v2.8h,  v3.8h
-.endm
-
-.macro SAD_START_16
-    lsl         x1, x1, #1
-    lsl         x3, x3, #1
-    ld2         {v0.8h, v1.8h}, [x2], x3
-    ld2         {v2.8h, v3.8h}, [x0], x1
-    ld2         {v4.8h, v5.8h}, [x2], x3
-    ld2         {v6.8h, v7.8h}, [x0], x1
-    uabdl       v16.4s,  v0.4h,  v2.4h
-    uabdl2      v17.4s,  v0.8h,  v2.8h
-    uabdl       v20.4s,  v1.4h,  v3.4h
-    uabdl2      v21.4s,  v1.8h,  v3.8h
-    uabdl       v18.4s,  v4.4h,  v6.4h
-    uabdl2      v19.4s,  v4.8h,  v6.8h
-    uabdl       v22.4s,  v5.4h,  v7.4h
-    uabdl2      v23.4s,  v5.8h,  v7.8h
-.endm
-
-.macro SAD_16
-    ld2         {v0.8h, v1.8h}, [x2], x3
-    ld2         {v2.8h, v3.8h}, [x0], x1
-    ld2         {v4.8h, v5.8h}, [x2], x3
-    ld2         {v6.8h, v7.8h}, [x0], x1
-    uabal       v16.4s,  v0.4h,  v2.4h
-    uabal2      v17.4s,  v0.8h,  v2.8h
-    uabal       v20.4s,  v1.4h,  v3.4h
-    uabal2      v21.4s,  v1.8h,  v3.8h
-    uabal       v18.4s,  v4.4h,  v6.4h
-    uabal2      v19.4s,  v4.8h,  v6.8h
-    uabal       v22.4s,  v5.4h,  v7.4h
-    uabal2      v23.4s,  v5.8h,  v7.8h
-.endm
-
-.macro SAD_FUNC w, h, name
-function pixel_sad\name\()_\w\()x\h\()_neon, export=1
-    SAD_START_\w
-
-.rept \h / 2 - 1
-    SAD_\w
-.endr
-.if \w > 8
-    add         v20.4s,  v20.4s,  v21.4s
-    add         v16.4s,  v16.4s,  v20.4s
-    add         v22.4s,  v22.4s,  v23.4s
-    add         v18.4s,  v18.4s,  v22.4s
-.endif
-.if \w > 4
-    add         v16.4s,  v16.4s,  v17.4s
-    add         v18.4s,  v18.4s,  v19.4s
-.endif
-    add         v16.4s,  v16.4s,  v18.4s
-    uaddlv      s0,  v16.8h
-    fmov        w0,  s0
-    ret
-endfunc
-.endm
-
-#endif /* BIT_DEPTH == 8 */
-
-SAD_FUNC  4,  4
-SAD_FUNC  4,  8
-SAD_FUNC  4,  16
-SAD_FUNC  8,  4
-SAD_FUNC  8,  8
-SAD_FUNC  8,  16
-SAD_FUNC  16, 8
-SAD_FUNC  16, 16
-
 .macro SAD_X_4 x, first=uabal
     ld1        {v0.s}[0], [x0], x7
     ld1        {v1.s}[0], [x1], x5
@@ -336,6 +223,237 @@ function pixel_sad_x\x\()_\w\()x\h\()_neon, export=1
     ret
 endfunc
 .endm
+
+#else /* BIT_DEPTH == 8 */
+
+.macro SAD_START_4
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    ld1         {v1.d}[0], [x2], x3
+    ld1         {v0.d}[0], [x0], x1
+    ld1         {v1.d}[1], [x2], x3
+    ld1         {v0.d}[1], [x0], x1
+    uabdl       v16.4s, v0.4h, v1.4h
+    uabdl2      v18.4s, v0.8h, v1.8h
+.endm
+
+.macro SAD_4
+    ld1         {v1.d}[0], [x2], x3
+    ld1         {v0.d}[0], [x0], x1
+    ld1         {v1.d}[1], [x2], x3
+    ld1         {v0.d}[1], [x0], x1
+    uabal       v16.4s, v0.4h, v1.4h
+    uabal2      v18.4s, v0.8h, v1.8h
+.endm
+
+.macro SAD_START_8
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v0.8h}, [x0], x1
+    ld1         {v3.8h}, [x2], x3
+    ld1         {v2.8h}, [x0], x1
+    uabdl       v16.4s, v0.4h, v1.4h
+    uabdl2      v17.4s, v0.8h, v1.8h
+    uabdl       v18.4s, v2.4h, v3.4h
+    uabdl2      v19.4s, v2.8h, v3.8h
+.endm
+
+.macro SAD_8
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v0.8h}, [x0], x1
+    ld1         {v3.8h}, [x2], x3
+    ld1         {v2.8h}, [x0], x1
+    uabal       v16.4s, v0.4h, v1.4h
+    uabal2      v17.4s, v0.8h, v1.8h
+    uabal       v18.4s, v2.4h, v3.4h
+    uabal2      v19.4s, v2.8h, v3.8h
+.endm
+
+.macro SAD_START_16
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    ld2         {v0.8h, v1.8h}, [x2], x3
+    ld2         {v2.8h, v3.8h}, [x0], x1
+    ld2         {v4.8h, v5.8h}, [x2], x3
+    ld2         {v6.8h, v7.8h}, [x0], x1
+    uabdl       v16.4s, v0.4h, v2.4h
+    uabdl2      v17.4s, v0.8h, v2.8h
+    uabdl       v20.4s, v1.4h, v3.4h
+    uabdl2      v21.4s, v1.8h, v3.8h
+    uabdl       v18.4s, v4.4h, v6.4h
+    uabdl2      v19.4s, v4.8h, v6.8h
+    uabdl       v22.4s, v5.4h, v7.4h
+    uabdl2      v23.4s, v5.8h, v7.8h
+.endm
+
+.macro SAD_16
+    ld2         {v0.8h, v1.8h}, [x2], x3
+    ld2         {v2.8h, v3.8h}, [x0], x1
+    ld2         {v4.8h, v5.8h}, [x2], x3
+    ld2         {v6.8h, v7.8h}, [x0], x1
+    uabal       v16.4s, v0.4h, v2.4h
+    uabal2      v17.4s, v0.8h, v2.8h
+    uabal       v20.4s, v1.4h, v3.4h
+    uabal2      v21.4s, v1.8h, v3.8h
+    uabal       v18.4s, v4.4h, v6.4h
+    uabal2      v19.4s, v4.8h, v6.8h
+    uabal       v22.4s, v5.4h, v7.4h
+    uabal2      v23.4s, v5.8h, v7.8h
+.endm
+
+.macro SAD_FUNC w, h, name
+function pixel_sad\name\()_\w\()x\h\()_neon, export=1
+    SAD_START_\w
+
+.rept \h / 2 - 1
+    SAD_\w
+.endr
+.if \w > 8
+    add         v20.4s, v20.4s, v21.4s
+    add         v16.4s, v16.4s, v20.4s
+    add         v22.4s, v22.4s, v23.4s
+    add         v18.4s, v18.4s, v22.4s
+.endif
+.if \w > 4
+    add         v16.4s, v16.4s, v17.4s
+    add         v18.4s, v18.4s, v19.4s
+.endif
+    add         v16.4s, v16.4s, v18.4s
+    uaddlv      s0, v16.8h
+    fmov        w0, s0
+    ret
+endfunc
+.endm
+
+.macro SAD_X_4 x, first=uaba
+    ld1         {v0.d}[0], [x0], x7
+    ld1         {v1.d}[0], [x1], x5
+    ld1         {v0.d}[1], [x0], x7
+    ld1         {v1.d}[1], [x1], x5
+    \first      v16.8h, v1.8h, v0.8h
+    ld1         {v2.d}[0], [x2], x5
+    ld1         {v2.d}[1], [x2], x5
+    \first      v17.8h, v2.8h, v0.8h
+    ld1         {v3.d}[0], [x3], x5
+    ld1         {v3.d}[1], [x3], x5
+    \first      v18.8h, v3.8h, v0.8h
+.if \x == 4
+    ld1         {v4.d}[0], [x4], x5
+    ld1         {v4.d}[1], [x4], x5
+    \first      v19.8h, v4.8h, v0.8h
+.endif
+.endm
+
+.macro SAD_X_8 x, first=uaba
+    ld1         {v0.8h}, [x0], x7
+    ld1         {v1.8h}, [x1], x5
+    \first      v16.8h, v1.8h, v0.8h
+    ld1         {v2.8h}, [x2], x5
+    ld1         {v5.8h}, [x0], x7
+    \first      v17.8h, v2.8h, v0.8h
+    ld1         {v3.8h}, [x3], x5
+    ld1         {v1.8h}, [x1], x5
+    \first      v18.8h, v3.8h, v0.8h
+    uaba        v16.8h, v1.8h, v5.8h
+    ld1         {v2.8h}, [x2], x5
+    ld1         {v3.8h}, [x3], x5
+    uaba        v17.8h, v2.8h, v5.8h
+    uaba        v18.8h, v3.8h, v5.8h
+.if \x == 4
+    ld1         {v4.8h}, [x4], x5
+    \first      v19.8h, v4.8h, v0.8h
+    ld1         {v4.8h}, [x4], x5
+    uaba        v19.8h, v4.8h, v5.8h
+.endif
+.endm
+
+.macro SAD_X_16 x, first=uaba
+    ld1         {v0.8h, v1.8h}, [x0], x7
+    ld1         {v2.8h, v3.8h}, [x1], x5
+    \first      v16.8h, v2.8h, v0.8h
+    \first      v20.8h, v3.8h, v1.8h
+
+    ld1         {v4.8h, v5.8h}, [x2], x5
+    ld1         {v6.8h, v7.8h}, [x0], x7
+    \first      v17.8h, v4.8h, v0.8h
+    \first      v21.8h, v5.8h, v1.8h
+
+    ld1         {v24.8h, v25.8h}, [x3], x5
+    ld1         {v2.8h, v3.8h}, [x1], x5
+    \first      v18.8h, v24.8h, v0.8h
+    \first      v22.8h, v25.8h, v1.8h
+    uaba        v16.8h, v2.8h, v6.8h
+    uaba        v20.8h, v3.8h, v7.8h
+
+    ld1         {v4.8h, v5.8h}, [x2], x5
+    ld1         {v24.8h, v25.8h}, [x3], x5
+    uaba        v17.8h, v4.8h, v6.8h
+    uaba        v21.8h, v5.8h, v7.8h
+
+    uaba        v18.8h, v24.8h, v6.8h
+    uaba        v22.8h, v25.8h, v7.8h
+.if \x == 4
+    ld1         {v26.8h, v27.8h}, [x4], x5
+    \first      v19.8h, v26.8h, v0.8h
+    \first      v23.8h, v27.8h, v1.8h
+
+    ld1         {v26.8h, v27.8h}, [x4], x5
+    uaba        v19.8h, v26.8h, v6.8h
+    uaba        v23.8h, v27.8h, v7.8h
+.endif
+.endm
+
+.macro SAD_X_FUNC x, w, h
+function pixel_sad_x\x\()_\w\()x\h\()_neon, export=1
+.if \x == 3
+    mov         x6, x5
+    mov         x5, x4
+.endif
+    mov         x7, #FENC_STRIDE
+    lsl         x5, x5, #1
+    lsl         x7, x7, #1
+
+    SAD_X_\w \x, uabd
+
+.rept \h / 2 - 1
+    SAD_X_\w \x
+.endr
+
+.if \w > 8
+    add         v16.8h, v16.8h, v20.8h
+    add         v17.8h, v17.8h, v21.8h
+    add         v18.8h, v18.8h, v22.8h
+.if \x == 4
+    add         v19.8h, v19.8h, v23.8h
+.endif
+.endif
+// add up the sads
+    uaddlv      s0, v16.8h
+    uaddlv      s1, v17.8h
+    uaddlv      s2, v18.8h
+
+    stp         s0, s1, [x6], #8
+.if \x == 3
+    str         s2, [x6]
+.else
+    uaddlv      s3, v19.8h
+    stp         s2, s3, [x6]
+.endif
+    ret
+endfunc
+.endm
+
+#endif /* BIT_DEPTH == 8 */
+
+SAD_FUNC 4, 4
+SAD_FUNC 4, 8
+SAD_FUNC 4, 16
+SAD_FUNC 8, 4
+SAD_FUNC 8, 8
+SAD_FUNC 8, 16
+SAD_FUNC 16, 8
+SAD_FUNC 16,16
 
 SAD_X_FUNC  3, 4,  4
 SAD_X_FUNC  3, 4,  8

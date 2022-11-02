@@ -1058,6 +1058,7 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
     if( cpu&X264_CPU_NEON )
     {
         INIT8( sad, _neon );
+        INIT7( sad_x3, _neon);
     }
 #endif // HAVE_AARCH64
 
