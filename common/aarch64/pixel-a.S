@@ -224,6 +224,30 @@ function pixel_sad_x\x\()_\w\()x\h\()_neon, export=1
 endfunc
 .endm
 
+function pixel_vsad_neon, export=1
+    subs        w2,  w2,  #2
+    ld1        {v0.16b},  [x0],  x1
+    ld1        {v1.16b},  [x0],  x1
+    uabdl       v6.8h,  v0.8b,  v1.8b
+    uabdl2      v7.8h,  v0.16b, v1.16b
+    b.le        2f
+1:
+    subs        w2,  w2,  #2
+    ld1        {v0.16b},  [x0],  x1
+    uabal       v6.8h,  v1.8b,  v0.8b
+    uabal2      v7.8h,  v1.16b, v0.16b
+    ld1        {v1.16b},  [x0],  x1
+    b.lt        2f
+    uabal       v6.8h,  v0.8b,  v1.8b
+    uabal2      v7.8h,  v0.16b, v1.16b
+    b.gt        1b
+2:
+    add         v5.8h,  v6.8h,  v7.8h
+    uaddlv      s0,  v5.8h
+    fmov        w0,  s0
+    ret
+endfunc
+
 #else /* BIT_DEPTH == 8 */
 
 .macro SAD_START_4
@@ -444,6 +468,33 @@ function pixel_sad_x\x\()_\w\()x\h\()_neon, export=1
 endfunc
 .endm
 
+function pixel_vsad_neon, export=1
+    subs        w2, w2, #2
+    lsl         x1, x1, #1
+
+    ld1         {v0.8h, v1.8h}, [x0], x1
+    ld1         {v2.8h, v3.8h}, [x0], x1
+    uabd        v6.8h, v0.8h, v2.8h
+    uabd        v7.8h, v1.8h, v3.8h
+    b.le        2f
+1:
+    subs        w2, w2, #2
+
+    ld1         {v0.8h, v1.8h}, [x0], x1
+    uaba        v6.8h, v2.8h, v0.8h
+    uaba        v7.8h, v3.8h, v1.8h
+    ld1         {v2.8h, v3.8h}, [x0], x1
+    b.lt        2f
+    uaba        v6.8h, v0.8h, v2.8h
+    uaba        v7.8h, v1.8h, v3.8h
+    b.gt        1b
+2:
+    add         v5.8h, v6.8h, v7.8h
+    uaddlv      s0, v5.8h
+    fmov        w0, s0
+    ret
+endfunc
+
 #endif /* BIT_DEPTH == 8 */
 
 SAD_FUNC 4, 4
@@ -470,31 +521,6 @@ SAD_X_FUNC  4, 8,  8
 SAD_X_FUNC  4, 8,  16
 SAD_X_FUNC  4, 16, 8
 SAD_X_FUNC  4, 16, 16
-
-
-function pixel_vsad_neon, export=1
-    subs        w2,  w2,  #2
-    ld1        {v0.16b},  [x0],  x1
-    ld1        {v1.16b},  [x0],  x1
-    uabdl       v6.8h,  v0.8b,  v1.8b
-    uabdl2      v7.8h,  v0.16b, v1.16b
-    b.le        2f
-1:
-    subs        w2,  w2,  #2
-    ld1        {v0.16b},  [x0],  x1
-    uabal       v6.8h,  v1.8b,  v0.8b
-    uabal2      v7.8h,  v1.16b, v0.16b
-    ld1        {v1.16b},  [x0],  x1
-    b.lt        2f
-    uabal       v6.8h,  v0.8b,  v1.8b
-    uabal2      v7.8h,  v0.16b, v1.16b
-    b.gt        1b
-2:
-    add         v5.8h,  v6.8h,  v7.8h
-    uaddlv      s0,  v5.8h
-    fmov        w0,  s0
-    ret
-endfunc
 
 function pixel_asd8_neon, export=1
     sub         w4,  w4,  #2
