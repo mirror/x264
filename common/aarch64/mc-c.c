@@ -258,13 +258,10 @@ static pixel *get_ref_neon( pixel *dst,   intptr_t *i_dst_stride,
     }
 }
 
-#if !HIGH_BIT_DEPTH
-
 #define x264_hpel_filter_neon x264_template(hpel_filter_neon)
 void x264_hpel_filter_neon( pixel *dsth, pixel *dstv, pixel *dstc,
                             pixel *src, intptr_t stride, int width,
                             int height, int16_t *buf );
-#endif // !HIGH_BIT_DEPTH
 
 PLANE_COPY(16, neon)
 PLANE_COPY_SWAP(16, neon)
@@ -334,10 +331,11 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
     pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_neon;
     pf->plane_copy_interleave       = plane_copy_interleave_neon;
 
+    pf->hpel_filter = x264_hpel_filter_neon;
+
 #if !HIGH_BIT_DEPTH
 
 
-    pf->hpel_filter = x264_hpel_filter_neon;
 
 #endif // !HIGH_BIT_DEPTH
 }

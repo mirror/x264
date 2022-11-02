@@ -3511,4 +3511,292 @@ function plane_copy_deinterleave_rgb_neon, export=1
     ret
 endfunc
 
+// void hpel_filter( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
+//                   intptr_t stride, int width, int height, int16_t *buf )
+function hpel_filter_neon, export=1
+    lsl         x5, x5, #1
+    ubfm        x9, x3, #3, #7
+    add         w15, w5, w9
+    sub         x13, x3, x9                 // align src
+    sub         x10, x0, x9
+    sub         x11, x1, x9
+    sub         x12, x2, x9
+    movi        v30.8h, #5
+    movi        v31.8h, #20
+
+    lsl         x4, x4, #1
+    stp         d8, d9, [sp, #-0x40]!
+    stp         d10, d11, [sp, #0x10]
+    stp         d12, d13, [sp, #0x20]
+    stp         d14, d15, [sp, #0x30]
+
+    str         q0, [sp, #-0x50]!
+
+1:  // line start
+    mov         x3, x13
+    mov         x2, x12
+    mov         x1, x11
+    mov         x0, x10
+    add         x7, x3, #32                 // src pointer next 16b for horiz filter
+    mov         x5, x15                     // restore width
+    sub         x3, x3, x4, lsl #1          // src - 2*stride
+    ld1         {v28.8h, v29.8h}, [x7], #32 // src[16:31]
+    add         x9, x3, x5                  // holds src - 2*stride + width
+
+    ld1         {v8.8h, v9.8h}, [x3], x4    // src-2*stride[0:15]
+    ld1         {v10.8h, v11.8h}, [x3], x4  // src-1*stride[0:15]
+    ld1         {v12.8h, v13.8h}, [x3], x4  // src-0*stride[0:15]
+    ld1         {v14.8h, v15.8h}, [x3], x4  // src+1*stride[0:15]
+    ld1         {v16.8h, v17.8h}, [x3], x4  // src+2*stride[0:15]
+    ld1         {v18.8h, v19.8h}, [x3], x4  // src+3*stride[0:15]
+
+    ext         v22.16b, v7.16b, v12.16b, #12
+    ext         v23.16b, v12.16b, v13.16b, #12
+    uaddl       v1.4s, v8.4h, v18.4h
+    uaddl2      v20.4s, v8.8h, v18.8h
+    ext         v24.16b, v12.16b, v13.16b, #6
+    ext         v25.16b, v13.16b, v28.16b, #6
+    umlsl       v1.4s, v10.4h, v30.4h
+    umlsl2      v20.4s, v10.8h, v30.8h
+    ext         v26.16b, v7.16b, v12.16b, #14
+    ext         v27.16b, v12.16b, v13.16b, #14
+    umlal       v1.4s, v12.4h, v31.4h
+    umlal2      v20.4s, v12.8h, v31.8h
+    ext         v3.16b, v12.16b, v13.16b, #2
+    ext         v4.16b, v13.16b, v28.16b, #2
+    umlal       v1.4s, v14.4h, v31.4h
+    umlal2      v20.4s, v14.8h, v31.8h
+    ext         v21.16b, v12.16b, v13.16b, #4
+    ext         v5.16b, v13.16b, v28.16b, #4
+    umlsl       v1.4s, v16.4h, v30.4h
+    umlsl2      v20.4s, v16.8h, v30.8h
+
+2:  // next 16 pixel of line
+    subs        x5, x5, #32
+    sub         x3, x9, x5                  // src - 2*stride += 16
+
+    uaddl       v8.4s, v22.4h, v24.4h
+    uaddl2      v22.4s, v22.8h, v24.8h
+    uaddl       v10.4s, v23.4h, v25.4h
+    uaddl2      v23.4s, v23.8h, v25.8h
+
+    umlsl       v8.4s, v26.4h, v30.4h
+    umlsl2      v22.4s, v26.8h, v30.8h
+    umlsl       v10.4s, v27.4h, v30.4h
+    umlsl2      v23.4s, v27.8h, v30.8h
+
+    umlal       v8.4s, v12.4h, v31.4h
+    umlal2      v22.4s, v12.8h, v31.8h
+    umlal       v10.4s, v13.4h, v31.4h
+    umlal2      v23.4s, v13.8h, v31.8h
+
+    umlal       v8.4s, v3.4h, v31.4h
+    umlal2      v22.4s, v3.8h, v31.8h
+    umlal       v10.4s, v4.4h, v31.4h
+    umlal2      v23.4s, v4.8h, v31.8h
+
+    umlsl       v8.4s, v21.4h, v30.4h
+    umlsl2      v22.4s, v21.8h, v30.8h
+    umlsl       v10.4s, v5.4h, v30.4h
+    umlsl2      v23.4s, v5.8h, v30.8h
+
+    uaddl       v5.4s, v9.4h, v19.4h
+    uaddl2      v2.4s, v9.8h, v19.8h
+
+    sqrshrun    v8.4h, v8.4s, #5
+    sqrshrun2   v8.8h, v22.4s, #5
+    sqrshrun    v10.4h, v10.4s, #5
+    sqrshrun2   v10.8h, v23.4s, #5
+
+    mov         v6.16b, v12.16b
+    mov         v7.16b, v13.16b
+
+    mvni        v23.8h, #0xfc, lsl #8
+
+    umin        v8.8h, v8.8h, v23.8h
+    umin        v10.8h, v10.8h, v23.8h
+
+    st1         {v8.8h}, [x0], #16
+    st1         {v10.8h}, [x0], #16
+
+    umlsl       v5.4s, v11.4h, v30.4h
+    umlsl2      v2.4s, v11.8h, v30.8h
+
+    ld1         {v8.8h, v9.8h}, [x3], x4
+    umlal       v5.4s, v13.4h, v31.4h
+    umlal2      v2.4s, v13.8h, v31.8h
+    ld1         {v10.8h, v11.8h}, [x3], x4
+    umlal       v5.4s, v15.4h, v31.4h
+    umlal2      v2.4s, v15.8h, v31.8h
+    ld1         {v12.8h, v13.8h}, [x3], x4
+    umlsl       v5.4s, v17.4h, v30.4h
+    umlsl2      v2.4s, v17.8h, v30.8h
+    ld1         {v14.8h, v15.8h}, [x3], x4
+
+    sqrshrun    v4.4h, v5.4s, #5
+    sqrshrun2   v4.8h, v2.4s, #5
+    sqrshrun    v18.4h, v1.4s, #5
+    sqrshrun2   v18.8h, v20.4s, #5
+
+    mvni        v17.8h, #0xfc, lsl #8
+
+    smin        v4.8h, v4.8h, v17.8h
+    smin        v18.8h, v18.8h, v17.8h
+
+    st1         {v18.8h}, [x1], #16
+    st1         {v4.8h}, [x1], #16
+
+    ld1         {v16.8h, v17.8h}, [x3], x4          // src+2*stride[0:15]
+    ld1         {v18.8h, v19.8h}, [x3], x4          // src+3*stride[0:15]
+
+    str         q9, [sp, #0x10]
+    str         q15, [sp, #0x20]
+    str         q17, [sp, #0x30]
+    str         q19, [sp, #0x40]
+
+    ldr         q28, [sp]
+
+    ext         v22.16b, v28.16b, v1.16b, #8
+    ext         v9.16b, v1.16b, v20.16b, #8
+    ext         v26.16b, v1.16b, v20.16b, #12
+    ext         v17.16b, v20.16b, v5.16b, #12
+    ext         v23.16b, v28.16b, v1.16b, #12
+    ext         v19.16b, v1.16b, v20.16b, #12
+
+    uaddl       v3.4s, v8.4h, v18.4h
+    uaddl2      v15.4s, v8.8h, v18.8h
+    umlsl       v3.4s, v10.4h, v30.4h
+    umlsl2      v15.4s, v10.8h, v30.8h
+    umlal       v3.4s, v12.4h, v31.4h
+    umlal2      v15.4s, v12.8h, v31.8h
+    umlal       v3.4s, v14.4h, v31.4h
+    umlal2      v15.4s, v14.8h, v31.8h
+    umlsl       v3.4s, v16.4h, v30.4h
+    umlsl2      v15.4s, v16.8h, v30.8h
+
+    add         v4.4s, v22.4s, v26.4s
+    add         v26.4s, v9.4s, v17.4s
+
+    ext         v25.16b, v1.16b, v20.16b, #8
+    ext         v22.16b, v20.16b, v5.16b, #8
+    ext         v24.16b, v1.16b, v20.16b, #4
+    ext         v9.16b, v20.16b, v5.16b, #4
+
+    add         v31.4s, v23.4s, v25.4s
+    add         v19.4s, v19.4s, v22.4s
+    add         v6.4s, v24.4s, v1.4s
+    add         v17.4s, v9.4s, v20.4s
+    sub         v4.4s, v4.4s, v31.4s                // a-b
+    sub         v26.4s, v26.4s, v19.4s              // a-b
+    sub         v31.4s, v31.4s, v6.4s               // b-c
+    sub         v19.4s, v19.4s, v17.4s              // b-c
+
+    ext         v22.16b, v20.16b, v5.16b, #8
+    ext         v9.16b, v5.16b, v2.16b, #8
+    ext         v24.16b, v5.16b, v2.16b, #12
+    ext         v28.16b, v2.16b, v3.16b, #12
+    ext         v23.16b, v20.16b, v5.16b, #12
+    ext         v30.16b, v5.16b, v2.16b, #12
+    ext         v25.16b, v5.16b, v2.16b, #8
+    ext         v29.16b, v2.16b, v3.16b, #8
+
+    add         v22.4s, v22.4s, v24.4s
+    add         v9.4s, v9.4s, v28.4s
+    add         v23.4s, v23.4s, v25.4s
+    add         v29.4s, v29.4s, v30.4s
+
+    ext         v24.16b, v5.16b, v2.16b, #4
+    ext         v28.16b, v2.16b, v3.16b, #4
+
+    add         v24.4s, v24.4s, v5.4s
+    add         v28.4s, v28.4s, v2.4s
+
+    sub         v22.4s, v22.4s, v23.4s
+    sub         v9.4s, v9.4s, v29.4s
+    sub         v23.4s, v23.4s, v24.4s
+    sub         v29.4s, v29.4s, v28.4s
+
+    sshr        v4.4s, v4.4s, #2
+    sshr        v0.4s, v26.4s, #2
+    sshr        v22.4s, v22.4s, #2
+    sshr        v9.4s, v9.4s, #2
+
+    sub         v4.4s, v4.4s, v31.4s
+    sub         v0.4s, v0.4s, v19.4s
+    sub         v22.4s, v22.4s, v23.4s
+    sub         v9.4s, v9.4s, v29.4s
+
+    sshr        v4.4s, v4.4s, #2
+    sshr        v0.4s, v0.4s, #2
+    sshr        v22.4s, v22.4s, #2
+    sshr        v9.4s, v9.4s, #2
+
+    add         v4.4s, v4.4s, v6.4s
+    add         v0.4s, v0.4s, v17.4s
+    add         v22.4s, v22.4s, v24.4s
+    add         v9.4s, v9.4s, v28.4s
+
+    str         q2, [sp]
+
+    sqrshrun    v4.4h, v4.4s, #6
+    sqrshrun2   v4.8h, v0.4s, #6
+    sqrshrun    v22.4h, v22.4s, #6
+    sqrshrun2   v22.8h, v9.4s, #6
+
+    mov         v0.16b, v5.16b
+
+    ld1        {v28.8h, v29.8h}, [x7], #32          // src[16:31]
+
+    ldr         q9, [sp, #0x10]
+    ldr         q17, [sp, #0x30]
+    ldr         q19, [sp, #0x40]
+
+    ext         v26.16b, v7.16b, v12.16b, #14
+    ext         v27.16b, v12.16b, v13.16b, #14
+
+    mvni        v25.8h, 0xfc, lsl #8
+
+    smin        v22.8h, v22.8h, v25.8h
+    smin        v4.8h, v4.8h, v25.8h
+
+    st1        {v4.8h}, [x2], #16
+    st1        {v22.8h}, [x2], #16
+
+    mov         v1.16b, v3.16b
+    mov         v20.16b, v15.16b
+
+    ldr         q15, [sp, #0x20]
+
+    ext         v22.16b, v7.16b, v12.16b, #12
+    ext         v23.16b, v12.16b, v13.16b, #12
+    ext         v3.16b, v12.16b, v13.16b, #2
+    ext         v4.16b, v13.16b, v28.16b, #2
+    ext         v21.16b, v12.16b, v13.16b, #4
+    ext         v5.16b, v13.16b, v28.16b, #4
+    ext         v24.16b, v12.16b, v13.16b, #6
+    ext         v25.16b, v13.16b, v28.16b, #6
+
+    movi        v30.8h, #5
+    movi        v31.8h, #20
+
+    b.gt        2b
+
+    subs        w6, w6, #1
+    add         x10, x10, x4
+    add         x11, x11, x4
+    add         x12, x12, x4
+    add         x13, x13, x4
+    b.gt        1b
+
+    add         sp, sp, #0x50
+
+    ldp         d8, d9, [sp]
+    ldp         d10, d11, [sp, #0x10]
+    ldp         d12, d13, [sp, #0x20]
+    ldp         d14, d15, [sp, #0x30]
+    add         sp, sp, #0x40
+
+    ret
+endfunc
+
 #endif
