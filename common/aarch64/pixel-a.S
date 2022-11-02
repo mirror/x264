@@ -248,6 +248,32 @@ function pixel_vsad_neon, export=1
     ret
 endfunc
 
+function pixel_asd8_neon, export=1
+    sub         w4,  w4,  #2
+    ld1        {v0.8b}, [x0], x1
+    ld1        {v1.8b}, [x2], x3
+    ld1        {v2.8b}, [x0], x1
+    ld1        {v3.8b}, [x2], x3
+    usubl       v16.8h, v0.8b,  v1.8b
+1:
+    subs        w4,  w4,  #2
+    ld1        {v4.8b}, [x0], x1
+    ld1        {v5.8b}, [x2], x3
+    usubl       v17.8h, v2.8b,  v3.8b
+    usubl       v18.8h, v4.8b,  v5.8b
+    add         v16.8h, v16.8h, v17.8h
+    ld1        {v2.8b}, [x0], x1
+    ld1        {v3.8b}, [x2], x3
+    add         v16.8h, v16.8h, v18.8h
+    b.gt        1b
+    usubl       v17.8h, v2.8b,  v3.8b
+    add         v16.8h, v16.8h, v17.8h
+    saddlv      s0,  v16.8h
+    abs         v0.2s,  v0.2s
+    fmov        w0,  s0
+    ret
+endfunc
+
 #else /* BIT_DEPTH == 8 */
 
 .macro SAD_START_4
@@ -495,6 +521,42 @@ function pixel_vsad_neon, export=1
     ret
 endfunc
 
+function pixel_asd8_neon, export=1
+    sub         w4, w4, #2
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+
+    ld1         {v0.8h}, [x0], x1
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v2.8h}, [x0], x1
+    ld1         {v3.8h}, [x2], x3
+
+    sub         v16.8h, v0.8h, v1.8h
+
+1:
+    subs        w4, w4, #2
+    ld1         {v4.8h}, [x0], x1
+    ld1         {v5.8h}, [x2], x3
+
+    sub         v17.8h, v2.8h, v3.8h
+    sub         v18.8h, v4.8h, v5.8h
+    add         v16.8h, v16.8h, v17.8h
+
+    ld1         {v2.8h}, [x0], x1
+    ld1         {v3.8h}, [x2], x3
+    add         v16.8h, v16.8h, v18.8h
+
+    b.gt        1b
+
+    sub         v17.8h, v2.8h, v3.8h
+    add         v16.8h, v16.8h, v17.8h
+
+    saddlv      s0, v16.8h
+    abs         v0.4s, v0.4s
+    fmov        w0, s0
+    ret
+endfunc
+
 #endif /* BIT_DEPTH == 8 */
 
 SAD_FUNC 4, 4
@@ -521,32 +583,6 @@ SAD_X_FUNC  4, 8,  8
 SAD_X_FUNC  4, 8,  16
 SAD_X_FUNC  4, 16, 8
 SAD_X_FUNC  4, 16, 16
-
-function pixel_asd8_neon, export=1
-    sub         w4,  w4,  #2
-    ld1        {v0.8b}, [x0], x1
-    ld1        {v1.8b}, [x2], x3
-    ld1        {v2.8b}, [x0], x1
-    ld1        {v3.8b}, [x2], x3
-    usubl       v16.8h, v0.8b,  v1.8b
-1:
-    subs        w4,  w4,  #2
-    ld1        {v4.8b}, [x0], x1
-    ld1        {v5.8b}, [x2], x3
-    usubl       v17.8h, v2.8b,  v3.8b
-    usubl       v18.8h, v4.8b,  v5.8b
-    add         v16.8h, v16.8h, v17.8h
-    ld1        {v2.8b}, [x0], x1
-    ld1        {v3.8b}, [x2], x3
-    add         v16.8h, v16.8h, v18.8h
-    b.gt        1b
-    usubl       v17.8h, v2.8b,  v3.8b
-    add         v16.8h, v16.8h, v17.8h
-    saddlv      s0,  v16.8h
-    abs         v0.2s,  v0.2s
-    fmov        w0,  s0
-    ret
-endfunc
 
 .macro SSD_START_4
     ld1        {v16.s}[0], [x0], x1
