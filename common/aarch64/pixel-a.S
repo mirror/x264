@@ -274,6 +274,99 @@ function pixel_asd8_neon, export=1
     ret
 endfunc
 
+.macro SSD_START_4
+    ld1        {v16.s}[0], [x0], x1
+    ld1        {v17.s}[0], [x2], x3
+    usubl       v2.8h,  v16.8b,  v17.8b
+    ld1        {v16.s}[0], [x0], x1
+    ld1        {v17.s}[0], [x2], x3
+    smull       v0.4s,  v2.4h,   v2.4h
+.endm
+
+.macro SSD_4
+    usubl       v2.8h,  v16.8b,  v17.8b
+    ld1        {v16.s}[0], [x0], x1
+    ld1        {v17.s}[0], [x2], x3
+    smlal       v0.4s,  v2.4h,   v2.4h
+.endm
+
+.macro SSD_END_4
+    usubl       v2.8h,  v16.8b,  v17.8b
+    smlal       v0.4s,  v2.4h,   v2.4h
+.endm
+
+.macro SSD_START_8
+    ld1        {v16.8b}, [x0], x1
+    ld1        {v17.8b}, [x2], x3
+    usubl       v2.8h,  v16.8b,  v17.8b
+    ld1        {v16.8b}, [x0], x1
+    smull       v0.4s,  v2.4h,   v2.4h
+    ld1        {v17.8b}, [x2], x3
+    smlal2      v0.4s,  v2.8h,   v2.8h
+.endm
+
+.macro SSD_8
+    usubl       v2.8h,  v16.8b,  v17.8b
+    ld1        {v16.8b}, [x0], x1
+    smlal       v0.4s,  v2.4h,   v2.4h
+    ld1        {v17.8b}, [x2], x3
+    smlal2      v0.4s,  v2.8h,   v2.8h
+.endm
+
+.macro SSD_END_8
+    usubl       v2.8h,  v16.8b,  v17.8b
+    smlal       v0.4s,  v2.4h,   v2.4h
+    smlal2      v0.4s,  v2.8h,   v2.8h
+.endm
+
+.macro SSD_START_16
+    ld1        {v16.16b}, [x0], x1
+    ld1        {v17.16b}, [x2], x3
+    usubl       v2.8h,  v16.8b,  v17.8b
+    usubl2      v3.8h,  v16.16b, v17.16b
+    ld1         {v16.16b}, [x0], x1
+    smull       v0.4s,  v2.4h,   v2.4h
+    smull2      v1.4s,  v2.8h,   v2.8h
+    ld1         {v17.16b}, [x2], x3
+    smlal       v0.4s,  v3.4h,   v3.4h
+    smlal2      v1.4s,  v3.8h,   v3.8h
+.endm
+
+.macro SSD_16
+    usubl       v2.8h,  v16.8b,  v17.8b
+    usubl2      v3.8h,  v16.16b, v17.16b
+    ld1         {v16.16b}, [x0], x1
+    smlal       v0.4s,  v2.4h,   v2.4h
+    smlal2      v1.4s,  v2.8h,   v2.8h
+    ld1         {v17.16b}, [x2], x3
+    smlal       v0.4s,  v3.4h,   v3.4h
+    smlal2      v1.4s,  v3.8h,   v3.8h
+.endm
+
+.macro SSD_END_16
+    usubl       v2.8h,  v16.8b,  v17.8b
+    usubl2      v3.8h,  v16.16b, v17.16b
+    smlal       v0.4s,  v2.4h,   v2.4h
+    smlal2      v1.4s,  v2.8h,   v2.8h
+    smlal       v0.4s,  v3.4h,   v3.4h
+    smlal2      v1.4s,  v3.8h,   v3.8h
+    add         v0.4s,  v0.4s,   v1.4s
+.endm
+
+.macro SSD_FUNC w h
+function pixel_ssd_\w\()x\h\()_neon, export=1
+    SSD_START_\w
+.rept \h-2
+    SSD_\w
+.endr
+    SSD_END_\w
+
+    addv        s0,  v0.4s
+    mov         w0,  v0.s[0]
+    ret
+endfunc
+.endm
+
 #else /* BIT_DEPTH == 8 */
 
 .macro SAD_START_4
@@ -557,6 +650,102 @@ function pixel_asd8_neon, export=1
     ret
 endfunc
 
+.macro SSD_START_4
+    ld1         {v16.d}[0], [x0], x1
+    ld1         {v17.d}[0], [x2], x3
+    sub         v2.4h, v16.4h, v17.4h
+    ld1         {v16.d}[0], [x0], x1
+    ld1         {v17.d}[0], [x2], x3
+    smull       v0.4s, v2.4h, v2.4h
+.endm
+
+.macro SSD_4
+    sub         v2.4h, v16.4h, v17.4h
+    ld1         {v16.d}[0], [x0], x1
+    ld1         {v17.d}[0], [x2], x3
+    smlal       v0.4s, v2.4h, v2.4h
+.endm
+
+.macro SSD_END_4
+    sub         v2.4h, v16.4h, v17.4h
+    smlal       v0.4s, v2.4h, v2.4h
+.endm
+
+.macro SSD_START_8
+    ld1         {v16.8h}, [x0], x1
+    ld1         {v17.8h}, [x2], x3
+    sub         v2.8h, v16.8h, v17.8h
+    ld1         {v16.8h}, [x0], x1
+    ld1         {v17.8h}, [x2], x3
+    smull       v0.4s, v2.4h, v2.4h
+    smull2      v20.4s, v2.8h, v2.8h
+.endm
+
+.macro SSD_8
+    sub         v2.8h, v16.8h, v17.8h
+    ld1         {v16.8h}, [x0], x1
+    ld1         {v17.8h}, [x2], x3
+    smlal       v0.4s, v2.4h, v2.4h
+    smlal2      v20.4s, v2.8h, v2.8h
+.endm
+
+.macro SSD_END_8
+    sub         v2.8h, v16.8h, v17.8h
+    smlal       v0.4s, v2.4h, v2.4h
+    smlal2      v20.4s, v2.8h, v2.8h
+    add         v0.4s, v0.4s, v20.4s
+.endm
+
+.macro SSD_START_16
+    ld1         {v16.8h, v17.8h}, [x0], x1
+    ld1         {v18.8h, v19.8h}, [x2], x3
+    sub         v2.8h, v16.8h, v18.8h
+    sub         v3.8h, v17.8h, v19.8h
+    ld1         {v16.8h, v17.8h}, [x0], x1
+    smull       v0.4s, v2.4h, v2.4h
+    smull2      v20.4s, v2.8h, v2.8h
+    ld1         {v18.8h, v19.8h}, [x2], x3
+    smlal       v0.4s, v3.4h, v3.4h
+    smlal2      v20.4s, v3.8h, v3.8h
+.endm
+
+.macro SSD_16
+    sub         v2.8h, v16.8h, v18.8h
+    sub         v3.8h, v17.8h, v19.8h
+    ld1         {v16.8h, v17.8h}, [x0], x1
+    smlal       v0.4s, v2.4h, v2.4h
+    smlal2      v20.4s, v2.8h, v2.8h
+    ld1         {v18.8h, v19.8h}, [x2], x3
+    smlal       v0.4s, v3.4h, v3.4h
+    smlal2      v20.4s, v3.8h, v3.8h
+.endm
+
+.macro SSD_END_16
+    sub         v2.8h, v16.8h, v18.8h
+    sub         v3.8h, v17.8h, v19.8h
+    smlal       v0.4s, v2.4h, v2.4h
+    smlal2      v20.4s, v2.8h, v2.8h
+    smlal       v0.4s, v3.4h, v3.4h
+    smlal2      v20.4s, v3.8h, v3.8h
+    add         v0.4s, v0.4s, v20.4s
+.endm
+
+.macro SSD_FUNC w h
+function pixel_ssd_\w\()x\h\()_neon, export=1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    SSD_START_\w
+.rept \h-2
+    SSD_\w
+.endr
+    SSD_END_\w
+
+    addv        s0, v0.4s
+    fmov        w0, s0
+    ret
+endfunc
+.endm
+
 #endif /* BIT_DEPTH == 8 */
 
 SAD_FUNC 4, 4
@@ -584,107 +773,14 @@ SAD_X_FUNC  4, 8,  16
 SAD_X_FUNC  4, 16, 8
 SAD_X_FUNC  4, 16, 16
 
-.macro SSD_START_4
-    ld1        {v16.s}[0], [x0], x1
-    ld1        {v17.s}[0], [x2], x3
-    usubl       v2.8h,  v16.8b,  v17.8b
-    ld1        {v16.s}[0], [x0], x1
-    ld1        {v17.s}[0], [x2], x3
-    smull       v0.4s,  v2.4h,   v2.4h
-.endm
-
-.macro SSD_4
-    usubl       v2.8h,  v16.8b,  v17.8b
-    ld1        {v16.s}[0], [x0], x1
-    ld1        {v17.s}[0], [x2], x3
-    smlal       v0.4s,  v2.4h,   v2.4h
-.endm
-
-.macro SSD_END_4
-    usubl       v2.8h,  v16.8b,  v17.8b
-    smlal       v0.4s,  v2.4h,   v2.4h
-.endm
-
-.macro SSD_START_8
-    ld1        {v16.8b}, [x0], x1
-    ld1        {v17.8b}, [x2], x3
-    usubl       v2.8h,  v16.8b,  v17.8b
-    ld1        {v16.8b}, [x0], x1
-    smull       v0.4s,  v2.4h,   v2.4h
-    ld1        {v17.8b}, [x2], x3
-    smlal2      v0.4s,  v2.8h,   v2.8h
-.endm
-
-.macro SSD_8
-    usubl       v2.8h,  v16.8b,  v17.8b
-    ld1        {v16.8b}, [x0], x1
-    smlal       v0.4s,  v2.4h,   v2.4h
-    ld1        {v17.8b}, [x2], x3
-    smlal2      v0.4s,  v2.8h,   v2.8h
-.endm
-
-.macro SSD_END_8
-    usubl       v2.8h,  v16.8b,  v17.8b
-    smlal       v0.4s,  v2.4h,   v2.4h
-    smlal2      v0.4s,  v2.8h,   v2.8h
-.endm
-
-.macro SSD_START_16
-    ld1        {v16.16b}, [x0], x1
-    ld1        {v17.16b}, [x2], x3
-    usubl       v2.8h,  v16.8b,  v17.8b
-    usubl2      v3.8h,  v16.16b, v17.16b
-    ld1         {v16.16b}, [x0], x1
-    smull       v0.4s,  v2.4h,   v2.4h
-    smull2      v1.4s,  v2.8h,   v2.8h
-    ld1         {v17.16b}, [x2], x3
-    smlal       v0.4s,  v3.4h,   v3.4h
-    smlal2      v1.4s,  v3.8h,   v3.8h
-.endm
-
-.macro SSD_16
-    usubl       v2.8h,  v16.8b,  v17.8b
-    usubl2      v3.8h,  v16.16b, v17.16b
-    ld1         {v16.16b}, [x0], x1
-    smlal       v0.4s,  v2.4h,   v2.4h
-    smlal2      v1.4s,  v2.8h,   v2.8h
-    ld1         {v17.16b}, [x2], x3
-    smlal       v0.4s,  v3.4h,   v3.4h
-    smlal2      v1.4s,  v3.8h,   v3.8h
-.endm
-
-.macro SSD_END_16
-    usubl       v2.8h,  v16.8b,  v17.8b
-    usubl2      v3.8h,  v16.16b, v17.16b
-    smlal       v0.4s,  v2.4h,   v2.4h
-    smlal2      v1.4s,  v2.8h,   v2.8h
-    smlal       v0.4s,  v3.4h,   v3.4h
-    smlal2      v1.4s,  v3.8h,   v3.8h
-    add         v0.4s,  v0.4s,   v1.4s
-.endm
-
-.macro SSD_FUNC w h
-function pixel_ssd_\w\()x\h\()_neon, export=1
-    SSD_START_\w
-.rept \h-2
-    SSD_\w
-.endr
-    SSD_END_\w
-
-    addv        s0,  v0.4s
-    mov         w0,  v0.s[0]
-    ret
-endfunc
-.endm
-
-SSD_FUNC   4, 4
-SSD_FUNC   4, 8
-SSD_FUNC   4, 16
-SSD_FUNC   8, 4
-SSD_FUNC   8, 8
-SSD_FUNC   8, 16
-SSD_FUNC  16, 8
-SSD_FUNC  16, 16
+SSD_FUNC 4, 4
+SSD_FUNC 4, 8
+SSD_FUNC 4, 16
+SSD_FUNC 8, 4
+SSD_FUNC 8, 8
+SSD_FUNC 8, 16
+SSD_FUNC 16, 8
+SSD_FUNC 16, 16
 
 
 function pixel_ssd_nv12_core_neon, export=1
