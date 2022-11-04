@@ -40,6 +40,21 @@ const mask_ac_4_8
 .short 0, -1, -1, -1, -1, -1, -1, -1
 endconst
 
+.macro SUMSUBL_AB   sum, sub, a, b
+    uaddl       \sum, \a, \b
+    usubl       \sub, \a, \b
+.endm
+
+.macro SUMSUB_ABCD s1, d1, s2, d2, a, b, c, d
+    SUMSUB_AB   \s1, \d1, \a, \b
+    SUMSUB_AB   \s2, \d2, \c, \d
+.endm
+
+.macro HADAMARD4_V r1, r2, r3, r4, t1, t2, t3, t4
+    SUMSUB_ABCD \t1, \t2, \t3, \t4, \r1, \r2, \r3, \r4
+    SUMSUB_ABCD \r1, \r3, \r2, \r4, \t1, \t3, \t2, \t4
+.endm
+
 #if BIT_DEPTH == 8
 .macro SAD_START_4
     ld1        {v1.s}[0], [x2], x3
@@ -521,6 +536,109 @@ function pixel_satd_4x16_neon, export=1
     uaddlv      s0,  v0.8h
     mov         w0,  v0.s[0]
     ret         x4
+endfunc
+
+.macro load_diff_fly_8x8
+    ld1        {v1.8b},  [x2], x3
+    ld1        {v0.8b},  [x0], x1
+    ld1        {v3.8b},  [x2], x3
+    ld1        {v2.8b},  [x0], x1
+    usubl       v16.8h, v0.8b,  v1.8b
+    ld1        {v5.8b},  [x2], x3
+    ld1        {v4.8b},  [x0], x1
+    usubl       v17.8h, v2.8b,  v3.8b
+    ld1        {v7.8b},  [x2], x3
+    ld1        {v6.8b},  [x0], x1
+    usubl       v18.8h, v4.8b,  v5.8b
+    ld1        {v1.8b},  [x2], x3
+    ld1        {v0.8b},  [x0], x1
+    usubl       v19.8h, v6.8b,  v7.8b
+    ld1        {v3.8b},  [x2], x3
+    ld1        {v2.8b},  [x0], x1
+    usubl       v20.8h, v0.8b,  v1.8b
+    ld1        {v5.8b},  [x2], x3
+    ld1        {v4.8b},  [x0], x1
+    usubl       v21.8h, v2.8b,  v3.8b
+    ld1        {v7.8b},  [x2], x3
+    ld1        {v6.8b},  [x0], x1
+
+    SUMSUB_AB   v0.8h,  v1.8h,  v16.8h, v17.8h
+    SUMSUB_AB   v2.8h,  v3.8h,  v18.8h, v19.8h
+
+    usubl       v22.8h, v4.8b,  v5.8b
+    usubl       v23.8h, v6.8b,  v7.8b
+.endm
+
+function pixel_satd_8x8_neon, export=1
+    mov         x4,  x30
+
+    bl satd_8x8_neon
+    add         v0.8h,  v0.8h,  v1.8h
+    add         v1.8h,  v2.8h,  v3.8h
+    add         v0.8h,  v0.8h,  v1.8h
+    uaddlv      s0,  v0.8h
+    mov         w0,  v0.s[0]
+    ret         x4
+endfunc
+
+function pixel_satd_8x16_neon, export=1
+    mov         x4,  x30
+
+    bl satd_8x8_neon
+    add         v0.8h,  v0.8h,  v1.8h
+    add         v1.8h,  v2.8h,  v3.8h
+    add         v30.8h, v0.8h,  v1.8h
+
+    bl satd_8x8_neon
+    add         v0.8h,  v0.8h,  v1.8h
+    add         v1.8h,  v2.8h,  v3.8h
+    add         v31.8h, v0.8h,  v1.8h
+    add         v0.8h,  v30.8h, v31.8h
+    uaddlv      s0,  v0.8h
+    mov         w0,  v0.s[0]
+    ret         x4
+endfunc
+
+function satd_8x8_neon
+    load_diff_fly_8x8
+endfunc
+
+// one vertical hadamard pass and two horizontal
+function satd_8x4v_8x8h_neon
+    SUMSUB_AB   v16.8h, v18.8h, v0.8h,  v2.8h
+    SUMSUB_AB   v17.8h, v19.8h, v1.8h,  v3.8h
+    HADAMARD4_V v20.8h, v21.8h, v22.8h, v23.8h, v0.8h,  v1.8h, v2.8h, v3.8h
+    transpose   v0.8h,  v1.8h,  v16.8h, v17.8h
+    transpose   v2.8h,  v3.8h,  v18.8h, v19.8h
+    transpose   v4.8h,  v5.8h,  v20.8h, v21.8h
+    transpose   v6.8h,  v7.8h,  v22.8h, v23.8h
+
+
+    SUMSUB_AB   v16.8h, v17.8h, v0.8h,  v1.8h
+    SUMSUB_AB   v18.8h, v19.8h, v2.8h,  v3.8h
+    SUMSUB_AB   v20.8h, v21.8h, v4.8h,  v5.8h
+    SUMSUB_AB   v22.8h, v23.8h, v6.8h,  v7.8h
+
+    transpose   v0.4s,  v2.4s,  v16.4s, v18.4s
+    transpose   v1.4s,  v3.4s,  v17.4s, v19.4s
+    transpose   v4.4s,  v6.4s,  v20.4s, v22.4s
+    transpose   v5.4s,  v7.4s,  v21.4s, v23.4s
+
+    abs         v0.8h,  v0.8h
+    abs         v1.8h,  v1.8h
+    abs         v2.8h,  v2.8h
+    abs         v3.8h,  v3.8h
+    abs         v4.8h,  v4.8h
+    abs         v5.8h,  v5.8h
+    abs         v6.8h,  v6.8h
+    abs         v7.8h,  v7.8h
+
+    umax        v0.8h,  v0.8h,  v2.8h
+    umax        v1.8h,  v1.8h,  v3.8h
+    umax        v2.8h,  v4.8h,  v6.8h
+    umax        v3.8h,  v5.8h,  v7.8h
+
+    ret
 endfunc
 
 #else /* BIT_DEPTH == 8 */
@@ -1067,6 +1185,114 @@ function pixel_satd_4x16_neon, export=1
     ret         x4
 endfunc
 
+.macro load_diff_fly_8x8
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v0.8h}, [x0], x1
+    ld1         {v3.8h}, [x2], x3
+    ld1         {v2.8h}, [x0], x1
+    sub         v16.8h, v0.8h, v1.8h
+    ld1         {v5.8h}, [x2], x3
+    ld1         {v4.8h}, [x0], x1
+    sub         v17.8h, v2.8h, v3.8h
+    ld1         {v7.8h}, [x2], x3
+    ld1         {v6.8h}, [x0], x1
+    sub         v18.8h, v4.8h, v5.8h
+    ld1         {v1.8h}, [x2], x3
+    ld1         {v0.8h}, [x0], x1
+    sub         v19.8h, v6.8h, v7.8h
+    ld1         {v3.8h}, [x2], x3
+    ld1         {v2.8h}, [x0], x1
+    sub         v20.8h, v0.8h, v1.8h
+    ld1         {v5.8h}, [x2], x3
+    ld1         {v4.8h}, [x0], x1
+    sub         v21.8h, v2.8h, v3.8h
+    ld1         {v7.8h}, [x2], x3
+    ld1         {v6.8h}, [x0], x1
+
+    SUMSUB_AB   v0.8h, v1.8h, v16.8h, v17.8h
+    SUMSUB_AB   v2.8h, v3.8h, v18.8h, v19.8h
+
+    sub         v22.8h, v4.8h, v5.8h
+    sub         v23.8h, v6.8h, v7.8h
+.endm
+
+function pixel_satd_8x8_neon, export=1
+    mov         x4, x30
+
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+
+    bl satd_8x8_neon
+    add         v0.8h, v0.8h, v1.8h
+    add         v1.8h, v2.8h, v3.8h
+    add         v0.8h, v0.8h, v1.8h
+    uaddlv      s0, v0.8h
+    mov         w0, v0.s[0]
+    ret         x4
+endfunc
+
+function pixel_satd_8x16_neon, export=1
+    mov         x4, x30
+
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+
+    bl satd_8x8_neon
+    add         v0.8h, v0.8h, v1.8h
+    add         v1.8h, v2.8h, v3.8h
+    add         v30.8h, v0.8h, v1.8h
+
+    bl satd_8x8_neon
+    add         v0.8h, v0.8h, v1.8h
+    add         v1.8h, v2.8h, v3.8h
+    add         v31.8h, v0.8h, v1.8h
+    add         v0.8h, v30.8h, v31.8h
+    uaddlv      s0, v0.8h
+    mov         w0, v0.s[0]
+    ret         x4
+endfunc
+
+function satd_8x8_neon
+    load_diff_fly_8x8
+endfunc
+
+// one vertical hadamard pass and two horizontal
+function satd_8x4v_8x8h_neon
+    SUMSUB_AB   v16.8h, v18.8h, v0.8h, v2.8h
+    SUMSUB_AB   v17.8h, v19.8h, v1.8h, v3.8h
+    HADAMARD4_V v20.8h, v21.8h, v22.8h, v23.8h, v0.8h, v1.8h, v2.8h, v3.8h
+    transpose   v0.8h, v1.8h, v16.8h, v17.8h
+    transpose   v2.8h, v3.8h, v18.8h, v19.8h
+    transpose   v4.8h, v5.8h, v20.8h, v21.8h
+    transpose   v6.8h, v7.8h, v22.8h, v23.8h
+
+    SUMSUB_AB   v16.8h, v17.8h, v0.8h, v1.8h
+    SUMSUB_AB   v18.8h, v19.8h, v2.8h, v3.8h
+    SUMSUB_AB   v20.8h, v21.8h, v4.8h, v5.8h
+    SUMSUB_AB   v22.8h, v23.8h, v6.8h, v7.8h
+
+    transpose   v0.4s, v2.4s, v16.4s, v18.4s
+    transpose   v1.4s, v3.4s, v17.4s, v19.4s
+    transpose   v4.4s, v6.4s, v20.4s, v22.4s
+    transpose   v5.4s, v7.4s, v21.4s, v23.4s
+
+    abs         v0.8h, v0.8h
+    abs         v1.8h, v1.8h
+    abs         v2.8h, v2.8h
+    abs         v3.8h, v3.8h
+    abs         v4.8h, v4.8h
+    abs         v5.8h, v5.8h
+    abs         v6.8h, v6.8h
+    abs         v7.8h, v7.8h
+
+    umax        v0.8h, v0.8h, v2.8h
+    umax        v1.8h, v1.8h, v3.8h
+    umax        v2.8h, v4.8h, v6.8h
+    umax        v3.8h, v5.8h, v7.8h
+
+    ret
+endfunc
+
 #endif /* BIT_DEPTH == 8 */
 
 SAD_FUNC 4, 4
@@ -1337,125 +1563,6 @@ endfunc
 
 pixel_var2_8  8
 pixel_var2_8 16
-
-function pixel_satd_8x8_neon, export=1
-    mov         x4,  x30
-
-    bl satd_8x8_neon
-    add         v0.8h,  v0.8h,  v1.8h
-    add         v1.8h,  v2.8h,  v3.8h
-    add         v0.8h,  v0.8h,  v1.8h
-    uaddlv      s0,  v0.8h
-    mov         w0,  v0.s[0]
-    ret         x4
-endfunc
-
-function pixel_satd_8x16_neon, export=1
-    mov         x4,  x30
-
-    bl satd_8x8_neon
-    add         v0.8h,  v0.8h,  v1.8h
-    add         v1.8h,  v2.8h,  v3.8h
-    add         v30.8h, v0.8h,  v1.8h
-
-    bl satd_8x8_neon
-    add         v0.8h,  v0.8h,  v1.8h
-    add         v1.8h,  v2.8h,  v3.8h
-    add         v31.8h, v0.8h,  v1.8h
-    add         v0.8h,  v30.8h, v31.8h
-    uaddlv      s0,  v0.8h
-    mov         w0,  v0.s[0]
-    ret         x4
-endfunc
-
-.macro SUMSUBL_AB  sum, sub, a, b
-    uaddl      \sum,  \a,  \b
-    usubl      \sub,  \a,  \b
-.endm
-
-.macro load_diff_fly_8x8
-    ld1        {v1.8b},  [x2], x3
-    ld1        {v0.8b},  [x0], x1
-    ld1        {v3.8b},  [x2], x3
-    ld1        {v2.8b},  [x0], x1
-    usubl       v16.8h, v0.8b,  v1.8b
-    ld1        {v5.8b},  [x2], x3
-    ld1        {v4.8b},  [x0], x1
-    usubl       v17.8h, v2.8b,  v3.8b
-    ld1        {v7.8b},  [x2], x3
-    ld1        {v6.8b},  [x0], x1
-    usubl       v18.8h, v4.8b,  v5.8b
-    ld1        {v1.8b},  [x2], x3
-    ld1        {v0.8b},  [x0], x1
-    usubl       v19.8h, v6.8b,  v7.8b
-    ld1        {v3.8b},  [x2], x3
-    ld1        {v2.8b},  [x0], x1
-    usubl       v20.8h, v0.8b,  v1.8b
-    ld1        {v5.8b},  [x2], x3
-    ld1        {v4.8b},  [x0], x1
-    usubl       v21.8h, v2.8b,  v3.8b
-    ld1        {v7.8b},  [x2], x3
-    ld1        {v6.8b},  [x0], x1
-
-    SUMSUB_AB   v0.8h,  v1.8h,  v16.8h, v17.8h
-    SUMSUB_AB   v2.8h,  v3.8h,  v18.8h, v19.8h
-
-    usubl       v22.8h, v4.8b,  v5.8b
-    usubl       v23.8h, v6.8b,  v7.8b
-.endm
-
-.macro SUMSUB_ABCD s1, d1, s2, d2, a, b, c, d
-    SUMSUB_AB   \s1, \d1, \a, \b
-    SUMSUB_AB   \s2, \d2, \c, \d
-.endm
-
-.macro HADAMARD4_V r1, r2, r3, r4, t1, t2, t3, t4
-    SUMSUB_ABCD \t1, \t2, \t3, \t4, \r1, \r2, \r3, \r4
-    SUMSUB_ABCD \r1, \r3, \r2, \r4, \t1, \t3, \t2, \t4
-.endm
-
-function satd_8x8_neon
-    load_diff_fly_8x8
-endfunc
-
-// one vertical hadamard pass and two horizontal
-function satd_8x4v_8x8h_neon
-    SUMSUB_AB   v16.8h, v18.8h, v0.8h,  v2.8h
-    SUMSUB_AB   v17.8h, v19.8h, v1.8h,  v3.8h
-
-    HADAMARD4_V v20.8h, v21.8h, v22.8h, v23.8h, v0.8h,  v1.8h, v2.8h, v3.8h
-
-    transpose   v0.8h,  v1.8h,  v16.8h, v17.8h
-    transpose   v2.8h,  v3.8h,  v18.8h, v19.8h
-    transpose   v4.8h,  v5.8h,  v20.8h, v21.8h
-    transpose   v6.8h,  v7.8h,  v22.8h, v23.8h
-
-    SUMSUB_AB   v16.8h, v17.8h, v0.8h,  v1.8h
-    SUMSUB_AB   v18.8h, v19.8h, v2.8h,  v3.8h
-    SUMSUB_AB   v20.8h, v21.8h, v4.8h,  v5.8h
-    SUMSUB_AB   v22.8h, v23.8h, v6.8h,  v7.8h
-
-    transpose   v0.4s,  v2.4s,  v16.4s, v18.4s
-    transpose   v1.4s,  v3.4s,  v17.4s, v19.4s
-    transpose   v4.4s,  v6.4s,  v20.4s, v22.4s
-    transpose   v5.4s,  v7.4s,  v21.4s, v23.4s
-
-    abs         v0.8h,  v0.8h
-    abs         v1.8h,  v1.8h
-    abs         v2.8h,  v2.8h
-    abs         v3.8h,  v3.8h
-    abs         v4.8h,  v4.8h
-    abs         v5.8h,  v5.8h
-    abs         v6.8h,  v6.8h
-    abs         v7.8h,  v7.8h
-
-    umax        v0.8h,  v0.8h,  v2.8h
-    umax        v1.8h,  v1.8h,  v3.8h
-    umax        v2.8h,  v4.8h,  v6.8h
-    umax        v3.8h,  v5.8h,  v7.8h
-
-    ret
-endfunc
 
 function pixel_satd_16x8_neon, export=1
     mov         x4,  x30
