@@ -89,7 +89,7 @@ DECL_X1( ssd, neon )
 
 
 #define x264_pixel_ssd_nv12_core_neon x264_template(pixel_ssd_nv12_core_neon)
-void x264_pixel_ssd_nv12_core_neon( uint8_t *, intptr_t, uint8_t *, intptr_t, int, int, uint64_t *, uint64_t * );
+void x264_pixel_ssd_nv12_core_neon( pixel *, intptr_t, pixel *, intptr_t, int, int, uint64_t *, uint64_t * );
 
 #define x264_pixel_vsad_neon x264_template(pixel_vsad_neon)
 int x264_pixel_vsad_neon( pixel *, intptr_t, int );
