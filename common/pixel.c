@@ -1072,6 +1072,8 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
         pixf->var[PIXEL_8x8]    = x264_pixel_var_8x8_neon;
         pixf->var[PIXEL_8x16]   = x264_pixel_var_8x16_neon;
         pixf->var[PIXEL_16x16]  = x264_pixel_var_16x16_neon;
+        pixf->var2[PIXEL_8x8]    = x264_pixel_var2_8x8_neon;
+        pixf->var2[PIXEL_8x16]   = x264_pixel_var2_8x16_neon;
 
     }
 #endif // HAVE_AARCH64
