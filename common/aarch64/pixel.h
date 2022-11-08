@@ -95,11 +95,11 @@ void x264_pixel_ssd_nv12_core_neon( pixel *, intptr_t, pixel *, intptr_t, int, i
 int x264_pixel_vsad_neon( pixel *, intptr_t, int );
 
 #define x264_pixel_sa8d_8x8_neon x264_template(pixel_sa8d_8x8_neon)
-int x264_pixel_sa8d_8x8_neon  ( uint8_t *, intptr_t, uint8_t *, intptr_t );
+int x264_pixel_sa8d_8x8_neon  ( pixel *, intptr_t, pixel *, intptr_t );
 #define x264_pixel_sa8d_16x16_neon x264_template(pixel_sa8d_16x16_neon)
-int x264_pixel_sa8d_16x16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t );
+int x264_pixel_sa8d_16x16_neon( pixel *, intptr_t, pixel *, intptr_t );
 #define x264_pixel_sa8d_satd_16x16_neon x264_template(pixel_sa8d_satd_16x16_neon)
-uint64_t x264_pixel_sa8d_satd_16x16_neon( uint8_t *, intptr_t, uint8_t *, intptr_t );
+uint64_t x264_pixel_sa8d_satd_16x16_neon( pixel *, intptr_t, pixel *, intptr_t );
 
 #define x264_pixel_var_8x8_neon x264_template(pixel_var_8x8_neon)
 uint64_t x264_pixel_var_8x8_neon  ( pixel *, intptr_t );
