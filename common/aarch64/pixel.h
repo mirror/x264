@@ -113,13 +113,13 @@ int x264_pixel_var2_8x8_neon ( pixel *, pixel *, int * );
 int x264_pixel_var2_8x16_neon( pixel *, pixel *, int * );
 
 #define x264_pixel_hadamard_ac_8x8_neon x264_template(pixel_hadamard_ac_8x8_neon)
-uint64_t x264_pixel_hadamard_ac_8x8_neon  ( uint8_t *, intptr_t );
+uint64_t x264_pixel_hadamard_ac_8x8_neon  ( pixel *, intptr_t );
 #define x264_pixel_hadamard_ac_8x16_neon x264_template(pixel_hadamard_ac_8x16_neon)
-uint64_t x264_pixel_hadamard_ac_8x16_neon ( uint8_t *, intptr_t );
+uint64_t x264_pixel_hadamard_ac_8x16_neon ( pixel *, intptr_t );
 #define x264_pixel_hadamard_ac_16x8_neon x264_template(pixel_hadamard_ac_16x8_neon)
-uint64_t x264_pixel_hadamard_ac_16x8_neon ( uint8_t *, intptr_t );
+uint64_t x264_pixel_hadamard_ac_16x8_neon ( pixel *, intptr_t );
 #define x264_pixel_hadamard_ac_16x16_neon x264_template(pixel_hadamard_ac_16x16_neon)
-uint64_t x264_pixel_hadamard_ac_16x16_neon( uint8_t *, intptr_t );
+uint64_t x264_pixel_hadamard_ac_16x16_neon( pixel *, intptr_t );
 
 #define x264_pixel_ssim_4x4x2_core_neon x264_template(pixel_ssim_4x4x2_core_neon)
 void x264_pixel_ssim_4x4x2_core_neon( const uint8_t *, intptr_t,
