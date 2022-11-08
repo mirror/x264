@@ -122,8 +122,8 @@ uint64_t x264_pixel_hadamard_ac_16x8_neon ( pixel *, intptr_t );
 uint64_t x264_pixel_hadamard_ac_16x16_neon( pixel *, intptr_t );
 
 #define x264_pixel_ssim_4x4x2_core_neon x264_template(pixel_ssim_4x4x2_core_neon)
-void x264_pixel_ssim_4x4x2_core_neon( const uint8_t *, intptr_t,
-                                      const uint8_t *, intptr_t,
+void x264_pixel_ssim_4x4x2_core_neon( const pixel *, intptr_t,
+                                      const pixel *, intptr_t,
                                       int sums[2][4] );
 #define x264_pixel_ssim_end4_neon x264_template(pixel_ssim_end4_neon)
 float x264_pixel_ssim_end4_neon( int sum0[5][4], int sum1[5][4], int width );
