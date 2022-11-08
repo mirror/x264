@@ -1081,6 +1081,7 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
         pixf->sa8d[PIXEL_16x16]  = x264_pixel_sa8d_16x16_neon;
         pixf->sa8d_satd[PIXEL_16x16] = x264_pixel_sa8d_satd_16x16_neon;
         INIT4(hadamard_ac, _neon);
+        pixf->ssim_4x4x2_core    = x264_pixel_ssim_4x4x2_core_neon;
     }
 #endif // HAVE_AARCH64
 
