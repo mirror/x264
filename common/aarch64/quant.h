@@ -31,15 +31,15 @@
 int x264_quant_2x2_dc_aarch64( int16_t dct[4], int mf, int bias );
 
 #define x264_quant_2x2_dc_neon x264_template(quant_2x2_dc_neon)
-int x264_quant_2x2_dc_neon( int16_t dct[4], int mf, int bias );
+int x264_quant_2x2_dc_neon( dctcoef dct[4], int mf, int bias );
 #define x264_quant_4x4_dc_neon x264_template(quant_4x4_dc_neon)
-int x264_quant_4x4_dc_neon( int16_t dct[16], int mf, int bias );
+int x264_quant_4x4_dc_neon( dctcoef dct[16], int mf, int bias );
 #define x264_quant_4x4_neon x264_template(quant_4x4_neon)
-int x264_quant_4x4_neon( int16_t dct[16], uint16_t mf[16], uint16_t bias[16] );
+int x264_quant_4x4_neon( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] );
 #define x264_quant_4x4x4_neon x264_template(quant_4x4x4_neon)
-int x264_quant_4x4x4_neon( int16_t dct[4][16], uint16_t mf[16], uint16_t bias[16] );
+int x264_quant_4x4x4_neon( dctcoef dct[4][16], udctcoef mf[16], udctcoef bias[16] );
 #define x264_quant_8x8_neon x264_template(quant_8x8_neon)
-int x264_quant_8x8_neon( int16_t dct[64], uint16_t mf[64], uint16_t bias[64] );
+int x264_quant_8x8_neon( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] );
 
 #define x264_dequant_4x4_dc_neon x264_template(dequant_4x4_dc_neon)
 void x264_dequant_4x4_dc_neon( int16_t dct[16], int dequant_mf[6][16], int i_qp );

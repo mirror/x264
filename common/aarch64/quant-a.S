@@ -27,6 +27,8 @@
 
 #include "asm.S"
 
+.if BIT_DEPTH == 8
+
 .macro QUANT_TWO bias0 bias1 mf0_1 mf2_3 mask
     add         v18.8h, v18.8h, \bias0
     add         v19.8h, v19.8h, \bias1
@@ -590,3 +592,223 @@ function denoise_dct_neon, export=1
     b.gt        1b
     ret
 endfunc
+
+.else // BIT_DEPTH == 8
+
+.macro QUANT_TWO mask
+    add         v20.4s, v20.4s, v0.4s
+    add         v21.4s, v21.4s, v1.4s
+    add         v22.4s, v22.4s, v2.4s
+    add         v23.4s, v23.4s, v3.4s
+
+    mul         v24.4s, v20.4s, v4.4s
+    mul         v25.4s, v21.4s, v5.4s
+    mul         v26.4s, v22.4s, v6.4s
+    mul         v27.4s, v23.4s, v7.4s
+
+    sshr        v16.4s, v16.4s, #31
+    sshr        v17.4s, v17.4s, #31
+    sshr        v18.4s, v18.4s, #31
+    sshr        v19.4s, v19.4s, #31
+
+    sshr        v20.4s, v24.4s, #16
+    sshr        v21.4s, v25.4s, #16
+    sshr        v22.4s, v26.4s, #16
+    sshr        v23.4s, v27.4s, #16
+
+    eor         v20.16b, v20.16b, v16.16b
+    eor         v21.16b, v21.16b, v17.16b
+    eor         v22.16b, v22.16b, v18.16b
+    eor         v23.16b, v23.16b, v19.16b
+
+    sub         v20.4s, v20.4s, v16.4s
+    sub         v21.4s, v21.4s, v17.4s
+    sub         v22.4s, v22.4s, v18.4s
+    sub         v23.4s, v23.4s, v19.4s
+
+    orr         \mask, v20.16b, v21.16b
+    orr         v16.16b, v22.16b, v23.16b
+    orr         \mask, \mask, v16.16b
+
+    st1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x0], #64
+.endm
+
+
+.macro QUANT_END d
+    // Use parameter d as a register number and extract upper and lower halves.
+    fmov        x2, d\d
+    fmov        x3, v\d\().d[1]
+    orr         x2, x2, x3
+    mov         w0, #0
+    tst         x2, x2
+    cinc        w0, w0, ne
+    ret
+.endm
+
+// quant_2x2_dc( dctcoef dct[4], int mf, int bias )
+function quant_2x2_dc_neon, export=1
+    ld1         {v0.4s}, [x0]
+    dup         v2.4s, w2
+    dup         v1.4s, w1
+    abs         v3.4s, v0.4s
+    add         v3.4s, v3.4s, v2.4s
+    mul         v3.4s, v3.4s, v1.4s
+    sshr        v0.4s, v0.4s, #31
+    sshr        v3.4s, v3.4s, #16
+    eor         v3.16b, v3.16b, v0.16b
+    sub         v0.4s, v3.4s, v0.4s
+    st1         {v0.4s}, [x0]
+    QUANT_END   0
+endfunc
+
+// quant_4x4_dc( dctcoef dct[16], int mf, int bias )
+function quant_4x4_dc_neon, export=1
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    dup         v0.4s, w2
+    dup         v1.4s, w2
+    dup         v2.4s, w2
+    dup         v3.4s, w2
+    dup         v4.4s, w1
+    dup         v5.4s, w1
+    dup         v6.4s, w1
+    dup         v7.4s, w1
+
+    QUANT_TWO   v0.16b
+    QUANT_END   0
+endfunc
+
+// quant_4x4( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] )
+function quant_4x4_neon, export=1
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2]
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1]
+
+    QUANT_TWO   v0.16b
+    QUANT_END   0
+endfunc
+
+// quant_4x4x4( dctcoef dct[4][16], uint32_t mf[16], uint32_t bias[16] )
+function quant_4x4x4_neon, export=1
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2]
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1]
+
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    QUANT_TWO   v28.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+    QUANT_TWO   v29.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+    QUANT_TWO   v30.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+    QUANT_TWO   v31.16b
+
+    uqxtn       v28.4h, v28.4s
+    uqxtn       v29.4h, v29.4s
+    uqxtn       v30.4h, v30.4s
+    uqxtn       v31.4h, v31.4s
+
+    fmov        x7, d28
+    fmov        x6, d29
+    fmov        x10, d30
+    fmov        x12, d31
+
+    mov         w0, #0
+    tst         x12, x12
+    cinc        w0, w0, ne
+    lsl         w0, w0, #1
+    tst         x10, x10
+    cinc        w0, w0, ne
+    lsl         w0, w0, #1
+    tst         x6, x6
+    cinc        w0, w0, ne
+    lsl         w0, w0, #1
+    tst         x7, x7
+    cinc        w0, w0, ne
+    ret
+endfunc
+
+// quant_8x8( dctcoef dct[64], uint32_t mf[64], uint32_t bias[64] )
+function quant_8x8_neon, export=1
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+
+    QUANT_TWO   v28.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+
+    QUANT_TWO   v29.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+
+    QUANT_TWO   v30.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+
+    QUANT_TWO   v31.16b
+
+    orr         v0.16b, v28.16b, v29.16b
+    orr         v0.16b, v0.16b, v30.16b
+    orr         v0.16b, v0.16b, v31.16b
+
+    QUANT_END   0
+endfunc
+
+.endif

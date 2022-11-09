@@ -557,6 +557,18 @@ void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
         pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_avx512;
     }
 #endif // HAVE_MMX
+#if HAVE_AARCH64
+
+    if( cpu&X264_CPU_NEON )
+    {
+        pf->quant_2x2_dc   = x264_quant_2x2_dc_neon;
+        pf->quant_4x4_dc   = x264_quant_4x4_dc_neon;
+        pf->quant_4x4      = x264_quant_4x4_neon;
+        pf->quant_4x4x4    = x264_quant_4x4x4_neon;
+        pf->quant_8x8      = x264_quant_8x8_neon;
+    }
+
+#endif // HAVE_AARCH64
 #else // !HIGH_BIT_DEPTH
 #if HAVE_MMX
     INIT_TRELLIS( sse2 );
