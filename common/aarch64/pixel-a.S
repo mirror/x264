@@ -56,6 +56,7 @@ endconst
 .endm
 
 #if BIT_DEPTH == 8
+
 .macro SAD_START_4
     ld1        {v1.s}[0], [x2], x3
     ld1        {v0.s}[0], [x0], x1
@@ -1291,6 +1292,72 @@ function pixel_ssim_4x4x2_core_neon, export=1
     addp        v3.4s,  v17.4s, v17.4s
 
     st4        {v0.2s,v1.2s,v2.2s,v3.2s}, [x4]
+    ret
+endfunc
+
+function pixel_ssim_end4_neon, export=1
+    mov         x5,  #4
+    ld1        {v16.4s,v17.4s}, [x0], #32
+    ld1        {v18.4s,v19.4s}, [x1], #32
+    mov         w4,  #0x99bb
+    subs        x2,  x5,  w2, uxtw
+    mov         w3,  #416                       // ssim_c1 = .01*.01*255*255*64
+    movk        w4,  #0x03, lsl #16             // ssim_c2 = .03*.03*255*255*64*63
+    add         v0.4s,  v16.4s,  v18.4s
+    add         v1.4s,  v17.4s,  v19.4s
+    add         v0.4s,  v0.4s,  v1.4s
+    ld1        {v20.4s,v21.4s}, [x0], #32
+    ld1        {v22.4s,v23.4s}, [x1], #32
+    add         v2.4s,  v20.4s, v22.4s
+    add         v3.4s,  v21.4s, v23.4s
+    add         v1.4s,  v1.4s,  v2.4s
+    ld1        {v16.4s}, [x0], #16
+    ld1        {v18.4s}, [x1], #16
+    add         v16.4s, v16.4s, v18.4s
+    add         v2.4s,  v2.4s,  v3.4s
+    add         v3.4s,  v3.4s,  v16.4s
+
+    dup         v30.4s, w3
+    dup         v31.4s, w4
+
+    transpose   v4.4s,  v5.4s,  v0.4s,  v1.4s
+    transpose   v6.4s,  v7.4s,  v2.4s,  v3.4s
+    transpose   v0.2d,  v2.2d,  v4.2d,  v6.2d
+    transpose   v1.2d,  v3.2d,  v5.2d,  v7.2d
+
+    mul         v16.4s, v0.4s, v1.4s    // s1*s2
+    mul         v0.4s,  v0.4s, v0.4s
+    mla         v0.4s,  v1.4s, v1.4s    // s1*s1 + s2*s2
+
+    shl         v3.4s,  v3.4s,  #7
+    shl         v2.4s,  v2.4s,  #6
+    add         v1.4s,  v16.4s, v16.4s
+
+    sub         v2.4s,  v2.4s,  v0.4s    // vars
+    sub         v3.4s,  v3.4s,  v1.4s    // covar*2
+    add         v0.4s,  v0.4s,  v30.4s
+    add         v2.4s,  v2.4s,  v31.4s
+    add         v1.4s,  v1.4s,  v30.4s
+    add         v3.4s,  v3.4s,  v31.4s
+
+    scvtf       v0.4s,  v0.4s
+    scvtf       v2.4s,  v2.4s
+    scvtf       v1.4s,  v1.4s
+    scvtf       v3.4s,  v3.4s
+
+    fmul        v0.4s,  v0.4s,  v2.4s
+    fmul        v1.4s,  v1.4s,  v3.4s
+
+    fdiv        v0.4s,  v1.4s,  v0.4s
+
+    b.eq        1f
+    movrel      x3,  mask
+    add         x3,  x3,  x2,  lsl #2
+    ld1        {v29.4s}, [x3]
+    and         v0.16b, v0.16b, v29.16b
+1:
+    faddp       v0.4s,  v0.4s,  v0.4s
+    faddp       s0,  v0.2s
     ret
 endfunc
 
@@ -2664,6 +2731,83 @@ function pixel_ssim_4x4x2_core_neon, export=1
     ret
 endfunc
 
+function pixel_ssim_end4_neon, export=1
+    mov         x5, #4
+    ld1         {v16.4s, v17.4s}, [x0], #32
+    ld1         {v18.4s, v19.4s}, [x1], #32
+    subs        x2, x5, w2, uxtw
+    // These values must be stored in float, since with 10 bit depth edge cases
+    // may overflow. The hexadecimal values are IEEE-754 representation of the
+    // floating point numbers.
+    ldr         w3, =0x45d14e49                 // ssim_c1 = .01*.01*1023*1023*64
+    ldr         w4, =0x4a67ca32                 // ssim_c2 = .03*.03*1023*1023*64*63
+    add         v0.4s, v16.4s, v18.4s
+    add         v1.4s, v17.4s, v19.4s
+    add         v0.4s, v0.4s, v1.4s
+    ld1         {v20.4s, v21.4s}, [x0], #32
+    ld1         {v22.4s, v23.4s}, [x1], #32
+    add         v2.4s, v20.4s, v22.4s
+    add         v3.4s, v21.4s, v23.4s
+    add         v1.4s, v1.4s, v2.4s
+    ld1         {v16.4s}, [x0], #16
+    ld1         {v18.4s}, [x1], #16
+    add         v16.4s, v16.4s, v18.4s
+    add         v2.4s, v2.4s, v3.4s
+    add         v3.4s, v3.4s, v16.4s
+
+    dup         v30.4s, w3
+    dup         v31.4s, w4
+
+    transpose   v4.4s, v5.4s, v0.4s, v1.4s
+    transpose   v6.4s, v7.4s, v2.4s, v3.4s
+    transpose   v0.2d, v2.2d, v4.2d, v6.2d
+    transpose   v1.2d, v3.2d, v5.2d, v7.2d
+
+    // Conversion to floating point number must occur earlier than in 8 bit case
+    // because of the range overflow
+    scvtf       v0.4s, v0.4s
+    scvtf       v2.4s, v2.4s
+    scvtf       v1.4s, v1.4s
+    scvtf       v3.4s, v3.4s
+
+    fmul        v16.4s, v0.4s, v1.4s            // s1*s2
+    fmul        v0.4s, v0.4s, v0.4s
+    fmla        v0.4s, v1.4s, v1.4s             // s1*s1 + s2*s2
+
+    // IEEE-754 hexadecimal representation of multipliers
+    ldr         w3, =0x42800000                 // 64
+    ldr         w4, =0x43000000                 // 128
+    dup         v28.4s, w3
+    dup         v29.4s, w4
+
+    fmul        v2.4s, v2.4s, v28.4s
+    fmul        v3.4s, v3.4s, v29.4s
+
+    fadd        v1.4s, v16.4s, v16.4s
+
+    fsub        v2.4s, v2.4s, v0.4s             // vars
+    fsub        v3.4s, v3.4s, v1.4s             // covar*2
+    fadd        v0.4s, v0.4s, v30.4s
+    fadd        v2.4s, v2.4s, v31.4s
+    fadd        v1.4s, v1.4s, v30.4s
+    fadd        v3.4s, v3.4s, v31.4s
+
+    fmul        v0.4s, v0.4s, v2.4s
+    fmul        v1.4s, v1.4s, v3.4s
+
+    fdiv        v0.4s, v1.4s, v0.4s
+
+    b.eq        1f
+    movrel      x3, mask
+    add         x3, x3, x2, lsl #2
+    ld1         {v29.4s}, [x3]
+    and         v0.16b, v0.16b, v29.16b
+1:
+    faddp       v0.4s, v0.4s, v0.4s
+    faddp       s0, v0.2s
+    ret
+endfunc
+
 #endif /* BIT_DEPTH == 8 */
 
 SAD_FUNC  4,  4
@@ -2713,69 +2857,3 @@ HADAMARD_AC  8, 8
 HADAMARD_AC  8, 16
 HADAMARD_AC 16, 8
 HADAMARD_AC 16, 16
-
-function pixel_ssim_end4_neon, export=1
-    mov         x5,  #4
-    ld1        {v16.4s,v17.4s}, [x0], #32
-    ld1        {v18.4s,v19.4s}, [x1], #32
-    mov         w4,  #0x99bb
-    subs        x2,  x5,  w2, uxtw
-    mov         w3,  #416                       // ssim_c1 = .01*.01*255*255*64
-    movk        w4,  #0x03, lsl #16             // ssim_c2 = .03*.03*255*255*64*63
-    add         v0.4s,  v16.4s,  v18.4s
-    add         v1.4s,  v17.4s,  v19.4s
-    add         v0.4s,  v0.4s,  v1.4s
-    ld1        {v20.4s,v21.4s}, [x0], #32
-    ld1        {v22.4s,v23.4s}, [x1], #32
-    add         v2.4s,  v20.4s, v22.4s
-    add         v3.4s,  v21.4s, v23.4s
-    add         v1.4s,  v1.4s,  v2.4s
-    ld1        {v16.4s}, [x0], #16
-    ld1        {v18.4s}, [x1], #16
-    add         v16.4s, v16.4s, v18.4s
-    add         v2.4s,  v2.4s,  v3.4s
-    add         v3.4s,  v3.4s,  v16.4s
-
-    dup         v30.4s, w3
-    dup         v31.4s, w4
-
-    transpose   v4.4s,  v5.4s,  v0.4s,  v1.4s
-    transpose   v6.4s,  v7.4s,  v2.4s,  v3.4s
-    transpose   v0.2d,  v2.2d,  v4.2d,  v6.2d
-    transpose   v1.2d,  v3.2d,  v5.2d,  v7.2d
-
-    mul         v16.4s, v0.4s, v1.4s    // s1*s2
-    mul         v0.4s,  v0.4s, v0.4s
-    mla         v0.4s,  v1.4s, v1.4s    // s1*s1 + s2*s2
-
-    shl         v3.4s,  v3.4s,  #7
-    shl         v2.4s,  v2.4s,  #6
-    add         v1.4s,  v16.4s, v16.4s
-
-    sub         v2.4s,  v2.4s,  v0.4s    // vars
-    sub         v3.4s,  v3.4s,  v1.4s    // covar*2
-    add         v0.4s,  v0.4s,  v30.4s
-    add         v2.4s,  v2.4s,  v31.4s
-    add         v1.4s,  v1.4s,  v30.4s
-    add         v3.4s,  v3.4s,  v31.4s
-
-    scvtf       v0.4s,  v0.4s
-    scvtf       v2.4s,  v2.4s
-    scvtf       v1.4s,  v1.4s
-    scvtf       v3.4s,  v3.4s
-
-    fmul        v0.4s,  v0.4s,  v2.4s
-    fmul        v1.4s,  v1.4s,  v3.4s
-
-    fdiv        v0.4s,  v1.4s,  v0.4s
-
-    b.eq        1f
-    movrel      x3,  mask
-    add         x3,  x3,  x2,  lsl #2
-    ld1        {v29.4s}, [x3]
-    and         v0.16b, v0.16b, v29.16b
-1:
-    faddp       v0.4s,  v0.4s,  v0.4s
-    faddp       s0,  v0.2s
-    ret
-endfunc
