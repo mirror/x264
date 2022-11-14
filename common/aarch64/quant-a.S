@@ -811,4 +811,139 @@ function quant_8x8_neon, export=1
     QUANT_END   0
 endfunc
 
+.macro DEQUANT_START mf_size offset dc=no
+    mov         w3,  #0x2b
+    mul         w3,  w3,  w2
+    lsr         w3,  w3,  #8            // i_qbits = i_qp / 6
+    add         w5,  w3,  w3,  lsl #1
+    sub         w2,  w2,  w5,  lsl #1  // i_mf = i_qp % 6
+    lsl         w2,  w2,  #\mf_size
+.ifc \dc,no
+    add         x1,  x1,  w2, sxtw      // dequant_mf[i_mf]
+.else
+    ldr         x1, [x1,  w2, sxtw]     // dequant_mf[i_mf][0][0]
+.endif
+    subs        w3,  w3,  #\offset      // 6 for 8x8
+.endm
+
+// dequant_4x4( int32_t dct[16], int dequant_mf[6][16], int i_qp )
+.macro DEQUANT size bits
+function dequant_\size\()_neon, export=1
+    DEQUANT_START \bits+2, \bits
+.ifc \size, 8x8
+    mov         w2,  #4
+.endif
+    b.lt        dequant_\size\()_rshift
+
+    dup         v31.4s, w3
+dequant_\size\()_lshift_loop:
+.ifc \size, 8x8
+    subs        w2,  w2,  #1
+.endif
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x1], #64
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+    mul         v0.4s,  v0.4s,  v16.4s
+    mul         v1.4s,  v1.4s,  v17.4s
+    mul         v2.4s,  v2.4s,  v18.4s
+    mul         v3.4s,  v3.4s,  v19.4s
+
+    sshl        v0.4s,  v0.4s,  v31.4s
+    sshl        v1.4s,  v1.4s,  v31.4s
+    sshl        v2.4s,  v2.4s,  v31.4s
+    sshl        v3.4s,  v3.4s,  v31.4s
+
+    st1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], #64
+.ifc \size, 8x8
+    b.gt        dequant_\size\()_lshift_loop
+.endif
+    ret
+
+dequant_\size\()_rshift:
+    dup         v31.4s, w3
+    neg         w3,  w3
+    mov         w5,  #1
+    sub         w3,  w3,  #1
+    lsl         w5,  w5,  w3
+
+.ifc \size, 8x8
+dequant_\size\()_rshift_loop:
+    subs        w2,  w2,  #1
+.endif
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x1], #64
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+    dup         v20.4s, w5
+    dup         v21.4s, w5
+    dup         v22.4s, w5
+    dup         v23.4s, w5
+
+    mla         v20.4s, v0.4s,  v16.4s
+    mla         v21.4s, v1.4s,  v17.4s
+    mla         v22.4s, v2.4s,  v18.4s
+    mla         v23.4s, v3.4s,  v19.4s
+
+    sshl        v16.4s, v20.4s, v31.4s
+    sshl        v17.4s, v21.4s, v31.4s
+    sshl        v18.4s, v22.4s, v31.4s
+    sshl        v19.4s, v23.4s, v31.4s
+
+    st1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0], #64
+.ifc \size, 8x8
+    b.gt        dequant_\size\()_rshift_loop
+.endif
+    ret
+endfunc
+.endm
+
+DEQUANT 4x4, 4
+DEQUANT 8x8, 6
+
+// dequant_4x4_dc( int32_t dct[16], int dequant_mf[6][16], int i_qp )
+function dequant_4x4_dc_neon, export=1
+    DEQUANT_START 6, 6, yes
+    b.lt        dequant_4x4_dc_rshift
+
+    lsl         w1,  w1,  w3
+    dup         v31.4s,  w1
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s},   [x0]
+
+    mul         v0.4s,  v0.4s,  v31.4s
+    mul         v1.4s,  v1.4s,  v31.4s
+    mul         v2.4s,  v2.4s,  v31.4s
+    mul         v3.4s,  v3.4s,  v31.4s
+    st1         {v0.4s, v1.4s, v2.4s, v3.4s},   [x0]
+    ret
+
+dequant_4x4_dc_rshift:
+    dup         v31.4s, w1
+    dup         v30.4s, w3
+
+    neg         w3,  w3
+    mov         w5,  #1
+    sub         w3,  w3,  #1
+    lsl         w5,  w5,  w3
+
+    dup         v16.4s, w5
+    dup         v17.4s, w5
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+    dup         v18.4s, w5
+    dup         v19.4s, w5
+
+    mla         v16.4s, v0.4s,  v31.4s
+    mla         v17.4s, v1.4s,  v31.4s
+    mla         v18.4s, v2.4s,  v31.4s
+    mla         v19.4s, v3.4s,  v31.4s
+
+    sshl        v16.4s, v16.4s, v30.4s
+    sshl        v17.4s, v17.4s, v30.4s
+    sshl        v18.4s, v18.4s, v30.4s
+    sshl        v19.4s, v19.4s, v30.4s
+
+    st1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    ret
+endfunc
+
 .endif

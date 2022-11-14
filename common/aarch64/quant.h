@@ -42,11 +42,11 @@ int x264_quant_4x4x4_neon( dctcoef dct[4][16], udctcoef mf[16], udctcoef bias[16
 int x264_quant_8x8_neon( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] );
 
 #define x264_dequant_4x4_dc_neon x264_template(dequant_4x4_dc_neon)
-void x264_dequant_4x4_dc_neon( int16_t dct[16], int dequant_mf[6][16], int i_qp );
+void x264_dequant_4x4_dc_neon( dctcoef dct[16], int dequant_mf[6][16], int i_qp );
 #define x264_dequant_4x4_neon x264_template(dequant_4x4_neon)
-void x264_dequant_4x4_neon( int16_t dct[16], int dequant_mf[6][16], int i_qp );
+void x264_dequant_4x4_neon( dctcoef dct[16], int dequant_mf[6][16], int i_qp );
 #define x264_dequant_8x8_neon x264_template(dequant_8x8_neon)
-void x264_dequant_8x8_neon( int16_t dct[64], int dequant_mf[6][64], int i_qp );
+void x264_dequant_8x8_neon( dctcoef dct[64], int dequant_mf[6][64], int i_qp );
 
 #define x264_decimate_score15_neon x264_template(decimate_score15_neon)
 int x264_decimate_score15_neon( int16_t * );

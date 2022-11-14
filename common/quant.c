@@ -566,6 +566,10 @@ void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
         pf->quant_4x4      = x264_quant_4x4_neon;
         pf->quant_4x4x4    = x264_quant_4x4x4_neon;
         pf->quant_8x8      = x264_quant_8x8_neon;
+
+        pf->dequant_4x4    = x264_dequant_4x4_neon;
+        pf->dequant_8x8    = x264_dequant_8x8_neon;
+        pf->dequant_4x4_dc = x264_dequant_4x4_dc_neon;
     }
 
 #endif // HAVE_AARCH64
