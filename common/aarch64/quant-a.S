@@ -27,6 +27,61 @@
 
 #include "asm.S"
 
+// This is a common function for both 8 and 10 bit depth, since these two differ
+// at data loading only. The distinction is based on the depth parameters that
+//are passed to the macro.
+.macro decimate_score_1x size depth
+function decimate_score\size\()_neon, export=1
+
+.if BIT_DEPTH == 8
+    ld1        {v0.8h,v1.8h}, [x0]
+    movrel      x5,  X264(decimate_table4)
+    movi        v3.16b, #0x01
+    sqxtn       v0.8b,  v0.8h
+    sqxtn2      v0.16b, v1.8h
+.else // BIT_DEPTH == 8
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+    movrel      x5, X264(decimate_table4)
+    sqxtn       v20.4h, v0.4s
+    sqxtn2      v20.8h, v1.4s
+    sqxtn       v21.4h, v2.4s
+    sqxtn2      v21.8h, v3.4s
+    sqxtn       v0.8b, v20.8h
+    sqxtn2      v0.16b, v21.8h
+.endif // BIT_DEPTH == 8
+
+    movi        v3.16b, #0x01
+    abs         v2.16b, v0.16b
+    cmeq        v1.16b, v0.16b, #0
+    cmhi        v2.16b, v2.16b, v3.16b
+    shrn        v1.8b, v1.8h, #4
+    shrn        v2.8b, v2.8h, #4
+    fmov        x2, d2
+    fmov        x1, d1
+    cbnz        x2, 9f
+    mvn         x1, x1
+    mov         w0, #0
+    cbz         x1, 0f
+.ifc \size, 15
+    lsr         x1, x1, #1
+.endif
+    rbit        x1, x1
+1:
+    clz         x3, x1
+    lsr         x6, x3, #2
+    lsl         x1, x1, x3
+    ldrb        w7, [x5, x6]
+    lsl         x1, x1, #4
+    add         w0, w0, w7
+    cbnz        x1, 1b
+    ret
+9:
+    mov         w0, #9
+0:
+    ret
+endfunc
+.endm
+
 .if BIT_DEPTH == 8
 
 .macro QUANT_TWO bias0 bias1 mf0_1 mf2_3 mask
@@ -304,43 +359,6 @@ dequant_4x4_dc_rshift:
     ret
 endfunc
 
-.macro decimate_score_1x size
-function decimate_score\size\()_neon, export=1
-    ld1        {v0.8h,v1.8h}, [x0]
-    movrel      x5,  X264(decimate_table4)
-    movi        v3.16b, #0x01
-    sqxtn       v0.8b,  v0.8h
-    sqxtn2      v0.16b, v1.8h
-    abs         v2.16b, v0.16b
-    cmeq        v1.16b, v0.16b, #0
-    cmhi        v2.16b, v2.16b, v3.16b
-    shrn        v1.8b,  v1.8h,  #4
-    shrn        v2.8b,  v2.8h,  #4
-    fmov        x2,  d2
-    fmov        x1,  d1
-    cbnz        x2,  9f
-    mvn         x1,  x1
-    mov         w0,  #0
-    cbz         x1,  0f
-.ifc \size, 15
-    lsr         x1,  x1,  #1
-.endif
-    rbit        x1,  x1
-1:
-    clz         x3,  x1
-    lsr         x6,  x3,  #2
-    lsl         x1,  x1,  x3
-    ldrb        w7,  [x5, x6]
-    lsl         x1,  x1,  #4
-    add         w0,  w0,  w7
-    cbnz        x1,  1b
-    ret
-9:
-    mov         w0,  #9
-0:
-    ret
-endfunc
-.endm
 
 decimate_score_1x 15
 decimate_score_1x 16
@@ -945,5 +963,8 @@ dequant_4x4_dc_rshift:
     st1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
     ret
 endfunc
+
+decimate_score_1x 15
+decimate_score_1x 16
 
 .endif
