@@ -49,9 +49,9 @@ void x264_dequant_4x4_neon( dctcoef dct[16], int dequant_mf[6][16], int i_qp );
 void x264_dequant_8x8_neon( dctcoef dct[64], int dequant_mf[6][64], int i_qp );
 
 #define x264_decimate_score15_neon x264_template(decimate_score15_neon)
-int x264_decimate_score15_neon( int16_t * );
+int x264_decimate_score15_neon( dctcoef * );
 #define x264_decimate_score16_neon x264_template(decimate_score16_neon)
-int x264_decimate_score16_neon( int16_t * );
+int x264_decimate_score16_neon( dctcoef * );
 #define x264_decimate_score64_neon x264_template(decimate_score64_neon)
 int x264_decimate_score64_neon( int16_t * );
 
