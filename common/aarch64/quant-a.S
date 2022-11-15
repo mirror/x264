@@ -82,6 +82,105 @@ function decimate_score\size\()_neon, export=1
 endfunc
 .endm
 
+const mask64, align=6
+    .byte  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
+    .byte  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
+endconst
+
+.macro decimate_score64 depth
+function decimate_score64_neon, export=1
+.if BIT_DEPTH == 8
+    ld1         {v0.8h, v1.8h}, [x0], #32
+    ld1         {v2.8h, v3.8h}, [x0], #32
+    ld1         {v4.8h, v5.8h}, [x0], #32
+    ld1         {v6.8h, v7.8h}, [x0]
+    sqxtn       v16.8b, v1.8h
+    sqxtn2      v16.16b, v0.8h
+    sqxtn       v17.8b, v3.8h
+    sqxtn2      v17.16b, v2.8h
+    sqxtn       v18.8b, v5.8h
+    sqxtn2      v18.16b, v4.8h
+    sqxtn       v19.8b, v7.8h
+    sqxtn2      v19.16b, v6.8h
+.else // BIT_DEPTH == 8
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x0], #64
+    ld1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x0], #64
+    ld1         {v24.4s, v25.4s, v26.4s, v27.4s}, [x0]
+
+    sqxtn       v28.4h, v0.4s
+    sqxtn2      v28.8h, v1.4s
+    sqxtn       v0.4h, v2.4s
+    sqxtn2      v0.8h, v3.4s
+    sqxtn       v2.4h, v6.4s
+    sqxtn2      v2.8h, v7.4s
+    sqxtn       v3.4h, v4.4s
+    sqxtn2      v3.8h, v5.4s
+    sqxtn       v4.4h, v22.4s
+    sqxtn2      v4.8h, v23.4s
+    sqxtn       v5.4h, v20.4s
+    sqxtn2      v5.8h, v21.4s
+    sqxtn       v6.4h, v26.4s
+    sqxtn2      v6.8h, v27.4s
+    sqxtn       v7.4h, v24.4s
+    sqxtn2      v7.8h, v25.4s
+
+    sqxtn       v16.8b, v0.8h
+    sqxtn2      v16.16b, v28.8h
+    sqxtn       v17.8b, v2.8h
+    sqxtn2      v17.16b, v3.8h
+    sqxtn       v18.8b, v4.8h
+    sqxtn2      v18.16b, v5.8h
+    sqxtn       v19.8b, v6.8h
+    sqxtn2      v19.16b, v7.8h
+.endif // BIT_DEPTH == 8
+
+    movrel      x6, mask64
+    movi        v31.16b, #0x01
+    abs         v4.16b, v16.16b
+    abs         v5.16b, v17.16b
+    abs         v6.16b, v18.16b
+    abs         v7.16b, v19.16b
+    ld1         {v30.16b}, [x6]
+    cmeq        v0.16b, v16.16b, #0
+    cmeq        v1.16b, v17.16b, #0
+    cmeq        v2.16b, v18.16b, #0
+    cmeq        v3.16b, v19.16b, #0
+    umax        v4.16b, v4.16b, v5.16b
+    umax        v6.16b, v6.16b, v7.16b
+    and         v0.16b, v0.16b, v30.16b
+    and         v1.16b, v1.16b, v30.16b
+    and         v2.16b, v2.16b, v30.16b
+    and         v3.16b, v3.16b, v30.16b
+    umax        v4.16b, v4.16b, v6.16b
+    addp        v0.16b, v1.16b, v0.16b
+    addp        v2.16b, v3.16b, v2.16b
+    cmhi        v4.16b, v4.16b, v31.16b
+    addp        v0.16b, v2.16b, v0.16b
+    shrn        v4.8b, v4.8h, #4
+    addp        v0.16b, v0.16b, v0.16b
+    fmov        x2, d4
+    fmov        x1, d0
+    cbnz        x2, 9f
+    mvn         x1, x1
+    mov         w0, #0
+    cbz         x1, 0f
+    movrel      x5, X264(decimate_table8)
+1:
+    clz         x3, x1
+    lsl         x1, x1, x3
+    ldrb        w7, [x5, x3]
+    lsl         x1, x1, #1
+    add         w0, w0, w7
+    cbnz        x1, 1b
+    ret
+9:
+    mov         w0, #9
+0:
+    ret
+endfunc
+.endm
+
 .if BIT_DEPTH == 8
 
 .macro QUANT_TWO bias0 bias1 mf0_1 mf2_3 mask
@@ -363,68 +462,7 @@ endfunc
 decimate_score_1x 15
 decimate_score_1x 16
 
-const mask64, align=6
-    .byte  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
-    .byte  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
-endconst
-
-function decimate_score64_neon, export=1
-    ld1        {v0.8h,v1.8h}, [x0], #32
-    ld1        {v2.8h,v3.8h}, [x0], #32
-    ld1        {v4.8h,v5.8h}, [x0], #32
-    ld1        {v6.8h,v7.8h}, [x0]
-    movrel      x6,  mask64
-    movi        v31.16b, #0x01
-    sqxtn       v16.8b,  v1.8h
-    sqxtn2      v16.16b, v0.8h
-    sqxtn       v17.8b,  v3.8h
-    sqxtn2      v17.16b, v2.8h
-    sqxtn       v18.8b,  v5.8h
-    sqxtn2      v18.16b, v4.8h
-    sqxtn       v19.8b,  v7.8h
-    sqxtn2      v19.16b, v6.8h
-    abs         v4.16b, v16.16b
-    abs         v5.16b, v17.16b
-    abs         v6.16b, v18.16b
-    abs         v7.16b, v19.16b
-    ld1        {v30.16b}, [x6]
-    cmeq        v0.16b, v16.16b, #0
-    cmeq        v1.16b, v17.16b, #0
-    cmeq        v2.16b, v18.16b, #0
-    cmeq        v3.16b, v19.16b, #0
-    umax        v4.16b, v4.16b, v5.16b
-    umax        v6.16b, v6.16b, v7.16b
-    and         v0.16b, v0.16b, v30.16b
-    and         v1.16b, v1.16b, v30.16b
-    and         v2.16b, v2.16b, v30.16b
-    and         v3.16b, v3.16b, v30.16b
-    umax        v4.16b, v4.16b, v6.16b
-    addp        v0.16b, v1.16b, v0.16b
-    addp        v2.16b, v3.16b, v2.16b
-    cmhi        v4.16b, v4.16b, v31.16b
-    addp        v0.16b, v2.16b, v0.16b
-    shrn        v4.8b,  v4.8h,  #4
-    addp        v0.16b, v0.16b, v0.16b
-    fmov        x2,  d4
-    fmov        x1,  d0
-    cbnz        x2,  9f
-    mvn         x1,  x1
-    mov         w0,  #0
-    cbz         x1,  0f
-    movrel      x5,  X264(decimate_table8)
-1:
-    clz         x3,  x1
-    lsl         x1,  x1,  x3
-    ldrb        w7,  [x5, x3]
-    lsl         x1,  x1,  #1
-    add         w0,  w0,  w7
-    cbnz        x1,  1b
-    ret
-9:
-    mov         w0,  #9
-0:
-    ret
-endfunc
+decimate_score64
 
 // int coeff_last( int16_t *l )
 function coeff_last4_aarch64, export=1
@@ -966,5 +1004,7 @@ endfunc
 
 decimate_score_1x 15
 decimate_score_1x 16
+
+decimate_score64
 
 .endif
