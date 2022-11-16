@@ -55,16 +55,24 @@ int x264_decimate_score16_neon( dctcoef * );
 #define x264_decimate_score64_neon x264_template(decimate_score64_neon)
 int x264_decimate_score64_neon( dctcoef * );
 
+// BIT DEPTH = 8
 #define x264_coeff_last4_aarch64 x264_template(coeff_last4_aarch64)
-int x264_coeff_last4_aarch64( int16_t * );
+int x264_coeff_last4_aarch64( dctcoef * );
 #define x264_coeff_last8_aarch64 x264_template(coeff_last8_aarch64)
-int x264_coeff_last8_aarch64( int16_t * );
+int x264_coeff_last8_aarch64( dctcoef * );
+
+// BIT DEPTH = 10
+#define x264_coeff_last4_neon x264_template(coeff_last4_neon)
+int x264_coeff_last4_neon( dctcoef * );
+#define x264_coeff_last8_neon x264_template(coeff_last8_neon)
+int x264_coeff_last8_neon( dctcoef * );
+
 #define x264_coeff_last15_neon x264_template(coeff_last15_neon)
-int x264_coeff_last15_neon( int16_t * );
+int x264_coeff_last15_neon( dctcoef * );
 #define x264_coeff_last16_neon x264_template(coeff_last16_neon)
-int x264_coeff_last16_neon( int16_t * );
+int x264_coeff_last16_neon( dctcoef * );
 #define x264_coeff_last64_neon x264_template(coeff_last64_neon)
-int x264_coeff_last64_neon( int16_t * );
+int x264_coeff_last64_neon( dctcoef * );
 
 #define x264_coeff_level_run4_aarch64 x264_template(coeff_level_run4_aarch64)
 int x264_coeff_level_run4_aarch64( int16_t *, x264_run_level_t * );
