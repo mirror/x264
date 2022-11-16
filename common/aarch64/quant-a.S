@@ -181,6 +181,112 @@ function decimate_score64_neon, export=1
 endfunc
 .endm
 
+.macro COEFF_LAST_1x size, sub_factor
+function coeff_last\size\()_neon, export=1
+.if \size == 15
+    sub         x0,  x0,  \sub_factor
+.endif
+
+.if BIT_DEPTH == 8
+    ld1         {v0.8h, v1.8h}, [x0]
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+.else // BIT_DEPTH == 8
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn2      v0.8h, v1.4s
+    uqxtn       v1.4h, v2.4s
+    uqxtn2      v1.8h, v3.4s
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+.endif // BIT_DEPTH == 8
+
+    cmtst       v0.16b, v0.16b, v0.16b
+    shrn        v0.8b, v0.8h, #4
+    fmov        x1, d0
+    mov         w3, #\size - 1
+    clz         x2, x1
+    sub         w0, w3, w2, lsr #2
+    ret
+endfunc
+.endm
+
+.macro COEFF_LAST64
+function coeff_last64_neon, export=1
+.if BIT_DEPTH == 8
+    ld1         {v0.8h, v1.8h, v2.8h, v3.8h}, [x0], 64
+    movi        v31.8h, #8
+    movi        v30.8h, #1
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+    ld1         {v4.8h, v5.8h, v6.8h, v7.8h}, [x0], 64
+    uqxtn       v1.8b, v2.8h
+    uqxtn2      v1.16b, v3.8h
+    uqxtn       v2.8b, v4.8h
+    uqxtn2      v2.16b, v5.8h
+    uqxtn       v3.8b, v6.8h
+    uqxtn2      v3.16b, v7.8h
+.else // BIT_DEPTH == 8
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], #64
+    movi        v31.8h, #8
+    movi        v30.8h, #1
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x0], #64
+    uqxtn       v0.4h, v0.4s
+    uqxtn2      v0.8h, v1.4s
+    uqxtn       v1.4h, v2.4s
+    uqxtn2      v1.8h, v3.4s
+    uqxtn       v2.4h, v4.4s
+    uqxtn2      v2.8h, v5.4s
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0], #64
+    uqxtn       v3.4h, v6.4s
+    uqxtn2      v3.8h, v7.4s
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+    uqxtn       v1.8b, v2.8h
+    uqxtn2      v1.16b, v3.8h
+    ld1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x0], #64
+    uqxtn       v16.4h, v16.4s
+    uqxtn2      v16.8h, v17.4s
+    uqxtn       v17.4h, v18.4s
+    uqxtn2      v17.8h, v19.4s
+    uqxtn       v18.4h, v20.4s
+    uqxtn2      v18.8h, v21.4s
+    uqxtn       v19.4h, v22.4s
+    uqxtn2      v19.8h, v23.4s
+    uqxtn       v2.8b, v16.8h
+    uqxtn2      v2.16b, v17.8h
+    uqxtn       v3.8b, v18.8h
+    uqxtn2      v3.16b, v19.8h
+.endif // BIT_DEPTH == 8
+
+    cmtst       v0.16b, v0.16b, v0.16b
+    cmtst       v1.16b, v1.16b, v1.16b
+    cmtst       v2.16b, v2.16b, v2.16b
+    cmtst       v3.16b, v3.16b, v3.16b
+
+    shrn        v0.8b, v0.8h, #4
+    shrn2       v0.16b, v1.8h, #4
+    shrn        v1.8b, v2.8h, #4
+    shrn2       v1.16b, v3.8h, #4
+
+    clz         v0.4s, v0.4s
+    clz         v1.4s, v1.4s
+
+    shrn        v0.4h, v0.4s, #2
+    shrn2       v0.8h, v1.4s, #2
+
+    sub         v0.8h, v31.8h, v0.8h
+    sshl        v0.8h, v30.8h, v0.8h
+    shrn        v0.8b, v0.8h, #1
+
+    fmov        x2, d0
+    mov         w3, #63
+    clz         x2, x2
+    sub         w0, w3, w2
+    ret
+endfunc
+.endm
+
 .if BIT_DEPTH == 8
 
 .macro QUANT_TWO bias0 bias1 mf0_1 mf2_3 mask
@@ -487,67 +593,10 @@ function coeff_last8_aarch64, export=1
     ret
 endfunc
 
-.macro COEFF_LAST_1x size
-function coeff_last\size\()_neon, export=1
-.if \size == 15
-    sub         x0,  x0,  #2
-.endif
-    ld1        {v0.8h,v1.8h}, [x0]
-    uqxtn       v0.8b,  v0.8h
-    uqxtn2      v0.16b, v1.8h
-    cmtst       v0.16b, v0.16b, v0.16b
-    shrn        v0.8b,  v0.8h,  #4
-    fmov        x1,  d0
-    mov         w3,  #\size - 1
-    clz         x2,  x1
-    sub         w0,  w3,  w2, lsr #2
-    ret
-endfunc
-.endm
+COEFF_LAST_1x 15, #2
+COEFF_LAST_1x 16, #2
 
-COEFF_LAST_1x 15
-COEFF_LAST_1x 16
-
-function coeff_last64_neon, export=1
-    ld1        {v0.8h,v1.8h,v2.8h,v3.8h}, [x0], 64
-    movi        v31.8h,  #8
-    movi        v30.8h,  #1
-    uqxtn       v0.8b,  v0.8h
-    uqxtn2      v0.16b, v1.8h
-    ld1        {v4.8h,v5.8h,v6.8h,v7.8h}, [x0], 64
-    uqxtn       v1.8b,  v2.8h
-    uqxtn2      v1.16b, v3.8h
-    uqxtn       v2.8b,  v4.8h
-    uqxtn2      v2.16b, v5.8h
-    uqxtn       v3.8b,  v6.8h
-    uqxtn2      v3.16b, v7.8h
-
-    cmtst       v0.16b, v0.16b, v0.16b
-    cmtst       v1.16b, v1.16b, v1.16b
-    cmtst       v2.16b, v2.16b, v2.16b
-    cmtst       v3.16b, v3.16b, v3.16b
-
-    shrn        v0.8b,  v0.8h,  #4
-    shrn2       v0.16b, v1.8h,  #4
-    shrn        v1.8b,  v2.8h,  #4
-    shrn2       v1.16b, v3.8h,  #4
-
-    clz         v0.4s,  v0.4s
-    clz         v1.4s,  v1.4s
-
-    shrn        v0.4h,  v0.4s,  #2
-    shrn2       v0.8h,  v1.4s,  #2
-
-    sub         v0.8h,  v31.8h,  v0.8h
-    sshl        v0.8h,  v30.8h,  v0.8h
-    shrn        v0.8b,  v0.8h,  #1
-
-    fmov        x2,  d0
-    mov         w3,  #63
-    clz         x2,  x2
-    sub         w0,  w3,  w2
-    ret
-endfunc
+COEFF_LAST64
 
 .macro coeff_level_run_start size
     add         x6,  x1,  #23            // runlevel->mask
@@ -1006,5 +1055,36 @@ decimate_score_1x 15
 decimate_score_1x 16
 
 decimate_score64
+
+// int coeff_last( int32_t *l )
+function coeff_last4_neon, export=1
+    ld1         {v0.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn       v0.8b, v0.8h
+    mov         w4, #3
+    cmtst       v0.16b, v0.16b, v0.16b
+    fmov        w1, s0
+    clz         w2, w1
+    sub         w0, w4, w2, lsr #3
+    ret
+endfunc
+
+function coeff_last8_neon, export=1
+    ld1         {v0.4s, v1.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn2      v0.8h, v1.4s
+    uqxtn       v0.8b, v0.8h
+    mov         w4, #7
+    cmtst       v0.16b, v0.16b, v0.16b
+    fmov        x1, d0
+    clz         x2, x1
+    sub         x0, x4, x2, lsr #3
+    ret
+endfunc
+
+COEFF_LAST_1x 15, #4
+COEFF_LAST_1x 16, #4
+
+COEFF_LAST64
 
 .endif
