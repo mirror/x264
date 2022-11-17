@@ -580,6 +580,10 @@ void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
         pf->coeff_last[ DCT_LUMA_AC] = x264_coeff_last15_neon;
         pf->coeff_last[DCT_LUMA_4x4] = x264_coeff_last16_neon;
         pf->coeff_last[DCT_LUMA_8x8] = x264_coeff_last64_neon;
+        pf->coeff_level_run4         = x264_coeff_level_run4_neon;
+        pf->coeff_level_run8         = x264_coeff_level_run8_neon;
+        pf->coeff_level_run[  DCT_LUMA_AC] = x264_coeff_level_run15_neon;
+        pf->coeff_level_run[ DCT_LUMA_4x4] = x264_coeff_level_run16_neon;
     }
 
 #endif // HAVE_AARCH64
