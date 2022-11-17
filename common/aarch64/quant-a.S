@@ -1147,4 +1147,59 @@ X264_COEFF_LEVEL_RUN 8
 X264_COEFF_LEVEL_RUN 15
 X264_COEFF_LEVEL_RUN 16
 
+function denoise_dct_neon, export=1
+1:  subs        w3,  w3,  #16
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1]
+
+    abs         v16.4s, v0.4s
+    abs         v17.4s, v1.4s
+    abs         v18.4s, v2.4s
+    abs         v19.4s, v3.4s
+
+    cmlt        v24.4s, v0.4s, #0
+    cmlt        v25.4s, v1.4s, #0
+    cmlt        v26.4s, v2.4s, #0
+    cmlt        v27.4s, v3.4s, #0
+
+    ld1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x2], #64
+
+    add         v4.4s, v4.4s, v16.4s
+    add         v5.4s, v5.4s, v17.4s
+    sub         v28.4s, v16.4s, v20.4s
+    sub         v29.4s, v17.4s, v21.4s
+    sub         v30.4s, v18.4s, v22.4s
+    sub         v31.4s, v19.4s, v23.4s
+    add         v6.4s, v6.4s, v18.4s
+    add         v7.4s, v7.4s, v19.4s
+
+    cmlt        v20.4s, v28.4s, #0
+    cmlt        v21.4s, v29.4s, #0
+    cmlt        v22.4s, v30.4s, #0
+    cmlt        v23.4s, v31.4s, #0
+
+    movi        v0.4s, #0
+
+    bsl         v20.16b, v0.16b, v28.16b
+    bsl         v21.16b, v0.16b, v29.16b
+    bsl         v22.16b, v0.16b, v30.16b
+    bsl         v23.16b, v0.16b, v31.16b
+
+    neg         v0.4s, v20.4s
+    neg         v1.4s, v21.4s
+    neg         v2.4s, v22.4s
+    neg         v3.4s, v23.4s
+
+    bsl         v24.16b, v0.16b, v20.16b
+    bsl         v25.16b, v1.16b, v21.16b
+    bsl         v26.16b, v2.16b, v22.16b
+    bsl         v27.16b, v3.16b, v23.16b
+
+    st1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+    st1         {v24.4s, v25.4s, v26.4s, v27.4s}, [x0], #64
+    b.gt        1b
+    ret
+endfunc
+
 .endif
