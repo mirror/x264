@@ -298,10 +298,6 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     if( x264_pthread_cond_init( &frame->cv, NULL ) )
         goto fail;
 
-#if HAVE_OPENCL
-    frame->opencl.ocl = h->opencl.ocl;
-#endif
-
     return frame;
 
 fail:
@@ -332,9 +328,6 @@ void x264_frame_delete( x264_frame_t *frame )
         }
         x264_pthread_mutex_destroy( &frame->mutex );
         x264_pthread_cond_destroy( &frame->cv );
-#if HAVE_OPENCL
-        x264_opencl_frame_delete( frame );
-#endif
     }
     x264_free( frame );
 }

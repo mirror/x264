@@ -586,28 +586,6 @@ static int validate_parameters( x264_t *h, int b_open )
     if( h->i_thread_frames > 1 )
         h->param.nalu_process = NULL;
 
-    if( h->param.b_opencl )
-    {
-#if !HAVE_OPENCL
-        x264_log( h, X264_LOG_WARNING, "OpenCL: not compiled with OpenCL support, disabling\n" );
-        h->param.b_opencl = 0;
-#elif BIT_DEPTH > 8
-        x264_log( h, X264_LOG_WARNING, "OpenCL lookahead does not support high bit depth, disabling opencl\n" );
-        h->param.b_opencl = 0;
-#else
-        if( h->param.i_width < 32 || h->param.i_height < 32 )
-        {
-            x264_log( h, X264_LOG_WARNING, "OpenCL: frame size is too small, disabling opencl\n" );
-            h->param.b_opencl = 0;
-        }
-#endif
-        if( h->param.opencl_device_id && h->param.i_opencl_device )
-        {
-            x264_log( h, X264_LOG_WARNING, "OpenCL: device id and device skip count configured; dropping skip\n" );
-            h->param.i_opencl_device = 0;
-        }
-    }
-
     h->param.i_keyint_max = x264_clip3( h->param.i_keyint_max, 1, X264_KEYINT_MAX_INFINITE );
     if( h->param.i_keyint_max == 1 )
     {
@@ -1387,7 +1365,6 @@ static int validate_parameters( x264_t *h, int b_open )
     BOOLIFY( b_bluray_compat );
     BOOLIFY( b_stitchable );
     BOOLIFY( b_full_recon );
-    BOOLIFY( b_opencl );
     BOOLIFY( analyse.b_transform_8x8 );
     BOOLIFY( analyse.b_weighted_bipred );
     BOOLIFY( analyse.b_chroma_me );
@@ -1527,8 +1504,6 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
         CHECKED_PARAM_STRDUP( h->param.rc.psz_stat_in, &h->param, h->param.rc.psz_stat_in );
     if( h->param.rc.psz_zones )
         CHECKED_PARAM_STRDUP( h->param.rc.psz_zones, &h->param, h->param.rc.psz_zones );
-    if( h->param.psz_clbin_file )
-        CHECKED_PARAM_STRDUP( h->param.psz_clbin_file, &h->param, h->param.psz_clbin_file );
 
     if( param->param_free )
     {
@@ -1741,18 +1716,6 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
         x264_threadpool_init( &h->lookaheadpool, h->param.i_lookahead_threads ) )
         goto fail;
 
-#if HAVE_OPENCL
-    if( h->param.b_opencl )
-    {
-        h->opencl.ocl = x264_opencl_load_library();
-        if( !h->opencl.ocl )
-        {
-            x264_log( h, X264_LOG_WARNING, "failed to load OpenCL\n" );
-            h->param.b_opencl = 0;
-        }
-    }
-#endif
-
     h->thread[0] = h;
     for( int i = 1; i < h->param.i_threads + !!h->param.i_sync_lookahead; i++ )
         CHECKED_MALLOC( h->thread[i], sizeof(x264_t) );
@@ -1793,11 +1756,6 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
         if( allocate_threadlocal_data && x264_macroblock_cache_allocate( h->thread[i] ) < 0 )
             goto fail;
     }
-
-#if HAVE_OPENCL
-    if( h->param.b_opencl && x264_opencl_lookahead_init( h ) < 0 )
-        h->param.b_opencl = 0;
-#endif
 
     if( x264_lookahead_init( h, i_slicetype_length ) )
         goto fail;
@@ -3329,11 +3287,6 @@ int     x264_encoder_encode( x264_t *h,
     int i_nal_type, i_nal_ref_idc, i_global_qp;
     int overhead = NALU_OVERHEAD;
 
-#if HAVE_OPENCL
-    if( h->opencl.b_fatal_error )
-        return -1;
-#endif
-
     if( h->i_thread_frames > 1 )
     {
         thread_prev    = h->thread[ h->i_thread_phase ];
@@ -4204,11 +4157,6 @@ void    x264_encoder_close  ( x264_t *h )
 
     x264_lookahead_delete( h );
 
-#if HAVE_OPENCL
-    x264_opencl_lookahead_delete( h );
-    x264_opencl_function_t *ocl = h->opencl.ocl;
-#endif
-
     if( h->param.b_sliced_threads )
         threadpool_wait_all( h );
     if( h->param.i_threads > 1 )
@@ -4571,9 +4519,6 @@ void    x264_encoder_close  ( x264_t *h )
         x264_pthread_cond_destroy( &h->thread[i]->cv );
         x264_free( h->thread[i] );
     }
-#if HAVE_OPENCL
-    x264_opencl_close_library( ocl );
-#endif
 }
 
 int x264_encoder_delayed_frames( x264_t *h )

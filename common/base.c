@@ -478,10 +478,6 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->b_fake_interlaced = 0;
     param->i_frame_packing = -1;
     param->i_alternative_transfer = 2; /* undef */
-    param->b_opencl = 0;
-    param->i_opencl_device = 0;
-    param->opencl_device_id = NULL;
-    param->psz_clbin_file = NULL;
     param->i_avcintra_class = 0;
     param->i_avcintra_flavor = X264_AVCINTRA_FLAVOR_PANASONIC;
 }
@@ -1398,12 +1394,6 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         p->i_frame_packing = atoi(value);
     OPT("stitchable")
         p->b_stitchable = atobool(value);
-    OPT("opencl")
-        p->b_opencl = atobool( value );
-    OPT("opencl-clbin")
-        CHECKED_ERROR_PARAM_STRDUP( p->psz_clbin_file, p, value );
-    OPT("opencl-device")
-        p->i_opencl_device = atoi( value );
     else
     {
         b_error = 1;
@@ -1443,8 +1433,6 @@ char *x264_param2string( x264_param_t *p, int b_res )
         s += sprintf( s, "bitdepth=%d ", p->i_bitdepth );
     }
 
-    if( p->b_opencl )
-        s += sprintf( s, "opencl=%d ", p->b_opencl );
     s += sprintf( s, "cabac=%d", p->b_cabac );
     s += sprintf( s, " ref=%d", p->i_frame_reference );
     s += sprintf( s, " deblock=%d:%d:%d", p->b_deblocking_filter,
