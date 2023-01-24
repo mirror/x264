@@ -134,16 +134,18 @@ endfunc
     ld1        {v1.s}[0], [x1], x5
     ld1        {v0.s}[1], [x0], x7
     ld1        {v1.s}[1], [x1], x5
-    \first      v16.8h,  v1.8b,  v0.8b
     ld1        {v2.s}[0], [x2], x5
     ld1        {v2.s}[1], [x2], x5
-    \first      v17.8h,  v2.8b,  v0.8b
+    \first      v16.8h,  v1.8b,  v0.8b
     ld1        {v3.s}[0], [x3], x5
     ld1        {v3.s}[1], [x3], x5
-    \first      v18.8h,  v3.8b,  v0.8b
+    \first      v17.8h,  v2.8b,  v0.8b
 .if \x == 4
     ld1        {v4.s}[0], [x4], x5
     ld1        {v4.s}[1], [x4], x5
+.endif
+    \first      v18.8h,  v3.8b,  v0.8b
+.if \x == 4
     \first      v19.8h,  v4.8b,  v0.8b
 .endif
 .endm
@@ -151,54 +153,58 @@ endfunc
 .macro SAD_X_8 x, first=uabal
     ld1        {v0.8b}, [x0], x7
     ld1        {v1.8b}, [x1], x5
-    \first      v16.8h,  v1.8b,  v0.8b
     ld1        {v2.8b}, [x2], x5
-    ld1        {v5.8b}, [x0], x7
-    \first      v17.8h,  v2.8b,  v0.8b
+    \first      v16.8h,  v1.8b,  v0.8b
     ld1        {v3.8b}, [x3], x5
+    \first      v17.8h,  v2.8b,  v0.8b
+    ld1        {v5.8b}, [x0], x7
     ld1        {v1.8b}, [x1], x5
     \first      v18.8h,  v3.8b,  v0.8b
-    uabal       v16.8h,  v1.8b,  v5.8b
     ld1        {v2.8b}, [x2], x5
+    uabal       v16.8h,  v1.8b,  v5.8b
     ld1        {v3.8b}, [x3], x5
     uabal       v17.8h,  v2.8b,  v5.8b
-    uabal       v18.8h,  v3.8b,  v5.8b
 .if \x == 4
     ld1        {v4.8b}, [x4], x5
+    ld1        {v1.8b}, [x4], x5
+.endif
+    uabal       v18.8h,  v3.8b,  v5.8b
+.if \x == 4
     \first      v19.8h,  v4.8b,  v0.8b
-    ld1        {v4.8b}, [x4], x5
-    uabal       v19.8h,  v4.8b,  v5.8b
+    uabal       v19.8h,  v1.8b,  v5.8b
 .endif
 .endm
 
 .macro SAD_X_16 x, first=uabal
     ld1        {v0.16b}, [x0], x7
     ld1        {v1.16b}, [x1], x5
+    ld1        {v2.16b}, [x2], x5
     \first      v16.8h,  v1.8b,  v0.8b
     \first\()2  v20.8h,  v1.16b, v0.16b
-    ld1        {v2.16b}, [x2], x5
-    ld1        {v5.16b}, [x0], x7
+    ld1        {v3.16b}, [x3], x5
     \first      v17.8h,  v2.8b,  v0.8b
     \first\()2  v21.8h,  v2.16b, v0.16b
-    ld1        {v3.16b}, [x3], x5
+    ld1        {v5.16b}, [x0], x7
     ld1        {v1.16b}, [x1], x5
     \first      v18.8h,  v3.8b,  v0.8b
     \first\()2  v22.8h,  v3.16b, v0.16b
+    ld1        {v2.16b}, [x2], x5
     uabal       v16.8h,  v1.8b,  v5.8b
     uabal2      v20.8h,  v1.16b, v5.16b
-    ld1        {v2.16b}, [x2], x5
     ld1        {v3.16b}, [x3], x5
     uabal       v17.8h,  v2.8b,  v5.8b
     uabal2      v21.8h,  v2.16b, v5.16b
+.if \x == 4
+    ld1        {v4.16b}, [x4], x5
+    ld1        {v1.16b}, [x4], x5
+.endif
     uabal       v18.8h,  v3.8b,  v5.8b
     uabal2      v22.8h,  v3.16b, v5.16b
 .if \x == 4
-    ld1        {v4.16b}, [x4], x5
     \first      v19.8h,  v4.8b,  v0.8b
     \first\()2  v23.8h,  v4.16b, v0.16b
-    ld1        {v4.16b}, [x4], x5
-    uabal       v19.8h,  v4.8b,  v5.8b
-    uabal2      v23.8h,  v4.16b, v5.16b
+    uabal       v19.8h,  v1.8b,  v5.8b
+    uabal2      v23.8h,  v1.16b, v5.16b
 .endif
 .endm
 
@@ -1468,16 +1474,18 @@ endfunc
     ld1         {v1.d}[0], [x1], x5
     ld1         {v0.d}[1], [x0], x7
     ld1         {v1.d}[1], [x1], x5
-    \first      v16.8h, v1.8h, v0.8h
     ld1         {v2.d}[0], [x2], x5
     ld1         {v2.d}[1], [x2], x5
-    \first      v17.8h, v2.8h, v0.8h
+    \first      v16.8h, v1.8h, v0.8h
     ld1         {v3.d}[0], [x3], x5
     ld1         {v3.d}[1], [x3], x5
-    \first      v18.8h, v3.8h, v0.8h
+    \first      v17.8h, v2.8h, v0.8h
 .if \x == 4
     ld1         {v4.d}[0], [x4], x5
     ld1         {v4.d}[1], [x4], x5
+.endif
+    \first      v18.8h, v3.8h, v0.8h
+.if \x == 4
     \first      v19.8h, v4.8h, v0.8h
 .endif
 .endm
@@ -1487,57 +1495,61 @@ endfunc
     ld1         {v1.8h}, [x1], x5
     \first      v16.8h, v1.8h, v0.8h
     ld1         {v2.8h}, [x2], x5
-    ld1         {v5.8h}, [x0], x7
-    \first      v17.8h, v2.8h, v0.8h
     ld1         {v3.8h}, [x3], x5
+    \first      v17.8h, v2.8h, v0.8h
+    ld1         {v5.8h}, [x0], x7
     ld1         {v1.8h}, [x1], x5
     \first      v18.8h, v3.8h, v0.8h
-    uaba        v16.8h, v1.8h, v5.8h
     ld1         {v2.8h}, [x2], x5
+    uaba        v16.8h, v1.8h, v5.8h
     ld1         {v3.8h}, [x3], x5
     uaba        v17.8h, v2.8h, v5.8h
-    uaba        v18.8h, v3.8h, v5.8h
 .if \x == 4
     ld1         {v4.8h}, [x4], x5
+    ld1         {v1.8h}, [x4], x5
+.endif
+    uaba        v18.8h, v3.8h, v5.8h
+.if \x == 4
     \first      v19.8h, v4.8h, v0.8h
-    ld1         {v4.8h}, [x4], x5
-    uaba        v19.8h, v4.8h, v5.8h
+    uaba        v19.8h, v1.8h, v5.8h
 .endif
 .endm
 
 .macro SAD_X_16 x, first=uaba
     ld1         {v0.8h, v1.8h}, [x0], x7
     ld1         {v2.8h, v3.8h}, [x1], x5
-    \first      v16.8h, v2.8h, v0.8h
-    \first      v20.8h, v3.8h, v1.8h
 
     ld1         {v4.8h, v5.8h}, [x2], x5
-    ld1         {v6.8h, v7.8h}, [x0], x7
+    \first      v16.8h, v2.8h, v0.8h
+    \first      v20.8h, v3.8h, v1.8h
+    ld1         {v24.8h, v25.8h}, [x3], x5
     \first      v17.8h, v4.8h, v0.8h
     \first      v21.8h, v5.8h, v1.8h
 
-    ld1         {v24.8h, v25.8h}, [x3], x5
+    ld1         {v6.8h, v7.8h}, [x0], x7
     ld1         {v2.8h, v3.8h}, [x1], x5
     \first      v18.8h, v24.8h, v0.8h
     \first      v22.8h, v25.8h, v1.8h
+    ld1         {v4.8h, v5.8h}, [x2], x5
     uaba        v16.8h, v2.8h, v6.8h
     uaba        v20.8h, v3.8h, v7.8h
 
-    ld1         {v4.8h, v5.8h}, [x2], x5
     ld1         {v24.8h, v25.8h}, [x3], x5
     uaba        v17.8h, v4.8h, v6.8h
     uaba        v21.8h, v5.8h, v7.8h
 
+.if \x == 4
+    ld1         {v26.8h, v27.8h}, [x4], x5
+    ld1         {v28.8h, v29.8h}, [x4], x5
+.endif
     uaba        v18.8h, v24.8h, v6.8h
     uaba        v22.8h, v25.8h, v7.8h
 .if \x == 4
-    ld1         {v26.8h, v27.8h}, [x4], x5
     \first      v19.8h, v26.8h, v0.8h
     \first      v23.8h, v27.8h, v1.8h
 
-    ld1         {v26.8h, v27.8h}, [x4], x5
-    uaba        v19.8h, v26.8h, v6.8h
-    uaba        v23.8h, v27.8h, v7.8h
+    uaba        v19.8h, v28.8h, v6.8h
+    uaba        v23.8h, v29.8h, v7.8h
 .endif
 .endm
 
