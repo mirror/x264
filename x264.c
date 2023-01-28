@@ -1673,11 +1673,16 @@ generic_option:
     /* init threaded input while the information about the input video is unaltered by filtering */
 #if HAVE_THREAD
     const cli_input_t *thread_input;
-    if( HAVE_BITDEPTH8 && param->i_bitdepth == 8 )
+#if HAVE_BITDEPTH8
+    if( param->i_bitdepth == 8 )
         thread_input = &thread_8_input;
-    else if( HAVE_BITDEPTH10 && param->i_bitdepth == 10 )
+    else
+#endif
+#if HAVE_BITDEPTH10
+    if( param->i_bitdepth == 10 )
         thread_input = &thread_10_input;
     else
+#endif
         thread_input = NULL;
 
     if( thread_input && info.thread_safe && (b_thread_input || param->i_threads > 1
