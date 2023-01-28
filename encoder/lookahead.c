@@ -1,7 +1,7 @@
 /*****************************************************************************
  * lookahead.c: high-level lookahead functions
  *****************************************************************************
- * Copyright (C) 2010-2022 Avail Media and x264 project
+ * Copyright (C) 2010-2023 Avail Media and x264 project
  *
  * Authors: Michael Kazmier <mkazmier@availmedia.com>
  *          Alex Giladi <agiladi@availmedia.com>
