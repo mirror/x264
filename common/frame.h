@@ -53,6 +53,8 @@ typedef struct x264_frame
     int64_t i_dpb_output_delay;
     x264_param_t *param;
 
+    x264_timecode_t timecode[3];
+    int     i_timecode;
     int     i_frame;     /* Presentation frame number */
     int     i_coded;     /* Coded frame number */
     int64_t i_field_cnt; /* Presentation field count */
