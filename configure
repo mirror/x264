@@ -1111,6 +1111,10 @@ if [ "$thread" = "posix" ]; then
 fi
 [ "$thread" != "no" ] && define HAVE_THREAD
 
+if [ "$SYS" != "WINDOWS" -a "$ARCH" != "X86" ] && cc_check '' '' 'int *val; __sync_fetch_and_add(&val, 1);' ; then
+    define HAVE_SYNC_FETCH_AND_ADD
+fi
+
 if cc_check 'math.h' '' 'volatile float x = 2; return log2f(x);' ; then
     define HAVE_LOG2F
 fi
