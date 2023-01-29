@@ -798,6 +798,7 @@ case $host_cpu in
             define HAVE_ALTIVEC
             AS="${AS-${CC}}"
             AS_EXT=".c"
+            ASFLAGS="$ASFLAGS -c"
             if [ $SYS = MACOSX ] ; then
                 CFLAGS="$CFLAGS -faltivec -fastf -mcpu=G4"
             else

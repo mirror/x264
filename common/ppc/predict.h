@@ -26,9 +26,15 @@
 #ifndef X264_PPC_PREDICT_H
 #define X264_PPC_PREDICT_H
 
+#define x264_predict_4x4_init_altivec x264_template(predict_4x4_init_altivec)
+void x264_predict_4x4_init_altivec( uint32_t cpu, x264_predict_t pf[12] );
 #define x264_predict_16x16_init_altivec x264_template(predict_16x16_init_altivec)
-void x264_predict_16x16_init_altivec( x264_predict_t pf[7] );
+void x264_predict_16x16_init_altivec( uint32_t cpu, x264_predict_t pf[7] );
 #define x264_predict_8x8c_init_altivec x264_template(predict_8x8c_init_altivec)
-void x264_predict_8x8c_init_altivec( x264_predict_t pf[7] );
+void x264_predict_8x8c_init_altivec( uint32_t cpu, x264_predict_t pf[7] );
+#define x264_predict_8x8_init_altivec x264_template(predict_8x8_init_altivec)
+void x264_predict_8x8_init_altivec( uint32_t cpu, x264_predict8x8_t pf[12] );
+#define x264_predict_8x16c_init_altivec x264_template(predict_8x16c_init_altivec)
+void x264_predict_8x16c_init_altivec( uint32_t cpu, x264_predict_t pf[7] );
 
 #endif /* X264_PPC_PREDICT_H */

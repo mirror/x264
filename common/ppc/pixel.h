@@ -27,6 +27,6 @@
 #define X264_PPC_PIXEL_H
 
 #define x264_pixel_init_altivec x264_template(pixel_init_altivec)
-void x264_pixel_init_altivec( x264_pixel_function_t *pixf );
+void x264_pixel_init_altivec( uint32_t cpu, x264_pixel_function_t *pixf );
 
 #endif

@@ -206,7 +206,9 @@ static void print_bench(void)
                     b->cpu&X264_CPU_SSE ? "sse" :
                     b->cpu&X264_CPU_MMX ? "mmx" :
 #elif ARCH_PPC
+                    b->cpu&X264_CPU_ARCH_2_07 ? "arch_2_07" :
                     b->cpu&X264_CPU_ALTIVEC ? "altivec" :
+                    b->cpu&X264_CPU_PPC64 ? "ppc64" :
 #elif ARCH_ARM
                     b->cpu&X264_CPU_NEON ? "neon" :
                     b->cpu&X264_CPU_ARMV6 ? "armv6" :
@@ -2954,11 +2956,12 @@ static int check_all_flags( void )
     if( cpu_detect & X264_CPU_AVX512 )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_AVX512, "AVX512" );
 #elif ARCH_PPC
+    if( cpu_detect & X264_CPU_PPC64 )
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_PPC64, "PPC64" );
     if( cpu_detect & X264_CPU_ALTIVEC )
-    {
-        fprintf( stderr, "x264: ALTIVEC against C\n" );
-        ret = check_all_funcs( 0, X264_CPU_ALTIVEC );
-    }
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_ALTIVEC, "ALTIVEC" );
+    if( cpu_detect & X264_CPU_ARCH_2_07 )
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_ARCH_2_07, "ARCH_2_07" );
 #elif ARCH_ARM
     if( cpu_detect & X264_CPU_NEON )
         x264_checkasm_call = x264_checkasm_call_neon;

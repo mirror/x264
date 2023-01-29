@@ -680,6 +680,13 @@ void x264_dct_init( uint32_t cpu, x264_dct_function_t *dctf )
         dctf->add8x8_idct8  = x264_add8x8_idct8_altivec;
         dctf->add16x16_idct8= x264_add16x16_idct8_altivec;
     }
+    if( cpu&X264_CPU_ARCH_2_07 )
+    {
+        dctf->dct4x4dc      = x264_dct4x4dc_altivec;
+        dctf->idct4x4dc     = x264_idct4x4dc_altivec;
+
+        dctf->sub8x16_dct_dc = x264_sub8x16_dct_dc_altivec;
+    }
 #endif
 
 #if HAVE_ARMV6 || HAVE_AARCH64
@@ -994,6 +1001,13 @@ void x264_zigzag_init( uint32_t cpu, x264_zigzag_function_t *pf_progressive, x26
         pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_altivec;
         pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_altivec;
         pf_progressive->scan_8x8  = x264_zigzag_scan_8x8_frame_altivec;
+    }
+    if( cpu&X264_CPU_ARCH_2_07 )
+    {
+        pf_interlaced->sub_4x4    = x264_zigzag_sub_4x4_field_altivec;
+        pf_interlaced->sub_4x4ac  = x264_zigzag_sub_4x4ac_field_altivec;
+        pf_progressive->sub_4x4   = x264_zigzag_sub_4x4_frame_altivec;
+        pf_progressive->sub_4x4ac = x264_zigzag_sub_4x4ac_frame_altivec;
     }
 #endif
 #if HAVE_ARMV6 || HAVE_AARCH64

@@ -43,4 +43,38 @@ void x264_dequant_4x4_altivec( int16_t dct[16], int dequant_mf[6][16], int i_qp 
 #define x264_dequant_8x8_altivec x264_template(dequant_8x8_altivec)
 void x264_dequant_8x8_altivec( int16_t dct[64], int dequant_mf[6][64], int i_qp );
 
+#define x264_decimate_score15_altivec x264_template(decimate_score15_altivec)
+int x264_decimate_score15_altivec( int16_t * );
+#define x264_decimate_score16_altivec x264_template(decimate_score16_altivec)
+int x264_decimate_score16_altivec( int16_t * );
+#define x264_decimate_score64_altivec x264_template(decimate_score64_altivec)
+int x264_decimate_score64_altivec( int16_t * );
+
+#ifndef WORDS_BIGENDIAN
+#define x264_coeff_last4_ppc64 x264_template(coeff_last4_ppc64)
+int x264_coeff_last4_ppc64( int16_t * );
+#define x264_coeff_last8_ppc64 x264_template(coeff_last8_ppc64)
+int x264_coeff_last8_ppc64( int16_t * );
+#endif
+#define x264_coeff_last15_altivec x264_template(coeff_last15_altivec)
+int x264_coeff_last15_altivec( int16_t * );
+#define x264_coeff_last16_altivec x264_template(coeff_last16_altivec)
+int x264_coeff_last16_altivec( int16_t * );
+#define x264_coeff_last64_altivec x264_template(coeff_last64_altivec)
+int x264_coeff_last64_altivec( int16_t * );
+
+#ifndef WORDS_BIGENDIAN
+#define x264_coeff_level_run4_ppc64 x264_template(coeff_level_run4_ppc64)
+int x264_coeff_level_run4_ppc64( int16_t *, x264_run_level_t * );
+#endif
+#define x264_coeff_level_run8_altivec x264_template(coeff_level_run8_altivec)
+int x264_coeff_level_run8_altivec( int16_t *, x264_run_level_t * );
+#define x264_coeff_level_run15_altivec x264_template(coeff_level_run15_altivec)
+int x264_coeff_level_run15_altivec( int16_t *, x264_run_level_t * );
+#define x264_coeff_level_run16_altivec x264_template(coeff_level_run16_altivec)
+int x264_coeff_level_run16_altivec( int16_t *, x264_run_level_t * );
+
+#define x264_denoise_dct_altivec x264_template(denoise_dct_altivec)
+void x264_denoise_dct_altivec( dctcoef *, uint32_t *, udctcoef *, int );
+
 #endif

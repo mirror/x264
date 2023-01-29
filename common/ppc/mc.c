@@ -29,6 +29,79 @@
 #include "mc.h"
 
 #if !HIGH_BIT_DEPTH
+#define x264_pixel_avg_weight_16x16_altivec x264_template(pixel_avg_weight_16x16_altivec)
+void x264_pixel_avg_weight_16x16_altivec( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_weight_16x8_altivec x264_template(pixel_avg_weight_16x8_altivec)
+void x264_pixel_avg_weight_16x8_altivec ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_weight_8x16_altivec x264_template(pixel_avg_weight_8x16_altivec)
+void x264_pixel_avg_weight_8x16_altivec ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_weight_8x8_altivec x264_template(pixel_avg_weight_8x8_altivec)
+void x264_pixel_avg_weight_8x8_altivec  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_weight_8x4_altivec x264_template(pixel_avg_weight_8x4_altivec)
+void x264_pixel_avg_weight_8x4_altivec  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_weight_4x16_altivec x264_template(pixel_avg_weight_4x16_altivec)
+void x264_pixel_avg_weight_4x16_altivec ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_weight_4x8_altivec x264_template(pixel_avg_weight_4x8_altivec)
+void x264_pixel_avg_weight_4x8_altivec  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_weight_4x4_altivec x264_template(pixel_avg_weight_4x4_altivec)
+void x264_pixel_avg_weight_4x4_altivec  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+#define x264_pixel_avg_weight_4x2_altivec x264_template(pixel_avg_weight_4x2_altivec)
+void x264_pixel_avg_weight_4x2_altivec  ( uint8_t *, intptr_t, uint8_t *, intptr_t, uint8_t *, intptr_t, int );
+
+#define x264_pixel_avg_16x16_altivec x264_template(pixel_avg_16x16_altivec)
+#define x264_pixel_avg_16x8_altivec x264_template(pixel_avg_16x8_altivec)
+#define x264_pixel_avg_8x16_altivec x264_template(pixel_avg_8x16_altivec)
+#define x264_pixel_avg_8x8_altivec x264_template(pixel_avg_8x8_altivec)
+#define x264_pixel_avg_8x4_altivec x264_template(pixel_avg_8x4_altivec)
+#define x264_pixel_avg_4x16_altivec x264_template(pixel_avg_4x16_altivec)
+#define x264_pixel_avg_4x8_altivec x264_template(pixel_avg_4x8_altivec)
+#define x264_pixel_avg_4x4_altivec x264_template(pixel_avg_4x4_altivec)
+#define x264_pixel_avg_4x2_altivec x264_template(pixel_avg_4x2_altivec)
+
+#define x264_mc_weight_w20_nodenom_altivec x264_template(mc_weight_w20_nodenom_altivec)
+#define x264_mc_weight_w20_offsetadd_altivec x264_template(mc_weight_w20_offsetadd_altivec)
+#define x264_mc_weight_w20_offsetsub_altivec x264_template(mc_weight_w20_offsetsub_altivec)
+#define x264_mc_weight_w16_nodenom_altivec x264_template(mc_weight_w16_nodenom_altivec)
+#define x264_mc_weight_w16_offsetadd_altivec x264_template(mc_weight_w16_offsetadd_altivec)
+#define x264_mc_weight_w16_offsetsub_altivec x264_template(mc_weight_w16_offsetsub_altivec)
+#define x264_mc_weight_w8_nodenom_altivec x264_template(mc_weight_w8_nodenom_altivec)
+#define x264_mc_weight_w8_offsetadd_altivec x264_template(mc_weight_w8_offsetadd_altivec)
+#define x264_mc_weight_w8_offsetsub_altivec x264_template(mc_weight_w8_offsetsub_altivec)
+#define x264_mc_weight_w4_nodenom_altivec x264_template(mc_weight_w4_nodenom_altivec)
+#define x264_mc_weight_w4_offsetadd_altivec x264_template(mc_weight_w4_offsetadd_altivec)
+#define x264_mc_weight_w4_offsetsub_altivec x264_template(mc_weight_w4_offsetsub_altivec)
+#define MC_WEIGHT(func)\
+void x264_mc_weight_w20##func##_altivec( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
+void x264_mc_weight_w16##func##_altivec( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
+void x264_mc_weight_w8##func##_altivec ( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
+void x264_mc_weight_w4##func##_altivec ( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int );\
+\
+static void (* mc##func##_wtab_altivec[6])( uint8_t *, intptr_t, uint8_t *, intptr_t, const x264_weight_t *, int ) =\
+{\
+    x264_mc_weight_w4##func##_altivec,\
+    x264_mc_weight_w4##func##_altivec,\
+    x264_mc_weight_w8##func##_altivec,\
+    x264_mc_weight_w16##func##_altivec,\
+    x264_mc_weight_w16##func##_altivec,\
+    x264_mc_weight_w20##func##_altivec,\
+};
+
+MC_WEIGHT(_nodenom)
+MC_WEIGHT(_offsetadd)
+MC_WEIGHT(_offsetsub)
+
+#define x264_mbtree_propagate_cost_altivec x264_template(mbtree_propagate_cost_altivec)
+void x264_mbtree_propagate_cost_altivec( int16_t *, uint16_t *, uint16_t *, uint16_t *, uint16_t *, float *, int );
+
+#define x264_integral_init4h_altivec x264_template(integral_init4h_altivec)
+void x264_integral_init4h_altivec( uint16_t *, uint8_t *, intptr_t );
+#define x264_integral_init4v_altivec x264_template(integral_init4v_altivec)
+void x264_integral_init4v_altivec( uint16_t *, uint16_t *, intptr_t );
+#define x264_integral_init8h_altivec x264_template(integral_init8h_altivec)
+void x264_integral_init8h_altivec( uint16_t *, uint8_t *, intptr_t );
+#define x264_integral_init8v_altivec x264_template(integral_init8v_altivec)
+void x264_integral_init8v_altivec( uint16_t *, intptr_t );
+
 typedef void (*pf_mc_t)( uint8_t *src, intptr_t i_src,
                          uint8_t *dst, intptr_t i_dst, int i_height );
 
@@ -1273,8 +1346,30 @@ static weight_fn_t mc_weight_wtab_altivec[6] =
     mc_weight_w20_altivec,
 };
 
+static void weight_cache_altivec( x264_t *h, x264_weight_t *w )
+{
+    if( w->i_scale == 1<<w->i_denom )
+    {
+        if( w->i_offset < 0 )
+        {
+            w->weightfn = mc_offsetsub_wtab_altivec;
+            w->cachea[0] = -w->i_offset;
+        }
+        else
+        {
+            w->weightfn = mc_offsetadd_wtab_altivec;
+            w->cachea[0] = w->i_offset;
+        }
+    }
+    else if( !w->i_denom )
+        w->weightfn = mc_nodenom_wtab_altivec;
+    else
+        w->weightfn = mc_weight_wtab_altivec;
+}
+
 PLANE_COPY_SWAP(16, altivec)
 PLANE_INTERLEAVE(altivec)
+PROPAGATE_LIST(altivec)
 #endif // !HIGH_BIT_DEPTH
 
 #if HIGH_BIT_DEPTH
@@ -1364,30 +1459,60 @@ void x264_plane_copy_deinterleave_v210_altivec( uint16_t *dsty, intptr_t i_dsty,
 
 #endif // HIGH_BIT_DEPTH
 
-void x264_mc_init_altivec( x264_mc_functions_t *pf )
+void x264_mc_init_altivec( uint32_t cpu, x264_mc_functions_t *pf )
 {
 #if HIGH_BIT_DEPTH
-    pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_altivec;
-#else // !HIGH_BIT_DEPTH
-    pf->mc_luma   = mc_luma_altivec;
-    pf->get_ref   = get_ref_altivec;
-    pf->mc_chroma = mc_chroma_altivec;
+    if( cpu&X264_CPU_ALTIVEC )
+    {
+        pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_altivec;
+    }
+#else // !HIGH_BIT_DEPTH 
+    if( cpu&X264_CPU_ALTIVEC )
+    {
+        pf->mc_luma   = mc_luma_altivec;
+        pf->get_ref   = get_ref_altivec;
+        pf->mc_chroma = mc_chroma_altivec;
 
-    pf->copy_16x16_unaligned = mc_copy_w16_altivec;
-    pf->copy[PIXEL_16x16] = mc_copy_w16_aligned_altivec;
+        pf->copy_16x16_unaligned = mc_copy_w16_altivec;
+        pf->copy[PIXEL_16x16] = mc_copy_w16_aligned_altivec;
 
-    pf->hpel_filter = x264_hpel_filter_altivec;
-    pf->frame_init_lowres_core = frame_init_lowres_core_altivec;
+        pf->hpel_filter = x264_hpel_filter_altivec;
+        pf->frame_init_lowres_core = frame_init_lowres_core_altivec;
 
-    pf->weight = mc_weight_wtab_altivec;
+        pf->weight = mc_weight_wtab_altivec;
 
-    pf->plane_copy_swap = plane_copy_swap_altivec;
-    pf->plane_copy_interleave = plane_copy_interleave_altivec;
-    pf->store_interleave_chroma = x264_store_interleave_chroma_altivec;
-    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_altivec;
-    pf->load_deinterleave_chroma_fenc = load_deinterleave_chroma_fenc_altivec;
+        pf->plane_copy_swap = plane_copy_swap_altivec;
+        pf->plane_copy_interleave = plane_copy_interleave_altivec;
+        pf->store_interleave_chroma = x264_store_interleave_chroma_altivec;
+        pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_altivec;
+        pf->load_deinterleave_chroma_fenc = load_deinterleave_chroma_fenc_altivec;
 #if HAVE_VSX
-    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_altivec;
+        pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_altivec;
 #endif // HAVE_VSX
+    }
+    if( cpu&X264_CPU_ARCH_2_07 )
+    {
+        pf->avg[PIXEL_16x16] = x264_pixel_avg_weight_16x16_altivec;
+        pf->avg[PIXEL_16x8]  = x264_pixel_avg_weight_16x8_altivec;
+        pf->avg[PIXEL_8x16]  = x264_pixel_avg_weight_8x16_altivec;
+        pf->avg[PIXEL_8x8]   = x264_pixel_avg_weight_8x8_altivec;
+        pf->avg[PIXEL_8x4]   = x264_pixel_avg_weight_8x4_altivec;
+        pf->avg[PIXEL_4x16]  = x264_pixel_avg_weight_4x16_altivec;
+        pf->avg[PIXEL_4x8]   = x264_pixel_avg_weight_4x8_altivec;
+        pf->avg[PIXEL_4x4]   = x264_pixel_avg_weight_4x4_altivec;
+        pf->avg[PIXEL_4x2]   = x264_pixel_avg_weight_4x2_altivec;
+
+        pf->integral_init4h = x264_integral_init4h_altivec;
+        pf->integral_init8h = x264_integral_init8h_altivec;
+        pf->integral_init4v = x264_integral_init4v_altivec;
+        pf->integral_init8v = x264_integral_init8v_altivec;
+
+        pf->offsetadd = mc_offsetadd_wtab_altivec;
+        pf->offsetsub = mc_offsetsub_wtab_altivec;
+        pf->weight_cache = weight_cache_altivec;
+
+        pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_altivec;
+        pf->mbtree_propagate_list = mbtree_propagate_list_altivec;
+    }
 #endif // !HIGH_BIT_DEPTH
 }

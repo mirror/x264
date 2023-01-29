@@ -27,6 +27,6 @@
 #define X264_PPC_MC_H
 
 #define x264_mc_init_altivec x264_template(mc_init_altivec)
-void x264_mc_init_altivec( x264_mc_functions_t *pf );
+void x264_mc_init_altivec( uint32_t cpu, x264_mc_functions_t *pf );
 
 #endif

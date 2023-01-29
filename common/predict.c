@@ -898,8 +898,7 @@ void x264_predict_16x16_init( uint32_t cpu, x264_predict_t pf[7] )
 #endif
 
 #if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC )
-        x264_predict_16x16_init_altivec( pf );
+    x264_predict_16x16_init_altivec( cpu, pf );
 #endif
 
 #if HAVE_ARMV6
@@ -941,8 +940,7 @@ void x264_predict_8x8c_init( uint32_t cpu, x264_predict_t pf[7] )
 #endif
 
 #if HAVE_ALTIVEC
-    if( cpu&X264_CPU_ALTIVEC )
-        x264_predict_8x8c_init_altivec( pf );
+    x264_predict_8x8c_init_altivec( cpu, pf );
 #endif
 
 #if HAVE_ARMV6
@@ -977,6 +975,10 @@ void x264_predict_8x16c_init( uint32_t cpu, x264_predict_t pf[7] )
     x264_predict_8x16c_init_mmx( cpu, pf );
 #endif
 
+#if HAVE_ALTIVEC
+    x264_predict_8x16c_init_altivec( cpu, pf );
+#endif
+
 #if HAVE_ARMV6
     x264_predict_8x16c_init_arm( cpu, pf );
 #endif
@@ -1004,6 +1006,10 @@ void x264_predict_8x8_init( uint32_t cpu, x264_predict8x8_t pf[12], x264_predict
 
 #if HAVE_MMX
     x264_predict_8x8_init_mmx( cpu, pf, predict_filter );
+#endif
+
+#if HAVE_ALTIVEC
+    x264_predict_8x8_init_altivec( cpu, pf );
 #endif
 
 #if HAVE_ARMV6
@@ -1041,6 +1047,10 @@ void x264_predict_4x4_init( uint32_t cpu, x264_predict_t pf[12] )
 
 #if HAVE_MMX
     x264_predict_4x4_init_mmx( cpu, pf );
+#endif
+
+#if HAVE_ALTIVEC
+    x264_predict_4x4_init_altivec( cpu, pf );
 #endif
 
 #if HAVE_ARMV6
