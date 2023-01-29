@@ -744,6 +744,8 @@ static void help( x264_param_t *defaults, int longhelp )
     H2( "      --ipratio <float>       QP factor between I and P [%.2f]\n", defaults->rc.f_ip_factor );
     H2( "      --pbratio <float>       QP factor between P and B [%.2f]\n", defaults->rc.f_pb_factor );
     H2( "      --chroma-qp-offset <integer>  QP difference between chroma and luma [%d]\n", defaults->analyse.i_chroma_qp_offset );
+    H2( "      --hdr-opt               Bias toward bright areas to compensate for the perceptual difference between bt709\n"
+        "                                  and smpte2084/arib-std-b67\n" );
     H2( "      --aq-mode <integer>     AQ method [%d]\n"
         "                                  - 0: Disabled\n"
         "                                  - 1: Variance AQ (complexity mask)\n"
@@ -1103,6 +1105,8 @@ static struct option long_options[] =
     { "ipratio",              required_argument, NULL, 0 },
     { "pbratio",              required_argument, NULL, 0 },
     { "chroma-qp-offset",     required_argument, NULL, 0 },
+    { "hdr-opt",              no_argument,       NULL, 0 },
+    { "no-hdr-opt",           no_argument,       NULL, 0 },
     { "pass",                 required_argument, NULL, 'p' },
     { "stats",                required_argument, NULL, 0 },
     { "qcomp",                required_argument, NULL, 0 },

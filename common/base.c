@@ -1261,6 +1261,8 @@ REALIGN_STACK int x264_param_parse( x264_param_t *p, const char *name, const cha
         b_error |= parse_enum( value, x264_direct_pred_names, &p->analyse.i_direct_mv_pred );
     OPT("chroma-qp-offset")
         p->analyse.i_chroma_qp_offset = atoi(value);
+    OPT("hdr-opt")
+        p->rc.b_hdr_opt = atobool(value);
     OPT("me")
         b_error |= parse_enum( value, x264_motion_est_names, &p->analyse.i_me_method );
     OPT2("merange", "me-range")
