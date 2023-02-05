@@ -554,6 +554,15 @@ done
 
 [ "$cli" = "no" -a "$shared" = "no" -a "$static" = "no" ] && die "Nothing to build. Enable cli, shared or static."
 
+# check whether gcc or cl are present
+if [ -z "$CC" ]; then
+    if $(${cross_prefix}gcc >/dev/null 2>&1); then
+        CC="${cross_prefix}gcc}"
+    elif $(${cross_prefix}cl >/dev/null 2>&1); then        
+        CC="${cross_prefix}cl"
+    fi
+fi
+
 CC="${CC-${cross_prefix}gcc}"
 STRIP="${STRIP-${cross_prefix}strip}"
 STRINGS="${STRINGS-${cross_prefix}strings}"
