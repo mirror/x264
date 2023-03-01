@@ -510,10 +510,6 @@ dequant_\size\()_lshift_loop:
 
 dequant_\size\()_rshift:
     dup         v31.4s, w3
-    neg         w3,  w3
-    mov         w5,  #1
-    sub         w3,  w3,  #1
-    lsl         w5,  w5,  w3
 
 .ifc \size, 8x8
 dequant_\size\()_rshift_loop:
@@ -523,24 +519,20 @@ dequant_\size\()_rshift_loop:
     ld1        {v17.4s}, [x1], #16
     sqxtn       v2.4h,  v16.4s
     ld1        {v18.4s}, [x1], #16
-    dup         v16.4s, w5
     sqxtn2      v2.8h,  v17.4s
     ld1        {v19.4s}, [x1], #16
-    dup         v17.4s, w5
     sqxtn       v3.4h,  v18.4s
     ld1        {v0.8h,v1.8h}, [x0]
-    dup         v18.4s, w5
     sqxtn2      v3.8h,  v19.4s
-    dup         v19.4s, w5
 
-    smlal       v16.4s, v0.4h,  v2.4h
-    smlal2      v17.4s, v0.8h,  v2.8h
-    smlal       v18.4s, v1.4h,  v3.4h
-    smlal2      v19.4s, v1.8h,  v3.8h
-    sshl        v16.4s, v16.4s, v31.4s
-    sshl        v17.4s, v17.4s, v31.4s
-    sshl        v18.4s, v18.4s, v31.4s
-    sshl        v19.4s, v19.4s, v31.4s
+    smull       v16.4s, v0.4h,  v2.4h
+    smull2      v17.4s, v0.8h,  v2.8h
+    smull       v18.4s, v1.4h,  v3.4h
+    smull2      v19.4s, v1.8h,  v3.8h
+    srshl       v16.4s, v16.4s, v31.4s
+    srshl       v17.4s, v17.4s, v31.4s
+    srshl       v18.4s, v18.4s, v31.4s
+    srshl       v19.4s, v19.4s, v31.4s
 
     sqxtn       v0.4h,  v16.4s
     sqxtn2      v0.8h,  v17.4s
@@ -574,25 +566,17 @@ function dequant_4x4_dc_neon, export=1
 dequant_4x4_dc_rshift:
     dup         v4.8h,  w1
     dup         v3.4s, w3
-    neg         w3,  w3
-    mov         w5,  #1
-    sub         w3,  w3,  #1
-    lsl         w5,  w5,  w3
 
-    dup         v16.4s, w5
-    dup         v17.4s, w5
     ld1        {v0.8h,v1.8h}, [x0]
-    dup         v18.4s, w5
-    dup         v19.4s, w5
 
-    smlal       v16.4s, v0.4h,  v4.4h
-    smlal2      v17.4s, v0.8h,  v4.8h
-    smlal       v18.4s, v1.4h,  v4.4h
-    smlal2      v19.4s, v1.8h,  v4.8h
-    sshl        v16.4s, v16.4s, v3.4s
-    sshl        v17.4s, v17.4s, v3.4s
-    sshl        v18.4s, v18.4s, v3.4s
-    sshl        v19.4s, v19.4s, v3.4s
+    smull       v16.4s, v0.4h,  v4.4h
+    smull2      v17.4s, v0.8h,  v4.8h
+    smull       v18.4s, v1.4h,  v4.4h
+    smull2      v19.4s, v1.8h,  v4.8h
+    srshl       v16.4s, v16.4s, v3.4s
+    srshl       v17.4s, v17.4s, v3.4s
+    srshl       v18.4s, v18.4s, v3.4s
+    srshl       v19.4s, v19.4s, v3.4s
 
     sqxtn       v0.4h,  v16.4s
     sqxtn2      v0.8h,  v17.4s
@@ -973,10 +957,6 @@ dequant_\size\()_lshift_loop:
 
 dequant_\size\()_rshift:
     dup         v31.4s, w3
-    neg         w3,  w3
-    mov         w5,  #1
-    sub         w3,  w3,  #1
-    lsl         w5,  w5,  w3
 
 .ifc \size, 8x8
 dequant_\size\()_rshift_loop:
@@ -985,20 +965,15 @@ dequant_\size\()_rshift_loop:
     ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x1], #64
     ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
 
-    dup         v20.4s, w5
-    dup         v21.4s, w5
-    dup         v22.4s, w5
-    dup         v23.4s, w5
+    mul         v20.4s, v0.4s,  v16.4s
+    mul         v21.4s, v1.4s,  v17.4s
+    mul         v22.4s, v2.4s,  v18.4s
+    mul         v23.4s, v3.4s,  v19.4s
 
-    mla         v20.4s, v0.4s,  v16.4s
-    mla         v21.4s, v1.4s,  v17.4s
-    mla         v22.4s, v2.4s,  v18.4s
-    mla         v23.4s, v3.4s,  v19.4s
-
-    sshl        v16.4s, v20.4s, v31.4s
-    sshl        v17.4s, v21.4s, v31.4s
-    sshl        v18.4s, v22.4s, v31.4s
-    sshl        v19.4s, v23.4s, v31.4s
+    srshl       v16.4s, v20.4s, v31.4s
+    srshl       v17.4s, v21.4s, v31.4s
+    srshl       v18.4s, v22.4s, v31.4s
+    srshl       v19.4s, v23.4s, v31.4s
 
     st1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0], #64
 .ifc \size, 8x8
@@ -1031,28 +1006,17 @@ dequant_4x4_dc_rshift:
     dup         v31.4s, w1
     dup         v30.4s, w3
 
-    neg         w3,  w3
-    mov         w5,  #1
-    sub         w3,  w3,  #1
-    lsl         w5,  w5,  w3
-
-    dup         v16.4s, w5
-    dup         v17.4s, w5
-
     ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
 
-    dup         v18.4s, w5
-    dup         v19.4s, w5
+    mul         v16.4s, v0.4s,  v31.4s
+    mul         v17.4s, v1.4s,  v31.4s
+    mul         v18.4s, v2.4s,  v31.4s
+    mul         v19.4s, v3.4s,  v31.4s
 
-    mla         v16.4s, v0.4s,  v31.4s
-    mla         v17.4s, v1.4s,  v31.4s
-    mla         v18.4s, v2.4s,  v31.4s
-    mla         v19.4s, v3.4s,  v31.4s
-
-    sshl        v16.4s, v16.4s, v30.4s
-    sshl        v17.4s, v17.4s, v30.4s
-    sshl        v18.4s, v18.4s, v30.4s
-    sshl        v19.4s, v19.4s, v30.4s
+    srshl       v16.4s, v16.4s, v30.4s
+    srshl       v17.4s, v17.4s, v30.4s
+    srshl       v18.4s, v18.4s, v30.4s
+    srshl       v19.4s, v19.4s, v30.4s
 
     st1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
     ret
