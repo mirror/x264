@@ -680,6 +680,9 @@ void x264_macroblock_deblock( x264_t *h )
 #if HAVE_MSA
 #include "mips/deblock.h"
 #endif
+#if HAVE_LSX || HAVE_LASX
+#include "loongarch/deblock.h"
+#endif
 
 void x264_deblock_init( uint32_t cpu, x264_deblock_function_t *pf, int b_mbaff )
 {
@@ -816,6 +819,24 @@ void x264_deblock_init( uint32_t cpu, x264_deblock_function_t *pf, int b_mbaff )
         pf->deblock_strength = x264_deblock_strength_msa;
     }
 #endif
+
+#if HAVE_LSX || HAVE_LASX
+    if( cpu&X264_CPU_LSX )
+    {
+        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_lsx;
+        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_lsx;
+        pf->deblock_strength = x264_deblock_strength_lsx;
+    }
+    if( cpu&X264_CPU_LASX )
+    {
+        pf->deblock_luma[1] = x264_deblock_v_luma_lasx;
+        pf->deblock_luma[0] = x264_deblock_h_luma_lasx;
+        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_lasx;
+        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_lasx;
+        pf->deblock_strength = x264_deblock_strength_lasx;
+    }
+#endif
+
 #endif // !HIGH_BIT_DEPTH
 
     /* These functions are equivalent, so don't duplicate them. */

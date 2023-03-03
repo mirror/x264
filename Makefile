@@ -197,6 +197,30 @@ SRCS_X += common/mips/dct-c.c \
 endif
 endif
 
+# LOONGARCH optimization
+ifeq ($(SYS_ARCH),LOONGARCH)
+SRCASM_X += common/loongarch/deblock-a.S \
+            common/loongarch/sad-a.S \
+            common/loongarch/predict-a.S \
+            common/loongarch/quant-a.S \
+            common/loongarch/mc-a.S \
+            common/loongarch/dct-a.S \
+            common/loongarch/pixel-a.S
+
+SRCS_X += common/loongarch/predict-c.c \
+          common/loongarch/mc-c.c \
+          common/loongarch/pixel-c.c
+
+OBJASM +=
+ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
+OBJASM += $(SRCASM_X:%.S=%-8.o)
+endif
+ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
+OBJASM += $(SRCASM_X:%.S=%-10.o)
+endif
+
+endif
+
 endif
 
 ifneq ($(HAVE_GETOPT_LONG),1)

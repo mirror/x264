@@ -35,6 +35,8 @@ Configuration options:
   --disable-interlaced     disable interlaced encoding support
   --bit-depth=BIT_DEPTH    set output bit depth (8, 10, all) [all]
   --chroma-format=FORMAT   output chroma format (400, 420, 422, 444, all) [all]
+  --disable-lsx            disable LSX optimizations
+  --disable-lasx           disable LASX optimizations
 
 Advanced options:
   --disable-asm            disable platform-specific assembly optimizations
@@ -391,6 +393,8 @@ compiler="GNU"
 compiler_style="GNU"
 opencl="yes"
 vsx="auto"
+lsx="auto"
+lasx="auto"
 
 CFLAGS="$CFLAGS -Wall -I. -I\$(SRCPATH)"
 CFLAGSSO="$CFLAGSSO"
@@ -411,7 +415,7 @@ NL="
 # list of all preprocessor HAVE values we can define
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON AARCH64 BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
              LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
-             MSA MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R CLOCK_GETTIME BITDEPTH8 BITDEPTH10"
+             MSA LSX LASX MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R CLOCK_GETTIME BITDEPTH8 BITDEPTH10"
 
 # parse options
 
@@ -477,6 +481,13 @@ for opt do
             ;;
         --disable-gpl)
             gpl="no"
+            ;;
+        --disable-lasx)
+            lasx="no"
+            ;;
+        --disable-lsx)
+            lsx="no"
+            lasx="no"
             ;;
         --extra-asflags=*)
             ASFLAGS="$ASFLAGS $optarg"
@@ -822,6 +833,12 @@ case $host_cpu in
         AS="${AS-${CC}}"
         AS_EXT=".c"
         ;;
+    loongarch*)
+        ARCH="LOONGARCH"
+        ASFLAGS="$ASFLAGS -c"
+        AS="${AS-${CC}}"
+        AS_EXT=".S"
+        ;;
     aarch64|arm64*)
         ARCH="AARCH64"
         stack_alignment=16
@@ -1021,6 +1038,20 @@ if [ $asm = auto -a $ARCH = MIPS ] ; then
         echo "You specified a pre-MSA CPU in your CFLAGS."
         echo "If you really want to run on such a CPU, configure with --disable-asm."
         exit 1
+    fi
+fi
+
+if [ $asm = auto -a $ARCH = LOONGARCH ] ; then
+    if [ $lsx = auto ]; then
+        if cc_check '' '-mlsx' '__asm__("vadd.b $vr0, $vr1, $vr2");' ; then
+            define HAVE_LSX
+        fi
+    fi
+
+    if [ $lasx = auto ]; then
+        if cc_check '' '-mlasx' '__asm__("xvadd.b $xr0, $xr1, $xr2");' ; then
+            define HAVE_LASX
+        fi
     fi
 fi
 
@@ -1674,7 +1705,7 @@ cat conftest.log >> config.log
 cat conftest.log
 
 [ "$SRCPATH" != "." ] && ln -sf ${SRCPATH}/Makefile ./Makefile
-mkdir -p common/{aarch64,arm,mips,ppc,x86} encoder extras filters/video input output tools
+mkdir -p common/{aarch64,arm,mips,ppc,x86,loongarch} encoder extras filters/video input output tools
 
 echo
 echo "You can run 'make' or 'make fprofiled' now."
