@@ -1058,6 +1058,31 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
     if( cpu&X264_CPU_NEON )
     {
         INIT8( sad, _neon );
+        INIT7( sad_x3, _neon);
+        pixf->vsad = x264_pixel_vsad_neon;
+        pixf->asd8 = x264_pixel_asd8_neon;
+        INIT8(ssd, _neon);
+        pixf->satd[PIXEL_8x4] = x264_pixel_satd_8x4_neon;
+        pixf->satd[PIXEL_4x8] = x264_pixel_satd_4x8_neon;
+        pixf->satd[PIXEL_4x4] = x264_pixel_satd_4x4_neon;
+        pixf->satd[PIXEL_4x16] = x264_pixel_satd_4x16_neon;
+        pixf->satd[PIXEL_8x8] = x264_pixel_satd_8x8_neon;
+        pixf->satd[PIXEL_8x16] = x264_pixel_satd_8x16_neon;
+        pixf->ssd_nv12_core     = x264_pixel_ssd_nv12_core_neon;
+        pixf->var[PIXEL_8x8]    = x264_pixel_var_8x8_neon;
+        pixf->var[PIXEL_8x16]   = x264_pixel_var_8x16_neon;
+        pixf->var[PIXEL_16x16]  = x264_pixel_var_16x16_neon;
+        pixf->var2[PIXEL_8x8]    = x264_pixel_var2_8x8_neon;
+        pixf->var2[PIXEL_8x16]   = x264_pixel_var2_8x16_neon;
+        pixf->satd[PIXEL_16x8]   = x264_pixel_satd_16x8_neon;
+        pixf->satd[PIXEL_16x16]  = x264_pixel_satd_16x16_neon;
+        INIT7(sad_x4, _neon);
+        pixf->sa8d[PIXEL_8x8]    = x264_pixel_sa8d_8x8_neon;
+        pixf->sa8d[PIXEL_16x16]  = x264_pixel_sa8d_16x16_neon;
+        pixf->sa8d_satd[PIXEL_16x16] = x264_pixel_sa8d_satd_16x16_neon;
+        INIT4(hadamard_ac, _neon);
+        pixf->ssim_4x4x2_core    = x264_pixel_ssim_4x4x2_core_neon;
+        pixf->ssim_end4 = x264_pixel_ssim_end4_neon;
     }
 #endif // HAVE_AARCH64
 
