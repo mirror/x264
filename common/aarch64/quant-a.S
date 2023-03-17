@@ -27,6 +27,306 @@
 
 #include "asm.S"
 
+// This is a common function for both 8 and 10 bit depth, since these two differ
+// at data loading only. The distinction is based on the depth parameters that
+//are passed to the macro.
+.macro decimate_score_1x size depth
+function decimate_score\size\()_neon, export=1
+
+.ifc \depth, 8
+    ld1        {v0.8h,v1.8h}, [x0]
+    movrel      x5,  X264(decimate_table4)
+    movi        v3.16b, #0x01
+    sqxtn       v0.8b,  v0.8h
+    sqxtn2      v0.16b, v1.8h
+.else
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+    movrel      x5, X264(decimate_table4)
+    sqxtn       v20.4h, v0.4s
+    sqxtn2      v20.8h, v1.4s
+    sqxtn       v21.4h, v2.4s
+    sqxtn2      v21.8h, v3.4s
+    sqxtn       v0.8b, v20.8h
+    sqxtn2      v0.16b, v21.8h
+.endif
+
+    movi        v3.16b, #0x01
+    abs         v2.16b, v0.16b
+    cmeq        v1.16b, v0.16b, #0
+    cmhi        v2.16b, v2.16b, v3.16b
+    shrn        v1.8b, v1.8h, #4
+    shrn        v2.8b, v2.8h, #4
+    fmov        x2, d2
+    fmov        x1, d1
+    cbnz        x2, 9f
+    mvn         x1, x1
+    mov         w0, #0
+    cbz         x1, 0f
+.ifc \size, 15
+    lsr         x1, x1, #1
+.endif
+    rbit        x1, x1
+1:
+    clz         x3, x1
+    lsr         x6, x3, #2
+    lsl         x1, x1, x3
+    ldrb        w7, [x5, x6]
+    lsl         x1, x1, #4
+    add         w0, w0, w7
+    cbnz        x1, 1b
+    ret
+9:
+    mov         w0, #9
+0:
+    ret
+endfunc
+.endm
+
+const mask64, align=6
+    .byte  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
+    .byte  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
+endconst
+
+.macro decimate_score64 depth
+function decimate_score64_neon, export=1
+.ifc \depth, 8
+    ld1         {v0.8h, v1.8h}, [x0], #32
+    ld1         {v2.8h, v3.8h}, [x0], #32
+    ld1         {v4.8h, v5.8h}, [x0], #32
+    ld1         {v6.8h, v7.8h}, [x0]
+    sqxtn       v16.8b, v1.8h
+    sqxtn2      v16.16b, v0.8h
+    sqxtn       v17.8b, v3.8h
+    sqxtn2      v17.16b, v2.8h
+    sqxtn       v18.8b, v5.8h
+    sqxtn2      v18.16b, v4.8h
+    sqxtn       v19.8b, v7.8h
+    sqxtn2      v19.16b, v6.8h
+.else
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x0], #64
+    ld1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x0], #64
+    ld1         {v24.4s, v25.4s, v26.4s, v27.4s}, [x0]
+
+    sqxtn       v28.4h, v0.4s
+    sqxtn2      v28.8h, v1.4s
+    sqxtn       v0.4h, v2.4s
+    sqxtn2      v0.8h, v3.4s
+    sqxtn       v2.4h, v6.4s
+    sqxtn2      v2.8h, v7.4s
+    sqxtn       v3.4h, v4.4s
+    sqxtn2      v3.8h, v5.4s
+    sqxtn       v4.4h, v22.4s
+    sqxtn2      v4.8h, v23.4s
+    sqxtn       v5.4h, v20.4s
+    sqxtn2      v5.8h, v21.4s
+    sqxtn       v6.4h, v26.4s
+    sqxtn2      v6.8h, v27.4s
+    sqxtn       v7.4h, v24.4s
+    sqxtn2      v7.8h, v25.4s
+
+    sqxtn       v16.8b, v0.8h
+    sqxtn2      v16.16b, v28.8h
+    sqxtn       v17.8b, v2.8h
+    sqxtn2      v17.16b, v3.8h
+    sqxtn       v18.8b, v4.8h
+    sqxtn2      v18.16b, v5.8h
+    sqxtn       v19.8b, v6.8h
+    sqxtn2      v19.16b, v7.8h
+.endif
+
+    movrel      x6, mask64
+    movi        v31.16b, #0x01
+    abs         v4.16b, v16.16b
+    abs         v5.16b, v17.16b
+    abs         v6.16b, v18.16b
+    abs         v7.16b, v19.16b
+    ld1         {v30.16b}, [x6]
+    cmeq        v0.16b, v16.16b, #0
+    cmeq        v1.16b, v17.16b, #0
+    cmeq        v2.16b, v18.16b, #0
+    cmeq        v3.16b, v19.16b, #0
+    umax        v4.16b, v4.16b, v5.16b
+    umax        v6.16b, v6.16b, v7.16b
+    and         v0.16b, v0.16b, v30.16b
+    and         v1.16b, v1.16b, v30.16b
+    and         v2.16b, v2.16b, v30.16b
+    and         v3.16b, v3.16b, v30.16b
+    umax        v4.16b, v4.16b, v6.16b
+    addp        v0.16b, v1.16b, v0.16b
+    addp        v2.16b, v3.16b, v2.16b
+    cmhi        v4.16b, v4.16b, v31.16b
+    addp        v0.16b, v2.16b, v0.16b
+    shrn        v4.8b, v4.8h, #4
+    addp        v0.16b, v0.16b, v0.16b
+    fmov        x2, d4
+    fmov        x1, d0
+    cbnz        x2, 9f
+    mvn         x1, x1
+    mov         w0, #0
+    cbz         x1, 0f
+    movrel      x5, X264(decimate_table8)
+1:
+    clz         x3, x1
+    lsl         x1, x1, x3
+    ldrb        w7, [x5, x3]
+    lsl         x1, x1, #1
+    add         w0, w0, w7
+    cbnz        x1, 1b
+    ret
+9:
+    mov         w0, #9
+0:
+    ret
+endfunc
+.endm
+
+.macro COEFF_LAST_1x size, depth, sub_factor
+function coeff_last\size\()_neon, export=1
+.if \size == 15
+    sub         x0,  x0,  \sub_factor
+.endif
+
+.ifc \depth, 8
+    ld1         {v0.8h, v1.8h}, [x0]
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+.else
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn2      v0.8h, v1.4s
+    uqxtn       v1.4h, v2.4s
+    uqxtn2      v1.8h, v3.4s
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+.endif
+
+    cmtst       v0.16b, v0.16b, v0.16b
+    shrn        v0.8b, v0.8h, #4
+    fmov        x1, d0
+    mov         w3, #\size - 1
+    clz         x2, x1
+    sub         w0, w3, w2, lsr #2
+    ret
+endfunc
+.endm
+
+.macro COEFF_LAST64 depth
+function coeff_last64_neon, export=1
+.ifc \depth, 8
+    ld1         {v0.8h, v1.8h, v2.8h, v3.8h}, [x0], 64
+    movi        v31.8h, #8
+    movi        v30.8h, #1
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+    ld1         {v4.8h, v5.8h, v6.8h, v7.8h}, [x0], 64
+    uqxtn       v1.8b, v2.8h
+    uqxtn2      v1.16b, v3.8h
+    uqxtn       v2.8b, v4.8h
+    uqxtn2      v2.16b, v5.8h
+    uqxtn       v3.8b, v6.8h
+    uqxtn2      v3.16b, v7.8h
+.else
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], #64
+    movi        v31.8h, #8
+    movi        v30.8h, #1
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x0], #64
+    uqxtn       v0.4h, v0.4s
+    uqxtn2      v0.8h, v1.4s
+    uqxtn       v1.4h, v2.4s
+    uqxtn2      v1.8h, v3.4s
+    uqxtn       v2.4h, v4.4s
+    uqxtn2      v2.8h, v5.4s
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0], #64
+    uqxtn       v3.4h, v6.4s
+    uqxtn2      v3.8h, v7.4s
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+    uqxtn       v1.8b, v2.8h
+    uqxtn2      v1.16b, v3.8h
+    ld1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x0], #64
+    uqxtn       v16.4h, v16.4s
+    uqxtn2      v16.8h, v17.4s
+    uqxtn       v17.4h, v18.4s
+    uqxtn2      v17.8h, v19.4s
+    uqxtn       v18.4h, v20.4s
+    uqxtn2      v18.8h, v21.4s
+    uqxtn       v19.4h, v22.4s
+    uqxtn2      v19.8h, v23.4s
+    uqxtn       v2.8b, v16.8h
+    uqxtn2      v2.16b, v17.8h
+    uqxtn       v3.8b, v18.8h
+    uqxtn2      v3.16b, v19.8h
+.endif
+
+    cmtst       v0.16b, v0.16b, v0.16b
+    cmtst       v1.16b, v1.16b, v1.16b
+    cmtst       v2.16b, v2.16b, v2.16b
+    cmtst       v3.16b, v3.16b, v3.16b
+
+    shrn        v0.8b, v0.8h, #4
+    shrn2       v0.16b, v1.8h, #4
+    shrn        v1.8b, v2.8h, #4
+    shrn2       v1.16b, v3.8h, #4
+
+    clz         v0.4s, v0.4s
+    clz         v1.4s, v1.4s
+
+    shrn        v0.4h, v0.4s, #2
+    shrn2       v0.8h, v1.4s, #2
+
+    sub         v0.8h, v31.8h, v0.8h
+    sshl        v0.8h, v30.8h, v0.8h
+    shrn        v0.8b, v0.8h, #1
+
+    fmov        x2, d0
+    mov         w3, #63
+    clz         x2, x2
+    sub         w0, w3, w2
+    ret
+endfunc
+.endm
+
+.macro coeff_level_run_start size, mask
+    add         x6, x1, #\mask                      // runlevel->mask
+    mov         w7, #0
+    mov         w8, #0
+    mov         w9, #1
+    mov         w4, #\size - 1
+.endm
+
+.macro coeff_level_run shift, depth
+    clz         x3, x2
+    subs        w4, w4, w3, lsr #\shift
+    str         w4, [x1], #4
+1:
+.ifc \depth, 8
+    ldrh        w5, [x0, x4, lsl #1]
+    strh        w5, [x6], #2
+.else
+    lsl         w5, w4, #2
+    ldr         w5, [x0, x5]
+    str         w5, [x6], #4
+.endif
+
+    add         w7, w7, #1
+    lsl         w10, w9, w4
+    orr         w8, w8, w10
+    b.le        2f
+    add         w3, w3, #1 << \shift
+    sub         w4, w4, #1
+    and         x3, x3, #~((1 << \shift) - 1)
+    lsl         x2, x2, x3
+    clz         x3, x2
+    subs        w4, w4, w3, lsr #\shift
+    b.ge        1b
+2:
+    str         w8, [x1]
+    mov         w0, w7
+.endm
+
+.if BIT_DEPTH == 8
+
 .macro QUANT_TWO bias0 bias1 mf0_1 mf2_3 mask
     add         v18.8h, v18.8h, \bias0
     add         v19.8h, v19.8h, \bias1
@@ -302,109 +602,11 @@ dequant_4x4_dc_rshift:
     ret
 endfunc
 
-.macro decimate_score_1x size
-function decimate_score\size\()_neon, export=1
-    ld1        {v0.8h,v1.8h}, [x0]
-    movrel      x5,  X264(decimate_table4)
-    movi        v3.16b, #0x01
-    sqxtn       v0.8b,  v0.8h
-    sqxtn2      v0.16b, v1.8h
-    abs         v2.16b, v0.16b
-    cmeq        v1.16b, v0.16b, #0
-    cmhi        v2.16b, v2.16b, v3.16b
-    shrn        v1.8b,  v1.8h,  #4
-    shrn        v2.8b,  v2.8h,  #4
-    fmov        x2,  d2
-    fmov        x1,  d1
-    cbnz        x2,  9f
-    mvn         x1,  x1
-    mov         w0,  #0
-    cbz         x1,  0f
-.ifc \size, 15
-    lsr         x1,  x1,  #1
-.endif
-    rbit        x1,  x1
-1:
-    clz         x3,  x1
-    lsr         x6,  x3,  #2
-    lsl         x1,  x1,  x3
-    ldrb        w7,  [x5, x6]
-    lsl         x1,  x1,  #4
-    add         w0,  w0,  w7
-    cbnz        x1,  1b
-    ret
-9:
-    mov         w0,  #9
-0:
-    ret
-endfunc
-.endm
 
-decimate_score_1x 15
-decimate_score_1x 16
+decimate_score_1x 15, 8
+decimate_score_1x 16, 8
 
-const mask64, align=6
-    .byte  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
-    .byte  0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01
-endconst
-
-function decimate_score64_neon, export=1
-    ld1        {v0.8h,v1.8h}, [x0], #32
-    ld1        {v2.8h,v3.8h}, [x0], #32
-    ld1        {v4.8h,v5.8h}, [x0], #32
-    ld1        {v6.8h,v7.8h}, [x0]
-    movrel      x6,  mask64
-    movi        v31.16b, #0x01
-    sqxtn       v16.8b,  v1.8h
-    sqxtn2      v16.16b, v0.8h
-    sqxtn       v17.8b,  v3.8h
-    sqxtn2      v17.16b, v2.8h
-    sqxtn       v18.8b,  v5.8h
-    sqxtn2      v18.16b, v4.8h
-    sqxtn       v19.8b,  v7.8h
-    sqxtn2      v19.16b, v6.8h
-    abs         v4.16b, v16.16b
-    abs         v5.16b, v17.16b
-    abs         v6.16b, v18.16b
-    abs         v7.16b, v19.16b
-    ld1        {v30.16b}, [x6]
-    cmeq        v0.16b, v16.16b, #0
-    cmeq        v1.16b, v17.16b, #0
-    cmeq        v2.16b, v18.16b, #0
-    cmeq        v3.16b, v19.16b, #0
-    umax        v4.16b, v4.16b, v5.16b
-    umax        v6.16b, v6.16b, v7.16b
-    and         v0.16b, v0.16b, v30.16b
-    and         v1.16b, v1.16b, v30.16b
-    and         v2.16b, v2.16b, v30.16b
-    and         v3.16b, v3.16b, v30.16b
-    umax        v4.16b, v4.16b, v6.16b
-    addp        v0.16b, v1.16b, v0.16b
-    addp        v2.16b, v3.16b, v2.16b
-    cmhi        v4.16b, v4.16b, v31.16b
-    addp        v0.16b, v2.16b, v0.16b
-    shrn        v4.8b,  v4.8h,  #4
-    addp        v0.16b, v0.16b, v0.16b
-    fmov        x2,  d4
-    fmov        x1,  d0
-    cbnz        x2,  9f
-    mvn         x1,  x1
-    mov         w0,  #0
-    cbz         x1,  0f
-    movrel      x5,  X264(decimate_table8)
-1:
-    clz         x3,  x1
-    lsl         x1,  x1,  x3
-    ldrb        w7,  [x5, x3]
-    lsl         x1,  x1,  #1
-    add         w0,  w0,  w7
-    cbnz        x1,  1b
-    ret
-9:
-    mov         w0,  #9
-0:
-    ret
-endfunc
+decimate_score64 8
 
 // int coeff_last( int16_t *l )
 function coeff_last4_aarch64, export=1
@@ -429,106 +631,17 @@ function coeff_last8_aarch64, export=1
     ret
 endfunc
 
-.macro COEFF_LAST_1x size
-function coeff_last\size\()_neon, export=1
-.if \size == 15
-    sub         x0,  x0,  #2
-.endif
-    ld1        {v0.8h,v1.8h}, [x0]
-    uqxtn       v0.8b,  v0.8h
-    uqxtn2      v0.16b, v1.8h
-    cmtst       v0.16b, v0.16b, v0.16b
-    shrn        v0.8b,  v0.8h,  #4
-    fmov        x1,  d0
-    mov         w3,  #\size - 1
-    clz         x2,  x1
-    sub         w0,  w3,  w2, lsr #2
-    ret
-endfunc
-.endm
+COEFF_LAST_1x 15, 8, #2
+COEFF_LAST_1x 16, 8, #2
 
-COEFF_LAST_1x 15
-COEFF_LAST_1x 16
-
-function coeff_last64_neon, export=1
-    ld1        {v0.8h,v1.8h,v2.8h,v3.8h}, [x0], 64
-    movi        v31.8h,  #8
-    movi        v30.8h,  #1
-    uqxtn       v0.8b,  v0.8h
-    uqxtn2      v0.16b, v1.8h
-    ld1        {v4.8h,v5.8h,v6.8h,v7.8h}, [x0], 64
-    uqxtn       v1.8b,  v2.8h
-    uqxtn2      v1.16b, v3.8h
-    uqxtn       v2.8b,  v4.8h
-    uqxtn2      v2.16b, v5.8h
-    uqxtn       v3.8b,  v6.8h
-    uqxtn2      v3.16b, v7.8h
-
-    cmtst       v0.16b, v0.16b, v0.16b
-    cmtst       v1.16b, v1.16b, v1.16b
-    cmtst       v2.16b, v2.16b, v2.16b
-    cmtst       v3.16b, v3.16b, v3.16b
-
-    shrn        v0.8b,  v0.8h,  #4
-    shrn2       v0.16b, v1.8h,  #4
-    shrn        v1.8b,  v2.8h,  #4
-    shrn2       v1.16b, v3.8h,  #4
-
-    clz         v0.4s,  v0.4s
-    clz         v1.4s,  v1.4s
-
-    shrn        v0.4h,  v0.4s,  #2
-    shrn2       v0.8h,  v1.4s,  #2
-
-    sub         v0.8h,  v31.8h,  v0.8h
-    sshl        v0.8h,  v30.8h,  v0.8h
-    shrn        v0.8b,  v0.8h,  #1
-
-    fmov        x2,  d0
-    mov         w3,  #63
-    clz         x2,  x2
-    sub         w0,  w3,  w2
-    ret
-endfunc
-
-.macro coeff_level_run_start size
-    add         x6,  x1,  #23            // runlevel->mask
-    mov         w7,  #0
-    mov         w8,  #0
-    mov         w9,  #1
-    and         x6,  x6,  #~15
-    mov         w4,  #\size - 1
-.endm
-
-.macro coeff_level_run shift
-    clz         x3,  x2
-    subs        w4,  w4,  w3, lsr #\shift
-    str         w4,  [x1], #4
-1:
-    ldrh        w5,  [x0, x4, lsl #1]
-    strh        w5,  [x6], #2
-    add         w7,  w7,  #1
-    lsl         w10, w9, w4
-    orr         w8,  w8,  w10
-    b.le        2f
-    add         w3,  w3,  #1 << \shift
-    sub         w4,  w4,  #1
-    and         x3,  x3,  #~((1 << \shift) - 1)
-    lsl         x2,  x2,  x3
-    clz         x3,  x2
-    subs        w4,  w4,  w3, lsr #\shift
-    b.ge        1b
-2:
-    str         w8,  [x1]
-    mov         w0,  w7
-.endm
+COEFF_LAST64 8
 
 function coeff_level_run4_aarch64, export=1
     ldr         x2,  [x0]
 
-    coeff_level_run_start 4
-
-    coeff_level_run 4
+    coeff_level_run_start 4, 23
+    and         x6, x6, #~15
+    coeff_level_run 4, 8
 
     ret
 endfunc
@@ -554,9 +667,10 @@ function coeff_level_run\size\()_neon, export=1
     add         x0,  x0,  #2
 .endif
 
-    coeff_level_run_start \size
+    coeff_level_run_start \size, 23
+    and         x6, x6, #~15
 
-    coeff_level_run (4 - (\size + 1) / 8)
+    coeff_level_run (4 - (\size + 1) / 8), 8
 
     ret
 endfunc
@@ -590,3 +704,542 @@ function denoise_dct_neon, export=1
     b.gt        1b
     ret
 endfunc
+
+.else // BIT_DEPTH == 8
+
+.macro QUANT_TWO bias0 bias1 mf0_1 mf2_3 mask
+    add         v20.4s, v20.4s, \bias0
+    add         v21.4s, v21.4s, \bias0
+    add         v22.4s, v22.4s, \bias1
+    add         v23.4s, v23.4s, \bias1
+
+    mul         v24.4s, v20.4s, \mf0_1\().4s
+    mul         v25.4s, v21.4s, \mf0_1\().4s
+    mul         v26.4s, v22.4s, \mf2_3\().4s
+    mul         v27.4s, v23.4s, \mf2_3\().4s
+
+    sshr        v16.4s, v16.4s, #31
+    sshr        v17.4s, v17.4s, #31
+    sshr        v18.4s, v18.4s, #31
+    sshr        v19.4s, v19.4s, #31
+
+    sshr        v20.4s, v24.4s, #16
+    sshr        v21.4s, v25.4s, #16
+    sshr        v22.4s, v26.4s, #16
+    sshr        v23.4s, v27.4s, #16
+
+    eor         v20.16b, v20.16b, v16.16b
+    eor         v21.16b, v21.16b, v17.16b
+    eor         v22.16b, v22.16b, v18.16b
+    eor         v23.16b, v23.16b, v19.16b
+
+    sub         v20.4s, v20.4s, v16.4s
+    sub         v21.4s, v21.4s, v17.4s
+    sub         v22.4s, v22.4s, v18.4s
+    sub         v23.4s, v23.4s, v19.4s
+
+    orr         \mask, v20.16b, v21.16b
+    orr         v16.16b, v22.16b, v23.16b
+    orr         \mask, \mask, v16.16b
+
+    st1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x0], #64
+.endm
+
+.macro QUANT_TWO_S mask
+    add         v20.4s, v20.4s, v0.4s
+    add         v21.4s, v21.4s, v1.4s
+    add         v22.4s, v22.4s, v2.4s
+    add         v23.4s, v23.4s, v3.4s
+
+    mul         v24.4s, v20.4s, v4.4s
+    mul         v25.4s, v21.4s, v5.4s
+    mul         v26.4s, v22.4s, v6.4s
+    mul         v27.4s, v23.4s, v7.4s
+
+    sshr        v16.4s, v16.4s, #31
+    sshr        v17.4s, v17.4s, #31
+    sshr        v18.4s, v18.4s, #31
+    sshr        v19.4s, v19.4s, #31
+
+    sshr        v20.4s, v24.4s, #16
+    sshr        v21.4s, v25.4s, #16
+    sshr        v22.4s, v26.4s, #16
+    sshr        v23.4s, v27.4s, #16
+
+    eor         v20.16b, v20.16b, v16.16b
+    eor         v21.16b, v21.16b, v17.16b
+    eor         v22.16b, v22.16b, v18.16b
+    eor         v23.16b, v23.16b, v19.16b
+
+    sub         v20.4s, v20.4s, v16.4s
+    sub         v21.4s, v21.4s, v17.4s
+    sub         v22.4s, v22.4s, v18.4s
+    sub         v23.4s, v23.4s, v19.4s
+
+    orr         \mask, v20.16b, v21.16b
+    orr         v16.16b, v22.16b, v23.16b
+    orr         \mask, \mask, v16.16b
+
+    st1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x0], #64
+.endm
+
+
+.macro QUANT_END d
+    // Move passed register to the one we know for sure we can compromise
+    // just to not make assumptions which register is passed as a param to us.
+    mov         v0.16b, \d
+    fmov        x2, d0
+    fmov        x3, v0.d[1]
+    orr         x2, x2, x3
+    mov         w0, #0
+    tst         x2, x2
+    cinc        w0, w0, ne
+    ret
+.endm
+
+// quant_2x2_dc( dctcoef dct[4], int mf, int bias )
+function quant_2x2_dc_neon, export=1
+    ld1         {v0.4s}, [x0]
+    dup         v2.4s, w2
+    dup         v1.4s, w1
+    abs         v3.4s, v0.4s
+    add         v3.4s, v3.4s, v2.4s
+    mul         v3.4s, v3.4s, v1.4s
+    sshr        v0.4s, v0.4s, #31
+    sshr        v3.4s, v3.4s, #16
+    eor         v3.16b, v3.16b, v0.16b
+    sub         v0.4s, v3.4s, v0.4s
+    st1         {v0.4s}, [x0]
+    QUANT_END   v0.16b
+endfunc
+
+// quant_4x4_dc( dctcoef dct[16], int mf, int bias )
+function quant_4x4_dc_neon, export=1
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    dup         v0.4s, w2
+    dup         v1.4s, w2
+    dup         v2.4s, w2
+    dup         v3.4s, w2
+    dup         v4.4s, w1
+    dup         v5.4s, w1
+    dup         v6.4s, w1
+    dup         v7.4s, w1
+
+    QUANT_TWO_S v0.16b
+    QUANT_END   v0.16b
+endfunc
+
+// quant_4x4( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] )
+function quant_4x4_neon, export=1
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2]
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1]
+
+    QUANT_TWO_S v0.16b
+    QUANT_END   v0.16b
+endfunc
+
+// quant_4x4x4( dctcoef dct[4][16], uint32_t mf[16], uint32_t bias[16] )
+function quant_4x4x4_neon, export=1
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2]
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1]
+
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    QUANT_TWO_S v28.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+    QUANT_TWO_S v29.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+    QUANT_TWO_S v30.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+    QUANT_TWO_S v31.16b
+
+    uqxtn       v28.4h, v28.4s
+    uqxtn       v29.4h, v29.4s
+    uqxtn       v30.4h, v30.4s
+    uqxtn       v31.4h, v31.4s
+
+    fmov        x7, d28
+    fmov        x6, d29
+    fmov        x10, d30
+    fmov        x12, d31
+
+    mov         w0, #0
+    tst         x12, x12
+    cinc        w0, w0, ne
+    lsl         w0, w0, #1
+    tst         x10, x10
+    cinc        w0, w0, ne
+    lsl         w0, w0, #1
+    tst         x6, x6
+    cinc        w0, w0, ne
+    lsl         w0, w0, #1
+    tst         x7, x7
+    cinc        w0, w0, ne
+    ret
+endfunc
+
+// quant_8x8( dctcoef dct[64], uint32_t mf[64], uint32_t bias[64] )
+function quant_8x8_neon, export=1
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+
+    QUANT_TWO_S v28.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+
+    QUANT_TWO_S v29.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+
+    QUANT_TWO_S v30.16b
+
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    abs         v20.4s, v16.4s
+    abs         v21.4s, v17.4s
+    abs         v22.4s, v18.4s
+    abs         v23.4s, v19.4s
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x2], #64
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+
+    QUANT_TWO_S v31.16b
+
+    orr         v0.16b, v28.16b, v29.16b
+    orr         v0.16b, v0.16b, v30.16b
+    orr         v0.16b, v0.16b, v31.16b
+
+    QUANT_END   v0.16b
+endfunc
+
+.macro DEQUANT_START mf_size offset dc=no
+    mov         w3,  #0x2b
+    mul         w3,  w3,  w2
+    lsr         w3,  w3,  #8            // i_qbits = i_qp / 6
+    add         w5,  w3,  w3,  lsl #1
+    sub         w2,  w2,  w5,  lsl #1  // i_mf = i_qp % 6
+    lsl         w2,  w2,  #\mf_size
+.ifc \dc,no
+    add         x1,  x1,  w2, sxtw      // dequant_mf[i_mf]
+.else
+    ldr         x1, [x1,  w2, sxtw]     // dequant_mf[i_mf][0][0]
+.endif
+    subs        w3,  w3,  #\offset      // 6 for 8x8
+.endm
+
+// dequant_4x4( int32_t dct[16], int dequant_mf[6][16], int i_qp )
+.macro DEQUANT size bits
+function dequant_\size\()_neon, export=1
+    DEQUANT_START \bits+2, \bits
+.ifc \size, 8x8
+    mov         w2,  #4
+.endif
+    b.lt        dequant_\size\()_rshift
+
+    dup         v31.4s, w3
+dequant_\size\()_lshift_loop:
+.ifc \size, 8x8
+    subs        w2,  w2,  #1
+.endif
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x1], #64
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+    mul         v0.4s,  v0.4s,  v16.4s
+    mul         v1.4s,  v1.4s,  v17.4s
+    mul         v2.4s,  v2.4s,  v18.4s
+    mul         v3.4s,  v3.4s,  v19.4s
+
+    sshl        v0.4s,  v0.4s,  v31.4s
+    sshl        v1.4s,  v1.4s,  v31.4s
+    sshl        v2.4s,  v2.4s,  v31.4s
+    sshl        v3.4s,  v3.4s,  v31.4s
+
+    st1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], #64
+.ifc \size, 8x8
+    b.gt        dequant_\size\()_lshift_loop
+.endif
+    ret
+
+dequant_\size\()_rshift:
+    dup         v31.4s, w3
+    neg         w3,  w3
+    mov         w5,  #1
+    sub         w3,  w3,  #1
+    lsl         w5,  w5,  w3
+
+.ifc \size, 8x8
+dequant_\size\()_rshift_loop:
+    subs        w2,  w2,  #1
+.endif
+    ld1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x1], #64
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+    dup         v20.4s, w5
+    dup         v21.4s, w5
+    dup         v22.4s, w5
+    dup         v23.4s, w5
+
+    mla         v20.4s, v0.4s,  v16.4s
+    mla         v21.4s, v1.4s,  v17.4s
+    mla         v22.4s, v2.4s,  v18.4s
+    mla         v23.4s, v3.4s,  v19.4s
+
+    sshl        v16.4s, v20.4s, v31.4s
+    sshl        v17.4s, v21.4s, v31.4s
+    sshl        v18.4s, v22.4s, v31.4s
+    sshl        v19.4s, v23.4s, v31.4s
+
+    st1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0], #64
+.ifc \size, 8x8
+    b.gt        dequant_\size\()_rshift_loop
+.endif
+    ret
+endfunc
+.endm
+
+DEQUANT 4x4, 4
+DEQUANT 8x8, 6
+
+// dequant_4x4_dc( int32_t dct[16], int dequant_mf[6][16], int i_qp )
+function dequant_4x4_dc_neon, export=1
+    DEQUANT_START 6, 6, yes
+    b.lt        dequant_4x4_dc_rshift
+
+    lsl         w1,  w1,  w3
+    dup         v31.4s,  w1
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s},   [x0]
+
+    mul         v0.4s,  v0.4s,  v31.4s
+    mul         v1.4s,  v1.4s,  v31.4s
+    mul         v2.4s,  v2.4s,  v31.4s
+    mul         v3.4s,  v3.4s,  v31.4s
+    st1         {v0.4s, v1.4s, v2.4s, v3.4s},   [x0]
+    ret
+
+dequant_4x4_dc_rshift:
+    dup         v31.4s, w1
+    dup         v30.4s, w3
+
+    neg         w3,  w3
+    mov         w5,  #1
+    sub         w3,  w3,  #1
+    lsl         w5,  w5,  w3
+
+    dup         v16.4s, w5
+    dup         v17.4s, w5
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+    dup         v18.4s, w5
+    dup         v19.4s, w5
+
+    mla         v16.4s, v0.4s,  v31.4s
+    mla         v17.4s, v1.4s,  v31.4s
+    mla         v18.4s, v2.4s,  v31.4s
+    mla         v19.4s, v3.4s,  v31.4s
+
+    sshl        v16.4s, v16.4s, v30.4s
+    sshl        v17.4s, v17.4s, v30.4s
+    sshl        v18.4s, v18.4s, v30.4s
+    sshl        v19.4s, v19.4s, v30.4s
+
+    st1         {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    ret
+endfunc
+
+decimate_score_1x 15, 10
+decimate_score_1x 16, 10
+
+decimate_score64 10
+
+// int coeff_last( int32_t *l )
+function coeff_last4_neon, export=1
+    ld1         {v0.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn       v0.8b, v0.8h
+    mov         w4, #3
+    cmtst       v0.16b, v0.16b, v0.16b
+    fmov        w1, s0
+    clz         w2, w1
+    sub         w0, w4, w2, lsr #3
+    ret
+endfunc
+
+function coeff_last8_neon, export=1
+    ld1         {v0.4s, v1.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn2      v0.8h, v1.4s
+    uqxtn       v0.8b, v0.8h
+    mov         w4, #7
+    cmtst       v0.16b, v0.16b, v0.16b
+    fmov        x1, d0
+    clz         x2, x1
+    sub         x0, x4, x2, lsr #3
+    ret
+endfunc
+
+COEFF_LAST_1x 15, 10, #4
+COEFF_LAST_1x 16, 10, #4
+
+COEFF_LAST64 10
+
+function coeff_level_run4_neon, export=1
+    ldr         x2, [x0]
+    ld1         {v0.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn       v0.8b, v0.8h
+    fmov        x2, d0
+
+    coeff_level_run_start 8, 16
+
+    coeff_level_run 3, 10
+
+    ret
+endfunc
+
+.macro X264_COEFF_LEVEL_RUN size
+function coeff_level_run\size\()_neon, export=1
+.if \size == 15
+    sub         x0,  x0,  #4
+.endif
+.if         \size < 15
+    ld1         {v0.4s, v1.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn2      v0.8h, v1.4s
+    uqxtn       v0.8b, v0.8h
+    cmtst       v0.8b,  v0.8b,  v0.8b
+.else
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+    uqxtn       v0.4h, v0.4s
+    uqxtn2      v0.8h, v1.4s
+    uqxtn       v1.4h, v2.4s
+    uqxtn2      v1.8h, v3.4s
+    uqxtn       v0.8b, v0.8h
+    uqxtn2      v0.16b, v1.8h
+    cmtst       v0.16b, v0.16b, v0.16b
+    shrn        v0.8b,  v0.8h,  #4
+.endif
+    fmov        x2,  d0
+.if \size == 15
+    add         x0,  x0,  #4
+.endif
+
+    coeff_level_run_start \size, 16
+
+    coeff_level_run (4 - (\size + 1) / 8), 10
+
+    ret
+endfunc
+.endm
+
+X264_COEFF_LEVEL_RUN 8
+X264_COEFF_LEVEL_RUN 15
+X264_COEFF_LEVEL_RUN 16
+
+function denoise_dct_neon, export=1
+1:  subs        w3,  w3,  #16
+
+    ld1         {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+    ld1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1]
+
+    abs         v16.4s, v0.4s
+    abs         v17.4s, v1.4s
+    abs         v18.4s, v2.4s
+    abs         v19.4s, v3.4s
+
+    cmlt        v24.4s, v0.4s, #0
+    cmlt        v25.4s, v1.4s, #0
+    cmlt        v26.4s, v2.4s, #0
+    cmlt        v27.4s, v3.4s, #0
+
+    ld1         {v20.4s, v21.4s, v22.4s, v23.4s}, [x2], #64
+
+    add         v4.4s, v4.4s, v16.4s
+    add         v5.4s, v5.4s, v17.4s
+    sub         v28.4s, v16.4s, v20.4s
+    sub         v29.4s, v17.4s, v21.4s
+    sub         v30.4s, v18.4s, v22.4s
+    sub         v31.4s, v19.4s, v23.4s
+    add         v6.4s, v6.4s, v18.4s
+    add         v7.4s, v7.4s, v19.4s
+
+    cmlt        v20.4s, v28.4s, #0
+    cmlt        v21.4s, v29.4s, #0
+    cmlt        v22.4s, v30.4s, #0
+    cmlt        v23.4s, v31.4s, #0
+
+    movi        v0.4s, #0
+
+    bsl         v20.16b, v0.16b, v28.16b
+    bsl         v21.16b, v0.16b, v29.16b
+    bsl         v22.16b, v0.16b, v30.16b
+    bsl         v23.16b, v0.16b, v31.16b
+
+    neg         v0.4s, v20.4s
+    neg         v1.4s, v21.4s
+    neg         v2.4s, v22.4s
+    neg         v3.4s, v23.4s
+
+    bsl         v24.16b, v0.16b, v20.16b
+    bsl         v25.16b, v1.16b, v21.16b
+    bsl         v26.16b, v2.16b, v22.16b
+    bsl         v27.16b, v3.16b, v23.16b
+
+    st1         {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], #64
+    st1         {v24.4s, v25.4s, v26.4s, v27.4s}, [x0], #64
+    b.gt        1b
+    ret
+endfunc
+
+.endif
