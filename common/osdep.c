@@ -31,7 +31,9 @@
 #include <sys/types.h>
 #include <sys/timeb.h>
 #else
+#ifndef SYS_NONE
 #include <sys/time.h>
+#endif
 #endif
 #include <time.h>
 
@@ -50,6 +52,8 @@ int64_t x264_mdate( void )
     struct timespec ts;
     clock_gettime( CLOCK_MONOTONIC, &ts );
     return (int64_t)ts.tv_sec * 1000000 + (int64_t)ts.tv_nsec / 1000;
+#elif SYS_NONE
+    return 0;
 #else
     struct timeval tv_date;
     gettimeofday( &tv_date, NULL );
