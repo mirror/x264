@@ -31,12 +31,14 @@
 #define _LARGEFILE_SOURCE 1
 #define _FILE_OFFSET_BITS 64
 #include <stdio.h>
-#include <sys/stat.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
 #include "config.h"
+#ifndef SYS_NONE
+#include <sys/stat.h>
+#endif
 
 #ifdef __INTEL_COMPILER
 #include <mathimf.h>
@@ -205,6 +207,7 @@ static inline int x264_stat( const char *path, x264_struct_stat *buf )
 /* mdate: return the current date in microsecond */
 X264_API int64_t x264_mdate( void );
 
+#ifndef SYS_NONE
 #if defined(_WIN32) && !HAVE_WINRT
 static inline int x264_vfprintf( FILE *stream, const char *format, va_list arg )
 {
@@ -275,6 +278,13 @@ static inline int x264_is_regular_file( FILE *filehandle )
         return 1;
     return S_ISREG( file_stat.st_mode );
 }
+#else
+#define x264_vfprintf vfprintf
+static inline int x264_is_regular_file( FILE *filehandle )
+{
+    return 0;
+}
+#endif
 
 #define x264_glue3_expand(x,y,z) x##_##y##_##z
 #define x264_glue3(x,y,z) x264_glue3_expand(x,y,z)

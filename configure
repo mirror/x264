@@ -96,6 +96,12 @@ cc_cflags() {
             [ "$arg" = -fomit-frame-pointer ] && arg=
             [ "$arg" = -s ] && arg=
             [ "$arg" = -fPIC ] && arg=
+        elif [ $compiler_style = TI ]; then
+            [ "$arg" = -ffast-math ] && arg=
+            [ "$arg" = -Wall ] && arg=
+            [ "$arg" = -s ] && arg=
+            [ "$arg" = -fPIC ] && arg=
+            [ "$arg" = -Werror ] && arg=
         else
             [ "$arg" = -ffast-math ] && arg=
             [ "$arg" = -Wall ] && arg=
@@ -163,6 +169,8 @@ cc_check() {
     echo "int main (void) { $3 return 0; }" >> conftest.c
     if [ $compiler_style = MS ]; then
         cc_cmd="$CC conftest.c $(cc_cflags $CFLAGS $CFLAGSCLI $CHECK_CFLAGS $2) -link $(cl_ldflags $2 $LDFLAGSCLI $LDFLAGS)"
+    elif [ $compiler_style = TI ]; then
+        cc_cmd="$CC conftest.c $(cc_cflags $CFLAGS $CFLAGSCLI $CHECK_CFLAGS $2) -z $(cl_ldflags $LDFLAGSCLI $LDFLAGS) -o conftest"
     else
         cc_cmd="$CC conftest.c $CFLAGS $CFLAGSCLI $CHECK_CFLAGS $2 $LDFLAGSCLI $LDFLAGS -o conftest"
     fi
@@ -194,6 +202,8 @@ cpp_check() {
     echo -e "#if !($3) \n#error $4 \n#endif " >> conftest.c
     if [ $compiler_style = MS ]; then
         cpp_cmd="$CC conftest.c $(cc_cflags $CFLAGS $2) -P"
+    elif [ $compiler_style = TI ]; then
+        cpp_cmd="$CC conftest.c $(cc_cflags $CFLAGS $2) -ppo"
     else
         cpp_cmd="$CC conftest.c $CFLAGS $2 -E -o conftest"
     fi
@@ -584,6 +594,16 @@ host="${host#*-}"
 host_vendor="${host%%-*}"
 host_os="${host#*-}"
 
+# tic6x only supports cl6x now
+if [ $host_cpu = tic6x ]; then
+	CC=cl6x
+	AR=ar6x
+    RANLIB=
+	STRIP=strip6x
+	compiler=TI
+	compiler_style=TI
+fi
+
 trap 'rm -rf conftest*' EXIT
 
 # test for use of compilers that require specific handling
@@ -729,6 +749,9 @@ case $host_os in
     *haiku*)
         SYS="HAIKU"
         ;;
+    *none*)
+        SYS="NONE"
+        ;;
     *)
         die "Unknown system $host, edit the configure"
         ;;
@@ -869,6 +892,12 @@ case $host_cpu in
     alpha*)
         ARCH="ALPHA"
         ;;
+    tic6x)
+        ARCH="TIC6X"
+        # cl6x will call asm6x
+        AS="${AS-cl6x}"
+        AS_EXT=".sa"
+        ;;
     *)
         ARCH="$(echo $host_cpu | tr a-z A-Z)"
         ;;
@@ -919,6 +948,8 @@ if [ $compiler_style = GNU ]; then
     elif ! cc_check '' '' 'for( int i = 0; i < 9; i++ );' ; then
         die "C99 compiler is needed for compilation."
     fi
+elif cc_check '' --c99 'for( int i = 0; i < 9; i++ );' ; then
+    CFLAGS="$CFLAGS --c99"
 fi
 
 if [ $shared = yes ] ; then
@@ -1480,6 +1511,12 @@ if [ $compiler_style = MS ]; then
     else
         CFLAGS="-DNDEBUG $CFLAGS"
     fi
+elif [ $compiler_style = TI ]; then
+    HAVE_GETOPT_LONG=0
+    DEPMM=-ppd
+    AR="$AR r "
+    LD="$CC -z -c -o "
+    LIBX264=libx264.a
 else # gcc/icc
     DEPMM="$DEPMM -g0"
     AR="$AR rc "
@@ -1510,6 +1547,11 @@ elif [ $compiler = CL ]; then
     PROF_GEN_LD="-LTCG:PGINSTRUMENT"
     PROF_USE_CC="-GL"
     PROF_USE_LD="-LTCG:PGOPTIMIZE"
+elif [ $compiler = TI ]; then
+    PROF_GEN_CC=
+    PROF_GEN_LD=
+    PROF_USE_CC=
+    PROF_USE_LD=
 else
     PROF_GEN_CC="-fprofile-generate"
     PROF_GEN_LD="-fprofile-generate"
@@ -1561,6 +1603,8 @@ EOF
 
 if [ $compiler_style = MS ]; then
     echo 'CC_O=-Fo$@' >> config.mak
+elif [ $compiler_style = TI ]; then
+    echo 'CC_O=-fe=$@' >> config.mak
 else
     echo 'CC_O=-o $@' >> config.mak
 fi
