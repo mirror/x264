@@ -1802,18 +1802,26 @@ static void parse_qpfile( cli_opt_t *opt, x264_picture_t *pic, int i_frame )
 {
     int num = -1;
     char type;
+    char buf[100];
     while( num < i_frame )
     {
         int64_t file_pos = ftell( opt->qpfile );
         int qp = -1;
-        int ret = fscanf( opt->qpfile, "%d %c%*[ \t]%d\n", &num, &type, &qp );
+        int ret = fscanf( opt->qpfile, " %99[^\n]\n", buf );
+        if( ret == 1 )
+        {
+            ret = sscanf( buf, "%d %c %d", &num, &type, &qp );
+            if( ret == EOF )
+                ret = 0;
+        }
         pic->i_type = X264_TYPE_AUTO;
         pic->i_qpplus1 = X264_QP_AUTO;
         if( num > i_frame || ret == EOF )
         {
-            if( file_pos < 0 || fseek( opt->qpfile, file_pos, SEEK_SET ) )
+            if( ret == EOF || file_pos < 0 || fseek( opt->qpfile, file_pos, SEEK_SET ) )
             {
-                x264_cli_log( "x264", X264_LOG_ERROR, "qpfile seeking failed\n" );
+                if( ret != EOF )
+                    x264_cli_log( "x264", X264_LOG_ERROR, "qpfile seeking failed\n" );
                 fclose( opt->qpfile );
                 opt->qpfile = NULL;
             }
@@ -1821,8 +1829,6 @@ static void parse_qpfile( cli_opt_t *opt, x264_picture_t *pic, int i_frame )
         }
         if( num < i_frame && ret >= 2 )
             continue;
-        if( ret == 3 && qp >= 0 )
-            pic->i_qpplus1 = qp+1;
         if     ( type == 'I' ) pic->i_type = X264_TYPE_IDR;
         else if( type == 'i' ) pic->i_type = X264_TYPE_I;
         else if( type == 'K' ) pic->i_type = X264_TYPE_KEYFRAME;
@@ -1837,6 +1843,8 @@ static void parse_qpfile( cli_opt_t *opt, x264_picture_t *pic, int i_frame )
             opt->qpfile = NULL;
             break;
         }
+        if( ret == 3 && qp >= 0 )
+            pic->i_qpplus1 = qp+1;
     }
 }
 
