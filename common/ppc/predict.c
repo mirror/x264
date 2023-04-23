@@ -29,6 +29,52 @@
 #include "pixel.h"
 
 #if !HIGH_BIT_DEPTH
+#define x264_predict_4x4_ddr_altivec x264_template(predict_4x4_ddr_altivec)
+void x264_predict_4x4_ddr_altivec( uint8_t *src );
+#define x264_predict_4x4_ddl_altivec x264_template(predict_4x4_ddl_altivec)
+void x264_predict_4x4_ddl_altivec( uint8_t *src );
+
+#define x264_predict_8x8_dc_altivec x264_template(predict_8x8_dc_altivec)
+void x264_predict_8x8_dc_altivec( uint8_t *src, uint8_t edge[36] );
+#define x264_predict_8x8_h_altivec x264_template(predict_8x8_h_altivec)
+void x264_predict_8x8_h_altivec( uint8_t *src, uint8_t edge[36] );
+#define x264_predict_8x8_v_ppc64 x264_template(predict_8x8_v_ppc64)
+void x264_predict_8x8_v_ppc64( uint8_t *src, uint8_t edge[36] );
+#define x264_predict_8x8_ddl_altivec x264_template(predict_8x8_ddl_altivec)
+void x264_predict_8x8_ddl_altivec( uint8_t *src, uint8_t edge[36] );
+#define x264_predict_8x8_ddr_altivec x264_template(predict_8x8_ddr_altivec)
+void x264_predict_8x8_ddr_altivec( uint8_t *src, uint8_t edge[36] );
+#define x264_predict_8x8_vl_altivec x264_template(predict_8x8_vl_altivec)
+void x264_predict_8x8_vl_altivec( uint8_t *src, uint8_t edge[36] );
+#define x264_predict_8x8_vr_altivec x264_template(predict_8x8_vr_altivec)
+void x264_predict_8x8_vr_altivec( uint8_t *src, uint8_t edge[36] );
+#define x264_predict_8x8_hd_altivec x264_template(predict_8x8_hd_altivec)
+void x264_predict_8x8_hd_altivec( uint8_t *src, uint8_t edge[36] );
+#define x264_predict_8x8_hu_altivec x264_template(predict_8x8_hu_altivec)
+void x264_predict_8x8_hu_altivec( uint8_t *src, uint8_t edge[36] );
+
+#define x264_predict_8x8c_dc_altivec x264_template(predict_8x8c_dc_altivec)
+void x264_predict_8x8c_dc_altivec( uint8_t *src );
+#define x264_predict_8x8c_dc_top_altivec x264_template(predict_8x8c_dc_top_altivec)
+void x264_predict_8x8c_dc_top_altivec( uint8_t *src );
+#define x264_predict_8x8c_dc_left_altivec x264_template(predict_8x8c_dc_left_altivec)
+void x264_predict_8x8c_dc_left_altivec( uint8_t *src );
+#define x264_predict_8x8c_h_altivec x264_template(predict_8x8c_h_altivec)
+void x264_predict_8x8c_h_altivec( uint8_t *src );
+#define x264_predict_8x8c_v_ppc64 x264_template(predict_8x8c_v_ppc64)
+void x264_predict_8x8c_v_ppc64( uint8_t *src );
+
+#define x264_predict_8x16c_dc_altivec x264_template(predict_8x16c_dc_altivec)
+void x264_predict_8x16c_dc_altivec( uint8_t *src );
+#define x264_predict_8x16c_dc_top_altivec x264_template(predict_8x16c_dc_top_altivec)
+void x264_predict_8x16c_dc_top_altivec( uint8_t *src );
+#define x264_predict_8x16c_dc_left_altivec x264_template(predict_8x16c_dc_left_altivec)
+void x264_predict_8x16c_dc_left_altivec( uint8_t *src );
+#define x264_predict_8x16c_v_ppc64 x264_template(predict_8x16c_v_ppc64)
+void x264_predict_8x16c_v_ppc64( uint8_t *src );
+#define x264_predict_8x16c_h_altivec x264_template(predict_8x16c_h_altivec)
+void x264_predict_8x16c_h_altivec( uint8_t *src );
+
 static void predict_8x8c_p_altivec( uint8_t *src )
 {
     int H = 0, V = 0;
@@ -254,22 +300,94 @@ static void predict_16x16_v_altivec( uint8_t *src )
 /****************************************************************************
  * Exported functions:
  ****************************************************************************/
-void x264_predict_16x16_init_altivec( x264_predict_t pf[7] )
+ void x264_predict_4x4_init_altivec( uint32_t cpu, x264_predict_t pf[12] )
 {
 #if !HIGH_BIT_DEPTH
-    pf[I_PRED_16x16_V ]      = predict_16x16_v_altivec;
-    pf[I_PRED_16x16_H ]      = predict_16x16_h_altivec;
-    pf[I_PRED_16x16_DC]      = predict_16x16_dc_altivec;
-    pf[I_PRED_16x16_P ]      = predict_16x16_p_altivec;
-    pf[I_PRED_16x16_DC_LEFT] = predict_16x16_dc_left_altivec;
-    pf[I_PRED_16x16_DC_TOP ] = predict_16x16_dc_top_altivec;
-    pf[I_PRED_16x16_DC_128 ] = predict_16x16_dc_128_altivec;
+    if( cpu&X264_CPU_ARCH_2_07 )
+    {
+        pf[I_PRED_4x4_DDR]    = x264_predict_4x4_ddr_altivec;
+        pf[I_PRED_4x4_DDL]    = x264_predict_4x4_ddl_altivec;
+    }
 #endif // !HIGH_BIT_DEPTH
 }
 
-void x264_predict_8x8c_init_altivec( x264_predict_t pf[7] )
+void x264_predict_16x16_init_altivec( uint32_t cpu, x264_predict_t pf[7] )
 {
 #if !HIGH_BIT_DEPTH
-    pf[I_PRED_CHROMA_P]       = predict_8x8c_p_altivec;
+    if( cpu&X264_CPU_ALTIVEC )
+    {
+        pf[I_PRED_16x16_V ]      = predict_16x16_v_altivec;
+        pf[I_PRED_16x16_H ]      = predict_16x16_h_altivec;
+        pf[I_PRED_16x16_DC]      = predict_16x16_dc_altivec;
+        pf[I_PRED_16x16_P ]      = predict_16x16_p_altivec;
+        pf[I_PRED_16x16_DC_LEFT] = predict_16x16_dc_left_altivec;
+        pf[I_PRED_16x16_DC_TOP ] = predict_16x16_dc_top_altivec;
+        pf[I_PRED_16x16_DC_128 ] = predict_16x16_dc_128_altivec;
+    }
+#endif // !HIGH_BIT_DEPTH
+}
+
+void x264_predict_8x8c_init_altivec( uint32_t cpu, x264_predict_t pf[7] )
+{
+#if !HIGH_BIT_DEPTH
+    if( cpu&X264_CPU_ALTIVEC )
+    {
+        pf[I_PRED_CHROMA_P]       = predict_8x8c_p_altivec;
+    }
+    if( cpu&X264_CPU_PPC64 )
+    {
+        pf[I_PRED_CHROMA_V]       = x264_predict_8x8c_v_ppc64;
+    }
+    if( cpu&X264_CPU_ARCH_2_07 )
+    {
+        pf[I_PRED_CHROMA_H]       = x264_predict_8x8c_h_altivec;
+#ifdef WORDS_BIGENDIAN
+        /* yield to slower performance on little-endian mode */
+        pf[I_PRED_CHROMA_DC]      = x264_predict_8x8c_dc_altivec;
+        pf[I_PRED_CHROMA_DC_TOP]  = x264_predict_8x8c_dc_top_altivec;
+        pf[I_PRED_CHROMA_DC_LEFT] = x264_predict_8x8c_dc_left_altivec;
+#endif
+    }
+#endif // !HIGH_BIT_DEPTH
+}
+
+void x264_predict_8x8_init_altivec( uint32_t cpu, x264_predict8x8_t pf[12] )
+{
+#if !HIGH_BIT_DEPTH
+    if( cpu&X264_CPU_PPC64 )
+    {
+        pf[I_PRED_8x8_V]   = x264_predict_8x8_v_ppc64;
+    }
+    if( cpu&X264_CPU_ARCH_2_07 )
+    {
+        pf[I_PRED_8x8_DC]  = x264_predict_8x8_dc_altivec;
+        pf[I_PRED_8x8_H]   = x264_predict_8x8_h_altivec;
+        pf[I_PRED_8x8_DDL] = x264_predict_8x8_ddl_altivec;
+        pf[I_PRED_8x8_DDR] = x264_predict_8x8_ddr_altivec;
+        pf[I_PRED_8x8_VL]  = x264_predict_8x8_vl_altivec;
+        pf[I_PRED_8x8_VR]  = x264_predict_8x8_vr_altivec;
+        pf[I_PRED_8x8_HD]  = x264_predict_8x8_hd_altivec;
+        pf[I_PRED_8x8_HU]  = x264_predict_8x8_hu_altivec;
+    }
+#endif // !HIGH_BIT_DEPTH
+}
+
+void x264_predict_8x16c_init_altivec( uint32_t cpu, x264_predict_t pf[7] )
+{
+#if !HIGH_BIT_DEPTH
+    if( cpu&X264_CPU_PPC64 )
+    {
+        pf[I_PRED_CHROMA_V ]     = x264_predict_8x16c_v_ppc64;
+    }
+    if( cpu&X264_CPU_ARCH_2_07 )
+    {
+        pf[I_PRED_CHROMA_H ]     = x264_predict_8x16c_h_altivec;
+        pf[I_PRED_CHROMA_DC]     = x264_predict_8x16c_dc_altivec;
+        pf[I_PRED_CHROMA_DC_LEFT]= x264_predict_8x16c_dc_left_altivec;
+#ifdef WORDS_BIGENDIAN
+        /* yield to slower performance on little-endian mode */
+        pf[I_PRED_CHROMA_DC_TOP] = x264_predict_8x16c_dc_top_altivec;
+#endif
+    }
 #endif // !HIGH_BIT_DEPTH
 }

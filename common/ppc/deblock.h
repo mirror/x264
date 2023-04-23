@@ -31,4 +31,25 @@ void x264_deblock_v_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int 
 #define x264_deblock_h_luma_altivec x264_template(deblock_h_luma_altivec)
 void x264_deblock_h_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
 
+#define x264_deblock_v_chroma_altivec x264_template(deblock_v_chroma_altivec)
+void x264_deblock_v_chroma_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
+#define x264_deblock_h_chroma_altivec x264_template(deblock_h_chroma_altivec)
+void x264_deblock_h_chroma_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
+#define x264_deblock_h_chroma_422_altivec x264_template(deblock_h_chroma_422_altivec)
+void x264_deblock_h_chroma_422_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
+#define x264_deblock_h_chroma_mbaff_altivec x264_template(deblock_h_chroma_mbaff_altivec)
+void x264_deblock_h_chroma_mbaff_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
+#define x264_deblock_v_chroma_intra_altivec x264_template(deblock_v_chroma_intra_altivec)
+void x264_deblock_v_chroma_intra_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta );
+#define x264_deblock_h_chroma_intra_mbaff_altivec x264_template(deblock_h_chroma_intra_mbaff_altivec)
+void x264_deblock_h_chroma_intra_mbaff_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta );
+#define x264_deblock_h_chroma_intra_altivec x264_template(deblock_h_chroma_intra_altivec)
+void x264_deblock_h_chroma_intra_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta );
+#define x264_deblock_h_chroma_422_intra_altivec x264_template(deblock_h_chroma_422_intra_altivec)
+void x264_deblock_h_chroma_422_intra_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta );
+#define x264_deblock_strength_altivec x264_template(deblock_strength_altivec)
+void x264_deblock_strength_altivec( uint8_t nnz[X264_SCAN8_SIZE], int8_t ref[2][X264_SCAN8_LUMA_SIZE],
+                                 int16_t mv[2][X264_SCAN8_LUMA_SIZE][2], uint8_t bs[2][8][4],
+                                 int mvy_limit, int bframe );
+
 #endif

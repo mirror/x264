@@ -29,6 +29,52 @@
 #include "pixel.h"
 
 #if !HIGH_BIT_DEPTH
+#define x264_pixel_ssd_16x16_altivec x264_template(pixel_ssd_16x16_altivec)
+#define x264_pixel_ssd_16x8_altivec x264_template(pixel_ssd_16x8_altivec)
+#define x264_pixel_ssd_4x16_altivec x264_template(pixel_ssd_4x16_altivec)
+#define x264_pixel_ssd_4x4_altivec x264_template(pixel_ssd_4x4_altivec)
+#define x264_pixel_ssd_4x8_altivec x264_template(pixel_ssd_4x8_altivec)
+#define x264_pixel_ssd_8x16_altivec x264_template(pixel_ssd_8x16_altivec)
+#define x264_pixel_ssd_8x4_altivec x264_template(pixel_ssd_8x4_altivec)
+#define x264_pixel_ssd_8x8_altivec x264_template(pixel_ssd_8x8_altivec)
+#define DECL_PIXELS( ret, name, suffix, args ) \
+    ret x264_pixel_##name##_16x16_##suffix args;\
+    ret x264_pixel_##name##_16x8_##suffix args;\
+    ret x264_pixel_##name##_8x16_##suffix args;\
+    ret x264_pixel_##name##_8x8_##suffix args;\
+    ret x264_pixel_##name##_8x4_##suffix args;\
+    ret x264_pixel_##name##_4x16_##suffix args;\
+    ret x264_pixel_##name##_4x8_##suffix args;\
+    ret x264_pixel_##name##_4x4_##suffix args;\
+
+#define DECL_X1( name, suffix ) \
+    DECL_PIXELS( int, name, suffix, ( uint8_t *, intptr_t, uint8_t *, intptr_t ) )
+
+DECL_X1( ssd, altivec )
+
+#define x264_pixel_ssd_nv12_core_altivec x264_template(pixel_ssd_nv12_core_altivec)
+void x264_pixel_ssd_nv12_core_altivec( uint8_t *, intptr_t, uint8_t *, intptr_t, int, int, uint64_t *, uint64_t * );
+
+#define x264_pixel_ssim_end4_altivec x264_template(pixel_ssim_end4_altivec)
+float x264_pixel_ssim_end4_altivec( int sum0[5][4], int sum1[5][4], int width );
+
+#define x264_pixel_var2_8x8_altivec x264_template(pixel_var2_8x8_altivec)
+int x264_pixel_var2_8x8_altivec ( uint8_t *, uint8_t *, int * );
+#define x264_pixel_var2_8x16_altivec x264_template(pixel_var2_8x16_altivec)
+int x264_pixel_var2_8x16_altivec( uint8_t *, uint8_t *, int * );
+
+#define x264_pixel_asd8_altivec x264_template(pixel_asd8_altivec)
+int x264_pixel_asd8_altivec( uint8_t *, intptr_t,  uint8_t *, intptr_t, int );
+#define x264_pixel_vsad_altivec x264_template(pixel_vsad_altivec)
+int x264_pixel_vsad_altivec( uint8_t *, intptr_t, int );
+
+#define x264_pixel_sa8d_8x8_altivec x264_template(pixel_sa8d_8x8_altivec)
+int x264_pixel_sa8d_8x8_altivec  ( uint8_t *, intptr_t, uint8_t *, intptr_t );
+#define x264_pixel_sa8d_16x16_altivec x264_template(pixel_sa8d_16x16_altivec)
+int x264_pixel_sa8d_16x16_altivec( uint8_t *, intptr_t, uint8_t *, intptr_t );
+#define x264_pixel_sa8d_satd_16x16_altivec x264_template(pixel_sa8d_satd_16x16_altivec)
+uint64_t x264_pixel_sa8d_satd_16x16_altivec( uint8_t *, intptr_t, uint8_t *, intptr_t );
+
 /***********************************************************************
  * SAD routines
  **********************************************************************/
@@ -1564,72 +1610,98 @@ INTRA_MBCMP(satd, 16, v, h, dc, )
 /****************************************************************************
  * x264_pixel_init:
  ****************************************************************************/
-void x264_pixel_init_altivec( x264_pixel_function_t *pixf )
+void x264_pixel_init_altivec( uint32_t cpu, x264_pixel_function_t *pixf )
 {
 #if !HIGH_BIT_DEPTH
-    pixf->sad[PIXEL_16x16]  = pixel_sad_16x16_altivec;
-    pixf->sad[PIXEL_8x16]   = pixel_sad_8x16_altivec;
-    pixf->sad[PIXEL_16x8]   = pixel_sad_16x8_altivec;
-    pixf->sad[PIXEL_8x8]    = pixel_sad_8x8_altivec;
+    if( cpu&X264_CPU_ALTIVEC )
+    {
+        pixf->sad[PIXEL_16x16]  = pixel_sad_16x16_altivec;
+        pixf->sad[PIXEL_8x16]   = pixel_sad_8x16_altivec;
+        pixf->sad[PIXEL_16x8]   = pixel_sad_16x8_altivec;
+        pixf->sad[PIXEL_8x8]    = pixel_sad_8x8_altivec;
 
-    pixf->sad_x3[PIXEL_16x16] = pixel_sad_x3_16x16_altivec;
-    pixf->sad_x3[PIXEL_8x16]  = pixel_sad_x3_8x16_altivec;
-    pixf->sad_x3[PIXEL_16x8]  = pixel_sad_x3_16x8_altivec;
-    pixf->sad_x3[PIXEL_8x8]   = pixel_sad_x3_8x8_altivec;
+        pixf->sad_x3[PIXEL_16x16] = pixel_sad_x3_16x16_altivec;
+        pixf->sad_x3[PIXEL_8x16]  = pixel_sad_x3_8x16_altivec;
+        pixf->sad_x3[PIXEL_16x8]  = pixel_sad_x3_16x8_altivec;
+        pixf->sad_x3[PIXEL_8x8]   = pixel_sad_x3_8x8_altivec;
 
-    pixf->sad_x4[PIXEL_16x16] = pixel_sad_x4_16x16_altivec;
-    pixf->sad_x4[PIXEL_8x16]  = pixel_sad_x4_8x16_altivec;
-    pixf->sad_x4[PIXEL_16x8]  = pixel_sad_x4_16x8_altivec;
-    pixf->sad_x4[PIXEL_8x8]   = pixel_sad_x4_8x8_altivec;
+        pixf->sad_x4[PIXEL_16x16] = pixel_sad_x4_16x16_altivec;
+        pixf->sad_x4[PIXEL_8x16]  = pixel_sad_x4_8x16_altivec;
+        pixf->sad_x4[PIXEL_16x8]  = pixel_sad_x4_16x8_altivec;
+        pixf->sad_x4[PIXEL_8x8]   = pixel_sad_x4_8x8_altivec;
 
-    pixf->satd[PIXEL_16x16] = pixel_satd_16x16_altivec;
-    pixf->satd[PIXEL_8x16]  = pixel_satd_8x16_altivec;
-    pixf->satd[PIXEL_16x8]  = pixel_satd_16x8_altivec;
-    pixf->satd[PIXEL_8x8]   = pixel_satd_8x8_altivec;
-    pixf->satd[PIXEL_8x4]   = pixel_satd_8x4_altivec;
-    pixf->satd[PIXEL_4x8]   = pixel_satd_4x8_altivec;
-    pixf->satd[PIXEL_4x4]   = pixel_satd_4x4_altivec;
+        pixf->satd[PIXEL_16x16] = pixel_satd_16x16_altivec;
+        pixf->satd[PIXEL_8x16]  = pixel_satd_8x16_altivec;
+        pixf->satd[PIXEL_16x8]  = pixel_satd_16x8_altivec;
+        pixf->satd[PIXEL_8x8]   = pixel_satd_8x8_altivec;
+        pixf->satd[PIXEL_8x4]   = pixel_satd_8x4_altivec;
+        pixf->satd[PIXEL_4x8]   = pixel_satd_4x8_altivec;
+        pixf->satd[PIXEL_4x4]   = pixel_satd_4x4_altivec;
 
-    pixf->satd_x3[PIXEL_16x16] = pixel_satd_x3_16x16_altivec;
-    pixf->satd_x3[PIXEL_8x16]  = pixel_satd_x3_8x16_altivec;
-    pixf->satd_x3[PIXEL_16x8]  = pixel_satd_x3_16x8_altivec;
-    pixf->satd_x3[PIXEL_8x8]   = pixel_satd_x3_8x8_altivec;
-    pixf->satd_x3[PIXEL_8x4]   = pixel_satd_x3_8x4_altivec;
-    pixf->satd_x3[PIXEL_4x8]   = pixel_satd_x3_4x8_altivec;
-    pixf->satd_x3[PIXEL_4x4]   = pixel_satd_x3_4x4_altivec;
+        pixf->satd_x3[PIXEL_16x16] = pixel_satd_x3_16x16_altivec;
+        pixf->satd_x3[PIXEL_8x16]  = pixel_satd_x3_8x16_altivec;
+        pixf->satd_x3[PIXEL_16x8]  = pixel_satd_x3_16x8_altivec;
+        pixf->satd_x3[PIXEL_8x8]   = pixel_satd_x3_8x8_altivec;
+        pixf->satd_x3[PIXEL_8x4]   = pixel_satd_x3_8x4_altivec;
+        pixf->satd_x3[PIXEL_4x8]   = pixel_satd_x3_4x8_altivec;
+        pixf->satd_x3[PIXEL_4x4]   = pixel_satd_x3_4x4_altivec;
 
-    pixf->satd_x4[PIXEL_16x16] = pixel_satd_x4_16x16_altivec;
-    pixf->satd_x4[PIXEL_8x16]  = pixel_satd_x4_8x16_altivec;
-    pixf->satd_x4[PIXEL_16x8]  = pixel_satd_x4_16x8_altivec;
-    pixf->satd_x4[PIXEL_8x8]   = pixel_satd_x4_8x8_altivec;
-    pixf->satd_x4[PIXEL_8x4]   = pixel_satd_x4_8x4_altivec;
-    pixf->satd_x4[PIXEL_4x8]   = pixel_satd_x4_4x8_altivec;
-    pixf->satd_x4[PIXEL_4x4]   = pixel_satd_x4_4x4_altivec;
+        pixf->satd_x4[PIXEL_16x16] = pixel_satd_x4_16x16_altivec;
+        pixf->satd_x4[PIXEL_8x16]  = pixel_satd_x4_8x16_altivec;
+        pixf->satd_x4[PIXEL_16x8]  = pixel_satd_x4_16x8_altivec;
+        pixf->satd_x4[PIXEL_8x8]   = pixel_satd_x4_8x8_altivec;
+        pixf->satd_x4[PIXEL_8x4]   = pixel_satd_x4_8x4_altivec;
+        pixf->satd_x4[PIXEL_4x8]   = pixel_satd_x4_4x8_altivec;
+        pixf->satd_x4[PIXEL_4x4]   = pixel_satd_x4_4x4_altivec;
 
-    pixf->intra_sad_x3_8x8    = intra_sad_x3_8x8_altivec;
-    pixf->intra_sad_x3_8x8c   = intra_sad_x3_8x8c_altivec;
-    pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16_altivec;
+        pixf->intra_sad_x3_8x8    = intra_sad_x3_8x8_altivec;
+        pixf->intra_sad_x3_8x8c   = intra_sad_x3_8x8c_altivec;
+        pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16_altivec;
 
-    pixf->intra_satd_x3_4x4   = intra_satd_x3_4x4_altivec;
-    pixf->intra_satd_x3_8x8c  = intra_satd_x3_8x8c_altivec;
-    pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16_altivec;
+        pixf->intra_satd_x3_4x4   = intra_satd_x3_4x4_altivec;
+        pixf->intra_satd_x3_8x8c  = intra_satd_x3_8x8c_altivec;
+        pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16_altivec;
 
-    pixf->ssd[PIXEL_16x16] = pixel_ssd_16x16_altivec;
-    pixf->ssd[PIXEL_8x8]   = pixel_ssd_8x8_altivec;
+        pixf->ssd[PIXEL_16x16] = pixel_ssd_16x16_altivec;
+        pixf->ssd[PIXEL_8x8]   = pixel_ssd_8x8_altivec;
 
-    pixf->sa8d[PIXEL_16x16] = pixel_sa8d_16x16_altivec;
-    pixf->sa8d[PIXEL_8x8]   = pixel_sa8d_8x8_altivec;
+        pixf->sa8d[PIXEL_16x16] = pixel_sa8d_16x16_altivec;
+        pixf->sa8d[PIXEL_8x8]   = pixel_sa8d_8x8_altivec;
 
-    pixf->intra_sa8d_x3_8x8   = intra_sa8d_x3_8x8_altivec;
+        pixf->intra_sa8d_x3_8x8   = intra_sa8d_x3_8x8_altivec;
 
-    pixf->var[PIXEL_16x16] = pixel_var_16x16_altivec;
-    pixf->var[PIXEL_8x8]   = pixel_var_8x8_altivec;
+        pixf->var[PIXEL_16x16] = pixel_var_16x16_altivec;
+        pixf->var[PIXEL_8x8]   = pixel_var_8x8_altivec;
 
-    pixf->hadamard_ac[PIXEL_16x16] = pixel_hadamard_ac_16x16_altivec;
-    pixf->hadamard_ac[PIXEL_16x8]  = pixel_hadamard_ac_16x8_altivec;
-    pixf->hadamard_ac[PIXEL_8x16]  = pixel_hadamard_ac_8x16_altivec;
-    pixf->hadamard_ac[PIXEL_8x8]   = pixel_hadamard_ac_8x8_altivec;
+        pixf->hadamard_ac[PIXEL_16x16] = pixel_hadamard_ac_16x16_altivec;
+        pixf->hadamard_ac[PIXEL_16x8]  = pixel_hadamard_ac_16x8_altivec;
+        pixf->hadamard_ac[PIXEL_8x16]  = pixel_hadamard_ac_8x16_altivec;
+        pixf->hadamard_ac[PIXEL_8x8]   = pixel_hadamard_ac_8x8_altivec;
 
-    pixf->ssim_4x4x2_core = ssim_4x4x2_core_altivec;
+        pixf->ssim_4x4x2_core = ssim_4x4x2_core_altivec;
+    }
+    if( cpu&X264_CPU_ARCH_2_07 )
+    {
+        pixf->ssd[PIXEL_16x16] = x264_pixel_ssd_16x16_altivec;
+        pixf->ssd[PIXEL_8x16]  = x264_pixel_ssd_8x16_altivec;
+        pixf->ssd[PIXEL_16x8]  = x264_pixel_ssd_16x8_altivec;
+        pixf->ssd[PIXEL_8x8]   = x264_pixel_ssd_8x8_altivec;
+        pixf->ssd[PIXEL_8x4]   = x264_pixel_ssd_8x4_altivec;
+        pixf->ssd[PIXEL_4x8]   = x264_pixel_ssd_4x8_altivec;
+        pixf->ssd[PIXEL_4x4]   = x264_pixel_ssd_4x4_altivec;
+
+        pixf->sa8d[PIXEL_16x16]      = x264_pixel_sa8d_16x16_altivec;
+        pixf->sa8d[PIXEL_8x8]        = x264_pixel_sa8d_8x8_altivec;
+        pixf->sa8d_satd[PIXEL_16x16] = x264_pixel_sa8d_satd_16x16_altivec;
+
+        pixf->var2[PIXEL_8x16] = x264_pixel_var2_8x16_altivec;
+        pixf->var2[PIXEL_8x8]  = x264_pixel_var2_8x8_altivec;
+
+        pixf->ssd_nv12_core = x264_pixel_ssd_nv12_core_altivec;
+        pixf->ssim_end4     = x264_pixel_ssim_end4_altivec;
+
+        pixf->asd8 = x264_pixel_asd8_altivec;
+        pixf->vsad = x264_pixel_vsad_altivec;
+    }
 #endif // !HIGH_BIT_DEPTH
 }
