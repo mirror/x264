@@ -358,6 +358,14 @@ uint32_t x264_cpu_detect( void )
     return X264_CPU_ALTIVEC;
 #endif
 }
+
+#else
+
+uint32_t x264_cpu_detect( void )
+{
+    return 0;
+}
+
 #endif
 
 #elif HAVE_ARMV6
