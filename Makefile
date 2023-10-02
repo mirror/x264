@@ -203,6 +203,7 @@ ifneq ($(findstring HAVE_LSX 1, $(CONFIG)),)
 SRCASM_X += common/loongarch/deblock-a.S \
             common/loongarch/sad-a.S \
             common/loongarch/predict-a.S \
+            common/loongarch/quant-a.S \
 
 SRCS_X += common/loongarch/predict-c.c \
 
