@@ -41,6 +41,9 @@
 #if HAVE_MSA
 #include "mips/mc.h"
 #endif
+#if HAVE_LSX
+#   include "loongarch/mc.h"
+#endif
 
 
 static inline void pixel_avg( pixel *dst,  intptr_t i_dst_stride,
@@ -686,6 +689,9 @@ void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent )
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
         x264_mc_init_mips( cpu, pf );
+#endif
+#if HAVE_LSX
+    x264_mc_init_loongarch( cpu, pf );
 #endif
 
     if( cpu_independent )
