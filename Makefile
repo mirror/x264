@@ -202,8 +202,9 @@ ifeq ($(SYS_ARCH),LOONGARCH)
 ifneq ($(findstring HAVE_LSX 1, $(CONFIG)),)
 SRCASM_X += common/loongarch/deblock-a.S \
             common/loongarch/sad-a.S \
+            common/loongarch/predict-a.S \
 
-SRCS_X +=
+SRCS_X += common/loongarch/predict-c.c \
 
 OBJASM +=
 ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
