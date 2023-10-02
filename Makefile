@@ -199,6 +199,9 @@ endif
 
 # LOONGARCH optimization
 ifeq ($(SYS_ARCH),LOONGARCH)
+ifneq ($(findstring HAVE_LSX 1, $(CONFIG)),)
+SRCASM_X += common/loongarch/deblock-a.S \
+
 SRCS_X +=
 
 OBJASM +=
@@ -209,6 +212,7 @@ ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
 OBJASM += $(SRCASM_X:%.S=%-10.o)
 endif
 
+endif
 endif
 
 endif
