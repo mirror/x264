@@ -45,7 +45,9 @@
 #if HAVE_MSA
 #   include "mips/pixel.h"
 #endif
-
+#if HAVE_LSX
+#   include "loongarch/pixel.h"
+#endif
 
 /****************************************************************************
  * pixel_sad_WxH
@@ -1530,6 +1532,26 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
         pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_msa;
     }
 #endif // HAVE_MSA
+
+#if HAVE_LSX
+    if( cpu&X264_CPU_LSX )
+    {
+        INIT8( sad, _lsx );
+        INIT8_NAME( sad_aligned, sad, _lsx );
+        INIT7( sad_x3, _lsx );
+        INIT7( sad_x4, _lsx );
+    }
+
+    if( cpu&X264_CPU_LASX )
+    {
+        pixf->sad_x4[PIXEL_16x16] = x264_pixel_sad_x4_16x16_lasx;
+        pixf->sad_x4[PIXEL_16x8] = x264_pixel_sad_x4_16x8_lasx;
+        pixf->sad_x4[PIXEL_8x8] = x264_pixel_sad_x4_8x8_lasx;
+        pixf->sad_x4[PIXEL_8x4] = x264_pixel_sad_x4_8x4_lasx;
+        pixf->sad_x3[PIXEL_16x16] = x264_pixel_sad_x3_16x16_lasx;
+        pixf->sad_x3[PIXEL_16x8] = x264_pixel_sad_x3_16x8_lasx;
+    }
+#endif /* HAVE_LSX */
 
 #endif // HIGH_BIT_DEPTH
 #if HAVE_ALTIVEC
