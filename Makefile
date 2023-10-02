@@ -197,6 +197,20 @@ SRCS_X += common/mips/dct-c.c \
 endif
 endif
 
+# LOONGARCH optimization
+ifeq ($(SYS_ARCH),LOONGARCH)
+SRCS_X +=
+
+OBJASM +=
+ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
+OBJASM += $(SRCASM_X:%.S=%-8.o)
+endif
+ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
+OBJASM += $(SRCASM_X:%.S=%-10.o)
+endif
+
+endif
+
 endif
 
 ifneq ($(HAVE_GETOPT_LONG),1)

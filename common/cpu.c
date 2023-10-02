@@ -98,6 +98,9 @@ const x264_cpu_name_t x264_cpu_names[] =
     {"NEON",            X264_CPU_NEON},
 #elif ARCH_MIPS
     {"MSA",             X264_CPU_MSA},
+#elif ARCH_LOONGARCH
+    {"LSX",             X264_CPU_LSX},
+    {"LASX",            X264_CPU_LASX},
 #endif
     {"", 0},
 };
@@ -429,6 +432,25 @@ uint32_t x264_cpu_detect( void )
 uint32_t x264_cpu_detect( void )
 {
     return X264_CPU_MSA;
+}
+
+#elif HAVE_LSX
+#include <sys/auxv.h>
+
+#define LA_HWCAP_LSX    ( 1U << 4 )
+#define LA_HWCAP_LASX   ( 1U << 5 )
+
+uint32_t x264_cpu_detect( void )
+{
+    uint32_t flags = 0;
+    uint32_t hwcap = (uint32_t)getauxval( AT_HWCAP );
+
+    if( hwcap & LA_HWCAP_LSX )
+        flags |= X264_CPU_LSX;
+    if( hwcap & LA_HWCAP_LASX )
+        flags |= X264_CPU_LASX;
+
+    return flags;
 }
 
 #else

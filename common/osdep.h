@@ -314,7 +314,7 @@ static inline int x264_is_regular_file( FILE *filehandle )
 
 #define EXPAND(x) x
 
-#if ARCH_X86 || ARCH_X86_64
+#if ARCH_X86 || ARCH_X86_64 || ARCH_LOONGARCH
 #define NATIVE_ALIGN 64
 #define ALIGNED_32( var ) DECLARE_ALIGNED( var, 32 )
 #define ALIGNED_64( var ) DECLARE_ALIGNED( var, 64 )
