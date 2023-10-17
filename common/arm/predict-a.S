@@ -223,11 +223,11 @@ function predict_8x8_dc_neon
     add     r2, r2, r3
     lsr     r2, r2, #4
 
-    vdup.8   d0, r2
+    vdup.8  d0, r2
 .rept 8
     vst1.64 {d0}, [r0,:64], ip
 .endr
-    pop    {r4-r5,pc}
+    pop     {r4-r5,pc}
 endfunc
 
 function predict_8x8_h_neon

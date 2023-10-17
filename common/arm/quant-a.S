@@ -136,9 +136,9 @@ function quant_4x4x4_neon
     vabs.s16    q9,  q15
     QUANT_TWO   q0,  q1,  d4,  d5,  d6,  d7,  q7
     vorr        d8,  d8,  d9
-    vorr       d10, d10, d11
-    vorr       d12, d12, d13
-    vorr       d14, d14, d15
+    vorr        d10, d10, d11
+    vorr        d12, d12, d13
+    vorr        d14, d14, d15
     vmov        r0,  r1,  d8
     vmov        r2,  r3, d10
     orrs        r0,  r1

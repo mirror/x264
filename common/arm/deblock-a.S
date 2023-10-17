@@ -216,7 +216,7 @@ endfunc
     beq             9f
 
     sub             sp,  sp,  #32
-    vst1.8         {q12-q13}, [sp,:128]
+    vst1.8          {q12-q13}, [sp,:128]
 
     vshll.u8        q4,  d18, #1    @ 2*p1
     vshll.u8        q5,  d19, #1
@@ -252,7 +252,7 @@ endfunc
 
     vdup.8          q4,  r3         @ beta
     vabd.u8         q5,  q10, q8    @ abs(p2 - p0)
-    vld1.8         {q6-q7}, [sp,:128]   @ if_1, if_2
+    vld1.8          {q6-q7}, [sp,:128]   @ if_1, if_2
     vclt.u8         q5,  q5,  q4    @ < beta if_3
 
     vand            q7,  q7,  q5    @ if_2 && if_3
@@ -309,7 +309,7 @@ endfunc
 
     vdup.8          q4,  r3         @ beta
     vabd.u8         q5,  q2,  q0    @ abs(q2 - q0)
-    vld1.8         {q6-q7}, [sp,:128]!   @ if_1, if_2
+    vld1.8          {q6-q7}, [sp,:128]!   @ if_1, if_2
     vclt.u8         q5,  q5,  q4    @ < beta if_4
 
     vand            q7,  q7,  q5    @ if_2 && if_4

@@ -221,9 +221,9 @@ endfunc
     vadd.s16        q15, q15, q11
 
     SUMSUB_AB       q8,  q12, q9,  q12
-    SUMSUB_SHR   2, q9,  q15, q10, q15,  q0, q1
-    SUMSUB_SHR   1, q10, q14, q2,  q14,  q0, q1
-    SUMSUB_SHR2  2, q11, q13, q3,  q13,  q0, q1
+    SUMSUB_SHR      2, q9,  q15, q10, q15,  q0, q1
+    SUMSUB_SHR      1, q10, q14, q2,  q14,  q0, q1
+    SUMSUB_SHR2     2, q11, q13, q3,  q13,  q0, q1
 .endm
 
 function sub8x8_dct8_neon
@@ -254,7 +254,7 @@ function sub8x8_dct8_neon
     vld1.64         {d31}, [r2,:64], ip
     vsubl.u8        q15, d30, d31
 
-    DCT8_1D row
+    DCT8_1D         row
     vswp            d17, d24    // 8, 12
     vswp            d21, d28    // 10,14
     vtrn.32         q8,  q10
@@ -269,7 +269,7 @@ function sub8x8_dct8_neon
     vtrn.16         q12, q13
     vtrn.16         q8,  q9
     vtrn.16         q14, q15
-    DCT8_1D col
+    DCT8_1D         col
 
     vst1.64         {d16-d19}, [r0,:128]!
     vst1.64         {d20-d23}, [r0,:128]!
@@ -411,7 +411,7 @@ endfunc
 .else
     vswp            d19, d26
 .endif
-    SUMSUB_SHR   1, q2,  q3,  q10, q14,  q8, q12    // a6/a4
+    SUMSUB_SHR      1, q2,  q3,  q10, q14,  q8, q12    // a6/a4
 .ifc \type, col
     vswp            d23, d30
 .endif
@@ -420,8 +420,8 @@ endfunc
     SUMSUB_AB       q14, q15, q15, q9
     SUMSUB_15       q15, q14, q13, q11,  q12, q9    // a5/a3
 
-    SUMSUB_SHR   2, q13, q14, q14, q15,  q11, q9    // b3/b5
-    SUMSUB_SHR2  2, q12, q15, q8,  q10,  q11, q9    // b1/b7
+    SUMSUB_SHR      2, q13, q14, q14, q15,  q11, q9    // b3/b5
+    SUMSUB_SHR2     2, q12, q15, q8,  q10,  q11, q9    // b1/b7
 
     SUMSUB_AB       q10, q2,  q0,  q2               // b0/b6
     SUMSUB_AB       q11, q3,  q1,  q3               // b2/b4
@@ -441,7 +441,7 @@ function add8x8_idct8_neon
     vld1.64         {d20-d23}, [r1,:128]!
     vld1.64         {d24-d27}, [r1,:128]!
 
-    IDCT8_1D row
+    IDCT8_1D        row
     vtrn.16         q10, q11
     vtrn.16         q12, q13
     vtrn.16         q14, q15
@@ -450,7 +450,7 @@ function add8x8_idct8_neon
     vtrn.32         q12, q14
     vtrn.32         q13, q15
     vswp            d17, d24
-    IDCT8_1D col
+    IDCT8_1D        col
 
     vld1.64         {d0}, [r0,:64], r2
     vrshr.s16       q8,  q8,  #6

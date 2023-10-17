@@ -392,17 +392,17 @@ SAD_X_FUNC  4, 16, 16
 
 function pixel_vsad_neon
     subs        r2,  r2,    #2
-    vld1.8     {q0}, [r0],  r1
-    vld1.8     {q1}, [r0],  r1
+    vld1.8      {q0}, [r0],  r1
+    vld1.8      {q1}, [r0],  r1
     vabdl.u8    q2,  d0,    d2
     vabdl.u8    q3,  d1,    d3
     ble         2f
 1:
     subs        r2,  r2,    #2
-    vld1.8     {q0}, [r0],  r1
+    vld1.8      {q0}, [r0],  r1
     vabal.u8    q2,  d2,    d0
     vabal.u8    q3,  d3,    d1
-    vld1.8     {q1}, [r0],  r1
+    vld1.8      {q1}, [r0],  r1
     blt         2f
     vabal.u8    q2,  d0,    d2
     vabal.u8    q3,  d1,    d3
@@ -417,20 +417,20 @@ endfunc
 function pixel_asd8_neon
     ldr         r12, [sp,  #0]
     sub         r12,  r12, #2
-    vld1.8     {d0}, [r0], r1
-    vld1.8     {d1}, [r2], r3
-    vld1.8     {d2}, [r0], r1
-    vld1.8     {d3}, [r2], r3
+    vld1.8      {d0}, [r0], r1
+    vld1.8      {d1}, [r2], r3
+    vld1.8      {d2}, [r0], r1
+    vld1.8      {d3}, [r2], r3
     vsubl.u8    q8,   d0,  d1
 1:
     subs        r12,  r12,  #2
-    vld1.8     {d4}, [r0], r1
-    vld1.8     {d5}, [r2], r3
+    vld1.8      {d4}, [r0], r1
+    vld1.8      {d5}, [r2], r3
     vsubl.u8    q9,   d2,  d3
     vsubl.u8    q10,  d4,  d5
     vadd.s16    q8,   q9
-    vld1.8     {d2}, [r0], r1
-    vld1.8     {d3}, [r2], r3
+    vld1.8      {d2}, [r0], r1
+    vld1.8      {d3}, [r2], r3
     vadd.s16    q8,   q10
     bgt         1b
     vsubl.u8    q9,   d2,  d3
@@ -545,7 +545,7 @@ SSD_FUNC  16, 8
 SSD_FUNC  16, 16
 
 function pixel_ssd_nv12_core_neon
-    push       {r4-r5}
+    push        {r4-r5}
     ldrd        r4,  r5,  [sp, #8]
     add         r12, r4,  #8
     bic         r12, r12, #15
@@ -555,10 +555,10 @@ function pixel_ssd_nv12_core_neon
     sub         r3,  r3,  r12, lsl #1
 1:
     subs        r12, r4,  #16
-    vld2.8     {d0,d1},   [r0]!
-    vld2.8     {d2,d3},   [r2]!
-    vld2.8     {d4,d5},   [r0]!
-    vld2.8     {d6,d7},   [r2]!
+    vld2.8      {d0,d1},   [r0]!
+    vld2.8      {d2,d3},   [r2]!
+    vld2.8      {d4,d5},   [r0]!
+    vld2.8      {d6,d7},   [r2]!
 
     vsubl.u8    q10, d0,  d2
     vsubl.u8    q11, d1,  d3
@@ -574,8 +574,8 @@ function pixel_ssd_nv12_core_neon
 2:
     vmlal.s16   q14, d24, d24
     vmlal.s16   q15, d26, d26
-    vld2.8     {d0,d1},   [r0]!
-    vld2.8     {d2,d3},   [r2]!
+    vld2.8      {d0,d1},   [r0]!
+    vld2.8      {d2,d3},   [r2]!
     vmlal.s16   q14, d25, d25
     vmlal.s16   q15, d27, d27
 
@@ -584,8 +584,8 @@ function pixel_ssd_nv12_core_neon
     vsubl.u8    q11, d1,  d3
     vmlal.s16   q14, d20, d20
     vmlal.s16   q15, d22, d22
-    vld2.8     {d4,d5},   [r0]!
-    vld2.8     {d6,d7},   [r2]!
+    vld2.8      {d4,d5},   [r0]!
+    vld2.8      {d6,d7},   [r2]!
     vmlal.s16   q14, d21, d21
     vmlal.s16   q15, d23, d23
     blt         4f
@@ -611,10 +611,10 @@ function pixel_ssd_nv12_core_neon
     vadd.u64    d16, d16, d17
     vadd.u64    d18, d18, d19
     ldrd        r4,  r5, [sp, #16]
-    vst1.64    {d16}, [r4]
-    vst1.64    {d18}, [r5]
+    vst1.64     {d16}, [r4]
+    vst1.64     {d18}, [r5]
 
-    pop        {r4-r5}
+    pop         {r4-r5}
     bx          lr
 endfunc
 
@@ -942,7 +942,7 @@ endfunc
 function pixel_satd_8x8_neon
     mov         ip,  lr
 
-    bl satd_8x8_neon
+    bl          satd_8x8_neon
     vadd.u16    q0,  q12, q13
     vadd.u16    q1,  q14, q15
 
@@ -957,11 +957,11 @@ function pixel_satd_8x16_neon
     vpush       {d8-d11}
     mov         ip,  lr
 
-    bl satd_8x8_neon
+    bl          satd_8x8_neon
     vadd.u16    q4,  q12, q13
     vadd.u16    q5,  q14, q15
 
-    bl satd_8x8_neon
+    bl          satd_8x8_neon
     vadd.u16    q4,  q4,  q12
     vadd.u16    q5,  q5,  q13
     vadd.u16    q4,  q4,  q14
@@ -1444,9 +1444,9 @@ function pixel_ssim_4x4x2_core_neon
     vld1.64     {d28}, [r0], r1
     vmull.u8    q15, d2,  d2
 
-    SSIM_ITER 1, q8, q9, q14,  q2, q3, q15,  d28, d29, d26
-    SSIM_ITER 2, q10,q11,q13,  q8, q9, q14,  d26, d27, d28
-    SSIM_ITER 3, q8, q9, q15,  q10,q11,q13,  d28, d29
+    SSIM_ITER   1, q8, q9, q14,  q2, q3, q15,  d28, d29, d26
+    SSIM_ITER   2, q10,q11,q13,  q8, q9, q14,  d26, d27, d28
+    SSIM_ITER   3, q8, q9, q15,  q10,q11,q13,  d28, d29
 
     vpadal.u16  q2,  q8
     vpaddl.u16  q0,  q0
