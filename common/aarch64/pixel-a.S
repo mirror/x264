@@ -1778,7 +1778,7 @@ function pixel_satd_4x4_neon, export=1
     SUMSUB_AB   v2.8h, v3.8h, v0.8h, v1.8h
 
     trn1        v0.4s, v2.4s, v3.4s
-    trn2        v1.4s, v2.4s, v3.4S
+    trn2        v1.4s, v2.4s, v3.4s
     abs         v0.8h, v0.8h
     abs         v1.8h, v1.8h
     umax        v0.8h, v0.8h, v1.8h
