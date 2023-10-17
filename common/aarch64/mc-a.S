@@ -375,16 +375,16 @@ function pixel_avg_weight_w4_\ext\()_neon
     dup         v31.8b, w7
 1:  // height loop
     subs        w9,  w9,  #2
-    ld1        {v0.s}[0], [x2], x3
-    ld1        {v1.s}[0], [x4], x5
+    ld1         {v0.s}[0], [x2], x3
+    ld1         {v1.s}[0], [x4], x5
     weight_\ext v4.8h,  v0.8b,  v1.8b
-    ld1        {v2.s}[0], [x2], x3
-    ld1        {v3.s}[0], [x4], x5
+    ld1         {v2.s}[0], [x2], x3
+    ld1         {v3.s}[0], [x4], x5
     sqrshrun    v0.8b,  v4.8h,  #6
     weight_\ext v5.8h,  v2.8b,  v3.8b
-    st1        {v0.s}[0], [x0], x1
+    st1         {v0.s}[0], [x0], x1
     sqrshrun    v1.8b,  v5.8h,  #6
-    st1        {v1.s}[0], [x0], x1
+    st1         {v1.s}[0], [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -395,26 +395,26 @@ function pixel_avg_weight_w8_\ext\()_neon
     dup         v31.8b, w7
 1:  // height loop
     subs        w9,  w9,  #4
-    ld1        {v0.8b}, [x2], x3
-    ld1        {v1.8b}, [x4], x5
+    ld1         {v0.8b}, [x2], x3
+    ld1         {v1.8b}, [x4], x5
     weight_\ext v16.8h, v0.8b,  v1.8b
-    ld1        {v2.8b}, [x2], x3
-    ld1        {v3.8b}, [x4], x5
+    ld1         {v2.8b}, [x2], x3
+    ld1         {v3.8b}, [x4], x5
     weight_\ext v17.8h, v2.8b,  v3.8b
-    ld1        {v4.8b}, [x2], x3
-    ld1        {v5.8b}, [x4], x5
+    ld1         {v4.8b}, [x2], x3
+    ld1         {v5.8b}, [x4], x5
     weight_\ext v18.8h, v4.8b,  v5.8b
-    ld1        {v6.8b}, [x2], x3
-    ld1        {v7.8b}, [x4], x5
+    ld1         {v6.8b}, [x2], x3
+    ld1         {v7.8b}, [x4], x5
     weight_\ext v19.8h, v6.8b,  v7.8b
     sqrshrun    v0.8b,  v16.8h, #6
     sqrshrun    v1.8b,  v17.8h, #6
     sqrshrun    v2.8b,  v18.8h, #6
     sqrshrun    v3.8b,  v19.8h, #6
-    st1        {v0.8b}, [x0], x1
-    st1        {v1.8b}, [x0], x1
-    st1        {v2.8b}, [x0], x1
-    st1        {v3.8b}, [x0], x1
+    st1         {v0.8b}, [x0], x1
+    st1         {v1.8b}, [x0], x1
+    st1         {v2.8b}, [x0], x1
+    st1         {v3.8b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -425,20 +425,20 @@ function pixel_avg_weight_w16_\ext\()_neon
     dup         v31.16b, w7
 1:  // height loop
     subs        w9,  w9,  #2
-    ld1        {v0.16b}, [x2], x3
-    ld1        {v1.16b}, [x4], x5
+    ld1         {v0.16b}, [x2], x3
+    ld1         {v1.16b}, [x4], x5
     weight_\ext v16.8h, v0.8b,  v1.8b
     weight_\ext v17.8h, v0.16b, v1.16b, 2
-    ld1        {v2.16b}, [x2], x3
-    ld1        {v3.16b}, [x4], x5
+    ld1         {v2.16b}, [x2], x3
+    ld1         {v3.16b}, [x4], x5
     weight_\ext v18.8h, v2.8b,  v3.8b
     weight_\ext v19.8h, v2.16b, v3.16b, 2
     sqrshrun    v0.8b,  v16.8h, #6
     sqrshrun    v1.8b,  v18.8h, #6
     sqrshrun2   v0.16b, v17.8h, #6
     sqrshrun2   v1.16b, v19.8h, #6
-    st1        {v0.16b}, [x0], x1
-    st1        {v1.16b}, [x0], x1
+    st1         {v0.16b}, [x0], x1
+    st1         {v1.16b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -450,58 +450,58 @@ AVG_WEIGHT sub_add
 
 function pixel_avg_w4_neon
 1:  subs        w9,  w9,  #2
-    ld1        {v0.s}[0], [x2], x3
-    ld1        {v2.s}[0], [x4], x5
+    ld1         {v0.s}[0], [x2], x3
+    ld1         {v2.s}[0], [x4], x5
     urhadd      v0.8b,  v0.8b,  v2.8b
-    ld1        {v1.s}[0], [x2], x3
-    ld1        {v3.s}[0], [x4], x5
+    ld1         {v1.s}[0], [x2], x3
+    ld1         {v3.s}[0], [x4], x5
     urhadd      v1.8b,  v1.8b,  v3.8b
-    st1        {v0.s}[0], [x0], x1
-    st1        {v1.s}[0], [x0], x1
+    st1         {v0.s}[0], [x0], x1
+    st1         {v1.s}[0], [x0], x1
     b.gt        1b
     ret
 endfunc
 
 function pixel_avg_w8_neon
 1:  subs        w9,  w9,  #4
-    ld1        {v0.8b}, [x2], x3
-    ld1        {v1.8b}, [x4], x5
-    ld1        {v2.8b}, [x2], x3
+    ld1         {v0.8b}, [x2], x3
+    ld1         {v1.8b}, [x4], x5
+    ld1         {v2.8b}, [x2], x3
     urhadd      v0.8b,  v0.8b,  v1.8b
-    ld1        {v3.8b}, [x4], x5
-    st1        {v0.8b}, [x0], x1
-    ld1        {v4.8b}, [x2], x3
+    ld1         {v3.8b}, [x4], x5
+    st1         {v0.8b}, [x0], x1
+    ld1         {v4.8b}, [x2], x3
     urhadd      v1.8b,  v2.8b,  v3.8b
-    ld1        {v5.8b}, [x4], x5
-    st1        {v1.8b}, [x0], x1
-    ld1        {v6.8b}, [x2], x3
-    ld1        {v7.8b}, [x4], x5
+    ld1         {v5.8b}, [x4], x5
+    st1         {v1.8b}, [x0], x1
+    ld1         {v6.8b}, [x2], x3
+    ld1         {v7.8b}, [x4], x5
     urhadd      v2.8b,  v4.8b,  v5.8b
     urhadd      v3.8b,  v6.8b,  v7.8b
-    st1        {v2.8b}, [x0], x1
-    st1        {v3.8b}, [x0], x1
+    st1         {v2.8b}, [x0], x1
+    st1         {v3.8b}, [x0], x1
     b.gt        1b
     ret
 endfunc
 
 function pixel_avg_w16_neon
 1:  subs        w9,  w9,  #4
-    ld1        {v0.16b}, [x2], x3
-    ld1        {v1.16b}, [x4], x5
-    ld1        {v2.16b}, [x2], x3
+    ld1         {v0.16b}, [x2], x3
+    ld1         {v1.16b}, [x4], x5
+    ld1         {v2.16b}, [x2], x3
     urhadd      v0.16b, v0.16b, v1.16b
-    ld1        {v3.16b}, [x4], x5
-    st1        {v0.16b}, [x0], x1
-    ld1        {v4.16b}, [x2], x3
+    ld1         {v3.16b}, [x4], x5
+    st1         {v0.16b}, [x0], x1
+    ld1         {v4.16b}, [x2], x3
     urhadd      v1.16b, v2.16b, v3.16b
-    ld1        {v5.16b}, [x4], x5
-    st1        {v1.16b}, [x0], x1
-    ld1        {v6.16b}, [x2], x3
-    ld1        {v7.16b}, [x4], x5
+    ld1         {v5.16b}, [x4], x5
+    st1         {v1.16b}, [x0], x1
+    ld1         {v6.16b}, [x2], x3
+    ld1         {v7.16b}, [x4], x5
     urhadd      v2.16b, v4.16b, v5.16b
     urhadd      v3.16b, v6.16b, v7.16b
-    st1        {v2.16b}, [x0], x1
-    st1        {v3.16b}, [x0], x1
+    st1         {v2.16b}, [x0], x1
+    st1         {v3.16b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -509,14 +509,14 @@ endfunc
 function pixel_avg2_w4_neon, export=1
 1:
     subs        w5,  w5,  #2
-    ld1        {v0.s}[0],  [x2], x3
-    ld1        {v2.s}[0],  [x4], x3
+    ld1         {v0.s}[0],  [x2], x3
+    ld1         {v2.s}[0],  [x4], x3
     urhadd      v0.8b,  v0.8b,  v2.8b
-    ld1        {v1.s}[0],  [x2], x3
-    ld1        {v3.s}[0],  [x4], x3
+    ld1         {v1.s}[0],  [x2], x3
+    ld1         {v3.s}[0],  [x4], x3
     urhadd      v1.8b,  v1.8b,  v3.8b
-    st1        {v0.s}[0], [x0], x1
-    st1        {v1.s}[0], [x0], x1
+    st1         {v0.s}[0], [x0], x1
+    st1         {v1.s}[0], [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -524,14 +524,14 @@ endfunc
 function pixel_avg2_w8_neon, export=1
 1:
     subs        w5,  w5,  #2
-    ld1        {v0.8b}, [x2], x3
-    ld1        {v2.8b}, [x4], x3
+    ld1         {v0.8b}, [x2], x3
+    ld1         {v2.8b}, [x4], x3
     urhadd      v0.8b,  v0.8b,  v2.8b
-    ld1        {v1.8b}, [x2], x3
-    ld1        {v3.8b}, [x4], x3
+    ld1         {v1.8b}, [x2], x3
+    ld1         {v3.8b}, [x4], x3
     urhadd      v1.8b,  v1.8b,  v3.8b
-    st1        {v0.8b}, [x0], x1
-    st1        {v1.8b}, [x0], x1
+    st1         {v0.8b}, [x0], x1
+    st1         {v1.8b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -539,14 +539,14 @@ endfunc
 function pixel_avg2_w16_neon, export=1
 1:
     subs        w5,  w5,  #2
-    ld1        {v0.16b}, [x2], x3
-    ld1        {v2.16b}, [x4], x3
+    ld1         {v0.16b}, [x2], x3
+    ld1         {v2.16b}, [x4], x3
     urhadd      v0.16b, v0.16b, v2.16b
-    ld1        {v1.16b}, [x2], x3
-    ld1        {v3.16b}, [x4], x3
+    ld1         {v1.16b}, [x2], x3
+    ld1         {v3.16b}, [x4], x3
     urhadd      v1.16b, v1.16b, v3.16b
-    st1        {v0.16b}, [x0], x1
-    st1        {v1.16b}, [x0], x1
+    st1         {v0.16b}, [x0], x1
+    st1         {v1.16b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -555,18 +555,18 @@ function pixel_avg2_w20_neon, export=1
     sub         x1,  x1,  #16
 1:
     subs        w5,  w5,  #2
-    ld1        {v0.16b,v1.16b}, [x2], x3
-    ld1        {v2.16b,v3.16b}, [x4], x3
+    ld1         {v0.16b,v1.16b}, [x2], x3
+    ld1         {v2.16b,v3.16b}, [x4], x3
     urhadd      v0.16b, v0.16b, v2.16b
     urhadd      v1.8b,  v1.8b,  v3.8b
-    ld1        {v4.16b,v5.16b}, [x2], x3
-    ld1        {v6.16b,v7.16b}, [x4], x3
+    ld1         {v4.16b,v5.16b}, [x2], x3
+    ld1         {v6.16b,v7.16b}, [x4], x3
     urhadd      v4.16b, v4.16b, v6.16b
     urhadd      v5.8b,  v5.8b,  v7.8b
-    st1        {v0.16b},  [x0], #16
-    st1        {v1.s}[0], [x0], x1
-    st1        {v4.16b},  [x0], #16
-    st1        {v5.s}[0], [x0], x1
+    st1         {v0.16b},  [x0], #16
+    st1         {v1.s}[0], [x0], x1
+    st1         {v4.16b},  [x0], #16
+    st1         {v5.s}[0], [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -592,8 +592,8 @@ function mc_weight_w20_neon, export=1
     sub         x1,  x1,  #16
 1:
     subs        w9,  w9,  #2
-    ld1        {v16.8b,v17.8b,v18.8b}, [x2], x3
-    ld1        {v19.8b,v20.8b,v21.8b}, [x2], x3
+    ld1         {v16.8b,v17.8b,v18.8b}, [x2], x3
+    ld1         {v19.8b,v20.8b,v21.8b}, [x2], x3
     umull       v22.8h, v16.8b, v0.8b
     umull       v23.8h, v17.8b, v0.8b
     zip1        v18.2s, v18.2s, v21.2s
@@ -615,10 +615,10 @@ function mc_weight_w20_neon, export=1
     sqxtun      v6.8b,  v24.8h
     sqxtun      v5.8b,  v25.8h
     sqxtun2     v5.16b, v26.8h
-    st1        {v4.16b},  [x0], #16
-    st1        {v6.s}[0], [x0], x1
-    st1        {v5.16b},  [x0], #16
-    st1        {v6.s}[1], [x0], x1
+    st1         {v4.16b},  [x0], #16
+    st1         {v6.s}[0], [x0], x1
+    st1         {v5.16b},  [x0], #16
+    st1         {v6.s}[1], [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -628,8 +628,8 @@ function mc_weight_w16_neon, export=1
 weight16_loop:
 1:
     subs        w9,  w9,  #2
-    ld1        {v4.16b}, [x2], x3
-    ld1        {v5.16b}, [x2], x3
+    ld1         {v4.16b}, [x2], x3
+    ld1         {v5.16b}, [x2], x3
     umull       v22.8h, v4.8b,  v0.8b
     umull2      v23.8h, v4.16b, v0.16b
     umull       v24.8h, v5.8b,  v0.8b
@@ -646,8 +646,8 @@ weight16_loop:
     sqxtun2     v4.16b, v23.8h
     sqxtun      v5.8b,  v24.8h
     sqxtun2     v5.16b, v25.8h
-    st1        {v4.16b}, [x0], x1
-    st1        {v5.16b}, [x0], x1
+    st1         {v4.16b}, [x0], x1
+    st1         {v5.16b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -656,8 +656,8 @@ function mc_weight_w8_neon, export=1
     weight_prologue full
 1:
     subs        w9,  w9,  #2
-    ld1        {v16.8b}, [x2], x3
-    ld1        {v17.8b}, [x2], x3
+    ld1         {v16.8b}, [x2], x3
+    ld1         {v17.8b}, [x2], x3
     umull       v4.8h,  v16.8b, v0.8b
     umull       v5.8h,  v17.8b, v0.8b
     srshl       v4.8h,  v4.8h,  v2.8h
@@ -666,8 +666,8 @@ function mc_weight_w8_neon, export=1
     add         v5.8h,  v5.8h,  v1.8h
     sqxtun      v16.8b, v4.8h
     sqxtun      v17.8b, v5.8h
-    st1        {v16.8b}, [x0], x1
-    st1        {v17.8b}, [x0], x1
+    st1         {v16.8b}, [x0], x1
+    st1         {v17.8b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -676,14 +676,14 @@ function mc_weight_w4_neon, export=1
     weight_prologue full
 1:
     subs        w9,  w9,  #2
-    ld1        {v16.s}[0], [x2], x3
-    ld1        {v16.s}[1], [x2], x3
+    ld1         {v16.s}[0], [x2], x3
+    ld1         {v16.s}[1], [x2], x3
     umull       v4.8h,  v16.8b, v0.8b
     srshl       v4.8h,  v4.8h,  v2.8h
     add         v4.8h,  v4.8h,  v1.8h
     sqxtun      v16.8b, v4.8h
-    st1        {v16.s}[0], [x0], x1
-    st1        {v16.s}[1], [x0], x1
+    st1         {v16.s}[0], [x0], x1
+    st1         {v16.s}[1], [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -693,10 +693,10 @@ function mc_weight_w20_nodenom_neon, export=1
     sub         x1,  x1,  #16
 1:
     subs        w9,  w9,  #2
-    ld1        {v16.8b,v17.8b,v18.8b}, [x2], x3
+    ld1         {v16.8b,v17.8b,v18.8b}, [x2], x3
     mov         v27.16b, v1.16b
     mov         v28.16b, v1.16b
-    ld1        {v19.8b,v20.8b,v21.8b}, [x2], x3
+    ld1         {v19.8b,v20.8b,v21.8b}, [x2], x3
     mov         v31.16b, v1.16b
     mov         v29.16b, v1.16b
     mov         v30.16b, v1.16b
@@ -711,10 +711,10 @@ function mc_weight_w20_nodenom_neon, export=1
     sqxtun      v5.8b,  v29.8h
     sqxtun2     v5.16b, v30.8h
     sqxtun      v6.8b,  v31.8h
-    st1        {v4.16b},  [x0], #16
-    st1        {v6.s}[0], [x0], x1
-    st1        {v5.16b},  [x0], #16
-    st1        {v6.s}[1], [x0], x1
+    st1         {v4.16b},  [x0], #16
+    st1         {v6.s}[0], [x0], x1
+    st1         {v5.16b},  [x0], #16
+    st1         {v6.s}[1], [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -723,10 +723,10 @@ function mc_weight_w16_nodenom_neon, export=1
     weight_prologue nodenom
 1:
     subs        w9,  w9,  #2
-    ld1        {v6.16b},  [x2], x3
+    ld1         {v6.16b},  [x2], x3
     mov         v27.16b, v1.16b
     mov         v28.16b, v1.16b
-    ld1        {v7.16b},  [x2], x3
+    ld1         {v7.16b},  [x2], x3
     mov         v29.16b, v1.16b
     mov         v30.16b, v1.16b
     umlal       v27.8h, v6.8b,  v0.8b
@@ -737,8 +737,8 @@ function mc_weight_w16_nodenom_neon, export=1
     sqxtun2     v4.16b, v28.8h
     sqxtun      v5.8b,  v29.8h
     sqxtun2     v5.16b, v30.8h
-    st1        {v4.16b},  [x0], x1
-    st1        {v5.16b},  [x0], x1
+    st1         {v4.16b},  [x0], x1
+    st1         {v5.16b},  [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -747,16 +747,16 @@ function mc_weight_w8_nodenom_neon, export=1
     weight_prologue nodenom
 1:
     subs        w9,  w9,  #2
-    ld1        {v16.8b}, [x2], x3
+    ld1         {v16.8b}, [x2], x3
     mov         v27.16b, v1.16b
-    ld1        {v17.8b}, [x2], x3
+    ld1         {v17.8b}, [x2], x3
     mov         v29.16b, v1.16b
     umlal       v27.8h, v16.8b, v0.8b
     umlal       v29.8h, v17.8b, v0.8b
     sqxtun      v4.8b,  v27.8h
     sqxtun      v5.8b,  v29.8h
-    st1        {v4.8b},  [x0], x1
-    st1        {v5.8b},  [x0], x1
+    st1         {v4.8b},  [x0], x1
+    st1         {v5.8b},  [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -765,13 +765,13 @@ function mc_weight_w4_nodenom_neon, export=1
     weight_prologue nodenom
 1:
     subs        w9,  w9,  #2
-    ld1        {v16.s}[0], [x2], x3
-    ld1        {v16.s}[1], [x2], x3
+    ld1         {v16.s}[0], [x2], x3
+    ld1         {v16.s}[1], [x2], x3
     mov         v27.16b, v1.16b
     umlal       v27.8h, v16.8b, v0.8b
     sqxtun      v4.8b,  v27.8h
-    st1        {v4.s}[0],  [x0], x1
-    st1        {v4.s}[1],  [x0], x1
+    st1         {v4.s}[0],  [x0], x1
+    st1         {v4.s}[1],  [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -787,17 +787,17 @@ function mc_weight_w20_\name\()_neon, export=1
 1:
     subs        w5,  w5,  #2
     ldr         s18, [x2, #16]
-    ld1        {v16.16b}, [x2], x3
+    ld1         {v16.16b}, [x2], x3
     ldr         s19, [x2, #16]
-    ld1        {v17.16b}, [x2], x3
+    ld1         {v17.16b}, [x2], x3
     \op         v18.8b,  v18.8b,  v1.8b
     \op         v16.16b, v16.16b, v1.16b
     \op         v19.8b,  v19.8b,  v1.8b
     \op         v17.16b, v17.16b, v1.16b
     str         s18, [x0, #16]
-    st1        {v16.16b}, [x0], x1
+    st1         {v16.16b}, [x0], x1
     str         s19, [x0, #16]
-    st1        {v17.16b}, [x0], x1
+    st1         {v17.16b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -806,12 +806,12 @@ function mc_weight_w16_\name\()_neon, export=1
     weight_simple_prologue
 1:
     subs        w5,  w5,  #2
-    ld1        {v16.16b}, [x2], x3
-    ld1        {v17.16b}, [x2], x3
+    ld1         {v16.16b}, [x2], x3
+    ld1         {v17.16b}, [x2], x3
     \op         v16.16b, v16.16b, v1.16b
     \op         v17.16b, v17.16b, v1.16b
-    st1        {v16.16b}, [x0], x1
-    st1        {v17.16b}, [x0], x1
+    st1         {v16.16b}, [x0], x1
+    st1         {v17.16b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -820,12 +820,12 @@ function mc_weight_w8_\name\()_neon, export=1
     weight_simple_prologue
 1:
     subs        w5,  w5,  #2
-    ld1        {v16.8b}, [x2], x3
-    ld1        {v17.8b}, [x2], x3
+    ld1         {v16.8b}, [x2], x3
+    ld1         {v17.8b}, [x2], x3
     \op         v16.8b, v16.8b, v1.8b
     \op         v17.8b, v17.8b, v1.8b
-    st1        {v16.8b}, [x0], x1
-    st1        {v17.8b}, [x0], x1
+    st1         {v16.8b}, [x0], x1
+    st1         {v17.8b}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -834,11 +834,11 @@ function mc_weight_w4_\name\()_neon, export=1
     weight_simple_prologue
 1:
     subs        w5,  w5,  #2
-    ld1        {v16.s}[0], [x2], x3
-    ld1        {v16.s}[1], [x2], x3
+    ld1         {v16.s}[0], [x2], x3
+    ld1         {v16.s}[1], [x2], x3
     \op         v16.8b, v16.8b, v1.8b
-    st1        {v16.s}[0], [x0], x1
-    st1        {v16.s}[1], [x0], x1
+    st1         {v16.s}[0], [x0], x1
+    st1         {v16.s}[1], [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -852,42 +852,42 @@ weight_simple offsetsub, uqsub
 function mc_copy_w4_neon, export=1
 1:
     subs        w4,  w4,  #4
-    ld1        {v0.s}[0],  [x2],  x3
-    ld1        {v1.s}[0],  [x2],  x3
-    ld1        {v2.s}[0],  [x2],  x3
-    ld1        {v3.s}[0],  [x2],  x3
-    st1        {v0.s}[0],  [x0],  x1
-    st1        {v1.s}[0],  [x0],  x1
-    st1        {v2.s}[0],  [x0],  x1
-    st1        {v3.s}[0],  [x0],  x1
+    ld1         {v0.s}[0],  [x2],  x3
+    ld1         {v1.s}[0],  [x2],  x3
+    ld1         {v2.s}[0],  [x2],  x3
+    ld1         {v3.s}[0],  [x2],  x3
+    st1         {v0.s}[0],  [x0],  x1
+    st1         {v1.s}[0],  [x0],  x1
+    st1         {v2.s}[0],  [x0],  x1
+    st1         {v3.s}[0],  [x0],  x1
     b.gt        1b
     ret
 endfunc
 
 function mc_copy_w8_neon, export=1
 1:  subs        w4,  w4,  #4
-    ld1        {v0.8b},  [x2],  x3
-    ld1        {v1.8b},  [x2],  x3
-    ld1        {v2.8b},  [x2],  x3
-    ld1        {v3.8b},  [x2],  x3
-    st1        {v0.8b},  [x0],  x1
-    st1        {v1.8b},  [x0],  x1
-    st1        {v2.8b},  [x0],  x1
-    st1        {v3.8b},  [x0],  x1
+    ld1         {v0.8b},  [x2],  x3
+    ld1         {v1.8b},  [x2],  x3
+    ld1         {v2.8b},  [x2],  x3
+    ld1         {v3.8b},  [x2],  x3
+    st1         {v0.8b},  [x0],  x1
+    st1         {v1.8b},  [x0],  x1
+    st1         {v2.8b},  [x0],  x1
+    st1         {v3.8b},  [x0],  x1
     b.gt        1b
     ret
 endfunc
 
 function mc_copy_w16_neon, export=1
 1:  subs        w4,  w4,  #4
-    ld1        {v0.16b}, [x2],  x3
-    ld1        {v1.16b}, [x2],  x3
-    ld1        {v2.16b}, [x2],  x3
-    ld1        {v3.16b}, [x2],  x3
-    st1        {v0.16b}, [x0],  x1
-    st1        {v1.16b}, [x0],  x1
-    st1        {v2.16b}, [x0],  x1
-    st1        {v3.16b}, [x0],  x1
+    ld1         {v0.16b}, [x2],  x3
+    ld1         {v1.16b}, [x2],  x3
+    ld1         {v2.16b}, [x2],  x3
+    ld1         {v3.16b}, [x2],  x3
+    st1         {v0.16b}, [x0],  x1
+    st1         {v1.16b}, [x0],  x1
+    st1         {v2.16b}, [x0],  x1
+    st1         {v3.16b}, [x0],  x1
     b.gt        1b
     ret
 endfunc
@@ -939,14 +939,14 @@ function mc_chroma_w\width\()_neon
     CHROMA_MC_START
     b.eq        2f
 
-    ld2        {v28.8b,v29.8b}, [x3], x4
+    ld2         {v28.8b,v29.8b}, [x3], x4
     dup         v0.8b,  w9               // cA
     dup         v1.8b,  w10              // cB
 
     ext         v6.8b, v28.8b, v6.8b,  #1
     ext         v7.8b, v29.8b, v7.8b,  #1
 
-    ld2        {v30.8b,v31.8b}, [x3], x4
+    ld2         {v30.8b,v31.8b}, [x3], x4
     dup         v2.8b,  w11              // cC
     dup         v3.8b,  w12              // cD
 
@@ -967,7 +967,7 @@ function mc_chroma_w\width\()_neon
     umull       v17.8h, v5.8b,  v0.8b
     umlal       v17.8h, v21.8b, v2.8b
 
-    ld2        {v28.8b,v29.8b}, [x3], x4
+    ld2         {v28.8b,v29.8b}, [x3], x4
     transpose   v24.2d, v25.2d, v16.2d, v17.2d
 
     ext         v6.8b, v28.8b, v6.8b,  #1
@@ -983,7 +983,7 @@ function mc_chroma_w\width\()_neon
     umull       v19.8h, v21.8b, v0.8b
     umlal       v19.8h, v5.8b,  v2.8b
 
-    ld2        {v30.8b,v31.8b}, [x3], x4
+    ld2         {v30.8b,v31.8b}, [x3], x4
     transpose   v26.2d, v27.2d, v18.2d, v19.2d
 
     ext         v22.8b, v30.8b, v22.8b,  #1
@@ -999,10 +999,10 @@ function mc_chroma_w\width\()_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.\vsize}[0],    [x0], x2
-    st1        {v16.\vsize}[idx2], [x1], x2
-    st1        {v17.\vsize}[0],    [x0], x2
-    st1        {v17.\vsize}[idx2], [x1], x2
+    st1         {v16.\vsize}[0],    [x0], x2
+    st1         {v16.\vsize}[idx2], [x1], x2
+    st1         {v17.\vsize}[0],    [x0], x2
+    st1         {v17.\vsize}[idx2], [x1], x2
     b.gt        1b
 
     ret
@@ -1014,15 +1014,15 @@ function mc_chroma_w\width\()_neon
 
     b.eq        4f
 
-    ld1        {v4.8b}, [x3], x4
-    ld1        {v6.8b}, [x3], x4
+    ld1         {v4.8b}, [x3], x4
+    ld1         {v6.8b}, [x3], x4
 3:  // vertical interpolation loop
     subs        w15, w15, #2
     umull       v16.8h, v4.8b,  v0.8b
-    ld1        {v4.8b}, [x3], x4
+    ld1         {v4.8b}, [x3], x4
     umlal       v16.8h, v6.8b,  v1.8b
     umull       v17.8h, v6.8b,  v0.8b
-    ld1        {v6.8b}, [x3], x4
+    ld1         {v6.8b}, [x3], x4
     umlal       v17.8h, v4.8b,  v1.8b
 
     rshrn       v20.8b, v16.8h, #6      // uvuvuvuv
@@ -1034,17 +1034,17 @@ function mc_chroma_w\width\()_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.\vsize}[0],    [x0], x2
-    st1        {v16.\vsize}[idx2], [x0], x2
-    st1        {v17.\vsize}[0],    [x1], x2
-    st1        {v17.\vsize}[idx2], [x1], x2
+    st1         {v16.\vsize}[0],    [x0], x2
+    st1         {v16.\vsize}[idx2], [x0], x2
+    st1         {v17.\vsize}[0],    [x1], x2
+    st1         {v17.\vsize}[idx2], [x1], x2
     b.gt        3b
 
     ret
 
 4:  // dy is 0
-    ld1        {v4.8b,v5.8b}, [x3], x4
-    ld1        {v6.8b,v7.8b}, [x3], x4
+    ld1         {v4.8b,v5.8b}, [x3], x4
+    ld1         {v6.8b,v7.8b}, [x3], x4
 
     ext         v5.8b,  v4.8b,  v5.8b,  #2
     ext         v7.8b,  v6.8b,  v7.8b,  #2
@@ -1055,8 +1055,8 @@ function mc_chroma_w\width\()_neon
     umull       v17.8h, v6.8b,  v0.8b
     umlal       v17.8h, v7.8b,  v1.8b
 
-    ld1        {v4.8b,v5.8b}, [x3], x4
-    ld1        {v6.8b,v7.8b}, [x3], x4
+    ld1         {v4.8b,v5.8b}, [x3], x4
+    ld1         {v6.8b,v7.8b}, [x3], x4
     rshrn       v20.8b, v16.8h, #6
     rshrn       v21.8b, v17.8h, #6
     ext         v5.8b,  v4.8b,  v5.8b,  #2
@@ -1067,24 +1067,24 @@ function mc_chroma_w\width\()_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.\vsize}[0],    [x0], x2
-    st1        {v16.\vsize}[idx2], [x0], x2
-    st1        {v17.\vsize}[0],    [x1], x2
-    st1        {v17.\vsize}[idx2], [x1], x2
+    st1         {v16.\vsize}[0],    [x0], x2
+    st1         {v16.\vsize}[idx2], [x0], x2
+    st1         {v17.\vsize}[0],    [x1], x2
+    st1         {v17.\vsize}[idx2], [x1], x2
     b.gt        5b
 
     ret
 endfunc
 .endm
 
-    CHROMA_MC 2, h
-    CHROMA_MC 4, s
+    CHROMA_MC   2, h
+    CHROMA_MC   4, s
 
 function mc_chroma_w8_neon
     CHROMA_MC_START
     b.eq        2f
-    ld2        {v4.16b,v5.16b}, [x3], x4
-    ld2        {v20.16b,v21.16b}, [x3], x4
+    ld2         {v4.16b,v5.16b}, [x3], x4
+    ld2         {v20.16b,v21.16b}, [x3], x4
     dup         v0.8b, w9               // cA
     dup         v1.8b, w10              // cB
 
@@ -1109,7 +1109,7 @@ function mc_chroma_w8_neon
     umlal       v17.8h, v21.8b, v2.8b
     umlal       v17.8h, v23.8b, v3.8b
 
-    ld2        {v4.16b,v5.16b}, [x3], x4
+    ld2         {v4.16b,v5.16b}, [x3], x4
 
     ext         v6.16b, v4.16b, v4.16b, #1
     ext         v7.16b, v5.16b, v5.16b, #1
@@ -1124,7 +1124,7 @@ function mc_chroma_w8_neon
     umlal       v19.8h, v5.8b,  v2.8b
     umlal       v19.8h, v7.8b,  v3.8b
 
-    ld2        {v20.16b,v21.16b}, [x3], x4
+    ld2         {v20.16b,v21.16b}, [x3], x4
 
     rshrn       v16.8b, v16.8h, #6
     rshrn       v17.8b, v17.8h, #6
@@ -1137,10 +1137,10 @@ function mc_chroma_w8_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.8b}, [x0], x2
-    st1        {v17.8b}, [x1], x2
-    st1        {v18.8b}, [x0], x2
-    st1        {v19.8b}, [x1], x2
+    st1         {v16.8b}, [x0], x2
+    st1         {v17.8b}, [x1], x2
+    st1         {v18.8b}, [x0], x2
+    st1         {v19.8b}, [x1], x2
     b.gt        1b
 
     ret
@@ -1152,8 +1152,8 @@ function mc_chroma_w8_neon
 
     b.eq        4f
 
-    ld2        {v4.8b,v5.8b}, [x3], x4
-    ld2        {v6.8b,v7.8b}, [x3], x4
+    ld2         {v4.8b,v5.8b}, [x3], x4
+    ld2         {v6.8b,v7.8b}, [x3], x4
 3:  // vertical interpolation loop
     subs        w15, w15, #2
     umull       v16.8h, v4.8b,  v0.8b //U
@@ -1161,14 +1161,14 @@ function mc_chroma_w8_neon
     umull       v17.8h, v5.8b,  v0.8b //V
     umlal       v17.8h, v7.8b,  v1.8b
 
-    ld2        {v4.8b,v5.8b}, [x3], x4
+    ld2         {v4.8b,v5.8b}, [x3], x4
 
     umull       v18.8h, v6.8b,  v0.8b
     umlal       v18.8h, v4.8b,  v1.8b
     umull       v19.8h, v7.8b,  v0.8b
     umlal       v19.8h, v5.8b,  v1.8b
 
-    ld2        {v6.8b,v7.8b}, [x3], x4
+    ld2         {v6.8b,v7.8b}, [x3], x4
 
     rshrn       v16.8b, v16.8h, #6
     rshrn       v17.8b, v17.8h, #6
@@ -1178,18 +1178,18 @@ function mc_chroma_w8_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.8b}, [x0], x2
-    st1        {v17.8b}, [x1], x2
-    st1        {v18.8b}, [x0], x2
-    st1        {v19.8b}, [x1], x2
+    st1         {v16.8b}, [x0], x2
+    st1         {v17.8b}, [x1], x2
+    st1         {v18.8b}, [x0], x2
+    st1         {v19.8b}, [x1], x2
     b.gt        3b
 
     ret
 4:  // dy is 0
-    ld2        {v4.16b,v5.16b}, [x3], x4
+    ld2         {v4.16b,v5.16b}, [x3], x4
     ext         v6.16b, v4.16b, v4.16b, #1
     ext         v7.16b, v5.16b, v5.16b, #1
-    ld2        {v20.16b,v21.16b}, [x3], x4
+    ld2         {v20.16b,v21.16b}, [x3], x4
     ext         v22.16b, v20.16b, v20.16b, #1
     ext         v23.16b, v21.16b, v21.16b, #1
 5:  // horizontal interpolation loop
@@ -1199,14 +1199,14 @@ function mc_chroma_w8_neon
     umull       v17.8h, v5.8b,  v0.8b //V
     umlal       v17.8h, v7.8b,  v1.8b
 
-    ld2        {v4.16b,v5.16b}, [x3], x4
+    ld2         {v4.16b,v5.16b}, [x3], x4
 
     umull       v18.8h, v20.8b, v0.8b
     umlal       v18.8h, v22.8b, v1.8b
     umull       v19.8h, v21.8b, v0.8b
     umlal       v19.8h, v23.8b, v1.8b
 
-    ld2        {v20.16b,v21.16b}, [x3], x4
+    ld2         {v20.16b,v21.16b}, [x3], x4
 
     rshrn       v16.8b, v16.8h, #6
     rshrn       v17.8b, v17.8h, #6
@@ -1221,10 +1221,10 @@ function mc_chroma_w8_neon
     //pld         [x3]
     //pld         [x3, x4]
 
-    st1        {v16.8b}, [x0], x2
-    st1        {v17.8b}, [x1], x2
-    st1        {v18.8b}, [x0], x2
-    st1        {v19.8b}, [x1], x2
+    st1         {v16.8b}, [x0], x2
+    st1         {v17.8b}, [x1], x2
+    st1         {v18.8b}, [x0], x2
+    st1         {v19.8b}, [x1], x2
     b.gt        5b
 
     ret
@@ -1249,16 +1249,16 @@ function hpel_filter_neon, export=1
     add         x7,  x3,  #16           // src pointer next 16b for horiz filter
     mov         x5,  x15                // restore width
     sub         x3,  x3,  x4,  lsl #1   // src - 2*stride
-    ld1        {v28.16b}, [x7], #16     // src[16:31]
+    ld1         {v28.16b}, [x7], #16    // src[16:31]
 
     add         x9,  x3,  x5            // holds src - 2*stride + width
 
-    ld1        {v16.16b}, [x3], x4      // src-2*stride[0:15]
-    ld1        {v17.16b}, [x3], x4      // src-1*stride[0:15]
-    ld1        {v18.16b}, [x3], x4      // src+0*stride[0:15]
-    ld1        {v19.16b}, [x3], x4      // src+1*stride[0:15]
-    ld1        {v20.16b}, [x3], x4      // src+2*stride[0:15]
-    ld1        {v21.16b}, [x3], x4      // src+3*stride[0:15]
+    ld1         {v16.16b}, [x3], x4     // src-2*stride[0:15]
+    ld1         {v17.16b}, [x3], x4     // src-1*stride[0:15]
+    ld1         {v18.16b}, [x3], x4     // src+0*stride[0:15]
+    ld1         {v19.16b}, [x3], x4     // src+1*stride[0:15]
+    ld1         {v20.16b}, [x3], x4     // src+2*stride[0:15]
+    ld1         {v21.16b}, [x3], x4     // src+3*stride[0:15]
 
     ext         v22.16b, v7.16b,  v18.16b, #14
     uaddl       v1.8h,   v16.8b,  v21.8b
@@ -1292,22 +1292,22 @@ function hpel_filter_neon, export=1
     sqrshrun2   v4.16b, v5.8h,   #5
 
     umlsl2      v2.8h,  v17.16b, v30.16b
-    ld1        {v16.16b}, [x3],  x4      // src-2*stride[0:15]
+    ld1         {v16.16b}, [x3],  x4    // src-2*stride[0:15]
     umlal2      v2.8h,  v18.16b, v31.16b
-    ld1        {v17.16b}, [x3],  x4      // src-1*stride[0:15]
+    ld1         {v17.16b}, [x3],  x4    // src-1*stride[0:15]
     umlal2      v2.8h,  v19.16b, v31.16b
-    ld1        {v18.16b}, [x3],  x4      // src+0*stride[0:15]
+    ld1         {v18.16b}, [x3],  x4    // src+0*stride[0:15]
     umlsl2      v2.8h,  v20.16b, v30.16b
-    ld1        {v19.16b}, [x3],  x4      // src+1*stride[0:15]
-    st1        {v4.16b},  [x0],  #16
+    ld1         {v19.16b}, [x3],  x4    // src+1*stride[0:15]
+    st1         {v4.16b},  [x0],  #16
     sqrshrun2   v6.16b, v2.8h,   #5
-    ld1        {v20.16b}, [x3],  x4      // src+2*stride[0:15]
-    ld1        {v21.16b}, [x3],  x4      // src+3*stride[0:15]
+    ld1         {v20.16b}, [x3],  x4    // src+2*stride[0:15]
+    ld1         {v21.16b}, [x3],  x4    // src+3*stride[0:15]
 
     ext         v22.16b, v0.16b, v1.16b, #12
     ext         v26.16b, v1.16b, v2.16b, #6
     ext         v23.16b, v0.16b, v1.16b, #14
-    st1        {v6.16b},  [x1],  #16
+    st1         {v6.16b},  [x1],  #16
     uaddl       v3.8h,   v16.8b, v21.8b
     ext         v25.16b, v1.16b, v2.16b, #4
     umlsl       v3.8h,   v17.8b, v30.8b
@@ -1346,7 +1346,7 @@ function hpel_filter_neon, export=1
     add         v22.8h, v22.8h, v24.8h  // ((a-b)/4-b+c)/4+c = (a-5*b+20*c)/16
 
     sqrshrun    v4.8b,   v4.8h,   #6
-    ld1        {v28.16b}, [x7],   #16   // src[16:31]
+    ld1         {v28.16b}, [x7],   #16  // src[16:31]
     mov         v0.16b,  v2.16b
     ext         v23.16b, v7.16b,  v18.16b, #15
     sqrshrun2   v4.16b,  v22.8h,  #6
@@ -1356,7 +1356,7 @@ function hpel_filter_neon, export=1
     ext         v25.16b, v18.16b, v28.16b, #2
     ext         v26.16b, v18.16b, v28.16b, #3
 
-    st1        {v4.16b}, [x2], #16
+    st1         {v4.16b}, [x2], #16
     b.gt        2b
 
     subs        w6,  w6,  #1
@@ -1383,9 +1383,9 @@ function frame_init_lowres_core_neon, export=1
     add         x12, x0,  x5            // src1 = src0 + src_stride
     add         x13, x0,  x5,  lsl #1   // src2 = src1 + src_stride
 
-    ld2        {v0.16b,v1.16b}, [x11], #32
-    ld2        {v2.16b,v3.16b}, [x12], #32
-    ld2        {v4.16b,v5.16b}, [x13], #32
+    ld2         {v0.16b,v1.16b}, [x11], #32
+    ld2         {v2.16b,v3.16b}, [x12], #32
+    ld2         {v4.16b,v5.16b}, [x13], #32
 
     urhadd      v20.16b, v0.16b,  v2.16b    // s0[2x]   + s1[2x]
     urhadd      v22.16b, v2.16b,  v4.16b    // s1[2x]   + s2[2x]
@@ -1394,9 +1394,9 @@ function frame_init_lowres_core_neon, export=1
     urhadd      v21.16b, v1.16b,  v3.16b    // s0[2x+1] + s1[2x+1]
     urhadd      v23.16b, v3.16b,  v5.16b    // s1[2x+1] + s2[2x+1]
 
-    ld2        {v0.16b,v1.16b}, [x11], #32
-    ld2        {v2.16b,v3.16b}, [x12], #32
-    ld2        {v4.16b,v5.16b}, [x13], #32
+    ld2         {v0.16b,v1.16b}, [x11], #32
+    ld2         {v2.16b,v3.16b}, [x12], #32
+    ld2         {v4.16b,v5.16b}, [x13], #32
     urhadd      v30.16b, v0.16b,  v2.16b    // loop: s0[2x]   + s1[2x]
     urhadd      v31.16b, v2.16b,  v4.16b    // loop: s1[2x]   + s2[2x]
     ext         v24.16b, v20.16b, v30.16b, #1   // s0[2x+2] + s1[2x+2]
@@ -1407,19 +1407,19 @@ function frame_init_lowres_core_neon, export=1
     urhadd      v17.16b, v21.16b, v24.16b
     urhadd      v19.16b, v23.16b, v25.16b
 
-    st1        {v16.16b},   [x1],  #16
-    st1        {v18.16b},   [x3],  #16
-    st1        {v17.16b},   [x2],  #16
-    st1        {v19.16b},   [x4],  #16
+    st1         {v16.16b},   [x1],  #16
+    st1         {v18.16b},   [x3],  #16
+    st1         {v17.16b},   [x2],  #16
+    st1         {v19.16b},   [x4],  #16
     b.le        3f
 
     subs        w9,  w9,  #16
     urhadd      v21.16b, v1.16b,  v3.16b    // s0[2x+1] + s1[2x+1]
     urhadd      v23.16b, v3.16b,  v5.16b    // s1[2x+1] + s2[2x+1]
 
-    ld2        {v0.16b,v1.16b}, [x11], #32
-    ld2        {v2.16b,v3.16b}, [x12], #32
-    ld2        {v4.16b,v5.16b}, [x13], #32
+    ld2         {v0.16b,v1.16b}, [x11], #32
+    ld2         {v2.16b,v3.16b}, [x12], #32
+    ld2         {v4.16b,v5.16b}, [x13], #32
     urhadd      v20.16b, v0.16b,  v2.16b    // loop: s0[2x]   + s1[2x]
     urhadd      v22.16b, v2.16b,  v4.16b    // loop: s1[2x]   + s2[2x]
     ext         v24.16b, v30.16b, v20.16b, #1   // s0[2x+2] + s1[2x+2]
@@ -1430,10 +1430,10 @@ function frame_init_lowres_core_neon, export=1
     urhadd      v17.16b, v21.16b, v24.16b
     urhadd      v19.16b, v23.16b, v25.16b
 
-    st1        {v16.16b},   [x1],  #16
-    st1        {v18.16b},   [x3],  #16
-    st1        {v17.16b},   [x2],  #16
-    st1        {v19.16b},   [x4],  #16
+    st1         {v16.16b},   [x1],  #16
+    st1         {v18.16b},   [x3],  #16
+    st1         {v17.16b},   [x2],  #16
+    st1         {v19.16b},   [x4],  #16
     b.gt        2b
 3:
     subs        w8,  w8,  #1
@@ -1455,13 +1455,13 @@ endfunc
 function load_deinterleave_chroma_fdec_neon, export=1
     mov         x4,  #FDEC_STRIDE/2
 load_deinterleave_chroma:
-    ld2        {v0.8b,v1.8b}, [x1], x2
-    ld2        {v2.8b,v3.8b}, [x1], x2
+    ld2         {v0.8b,v1.8b}, [x1], x2
+    ld2         {v2.8b,v3.8b}, [x1], x2
     subs        w3,  w3,  #2
-    st1        {v0.8b}, [x0], x4
-    st1        {v1.8b}, [x0], x4
-    st1        {v2.8b}, [x0], x4
-    st1        {v3.8b}, [x0], x4
+    st1         {v0.8b}, [x0], x4
+    st1         {v1.8b}, [x0], x4
+    st1         {v2.8b}, [x0], x4
+    st1         {v3.8b}, [x0], x4
     b.gt        load_deinterleave_chroma
 
     ret
@@ -1531,10 +1531,10 @@ function plane_copy_deinterleave_neon, export=1
     sub         x3,  x3,  x9
     sub         x5,  x5,  x9, lsl #1
 1:
-    ld2        {v0.16b,v1.16b}, [x4], #32
+    ld2         {v0.16b,v1.16b}, [x4], #32
     subs        w9,  w9,  #16
-    st1        {v0.16b}, [x0],  #16
-    st1        {v1.16b}, [x2],  #16
+    st1         {v0.16b}, [x0],  #16
+    st1         {v1.16b}, [x2],  #16
     b.gt        1b
 
     add         x4,  x4,  x5
@@ -1542,16 +1542,16 @@ function plane_copy_deinterleave_neon, export=1
     add         x0,  x0,  x1
     add         x2,  x2,  x3
     mov         w9,  w6
-    b.gt       1b
+    b.gt        1b
 
     ret
 endfunc
 
 .macro deinterleave_rgb
     subs            x11, x11, #8
-    st1            {v0.8b},    [x0], #8
-    st1            {v1.8b},    [x2], #8
-    st1            {v2.8b},    [x4], #8
+    st1             {v0.8b},    [x0], #8
+    st1             {v1.8b},    [x2], #8
+    st1             {v2.8b},    [x4], #8
     b.gt            1b
 
     subs            w10, w10, #1
@@ -1582,14 +1582,14 @@ function plane_copy_deinterleave_rgb_neon, export=1
     sub             x7,  x7,  x11, lsl #1
     sub             x7,  x7,  x11
 1:
-    ld3            {v0.8b,v1.8b,v2.8b}, [x6], #24
+    ld3             {v0.8b,v1.8b,v2.8b}, [x6], #24
     deinterleave_rgb
 
     ret
 4:
     sub             x7,  x7,  x11, lsl #2
 1:
-    ld4            {v0.8b,v1.8b,v2.8b,v3.8b}, [x6], #32
+    ld4             {v0.8b,v1.8b,v2.8b,v3.8b}, [x6], #32
     deinterleave_rgb
 
     ret
@@ -1602,10 +1602,10 @@ function plane_copy_interleave_core_neon, export=1
     sub         x3,  x3,  x9
     sub         x5,  x5,  x9
 1:
-    ld1        {v0.16b}, [x2],  #16
-    ld1        {v1.16b}, [x4],  #16
+    ld1         {v0.16b}, [x2],  #16
+    ld1         {v1.16b}, [x4],  #16
     subs        w9,  w9,  #16
-    st2        {v0.16b,v1.16b}, [x0],  #32
+    st2         {v0.16b,v1.16b}, [x0],  #32
     b.gt        1b
 
     subs        w7,  w7,  #1
@@ -1619,17 +1619,17 @@ function plane_copy_interleave_core_neon, export=1
 endfunc
 
 function store_interleave_chroma_neon, export=1
-    mov             x5,  #FDEC_STRIDE
+    mov         x5,  #FDEC_STRIDE
 1:
-    ld1        {v0.8b}, [x2], x5
-    ld1        {v1.8b}, [x3], x5
-    ld1        {v2.8b}, [x2], x5
-    ld1        {v3.8b}, [x3], x5
+    ld1         {v0.8b}, [x2], x5
+    ld1         {v1.8b}, [x3], x5
+    ld1         {v2.8b}, [x2], x5
+    ld1         {v3.8b}, [x3], x5
     subs        w4,  w4,  #2
     zip1        v4.16b,  v0.16b,  v1.16b
     zip1        v5.16b,  v2.16b,  v3.16b
-    st1        {v4.16b}, [x0], x1
-    st1        {v5.16b}, [x0], x1
+    st1         {v4.16b}, [x0], x1
+    st1         {v5.16b}, [x0], x1
     b.gt        1b
 
     ret
@@ -1647,17 +1647,17 @@ endfunc
 
 function integral_init4h_neon, export=1
     sub         x3,  x0,  x2, lsl #1
-    ld1        {v6.8b,v7.8b}, [x1], #16
+    ld1         {v6.8b,v7.8b}, [x1], #16
 1:
     subs        x2,  x2,  #16
-    ld1        {v5.8h},  [x3], #16
+    ld1         {v5.8h},  [x3], #16
     integral4h  v6, v7
-    ld1        {v6.8b},  [x1], #8
-    ld1        {v5.8h},  [x3], #16
-    st1        {v0.8h},  [x0], #16
+    ld1         {v6.8b},  [x1], #8
+    ld1         {v5.8h},  [x3], #16
+    st1         {v0.8h},  [x0], #16
     integral4h  v7, v6
-    ld1        {v7.8b},  [x1], #8
-    st1        {v0.8h},  [x0], #16
+    ld1         {v7.8b},  [x1], #8
+    st1         {v0.8h},  [x0], #16
     b.gt        1b
     ret
 endfunc
@@ -1682,17 +1682,17 @@ endfunc
 
 function integral_init8h_neon, export=1
     sub         x3,  x0,  x2, lsl #1
-    ld1        {v16.8b,v17.8b}, [x1], #16
+    ld1         {v16.8b,v17.8b}, [x1], #16
 1:
     subs        x2,  x2,  #16
-    ld1        {v18.8h}, [x3], #16
+    ld1         {v18.8h}, [x3], #16
     integral8h  v16, v17, v18
-    ld1        {v16.8b}, [x1], #8
-    ld1        {v18.8h}, [x3], #16
-    st1        {v0.8h},  [x0], #16
+    ld1         {v16.8b}, [x1], #8
+    ld1         {v18.8h}, [x3], #16
+    st1         {v0.8h},  [x0], #16
     integral8h  v17, v16, v18
-    ld1        {v17.8b}, [x1], #8
-    st1        {v0.8h},  [x0], #16
+    ld1         {v17.8b}, [x1], #8
+    st1         {v0.8h},  [x0], #16
     b.gt        1b
     ret
 endfunc
@@ -1702,11 +1702,11 @@ function integral_init4v_neon, export=1
     add         x4,  x0,  x2,  lsl #3
     add         x8,  x0,  x2,  lsl #4
     sub         x2,  x2,  #8
-    ld1        {v20.8h,v21.8h,v22.8h}, [x3], #48
-    ld1        {v16.8h,v17.8h,v18.8h}, [x8], #48
+    ld1         {v20.8h,v21.8h,v22.8h}, [x3], #48
+    ld1         {v16.8h,v17.8h,v18.8h}, [x8], #48
 1:
     subs        x2,  x2,  #16
-    ld1        {v24.8h,v25.8h}, [x4], #32
+    ld1         {v24.8h,v25.8h}, [x4], #32
     ext         v0.16b,  v20.16b, v21.16b, #8
     ext         v1.16b,  v21.16b, v22.16b, #8
     ext         v2.16b,  v16.16b, v17.16b, #8
@@ -1717,16 +1717,16 @@ function integral_init4v_neon, export=1
     add         v1.8h,   v1.8h,   v21.8h
     add         v2.8h,   v2.8h,   v16.8h
     add         v3.8h,   v3.8h,   v17.8h
-    st1        {v24.8h},  [x1], #16
-    st1        {v25.8h},  [x1], #16
+    st1         {v24.8h},  [x1], #16
+    st1         {v25.8h},  [x1], #16
     mov         v20.16b,  v22.16b
     mov         v16.16b,  v18.16b
     sub         v0.8h,   v2.8h,   v0.8h
     sub         v1.8h,   v3.8h,   v1.8h
-    ld1        {v21.8h,v22.8h}, [x3], #32
-    ld1        {v17.8h,v18.8h}, [x8], #32
-    st1        {v0.8h},  [x0], #16
-    st1        {v1.8h},  [x0], #16
+    ld1         {v21.8h,v22.8h}, [x3], #32
+    ld1         {v17.8h,v18.8h}, [x8], #32
+    st1         {v0.8h},  [x0], #16
+    st1         {v1.8h},  [x0], #16
     b.gt        1b
 2:
     ret
@@ -1738,19 +1738,19 @@ function integral_init8v_neon, export=1
     ands        x3,  x1,  #16 - 1
     b.eq        1f
     subs        x1,  x1,  #8
-    ld1        {v0.8h}, [x0]
-    ld1        {v2.8h}, [x2], #16
+    ld1         {v0.8h}, [x0]
+    ld1         {v2.8h}, [x2], #16
     sub         v4.8h,  v2.8h,  v0.8h
-    st1        {v4.8h},  [x0], #16
+    st1         {v4.8h},  [x0], #16
     b.le        2f
 1:
     subs        x1,  x1,  #16
-    ld1        {v0.8h,v1.8h}, [x0]
-    ld1        {v2.8h,v3.8h}, [x2], #32
+    ld1         {v0.8h,v1.8h}, [x0]
+    ld1         {v2.8h,v3.8h}, [x2], #32
     sub         v4.8h,  v2.8h,  v0.8h
     sub         v5.8h,  v3.8h,  v1.8h
-    st1        {v4.8h},  [x0], #16
-    st1        {v5.8h},  [x0], #16
+    st1         {v4.8h},  [x0], #16
+    st1         {v5.8h},  [x0], #16
     b.gt        1b
 2:
     ret
@@ -1901,10 +1901,10 @@ function pixel_avg_weight_w8_\ext\()_neon
     smin        v4.8h, v4.8h, v28.8h
     smin        v6.8h, v6.8h, v28.8h
 
-    st1        {v0.8h}, [x0], x1
-    st1        {v2.8h}, [x0], x1
-    st1        {v4.8h}, [x0], x1
-    st1        {v6.8h}, [x0], x1
+    st1         {v0.8h}, [x0], x1
+    st1         {v2.8h}, [x0], x1
+    st1         {v4.8h}, [x0], x1
+    st1         {v6.8h}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -1948,8 +1948,8 @@ function pixel_avg_weight_w16_\ext\()_neon
     sqrshrun2   v3.8h, v23.4s, #6
     smin        v3.8h, v3.8h, v28.8h
 
-    st1        {v0.8h, v1.8h}, [x0], x1
-    st1        {v2.8h, v3.8h}, [x0], x1
+    st1         {v0.8h, v1.8h}, [x0], x1
+    st1         {v2.8h, v3.8h}, [x0], x1
     b.gt        1b
     ret
 endfunc
@@ -2002,32 +2002,32 @@ function pixel_avg_w8_neon
 endfunc
 
 function pixel_avg_w16_neon
-    lsl        x1, x1, #1
-    lsl        x3, x3, #1
-    lsl        x5, x5, #1
+    lsl         x1, x1, #1
+    lsl         x3, x3, #1
+    lsl         x5, x5, #1
 
 1:  subs       w9, w9, #4
 
-    ld1        {v0.8h, v1.8h}, [x2], x3
-    ld1        {v2.8h, v3.8h}, [x4], x5
-    ld1        {v4.8h, v5.8h}, [x2], x3
-    urhadd     v0.8h, v0.8h, v2.8h
-    urhadd     v1.8h, v1.8h, v3.8h
-    ld1        {v6.8h, v7.8h}, [x4], x5
-    ld1        {v20.8h, v21.8h}, [x2], x3
-    st1        {v0.8h, v1.8h}, [x0], x1
-    urhadd     v4.8h, v4.8h, v6.8h
-    urhadd     v5.8h, v5.8h, v7.8h
-    ld1        {v22.8h, v23.8h}, [x4], x5
-    ld1        {v24.8h, v25.8h}, [x2], x3
-    st1        {v4.8h, v5.8h}, [x0], x1
-    ld1        {v26.8h, v27.8h}, [x4], x5
-    urhadd     v20.8h, v20.8h, v22.8h
-    urhadd     v21.8h, v21.8h, v23.8h
-    urhadd     v24.8h, v24.8h, v26.8h
-    urhadd     v25.8h, v25.8h, v27.8h
-    st1        {v20.8h, v21.8h}, [x0], x1
-    st1        {v24.8h, v25.8h}, [x0], x1
+    ld1         {v0.8h, v1.8h}, [x2], x3
+    ld1         {v2.8h, v3.8h}, [x4], x5
+    ld1         {v4.8h, v5.8h}, [x2], x3
+    urhadd      v0.8h, v0.8h, v2.8h
+    urhadd      v1.8h, v1.8h, v3.8h
+    ld1         {v6.8h, v7.8h}, [x4], x5
+    ld1         {v20.8h, v21.8h}, [x2], x3
+    st1         {v0.8h, v1.8h}, [x0], x1
+    urhadd      v4.8h, v4.8h, v6.8h
+    urhadd      v5.8h, v5.8h, v7.8h
+    ld1         {v22.8h, v23.8h}, [x4], x5
+    ld1         {v24.8h, v25.8h}, [x2], x3
+    st1         {v4.8h, v5.8h}, [x0], x1
+    ld1         {v26.8h, v27.8h}, [x4], x5
+    urhadd      v20.8h, v20.8h, v22.8h
+    urhadd      v21.8h, v21.8h, v23.8h
+    urhadd      v24.8h, v24.8h, v26.8h
+    urhadd      v25.8h, v25.8h, v27.8h
+    st1         {v20.8h, v21.8h}, [x0], x1
+    st1         {v24.8h, v25.8h}, [x0], x1
 
     b.gt        1b
     ret
@@ -2213,12 +2213,12 @@ function mc_weight_w20_neon, export=1
     add         v26.4s, v26.4s, v1.4s
     add         v27.4s, v27.4s, v1.4s
 
-    sqxtun       v22.4h, v22.4s
-    sqxtun2      v22.8h, v23.4s
-    sqxtun       v23.4h, v24.4s
-    sqxtun2      v23.8h, v25.4s
-    sqxtun       v24.4h, v26.4s
-    sqxtun2      v24.8h, v27.4s
+    sqxtun      v22.4h, v22.4s
+    sqxtun2     v22.8h, v23.4s
+    sqxtun      v23.4h, v24.4s
+    sqxtun2     v23.8h, v25.4s
+    sqxtun      v24.4h, v26.4s
+    sqxtun2     v24.8h, v27.4s
 
     umull       v16.4s, v19.4h, v0.4h
     umull2      v17.4s, v19.8h, v0.8h
@@ -2234,10 +2234,10 @@ function mc_weight_w20_neon, export=1
     add         v18.4s, v18.4s, v1.4s
     add         v19.4s, v19.4s, v1.4s
 
-    sqxtun       v16.4h, v16.4s
-    sqxtun2      v16.8h, v17.4s
-    sqxtun       v17.4h, v18.4s
-    sqxtun2      v17.8h, v19.4s
+    sqxtun      v16.4h, v16.4s
+    sqxtun2     v16.8h, v17.4s
+    sqxtun      v17.4h, v18.4s
+    sqxtun2     v17.8h, v19.4s
 
     mvni        v31.8h, #0xfc, lsl #8
 
@@ -2280,10 +2280,10 @@ function mc_weight_w16_neon, export=1
     add         v24.4s, v24.4s, v1.4s
     add         v25.4s, v25.4s, v1.4s
 
-    sqxtun       v22.4h, v22.4s
-    sqxtun2      v22.8h, v23.4s
-    sqxtun       v23.4h, v24.4s
-    sqxtun2      v23.8h, v25.4s
+    sqxtun      v22.4h, v22.4s
+    sqxtun2     v22.8h, v23.4s
+    sqxtun      v23.4h, v24.4s
+    sqxtun2     v23.8h, v25.4s
 
     umull       v26.4s, v6.4h, v0.4h
     umull2      v27.4s, v6.8h, v0.8h
@@ -2300,10 +2300,10 @@ function mc_weight_w16_neon, export=1
     add         v28.4s, v28.4s, v1.4s
     add         v29.4s, v29.4s, v1.4s
 
-    sqxtun       v26.4h, v26.4s
-    sqxtun2      v26.8h, v27.4s
-    sqxtun       v27.4h, v28.4s
-    sqxtun2      v27.8h, v29.4s
+    sqxtun      v26.4h, v26.4s
+    sqxtun2     v26.8h, v27.4s
+    sqxtun      v27.4h, v28.4s
+    sqxtun2     v27.8h, v29.4s
 
     mvni        v31.8h, 0xfc, lsl #8
 
@@ -2343,10 +2343,10 @@ function mc_weight_w8_neon, export=1
     add         v6.4s, v6.4s, v1.4s
     add         v7.4s, v7.4s, v1.4s
 
-    sqxtun       v16.4h, v4.4s
-    sqxtun2      v16.8h, v5.4s
-    sqxtun       v17.4h, v6.4s
-    sqxtun2      v17.8h, v7.4s
+    sqxtun      v16.4h, v4.4s
+    sqxtun2     v16.8h, v5.4s
+    sqxtun      v17.4h, v6.4s
+    sqxtun2     v17.8h, v7.4s
 
     mvni        v28.8h, #0xfc, lsl #8
 
@@ -2374,8 +2374,8 @@ function mc_weight_w4_neon, export=1
     add         v4.4s, v4.4s, v1.4s
     add         v5.4s, v5.4s, v1.4s
 
-    sqxtun       v16.4h, v4.4s
-    sqxtun2      v16.8h, v5.4s
+    sqxtun      v16.4h, v4.4s
+    sqxtun2     v16.8h, v5.4s
 
     mvni        v28.8h, #0xfc, lsl #8
 
@@ -2418,16 +2418,16 @@ function mc_weight_w20_nodenom_neon, export=1
     umlal       v28.4s, v3.4h, v0.4h
     umlal2      v29.4s, v3.8h, v0.8h
 
-    sqxtun       v2.4h, v20.4s
-    sqxtun2      v2.8h, v21.4s
-    sqxtun       v3.4h, v22.4s
-    sqxtun2      v3.8h, v23.4s
-    sqxtun       v4.4h, v24.4s
-    sqxtun2      v4.8h, v25.4s
-    sqxtun       v5.4h, v26.4s
-    sqxtun2      v5.8h, v27.4s
-    sqxtun       v6.4h, v28.4s
-    sqxtun2      v6.8h, v29.4s
+    sqxtun      v2.4h, v20.4s
+    sqxtun2     v2.8h, v21.4s
+    sqxtun      v3.4h, v22.4s
+    sqxtun2     v3.8h, v23.4s
+    sqxtun      v4.4h, v24.4s
+    sqxtun2     v4.8h, v25.4s
+    sqxtun      v5.4h, v26.4s
+    sqxtun2     v5.8h, v27.4s
+    sqxtun      v6.4h, v28.4s
+    sqxtun2     v6.8h, v29.4s
 
     mvni        v31.8h, 0xfc, lsl #8
 
@@ -2473,15 +2473,15 @@ function mc_weight_w16_nodenom_neon, export=1
     umlal       v22.4s, v5.4h, v0.4h
     umlal2      v23.4s, v5.8h, v0.8h
 
-    sqxtun       v2.4h, v27.4s
-    sqxtun2      v2.8h, v28.4s
-    sqxtun       v3.4h, v29.4s
-    sqxtun2      v3.8h, v30.4s
+    sqxtun      v2.4h, v27.4s
+    sqxtun2     v2.8h, v28.4s
+    sqxtun      v3.4h, v29.4s
+    sqxtun2     v3.8h, v30.4s
 
-    sqxtun       v4.4h, v20.4s
-    sqxtun2      v4.8h, v21.4s
-    sqxtun       v5.4h, v22.4s
-    sqxtun2      v5.8h, v23.4s
+    sqxtun      v4.4h, v20.4s
+    sqxtun2     v4.8h, v21.4s
+    sqxtun      v5.4h, v22.4s
+    sqxtun2     v5.8h, v23.4s
 
     mvni        v31.8h, 0xfc, lsl #8
 
@@ -2514,10 +2514,10 @@ function mc_weight_w8_nodenom_neon, export=1
     umlal       v29.4s, v17.4h, v0.4h
     umlal2      v30.4s, v17.8h, v0.8h
 
-    sqxtun       v4.4h, v27.4s
-    sqxtun2      v4.8h, v28.4s
-    sqxtun       v5.4h, v29.4s
-    sqxtun2      v5.8h, v30.4s
+    sqxtun      v4.4h, v27.4s
+    sqxtun2     v4.8h, v28.4s
+    sqxtun      v5.4h, v29.4s
+    sqxtun2     v5.8h, v30.4s
 
     mvni        v31.8h, 0xfc, lsl #8
 
@@ -2543,8 +2543,8 @@ function mc_weight_w4_nodenom_neon, export=1
     umlal       v27.4s, v16.4h, v0.4h
     umlal2      v28.4s, v16.8h, v0.8h
 
-    sqxtun       v4.4h, v27.4s
-    sqxtun2      v4.8h, v28.4s
+    sqxtun      v4.4h, v27.4s
+    sqxtun2     v4.8h, v28.4s
 
     mvni        v31.8h, 0xfc, lsl #8
 
@@ -2848,8 +2848,8 @@ function mc_chroma_w\width\()_neon
 endfunc
 .endm
 
-    CHROMA_MC 2, s
-    CHROMA_MC 4, d
+    CHROMA_MC   2, s
+    CHROMA_MC   4, d
 
 function mc_chroma_w8_neon
     lsl         x2, x2, #1
@@ -3424,7 +3424,7 @@ function plane_copy_deinterleave_neon, export=1
     add         x0, x0, x1
     add         x2, x2, x3
     mov         w9, w6
-    b.gt       1b
+    b.gt        1b
 
     ret
 endfunc
@@ -3497,7 +3497,7 @@ function plane_copy_deinterleave_rgb_neon, export=1
     sub             x7, x7, x11
     lsl             x7, x7, #1
 1:
-    ld3            {v0.8h, v1.8h, v2.8h}, [x6], #48
+    ld3             {v0.8h, v1.8h, v2.8h}, [x6], #48
     deinterleave_rgb
 
     ret
@@ -3505,7 +3505,7 @@ function plane_copy_deinterleave_rgb_neon, export=1
     sub             x7, x7, x11, lsl #2
     lsl             x7, x7, #1
 1:
-    ld4            {v0.8h, v1.8h, v2.8h, v3.8h}, [x6], #64
+    ld4             {v0.8h, v1.8h, v2.8h, v3.8h}, [x6], #64
     deinterleave_rgb
 
     ret
@@ -3745,7 +3745,7 @@ function hpel_filter_neon, export=1
 
     mov         v0.16b, v5.16b
 
-    ld1        {v28.8h, v29.8h}, [x7], #32          // src[16:31]
+    ld1         {v28.8h, v29.8h}, [x7], #32          // src[16:31]
 
     ldr         q9, [sp, #0x10]
     ldr         q17, [sp, #0x30]
@@ -3759,8 +3759,8 @@ function hpel_filter_neon, export=1
     smin        v22.8h, v22.8h, v25.8h
     smin        v4.8h, v4.8h, v25.8h
 
-    st1        {v4.8h}, [x2], #16
-    st1        {v22.8h}, [x2], #16
+    st1         {v4.8h}, [x2], #16
+    st1         {v22.8h}, [x2], #16
 
     mov         v1.16b, v3.16b
     mov         v20.16b, v15.16b

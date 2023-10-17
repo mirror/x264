@@ -34,7 +34,7 @@
 function decimate_score\size\()_neon, export=1
 
 .if BIT_DEPTH == 8
-    ld1        {v0.8h,v1.8h}, [x0]
+    ld1         {v0.8h,v1.8h}, [x0]
     movrel      x5,  X264(decimate_table4)
     movi        v3.16b, #0x01
     sqxtn       v0.8b,  v0.8h
@@ -345,7 +345,7 @@ endfunc
     sub         v18.8h, v18.8h, v16.8h
     sub         v19.8h, v19.8h, v17.8h
     orr         \mask,  v18.16b, v19.16b
-    st1        {v18.8h,v19.8h}, [x0], #32
+    st1         {v18.8h,v19.8h}, [x0], #32
 .endm
 
 .macro QUANT_END d
@@ -358,7 +358,7 @@ endfunc
 
 // quant_2x2_dc( int16_t dct[4], int mf, int bias )
 function quant_2x2_dc_neon, export=1
-    ld1        {v0.4h}, [x0]
+    ld1         {v0.4h}, [x0]
     dup         v2.4h,  w2
     dup         v1.4h,  w1
     abs         v3.4h,  v0.4h
@@ -368,13 +368,13 @@ function quant_2x2_dc_neon, export=1
     shrn        v3.4h,  v3.4s,  #16
     eor         v3.8b,  v3.8b,  v0.8b
     sub         v3.4h,  v3.4h,  v0.4h
-    st1        {v3.4h}, [x0]
+    st1         {v3.4h}, [x0]
     QUANT_END   d3
 endfunc
 
 // quant_4x4_dc( int16_t dct[16], int mf, int bias )
 function quant_4x4_dc_neon, export=1
-    ld1        {v16.8h,v17.8h}, [x0]
+    ld1         {v16.8h,v17.8h}, [x0]
     abs         v18.8h,  v16.8h
     abs         v19.8h,  v17.8h
     dup         v0.8h,  w2
@@ -386,11 +386,11 @@ endfunc
 
 // quant_4x4( int16_t dct[16], uint16_t mf[16], uint16_t bias[16] )
 function quant_4x4_neon, export=1
-    ld1        {v16.8h,v17.8h}, [x0]
+    ld1         {v16.8h,v17.8h}, [x0]
     abs         v18.8h,  v16.8h
     abs         v19.8h,  v17.8h
-    ld1        {v0.8h,v1.8h}, [x2]
-    ld1        {v2.8h,v3.8h}, [x1]
+    ld1         {v0.8h,v1.8h}, [x2]
+    ld1         {v2.8h,v3.8h}, [x1]
     QUANT_TWO   v0.8h,  v1.8h,  v2,  v3,  v0.16b
     uqxtn       v0.8b,  v0.8h
     QUANT_END   d0
@@ -398,21 +398,21 @@ endfunc
 
 // quant_4x4x4( int16_t dct[4][16], uint16_t mf[16], uint16_t bias[16] )
 function quant_4x4x4_neon, export=1
-    ld1        {v16.8h,v17.8h}, [x0]
+    ld1         {v16.8h,v17.8h}, [x0]
     abs         v18.8h, v16.8h
     abs         v19.8h, v17.8h
-    ld1        {v0.8h,v1.8h}, [x2]
-    ld1        {v2.8h,v3.8h}, [x1]
+    ld1         {v0.8h,v1.8h}, [x2]
+    ld1         {v2.8h,v3.8h}, [x1]
     QUANT_TWO   v0.8h,  v1.8h,  v2,  v3,  v4.16b
-    ld1        {v16.8h,v17.8h}, [x0]
+    ld1         {v16.8h,v17.8h}, [x0]
     abs         v18.8h, v16.8h
     abs         v19.8h, v17.8h
     QUANT_TWO   v0.8h,  v1.8h,  v2,  v3,  v5.16b
-    ld1        {v16.8h,v17.8h}, [x0]
+    ld1         {v16.8h,v17.8h}, [x0]
     abs         v18.8h, v16.8h
     abs         v19.8h, v17.8h
     QUANT_TWO   v0.8h,  v1.8h,  v2,  v3,  v6.16b
-    ld1        {v16.8h,v17.8h}, [x0]
+    ld1         {v16.8h,v17.8h}, [x0]
     abs         v18.8h, v16.8h
     abs         v19.8h, v17.8h
     QUANT_TWO   v0.8h,  v1.8h,  v2,  v3,  v7.16b
@@ -441,18 +441,18 @@ endfunc
 
 // quant_8x8( int16_t dct[64], uint16_t mf[64], uint16_t bias[64] )
 function quant_8x8_neon, export=1
-    ld1        {v16.8h,v17.8h}, [x0]
+    ld1         {v16.8h,v17.8h}, [x0]
     abs         v18.8h, v16.8h
     abs         v19.8h, v17.8h
-    ld1        {v0.8h,v1.8h}, [x2], #32
-    ld1        {v2.8h,v3.8h}, [x1], #32
+    ld1         {v0.8h,v1.8h}, [x2], #32
+    ld1         {v2.8h,v3.8h}, [x1], #32
     QUANT_TWO   v0.8h,  v1.8h,  v2,  v3,  v4.16b
 .rept 3
-    ld1        {v16.8h,v17.8h}, [x0]
+    ld1         {v16.8h,v17.8h}, [x0]
     abs         v18.8h, v16.8h
     abs         v19.8h, v17.8h
-    ld1        {v0.8h,v1.8h}, [x2], #32
-    ld1        {v2.8h,v3.8h}, [x1], #32
+    ld1         {v0.8h,v1.8h}, [x2], #32
+    ld1         {v2.8h,v3.8h}, [x1], #32
     QUANT_TWO   v0.8h,  v1.8h,  v2,  v3,  v5.16b
     orr         v4.16b, v4.16b, v5.16b
 .endr
@@ -489,20 +489,20 @@ dequant_\size\()_lshift_loop:
 .ifc \size, 8x8
     subs        w2,  w2,  #1
 .endif
-    ld1        {v16.4s}, [x1], #16
-    ld1        {v17.4s}, [x1], #16
+    ld1         {v16.4s}, [x1], #16
+    ld1         {v17.4s}, [x1], #16
     sqxtn       v2.4h,  v16.4s
-    ld1        {v18.4s}, [x1], #16
+    ld1         {v18.4s}, [x1], #16
     sqxtn2      v2.8h,  v17.4s
-    ld1        {v19.4s}, [x1], #16
+    ld1         {v19.4s}, [x1], #16
     sqxtn       v3.4h,  v18.4s
-    ld1        {v0.8h,v1.8h}, [x0]
+    ld1         {v0.8h,v1.8h}, [x0]
     sqxtn2      v3.8h,  v19.4s
     mul         v0.8h,  v0.8h,  v2.8h
     mul         v1.8h,  v1.8h,  v3.8h
     sshl        v0.8h,  v0.8h,  v31.8h
     sshl        v1.8h,  v1.8h,  v31.8h
-    st1        {v0.8h,v1.8h}, [x0], #32
+    st1         {v0.8h,v1.8h}, [x0], #32
 .ifc \size, 8x8
     b.gt        dequant_\size\()_lshift_loop
 .endif
@@ -515,14 +515,14 @@ dequant_\size\()_rshift:
 dequant_\size\()_rshift_loop:
     subs        w2,  w2,  #1
 .endif
-    ld1        {v16.4s}, [x1], #16
-    ld1        {v17.4s}, [x1], #16
+    ld1         {v16.4s}, [x1], #16
+    ld1         {v17.4s}, [x1], #16
     sqxtn       v2.4h,  v16.4s
-    ld1        {v18.4s}, [x1], #16
+    ld1         {v18.4s}, [x1], #16
     sqxtn2      v2.8h,  v17.4s
-    ld1        {v19.4s}, [x1], #16
+    ld1         {v19.4s}, [x1], #16
     sqxtn       v3.4h,  v18.4s
-    ld1        {v0.8h,v1.8h}, [x0]
+    ld1         {v0.8h,v1.8h}, [x0]
     sqxtn2      v3.8h,  v19.4s
 
     smull       v16.4s, v0.4h,  v2.4h
@@ -538,7 +538,7 @@ dequant_\size\()_rshift_loop:
     sqxtn2      v0.8h,  v17.4s
     sqxtn       v1.4h,  v18.4s
     sqxtn2      v1.8h,  v19.4s
-    st1        {v0.8h,v1.8h}, [x0], #32
+    st1         {v0.8h,v1.8h}, [x0], #32
 .ifc \size, 8x8
     b.gt        dequant_\size\()_rshift_loop
 .endif
@@ -556,18 +556,18 @@ function dequant_4x4_dc_neon, export=1
 
     lsl         w1,  w1,  w3
     dup         v2.8h,  w1
-    ld1        {v0.8h,v1.8h},   [x0]
+    ld1         {v0.8h,v1.8h},   [x0]
 
     mul         v0.8h,  v0.8h,  v2.8h
     mul         v1.8h,  v1.8h,  v2.8h
-    st1        {v0.8h,v1.8h},   [x0]
+    st1         {v0.8h,v1.8h},   [x0]
     ret
 
 dequant_4x4_dc_rshift:
     dup         v4.8h,  w1
     dup         v3.4s, w3
 
-    ld1        {v0.8h,v1.8h}, [x0]
+    ld1         {v0.8h,v1.8h}, [x0]
 
     smull       v16.4s, v0.4h,  v4.4h
     smull2      v17.4s, v0.8h,  v4.8h
@@ -582,7 +582,7 @@ dequant_4x4_dc_rshift:
     sqxtn2      v0.8h,  v17.4s
     sqxtn       v1.4h,  v18.4s
     sqxtn2      v1.8h,  v19.4s
-    st1        {v0.8h,v1.8h}, [x0]
+    st1         {v0.8h,v1.8h}, [x0]
     ret
 endfunc
 

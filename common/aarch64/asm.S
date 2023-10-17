@@ -133,8 +133,8 @@ MACH    .const_data
 
 
 .macro SUMSUB_AB   sum, sub, a, b
-    add        \sum,  \a,  \b
-    sub        \sub,  \a,  \b
+    add         \sum,  \a,  \b
+    sub         \sub,  \a,  \b
 .endm
 
 .macro unzip t1, t2, s1, s2
