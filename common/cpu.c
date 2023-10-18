@@ -96,6 +96,8 @@ const x264_cpu_name_t x264_cpu_names[] =
 #elif ARCH_AARCH64
     {"ARMv8",           X264_CPU_ARMV8},
     {"NEON",            X264_CPU_NEON},
+    {"SVE",             X264_CPU_SVE},
+    {"SVE2",            X264_CPU_SVE2},
 #elif ARCH_MIPS
     {"MSA",             X264_CPU_MSA},
 #elif ARCH_LOONGARCH
@@ -418,13 +420,62 @@ uint32_t x264_cpu_detect( void )
 
 #elif HAVE_AARCH64
 
+#ifdef __linux__
+#include <sys/auxv.h>
+
+#define get_cpu_feature_reg( reg, val ) \
+        __asm__( "mrs %0, " #reg : "=r" ( val ) )
+
+static uint32_t detect_flags( void )
+{
+    uint32_t flags = 0;
+
+#if defined( AT_HWCAP ) && defined( HWCAP_CPUID )
+    unsigned long hwcap = getauxval( AT_HWCAP );
+    if ( hwcap & HWCAP_CPUID ) {
+        // We could check for support directly with HWCAP_SVE and HWCAP2_SVE2,
+        // but those were added into headers much later. By using direct
+        // register access, we can detect these features even if compiled with
+        // slightly older userland headers.
+        // https://www.kernel.org/doc/html/latest/arm64/cpu-feature-registers.html
+        uint64_t tmp;
+        get_cpu_feature_reg( ID_AA64PFR0_EL1, tmp );
+        if ( ( ( tmp >> 32 ) & 0xf ) == 0x1 ) {
+            flags |= X264_CPU_SVE;
+
+            get_cpu_feature_reg( S3_0_C0_C4_4, tmp ); // ID_AA64ZFR0_EL1
+            if ( ( ( tmp >> 0 ) & 0xf ) == 0x1 )
+                flags |= X264_CPU_SVE2;
+        }
+    }
+#endif
+
+    return flags;
+}
+#endif
+
 uint32_t x264_cpu_detect( void )
 {
+    uint32_t flags = X264_CPU_ARMV8;
 #if HAVE_NEON
-    return X264_CPU_ARMV8 | X264_CPU_NEON;
-#else
-    return X264_CPU_ARMV8;
+    flags |= X264_CPU_NEON;
 #endif
+
+    // If these features are enabled unconditionally in the compiler, we can
+    // assume that they are available.
+#ifdef __ARM_FEATURE_SVE
+    flags |= X264_CPU_SVE;
+#endif
+#ifdef __ARM_FEATURE_SVE2
+    flags |= X264_CPU_SVE2;
+#endif
+
+    // Where possible, try to do runtime detection as well.
+#ifdef __linux__
+    flags |= detect_flags();
+#endif
+
+    return flags;
 }
 
 #elif HAVE_MSA
