@@ -91,4 +91,13 @@ int x264_zigzag_sub_8x8_frame_neon( dctcoef level[16], const pixel *p_src, pixel
 #define x264_zigzag_interleave_8x8_cavlc_neon x264_template(zigzag_interleave_8x8_cavlc_neon)
 void x264_zigzag_interleave_8x8_cavlc_neon( dctcoef *dst, dctcoef *src, uint8_t *nnz );
 
+#define x264_sub4x4_dct_sve x264_template(sub4x4_dct_sve)
+void x264_sub4x4_dct_sve( int16_t dct[16], uint8_t *pix1, uint8_t *pix2 );
+
+#define x264_add4x4_idct_sve2 x264_template(add4x4_idct_sve2)
+void x264_add4x4_idct_sve2( uint8_t *p_dst, int16_t dct[16] );
+
+#define x264_zigzag_interleave_8x8_cavlc_sve x264_template(zigzag_interleave_8x8_cavlc_sve)
+void x264_zigzag_interleave_8x8_cavlc_sve( dctcoef *dst, dctcoef *src, uint8_t *nnz );
+
 #endif
