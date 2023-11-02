@@ -27,6 +27,7 @@
  *****************************************************************************/
 
 #include "asm.S"
+#include "mc-a-common.S"
 
 // note: prefetch stuff assumes 64-byte cacheline
 
@@ -327,9 +328,6 @@ AVGH 16, 8
 AVGH 16, 16
 
 // 0 < weight < 64
-.macro load_weights_add_add
-    mov         w6,  w6
-.endm
 .macro weight_add_add dst, s1, s2, h=
 .ifc \h, 2
     umull2      \dst, \s1, v30.16b
@@ -341,9 +339,6 @@ AVGH 16, 16
 .endm
 
 // weight > 64
-.macro load_weights_add_sub
-    neg         w7,  w7
-.endm
 .macro weight_add_sub dst, s1, s2, h=
 .ifc \h, 2
     umull2      \dst, \s1, v30.16b
@@ -355,9 +350,6 @@ AVGH 16, 16
 .endm
 
 // weight < 0
-.macro load_weights_sub_add
-    neg         w6,  w6
-.endm
 .macro weight_sub_add dst, s1, s2, h=
 .ifc \h, 2
     umull2      \dst, \s2, v31.16b
@@ -447,20 +439,6 @@ endfunc
 AVG_WEIGHT add_add
 AVG_WEIGHT add_sub
 AVG_WEIGHT sub_add
-
-function pixel_avg_w4_neon
-1:  subs        w9,  w9,  #2
-    ld1         {v0.s}[0], [x2], x3
-    ld1         {v2.s}[0], [x4], x5
-    urhadd      v0.8b,  v0.8b,  v2.8b
-    ld1         {v1.s}[0], [x2], x3
-    ld1         {v3.s}[0], [x4], x5
-    urhadd      v1.8b,  v1.8b,  v3.8b
-    st1         {v0.s}[0], [x0], x1
-    st1         {v1.s}[0], [x0], x1
-    b.gt        1b
-    ret
-endfunc
 
 function pixel_avg_w8_neon
 1:  subs        w9,  w9,  #4
