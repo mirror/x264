@@ -58,6 +58,15 @@ void x264_pixel_avg_4x4_neon  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, i
 #define x264_pixel_avg_4x2_neon x264_template(pixel_avg_4x2_neon)
 void x264_pixel_avg_4x2_neon  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
 
+#define x264_pixel_avg_4x16_sve x264_template(pixel_avg_4x16_sve)
+void x264_pixel_avg_4x16_sve ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+#define x264_pixel_avg_4x8_sve x264_template(pixel_avg_4x8_sve)
+void x264_pixel_avg_4x8_sve  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+#define x264_pixel_avg_4x4_sve x264_template(pixel_avg_4x4_sve)
+void x264_pixel_avg_4x4_sve  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+#define x264_pixel_avg_4x2_sve x264_template(pixel_avg_4x2_sve)
+void x264_pixel_avg_4x2_sve  ( pixel *, intptr_t, pixel *, intptr_t, pixel *, intptr_t, int );
+
 #define x264_pixel_avg2_w4_neon x264_template(pixel_avg2_w4_neon)
 void x264_pixel_avg2_w4_neon ( pixel *, intptr_t, pixel *, intptr_t, pixel *, int );
 #define x264_pixel_avg2_w8_neon x264_template(pixel_avg2_w8_neon)
@@ -278,64 +287,70 @@ void x264_mc_init_aarch64( uint32_t cpu, x264_mc_functions_t *pf )
         pf->prefetch_ref      = x264_prefetch_ref_aarch64;
     }
 
-    if( !(cpu&X264_CPU_NEON) )
-        return;
+    if( cpu&X264_CPU_NEON )
+    {
+        pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
+        pf->mbtree_propagate_list = mbtree_propagate_list_neon;
+        pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_neon;
+        pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_neon;
 
-    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_neon;
-    pf->mbtree_propagate_list = mbtree_propagate_list_neon;
-    pf->mbtree_fix8_pack      = x264_mbtree_fix8_pack_neon;
-    pf->mbtree_fix8_unpack    = x264_mbtree_fix8_unpack_neon;
+        pf->memcpy_aligned  = x264_memcpy_aligned_neon;
+        pf->memzero_aligned = x264_memzero_aligned_neon;
 
-    pf->memcpy_aligned  = x264_memcpy_aligned_neon;
-    pf->memzero_aligned = x264_memzero_aligned_neon;
+        pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_neon;
+        pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_neon;
+        pf->avg[PIXEL_8x16]  = x264_pixel_avg_8x16_neon;
+        pf->avg[PIXEL_8x8]   = x264_pixel_avg_8x8_neon;
+        pf->avg[PIXEL_8x4]   = x264_pixel_avg_8x4_neon;
+        pf->avg[PIXEL_4x16]  = x264_pixel_avg_4x16_neon;
+        pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_neon;
+        pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_neon;
+        pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_neon;
 
-    pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_neon;
-    pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_neon;
-    pf->avg[PIXEL_8x16]  = x264_pixel_avg_8x16_neon;
-    pf->avg[PIXEL_8x8]   = x264_pixel_avg_8x8_neon;
-    pf->avg[PIXEL_8x4]   = x264_pixel_avg_8x4_neon;
-    pf->avg[PIXEL_4x16]  = x264_pixel_avg_4x16_neon;
-    pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_neon;
-    pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_neon;
-    pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_neon;
+        pf->copy_16x16_unaligned = x264_mc_copy_w16_neon;
+        pf->copy[PIXEL_16x16]    = x264_mc_copy_w16_neon;
+        pf->copy[PIXEL_8x8]      = x264_mc_copy_w8_neon;
+        pf->copy[PIXEL_4x4]      = x264_mc_copy_w4_neon;
 
-    pf->copy_16x16_unaligned = x264_mc_copy_w16_neon;
-    pf->copy[PIXEL_16x16]    = x264_mc_copy_w16_neon;
-    pf->copy[PIXEL_8x8]      = x264_mc_copy_w8_neon;
-    pf->copy[PIXEL_4x4]      = x264_mc_copy_w4_neon;
+        pf->weight       = mc_wtab_neon;
+        pf->offsetadd    = mc_offsetadd_wtab_neon;
+        pf->offsetsub    = mc_offsetsub_wtab_neon;
+        pf->weight_cache = weight_cache_neon;
 
-    pf->weight       = mc_wtab_neon;
-    pf->offsetadd    = mc_offsetadd_wtab_neon;
-    pf->offsetsub    = mc_offsetsub_wtab_neon;
-    pf->weight_cache = weight_cache_neon;
+        pf->mc_chroma = x264_mc_chroma_neon;
+        pf->mc_luma = mc_luma_neon;
+        pf->get_ref = get_ref_neon;
 
-    pf->mc_chroma = x264_mc_chroma_neon;
-    pf->mc_luma = mc_luma_neon;
-    pf->get_ref = get_ref_neon;
+        pf->integral_init4h = x264_integral_init4h_neon;
+        pf->integral_init8h = x264_integral_init8h_neon;
+        pf->integral_init4v = x264_integral_init4v_neon;
+        pf->integral_init8v = x264_integral_init8v_neon;
 
-    pf->integral_init4h = x264_integral_init4h_neon;
-    pf->integral_init8h = x264_integral_init8h_neon;
-    pf->integral_init4v = x264_integral_init4v_neon;
-    pf->integral_init8v = x264_integral_init8v_neon;
+        pf->frame_init_lowres_core = x264_frame_init_lowres_core_neon;
 
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_neon;
+        pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_neon;
+        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_neon;
 
-    pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_neon;
-    pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_neon;
+        pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
 
-    pf->store_interleave_chroma       = x264_store_interleave_chroma_neon;
+        pf->plane_copy                  = plane_copy_neon;
+        pf->plane_copy_swap             = plane_copy_swap_neon;
+        pf->plane_copy_deinterleave     = x264_plane_copy_deinterleave_neon;
+        pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_neon;
+        pf->plane_copy_interleave       = plane_copy_interleave_neon;
 
-    pf->plane_copy                  = plane_copy_neon;
-    pf->plane_copy_swap             = plane_copy_swap_neon;
-    pf->plane_copy_deinterleave     = x264_plane_copy_deinterleave_neon;
-    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_neon;
-    pf->plane_copy_interleave       = plane_copy_interleave_neon;
-
-    pf->hpel_filter = x264_hpel_filter_neon;
+        pf->hpel_filter = x264_hpel_filter_neon;
+    }
 
 #if !HIGH_BIT_DEPTH
-
-
-
+#if HAVE_SVE
+    if( cpu&X264_CPU_SVE )
+    {
+        pf->avg[PIXEL_4x16]  = x264_pixel_avg_4x16_sve;
+        pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_sve;
+        pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_sve;
+        pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_sve;
+    }
+#endif
 #endif // !HIGH_BIT_DEPTH
 }
