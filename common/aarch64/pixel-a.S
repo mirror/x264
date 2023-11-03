@@ -25,6 +25,7 @@
  *****************************************************************************/
 
 #include "asm.S"
+#include "pixel-a-common.S"
 
 const mask
 .rept 16
@@ -35,24 +36,9 @@ const mask
 .endr
 endconst
 
-const mask_ac_4_8
-.short 0, -1, -1, -1,  0, -1, -1, -1
-.short 0, -1, -1, -1, -1, -1, -1, -1
-endconst
-
 .macro SUMSUBL_AB   sum, sub, a, b
     uaddl       \sum, \a, \b
     usubl       \sub, \a, \b
-.endm
-
-.macro SUMSUB_ABCD s1, d1, s2, d2, a, b, c, d
-    SUMSUB_AB   \s1, \d1, \a, \b
-    SUMSUB_AB   \s2, \d2, \c, \d
-.endm
-
-.macro HADAMARD4_V r1, r2, r3, r4, t1, t2, t3, t4
-    SUMSUB_ABCD \t1, \t2, \t3, \t4, \r1, \r2, \r3, \r4
-    SUMSUB_ABCD \r1, \r3, \r2, \r4, \t1, \t3, \t2, \t4
 .endm
 
 #if BIT_DEPTH == 8
