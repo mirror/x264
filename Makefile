@@ -173,7 +173,8 @@ SRCASM_X  = common/aarch64/bitstream-a.S \
 ifneq ($(findstring HAVE_SVE 1, $(CONFIG)),)
 SRCASM_X += common/aarch64/dct-a-sve.S \
             common/aarch64/deblock-a-sve.S \
-            common/aarch64/mc-a-sve.S
+            common/aarch64/mc-a-sve.S \
+            common/aarch64/pixel-a-sve.S
 endif
 ifneq ($(findstring HAVE_SVE2 1, $(CONFIG)),)
 SRCASM_X += common/aarch64/dct-a-sve2.S

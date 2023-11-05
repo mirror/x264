@@ -829,12 +829,32 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
 #define INIT8_NAME( name1, name2, cpu ) \
     INIT7_NAME( name1, name2, cpu ) \
     pixf->name1[PIXEL_4x16]  = x264_pixel_##name2##_4x16##cpu;
+#if HAVE_SVE
+#define INIT7_NAME_SVE_SSD_10BIT( ) \
+    pixf->ssd[PIXEL_4x4]   = x264_pixel_ssd_4x4_sve; \
+    pixf->ssd[PIXEL_4x8]   = x264_pixel_ssd_4x8_sve;
+#endif
+#if HAVE_SVE
+#define INIT8_NAME_SVE_SSD( ) \
+    pixf->ssd[PIXEL_8x8]   = x264_pixel_ssd_8x8_sve; \
+    pixf->ssd[PIXEL_8x4]   = x264_pixel_ssd_8x4_sve; \
+    pixf->ssd[PIXEL_4x8]   = x264_pixel_ssd_4x8_sve; \
+    pixf->ssd[PIXEL_4x4]   = x264_pixel_ssd_4x4_sve; \
+    pixf->ssd[PIXEL_4x16]  = x264_pixel_ssd_4x16_sve;
+#define INIT8_NAME_SVE_SSD_10BIT() \
+    INIT7_NAME_SVE_SSD_10BIT() \
+    pixf->ssd[PIXEL_4x16]  = x264_pixel_ssd_4x16_sve;
+#endif
 #define INIT2( name, cpu ) INIT2_NAME( name, name, cpu )
 #define INIT4( name, cpu ) INIT4_NAME( name, name, cpu )
 #define INIT5( name, cpu ) INIT5_NAME( name, name, cpu )
 #define INIT6( name, cpu ) INIT6_NAME( name, name, cpu )
 #define INIT7( name, cpu ) INIT7_NAME( name, name, cpu )
 #define INIT8( name, cpu ) INIT8_NAME( name, name, cpu )
+#if HAVE_SVE
+#define INIT8_SVE_SSD( ) INIT8_NAME_SVE_SSD( )
+#define INIT8_SVE_SSD_10BIT( ) INIT8_NAME_SVE_SSD_10BIT( )
+#endif
 
 #define INIT_ADS( cpu ) \
     pixf->ads[PIXEL_16x16] = x264_pixel_ads4##cpu;\
@@ -1086,6 +1106,12 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
         pixf->ssim_4x4x2_core    = x264_pixel_ssim_4x4x2_core_neon;
         pixf->ssim_end4 = x264_pixel_ssim_end4_neon;
     }
+#if HAVE_SVE
+    if( cpu&X264_CPU_SVE )
+    {
+        INIT8_SVE_SSD_10BIT();
+    }
+#endif
 #endif // HAVE_AARCH64
 
 #else // !HIGH_BIT_DEPTH
@@ -1499,6 +1525,18 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
         pixf->ssim_4x4x2_core   = x264_pixel_ssim_4x4x2_core_neon;
         pixf->ssim_end4         = x264_pixel_ssim_end4_neon;
     }
+#if HAVE_SVE
+    if( cpu&X264_CPU_SVE )
+    {
+        INIT8_SVE_SSD( );
+        INIT4( hadamard_ac, _sve );
+
+        pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_sve;
+
+        pixf->var[PIXEL_8x8]    = x264_pixel_var_8x8_sve;
+        pixf->var[PIXEL_8x16]   = x264_pixel_var_8x16_sve;
+    }
+#endif
 #endif // HAVE_AARCH64
 
 #if HAVE_MSA
