@@ -22,7 +22,7 @@ stages:
 .variables-win64: &variables-win64
     _TRIPLET: "x86_64-w64-mingw32"
     _PLATFORMSUFFIX: ".exe"
-    _WRAPPER: "wine64"
+    _WRAPPER: "wine"
     _CONTRIB_URL: "https://artifacts.videolan.org/vlc/win64/"
 
 .variables-win-armv7: &variables-win-armv7
@@ -83,7 +83,7 @@ stages:
 
 build-debian-amd64:
     extends: .build
-    image: registry.videolan.org/x264-debian-unstable:20211206140856
+    image: registry.videolan.org/x264-debian-unstable:20231113190916
     tags:
         - docker
         - amd64
