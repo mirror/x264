@@ -262,6 +262,10 @@ intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
 
 #if HAVE_AARCH64
 intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
+
+#if HAVE_SVE
+int x264_checkasm_sve_length( void );
+#endif
 #endif
 
 #if HAVE_ARMV6
@@ -2888,6 +2892,9 @@ static int check_all_flags( void )
         simd_warmup_func = x264_checkasm_warmup_avx;
 #endif
     simd_warmup();
+#if ARCH_AARCH64 && HAVE_SVE
+    char buf[20];
+#endif
 
 #if ARCH_X86 || ARCH_X86_64
     if( cpu_detect & X264_CPU_MMX2 )
@@ -2981,10 +2988,16 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_ARMV8, "ARMv8" );
     if( cpu_detect & X264_CPU_NEON )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_NEON, "NEON" );
-    if( cpu_detect & X264_CPU_SVE )
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SVE, "SVE" );
-    if( cpu_detect & X264_CPU_SVE2 )
-        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SVE2, "SVE2" );
+#if HAVE_SVE
+    if( cpu_detect & X264_CPU_SVE ) {
+        snprintf( buf, sizeof( buf ), "SVE (%d bits)", x264_checkasm_sve_length() );
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SVE, buf );
+    }
+    if( cpu_detect & X264_CPU_SVE2 ) {
+        snprintf( buf, sizeof( buf ), "SVE2 (%d bits)", x264_checkasm_sve_length() );
+        ret |= add_flags( &cpu0, &cpu1, X264_CPU_SVE2, buf );
+    }
+#endif
 #elif ARCH_MIPS
     if( cpu_detect & X264_CPU_MSA )
         ret |= add_flags( &cpu0, &cpu1, X264_CPU_MSA, "MSA" );

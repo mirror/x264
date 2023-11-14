@@ -164,3 +164,13 @@ function checkasm_call, export=1
     ldp         x29, x30, [sp], #16
     ret
 endfunc
+
+#if HAVE_SVE
+.arch armv8-a+sve
+
+function checkasm_sve_length, export=1
+    cntb        x0
+    lsl         x0,  x0,  #3
+    ret
+endfunc
+#endif
