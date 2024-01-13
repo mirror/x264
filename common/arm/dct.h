@@ -1,7 +1,7 @@
 /*****************************************************************************
  * dct.h: arm transform and zigzag
  *****************************************************************************
- * Copyright (C) 2009-2023 x264 project
+ * Copyright (C) 2009-2024 x264 project
  *
  * Authors: David Conrad <lessen42@gmail.com>
  *

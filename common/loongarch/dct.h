@@ -1,7 +1,7 @@
 /*****************************************************************************
  * dct.h: loongarch transform and zigzag
  *****************************************************************************
- * Copyright (C) 2023 x264 project
+ * Copyright (C) 2023-2024 x264 project
  *
  * Authors: Peng Zhou <zhoupeng@loongson.cn>
  *

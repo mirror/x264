@@ -1,7 +1,7 @@
 /*****************************************************************************
  * sad-a.S: loongarch sad functions
  *****************************************************************************
- * Copyright (C) 2023 x264 project
+ * Copyright (C) 2023-2024 x264 project
  *
  * Authors: Lu Wang <wanglu@loongson.cn>
  *

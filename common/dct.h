@@ -1,7 +1,7 @@
 /*****************************************************************************
  * dct.h: transform and zigzag
  *****************************************************************************
- * Copyright (C) 2004-2023 x264 project
+ * Copyright (C) 2004-2024 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *

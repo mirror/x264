@@ -1,7 +1,7 @@
 /*****************************************************************************
  * macroblock.h: macroblock common functions
  *****************************************************************************
- * Copyright (C) 2005-2023 x264 project
+ * Copyright (C) 2005-2024 x264 project
  *
  * Authors: Loren Merritt <lorenm@u.washington.edu>
  *          Laurent Aimar <fenrir@via.ecp.fr>

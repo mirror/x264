@@ -1,7 +1,7 @@
 /*****************************************************************************
  * quant-a.S: LoongArch quantization and level-run
  *****************************************************************************
- * Copyright (C) 2023 x264 project
+ * Copyright (C) 2023-2024 x264 project
  *
  * Authors: Shiyou Yin <yinshiyou-hf@loongson.cn>
  *

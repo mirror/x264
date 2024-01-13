@@ -1,7 +1,7 @@
 /*****************************************************************************
  * loongson_util.S: loongson utility macros
  *****************************************************************************
- * Copyright (C) 2023 x264 project
+ * Copyright (C) 2023-2024 x264 project
  *
  * Authors: Shiyou Yin <yinshiyou-hf@loongson.cn>
  *          Xiwei Gu <guxiwei-hf@loongson.cn>

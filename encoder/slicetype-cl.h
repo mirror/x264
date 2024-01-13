@@ -1,7 +1,7 @@
 /*****************************************************************************
  * slicetype-cl.h: OpenCL slicetype decision code (lowres lookahead)
  *****************************************************************************
- * Copyright (C) 2017-2023 x264 project
+ * Copyright (C) 2017-2024 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * depth.c: bit-depth conversion video filter
  *****************************************************************************
- * Copyright (C) 2010-2023 x264 project
+ * Copyright (C) 2010-2024 x264 project
  *
  * Authors: Oskar Arvidsson <oskar@irock.se>
  *

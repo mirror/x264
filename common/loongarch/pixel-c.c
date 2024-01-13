@@ -1,7 +1,7 @@
 /*****************************************************************************
  * pixel-c.c: loongarch pixel metrics
  *****************************************************************************
- * Copyright (C) 2023 x264 project
+ * Copyright (C) 2023-2024 x264 project
  *
  * Authors: Hecai Yuan <yuanhecai@loongson.cn>
  *

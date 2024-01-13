@@ -1,7 +1,7 @@
 /*****************************************************************************
  * macros.h: msa macros
  *****************************************************************************
- * Copyright (C) 2015-2023 x264 project
+ * Copyright (C) 2015-2024 x264 project
  *
  * Authors: Rishikesh More <rishikesh.more@imgtec.com>
  *

@@ -1,7 +1,7 @@
 /*****************************************************************************
  * predict-a.S: loongarch predict functions
  *****************************************************************************
- * Copyright (C) 2023 x264 project
+ * Copyright (C) 2023-2024 x264 project
  *
  * Authors: Xiwei Gu <guxiwei-hf@loongson.cn>
  *          Lu Wang <wanglu@loongson.cn>

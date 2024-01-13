@@ -1,7 +1,7 @@
 /*****************************************************************************
  * util.h: x86 inline asm
  *****************************************************************************
- * Copyright (C) 2008-2023 x264 project
+ * Copyright (C) 2008-2024 x264 project
  *
  * Authors: Fiona Glaser <fiona@x264.com>
  *          Loren Merritt <lorenm@u.washington.edu>

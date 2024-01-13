@@ -1,7 +1,7 @@
 /*****************************************************************************
  * deblock.S: arm deblocking
  *****************************************************************************
- * Copyright (C) 2009-2023 x264 project
+ * Copyright (C) 2009-2024 x264 project
  *
  * Authors: Mans Rullgard <mans@mansr.com>
  *          Martin Storsjo <martin@martin.st>

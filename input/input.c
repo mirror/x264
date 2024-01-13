@@ -1,7 +1,7 @@
 /*****************************************************************************
  * input.c: common input functions
  *****************************************************************************
- * Copyright (C) 2010-2023 x264 project
+ * Copyright (C) 2010-2024 x264 project
  *
  * Authors: Steven Walters <kemuri9@gmail.com>
  *          Henrik Gramner <henrik@gramner.com>

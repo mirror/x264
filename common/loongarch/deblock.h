@@ -1,7 +1,7 @@
 /*****************************************************************************
  * deblock.h: loongarch deblock
  *****************************************************************************
- * Copyright (C) 2023 x264 project
+ * Copyright (C) 2023-2024 x264 project
  *
  * Authors: Hao Chen <chenhao@loongson.cn>
  *
