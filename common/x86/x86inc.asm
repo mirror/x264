@@ -1041,6 +1041,9 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
     %if WIN64
         AVX512_MM_PERMUTATION 6 ; Swap callee-saved registers with volatile registers
     %endif
+    %xdefine bcstw 1to8
+    %xdefine bcstd 1to4
+    %xdefine bcstq 1to2
 %endmacro
 
 %macro INIT_YMM 0-1+
@@ -1054,6 +1057,9 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
     INIT_CPUFLAGS %1
     DEFINE_MMREGS ymm
     AVX512_MM_PERMUTATION
+    %xdefine bcstw 1to16
+    %xdefine bcstd 1to8
+    %xdefine bcstq 1to4
 %endmacro
 
 %macro INIT_ZMM 0-1+
@@ -1067,6 +1073,9 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
     INIT_CPUFLAGS %1
     DEFINE_MMREGS zmm
     AVX512_MM_PERMUTATION
+    %xdefine bcstw 1to32
+    %xdefine bcstd 1to16
+    %xdefine bcstq 1to8
 %endmacro
 
 INIT_XMM
