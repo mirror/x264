@@ -17,13 +17,13 @@ stages:
     _TRIPLET: "i686-w64-mingw32"
     _PLATFORMSUFFIX: ".exe"
     _WRAPPER: "wine"
-    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/win32/"
+    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/win32-llvm/"
 
 .variables-win64: &variables-win64
     _TRIPLET: "x86_64-w64-mingw32"
     _PLATFORMSUFFIX: ".exe"
     _WRAPPER: "wine"
-    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/win64/"
+    _CONTRIB_URL: "https://artifacts.videolan.org/vlc/win64-llvm/"
 
 .variables-win-armv7: &variables-win-armv7
     _TRIPLET: "armv7-w64-mingw32"
@@ -84,7 +84,7 @@ stages:
 
 build-debian-amd64:
     extends: .build
-    image: registry.videolan.org/x264-debian-unstable:20231113190916
+    image: registry.videolan.org/vlc-debian-unstable:20240212151604
     tags:
         - docker
         - amd64
@@ -100,9 +100,11 @@ build-debian-aarch64:
 
 .build-win:
     extends: build-debian-amd64
+    image: registry.videolan.org/vlc-debian-llvm-msvcrt:20240212151604
     script: |
         set -x
         LOCAL_INSTALL_DIR=`pwd`/${_TRIPLET}
+        export PKGCONFIG=pkg-config
         export PKG_CONFIG_LIBDIR=${LOCAL_INSTALL_DIR}/lib/pkgconfig
         curl -f -o vlc-contrib.txt ${_CONTRIB_URL}
         CONTRIB_NAME=$(sed -n -e "s@.*href=\"\(vlc-contrib-${_TRIPLET}-[^\"]*\.tar\.bz2\)\".*@\1@p" vlc-contrib.txt | sed -n -e '1p')
@@ -129,7 +131,7 @@ build-win64:
 
 .build-llvm-mingw:
     extends: .build
-    image: registry.videolan.org/vlc-debian-llvm-mingw:20211020094514
+    image: registry.videolan.org/vlc-debian-llvm-ucrt:20240212151604
     tags:
         - docker
         - amd64
@@ -229,6 +231,7 @@ test-macos-x86_64:
 test-aarch64-qemu:
     <<: *test
     extends: build-debian-amd64
+    image: registry.videolan.org/x264-debian-unstable:20231113190916
     dependencies:
         - build-debian-aarch64
     variables: *variables-debian-amd64
