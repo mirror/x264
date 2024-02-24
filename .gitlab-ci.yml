@@ -79,6 +79,7 @@ stages:
             - x264${_PLATFORMSUFFIX}
             - checkasm8${_PLATFORMSUFFIX}
             - checkasm10${_PLATFORMSUFFIX}
+            - config.log
         expire_in: 1 week
 
 build-debian-amd64:
