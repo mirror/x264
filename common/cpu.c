@@ -423,32 +423,19 @@ uint32_t x264_cpu_detect( void )
 #ifdef __linux__
 #include <sys/auxv.h>
 
-#define get_cpu_feature_reg( reg, val ) \
-        __asm__( "mrs %0, " #reg : "=r" ( val ) )
+#define HWCAP_AARCH64_SVE   (1 << 22)
+#define HWCAP2_AARCH64_SVE2 (1 << 1)
 
 static uint32_t detect_flags( void )
 {
     uint32_t flags = 0;
 
-#if defined( AT_HWCAP ) && defined( HWCAP_CPUID )
     unsigned long hwcap = getauxval( AT_HWCAP );
-    if ( hwcap & HWCAP_CPUID ) {
-        // We could check for support directly with HWCAP_SVE and HWCAP2_SVE2,
-        // but those were added into headers much later. By using direct
-        // register access, we can detect these features even if compiled with
-        // slightly older userland headers.
-        // https://www.kernel.org/doc/html/latest/arm64/cpu-feature-registers.html
-        uint64_t tmp;
-        get_cpu_feature_reg( ID_AA64PFR0_EL1, tmp );
-        if ( ( ( tmp >> 32 ) & 0xf ) == 0x1 ) {
-            flags |= X264_CPU_SVE;
-
-            get_cpu_feature_reg( S3_0_C0_C4_4, tmp ); // ID_AA64ZFR0_EL1
-            if ( ( ( tmp >> 0 ) & 0xf ) == 0x1 )
-                flags |= X264_CPU_SVE2;
-        }
-    }
-#endif
+    unsigned long hwcap2 = getauxval( AT_HWCAP2 );
+    if ( hwcap & HWCAP_AARCH64_SVE )
+        flags |= X264_CPU_SVE;
+    if ( hwcap2 & HWCAP2_AARCH64_SVE2 )
+        flags |= X264_CPU_SVE2;
 
     return flags;
 }
