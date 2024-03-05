@@ -984,3 +984,248 @@ function_x264 decimate_score64_lsx
     jirl            $r0,    $r1,   0x0
 .END_SCORE_64_LSX:
 endfunc_x264
+
+/*
+ * int coeff_level_run16( dctcoef *dct, x264_run_level_t *runlevel )
+ */
+function_x264 coeff_level_run16_lasx
+    addi.w          t0,     zero,  15
+
+    xvld            xr0,    a0,    0
+    xvldi           xr2,    1
+
+    xvssrlni.bu.h   xr0,    xr0,   0
+    xvpermi.d       xr1,    xr0,   0xd8
+    xvsle.bu        xr3,    xr2,   xr1
+    xvsrlni.b.h     xr3,    xr3,   4
+    xvpickve2gr.du  t8,     xr3,   0
+    clz.d           t1,     t8
+
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    st.w            t0,     a1,    0x00 // Store runlevel->last
+    addi.d          t3,     a1,    23
+    nor             t2,     zero,  zero
+    addi.d          t2,     t2,    -15
+    and             t3,     t3,    t2 // runlevel->level
+    xor             t4,     t4,    t4 // mask
+    xor             t5,     t5,    t5 // total: number of non-zero elements
+    addi.w          t6,     zero,  1  // const 1
+.LOOP_COEFF_LEVEL_RUN16_LASX:
+    slli.w          t7,     t0,    1
+    ldx.h           t2,     a0,    t7
+    st.h            t2,     t3,    0
+    addi.d          t3,     t3,    2
+
+    addi.w          t5,     t5,    1
+    sll.w           t2,     t6,    t0
+    or              t4,     t4,    t2
+    bge             zero,   t4,    .END_COEFF_LEVEL_RUN16_LASX
+
+    addi.w          t0,     t0,    -1
+    slli.w          t1,     t1,    2
+    addi.w          t1,     t1,    4
+    sll.d           t8,     t8,    t1
+    clz.d           t1,     t8
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    bge             t0,     zero,  .LOOP_COEFF_LEVEL_RUN16_LASX
+.END_COEFF_LEVEL_RUN16_LASX:
+    st.w            t4,     a1,    4
+    move            a0,     t5
+endfunc_x264
+
+function_x264 coeff_level_run15_lasx
+    addi.w          t0,     zero,  15
+
+    vld             vr0,    a0,    0
+    vld             vr1,    a0,    16
+    xvldi           xr3,    1
+
+    vinsgr2vr.h     vr1,    zero,  7
+    xvpermi.q       xr1,    xr0,   0x20
+
+    xvssrlni.bu.h   xr1,    xr1,   0
+    xvpermi.d       xr2,    xr1,   0xd8
+    xvsle.bu        xr4,    xr3,   xr2
+    xvsrlni.b.h     xr4,    xr4,   4
+    xvpickve2gr.du  t8,     xr4,   0
+    clz.d           t1,     t8
+
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    st.w            t0,     a1,    0x00 // Store runlevel->last
+    addi.d          t3,     a1,    23
+    nor             t2,     zero,  zero
+    addi.d          t2,     t2,    -15
+    and             t3,     t3,    t2 // runlevel->level
+    xor             t4,     t4,    t4 // mask
+    xor             t5,     t5,    t5 // total: number of non-zero elements
+    addi.w          t6,     zero,  1  // const 1
+.LOOP_COEFF_LEVEL_RUN15_LASX:
+    slli.w          t7,     t0,    1
+    ldx.h           t2,     a0,    t7
+    st.h            t2,     t3,    0
+    addi.d          t3,     t3,    2
+
+    addi.w          t5,     t5,    1
+    sll.w           t2,     t6,    t0
+    or              t4,     t4,    t2
+    bge             zero,   t4,    .END_COEFF_LEVEL_RUN15_LASX
+
+    addi.w          t0,     t0,    -1
+    slli.w          t1,     t1,    2
+    addi.w          t1,     t1,    4
+    sll.d           t8,     t8,    t1
+    clz.d           t1,     t8
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    bge             t0,     zero,  .LOOP_COEFF_LEVEL_RUN15_LASX
+.END_COEFF_LEVEL_RUN15_LASX:
+    st.w            t4,     a1,    4
+    move            a0,     t5
+endfunc_x264
+
+function_x264 coeff_level_run16_lsx
+    addi.w          t0,     zero,  15
+    vld             vr0,    a0,    0
+    vld             vr1,    a0,    16
+    vldi            vr2,    1
+
+    vssrlni.bu.h    vr0,    vr0,   0
+    vssrlni.bu.h    vr1,    vr1,   0
+    vpermi.w        vr1,    vr0,   0x44
+    vsle.bu         vr3,    vr2,   vr1
+    vsrlni.b.h      vr3,    vr3,   4
+    vpickve2gr.du   t8,     vr3,   0
+    clz.d           t1,     t8
+
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    st.w            t0,     a1,    0x00 // Store runlevel->last
+    addi.d          t3,     a1,    23
+    nor             t2,     zero,  zero
+    addi.d          t2,     t2,    -15
+    and             t3,     t3,    t2 // runlevel->level
+    xor             t4,     t4,    t4 // mask
+    xor             t5,     t5,    t5 // total: number of non-zero elements
+    addi.w          t6,     zero,  1  // const 1
+.LOOP_COEFF_LEVEL_RUN16_LSX:
+    slli.w          t7,     t0,    1
+    ldx.h           t2,     a0,    t7
+    st.h            t2,     t3,    0
+    addi.d          t3,     t3,    2
+
+    addi.w          t5,     t5,    1
+    sll.w           t2,     t6,    t0
+    or              t4,     t4,    t2
+    bge             zero,   t4,    .END_COEFF_LEVEL_RUN16_LSX
+
+    addi.w          t0,     t0,    -1
+    slli.w          t1,     t1,    2
+    addi.w          t1,     t1,    4
+    sll.d           t8,     t8,    t1
+    clz.d           t1,     t8
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    bge             t0,     zero,  .LOOP_COEFF_LEVEL_RUN16_LSX
+.END_COEFF_LEVEL_RUN16_LSX:
+    st.w            t4,     a1,    4
+    move            a0,     t5
+endfunc_x264
+
+function_x264 coeff_level_run15_lsx
+    addi.w          t0,     zero,  15
+    vld             vr0,    a0,    0
+    vld             vr1,    a0,    16
+    vldi            vr2,    1
+    vinsgr2vr.h     vr1,    zero,  7
+
+    vssrlni.bu.h    vr0,    vr0,   0
+    vssrlni.bu.h    vr1,    vr1,   0
+    vpermi.w        vr1,    vr0,   0x44
+    vsle.bu         vr3,    vr2,   vr1
+    vsrlni.b.h      vr3,    vr3,   4
+    vpickve2gr.du   t8,     vr3,   0
+    clz.d           t1,     t8
+
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    st.w            t0,     a1,    0x00 // Store runlevel->last
+    addi.d          t3,     a1,    23
+    nor             t2,     zero,  zero
+    addi.d          t2,     t2,    -15
+    and             t3,     t3,    t2 // runlevel->level
+    xor             t4,     t4,    t4 // mask
+    xor             t5,     t5,    t5 // total: number of non-zero elements
+    addi.w          t6,     zero,  1  // const 1
+.LOOP_COEFF_LEVEL_RUN15_LSX:
+    slli.w          t7,     t0,    1
+    ldx.h           t2,     a0,    t7
+    st.h            t2,     t3,    0
+    addi.d          t3,     t3,    2
+
+    addi.w          t5,     t5,    1
+    sll.w           t2,     t6,    t0
+    or              t4,     t4,    t2
+    bge             zero,   t4,    .END_COEFF_LEVEL_RUN15_LSX
+
+    addi.w          t0,     t0,    -1
+    slli.w          t1,     t1,    2
+    addi.w          t1,     t1,    4
+    sll.d           t8,     t8,    t1
+    clz.d           t1,     t8
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    bge             t0,     zero,  .LOOP_COEFF_LEVEL_RUN15_LSX
+.END_COEFF_LEVEL_RUN15_LSX:
+    st.w            t4,     a1,    4
+    move            a0,     t5
+endfunc_x264
+
+function_x264 coeff_level_run8_lsx
+    addi.w          t0,     zero,  15
+    vld             vr0,    a0,    0
+    vxor.v          vr1,    vr1,   vr1
+    vldi            vr2,    1
+
+    vssrlni.bu.h    vr0,    vr0,   0
+    vpermi.w        vr1,    vr0,   0x44
+    vsle.bu         vr3,    vr2,   vr1
+    vsrlni.b.h      vr3,    vr3,   4
+    vpickve2gr.du   t8,     vr3,   0
+    clz.d           t1,     t8
+
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    st.w            t0,     a1,    0x00 // Store runlevel->last
+    addi.d          t3,     a1,    23
+    nor             t2,     zero,  zero
+    addi.d          t2,     t2,    -15
+    and             t3,     t3,    t2 // runlevel->level
+    xor             t4,     t4,    t4 // mask
+    xor             t5,     t5,    t5 // total: number of non-zero elements
+    addi.w          t6,     zero,  1  // const 1
+.LOOP_COEFF_LEVEL_RUN8_LSX:
+    slli.w          t7,     t0,    1
+    ldx.h           t2,     a0,    t7
+    st.h            t2,     t3,    0
+    addi.d          t3,     t3,    2
+
+    addi.w          t5,     t5,    1
+    sll.w           t2,     t6,    t0
+    or              t4,     t4,    t2
+    bge             zero,   t4,    .END_COEFF_LEVEL_RUN8_LSX
+
+    addi.w          t0,     t0,    -1
+    slli.w          t1,     t1,    2
+    addi.w          t1,     t1,    4
+    sll.d           t8,     t8,    t1
+    clz.d           t1,     t8
+    srai.w          t1,     t1,    2
+    sub.w           t0,     t0,    t1 // Index of the first non-zero element starting from the highest bit
+    bge             t0,     zero,  .LOOP_COEFF_LEVEL_RUN8_LSX
+.END_COEFF_LEVEL_RUN8_LSX:
+    st.w            t4,     a1,    4
+    move            a0,     t5
+endfunc_x264

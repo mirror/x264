@@ -81,4 +81,16 @@ void x264_dequant_8x8_lasx( dctcoef dct[64], int dequant_mf[6][64], int i_qp );
 #define x264_dequant_4x4_dc_lasx x264_template(dequant_4x4_dc_lasx)
 void x264_dequant_4x4_dc_lasx( dctcoef dct[16], int dequant_mf[6][16], int i_qp );
 
+#define x264_coeff_level_run16_lasx x264_template(coeff_level_run16_lasx)
+int x264_coeff_level_run16_lasx( dctcoef *, x264_run_level_t * );
+#define x264_coeff_level_run15_lasx x264_template(coeff_level_run15_lasx)
+int x264_coeff_level_run15_lasx( dctcoef *, x264_run_level_t * );
+
+#define x264_coeff_level_run16_lsx x264_template(coeff_level_run16_lsx)
+int x264_coeff_level_run16_lsx( dctcoef *, x264_run_level_t * );
+#define x264_coeff_level_run15_lsx x264_template(coeff_level_run15_lsx)
+int x264_coeff_level_run15_lsx( dctcoef *, x264_run_level_t * );
+#define x264_coeff_level_run8_lsx x264_template(coeff_level_run8_lsx)
+int x264_coeff_level_run8_lsx( dctcoef *, x264_run_level_t * );
+
 #endif/* X264_LOONGARCH_QUANT_H */
