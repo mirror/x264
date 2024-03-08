@@ -229,6 +229,7 @@ ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
 OBJASM += $(SRCASM_X:%.S=%-10.o)
 endif
 
+OBJCHK += tools/checkasm-loongarch.o
 endif
 endif
 
