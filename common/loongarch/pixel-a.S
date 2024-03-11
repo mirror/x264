@@ -1438,6 +1438,9 @@ endfunc_x264
  *                           const Pixel *pix2, intptr_t i_pix2)
  */
 function_x264 pixel_sa8d_16x16_lasx
+    addi.d          sp,    sp,   -8
+    fst.d           f24,   sp,   0
+
     slli.d          t2,    a1,   1
     slli.d          t3,    a3,   1
     add.d           t4,    a1,   t2
@@ -1753,6 +1756,9 @@ function_x264 pixel_sa8d_16x16_lasx
     add.d           t4,    t4,   t5
     addi.d          t4,    t4,   2
     srli.d          a0,    t4,   2
+
+    fld.d           f24,   sp,   0
+    addi.d          sp,    sp,   8
 endfunc_x264
 
 /*
