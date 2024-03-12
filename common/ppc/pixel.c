@@ -854,43 +854,43 @@ static void pixel_sad_x4_16x8_altivec( uint8_t *fenc, uint8_t *pix0, uint8_t *pi
         sum1v = (vec_s32_t) vec_sum4s( vec_absd( fencv, pix1v ), (vec_u32_t) sum1v ); \
         sum2v = (vec_s32_t) vec_sum4s( vec_absd( fencv, pix2v ), (vec_u32_t) sum2v );
 
-#define PIXEL_SAD_X3_ALTIVEC( name, ly )            \
-static int name( uint8_t *fenc, uint8_t *pix0,      \
-                 uint8_t *pix1, uint8_t *pix2,      \
-                 intptr_t i_stride, int scores[3] ) \
-{                                                   \
-    ALIGNED_16( int sum0 );                         \
-    ALIGNED_16( int sum1 );                         \
-    ALIGNED_16( int sum2 );                         \
-                                                    \
-    LOAD_ZERO;                                      \
-    vec_u8_t fencv, pix0v, pix1v, pix2v;            \
-    vec_s32_t sum0v, sum1v, sum2v;                  \
-                                                    \
-    sum0v = vec_splat_s32( 0 );                     \
-    sum1v = vec_splat_s32( 0 );                     \
-    sum2v = vec_splat_s32( 0 );                     \
-                                                    \
-    for( int y = 0; y < ly; y++ )                   \
-    {                                               \
-        PROCESS_PIXS                                \
-    }                                               \
-                                                    \
-    sum0v = vec_sums( sum0v, zero_s32v );           \
-    sum1v = vec_sums( sum1v, zero_s32v );           \
-    sum2v = vec_sums( sum2v, zero_s32v );           \
-                                                    \
-    sum0v = vec_splat( sum0v, 3 );                  \
-    sum1v = vec_splat( sum1v, 3 );                  \
-    sum2v = vec_splat( sum2v, 3 );                  \
-                                                    \
-    vec_ste( sum0v, 0, &sum0 );                     \
-    vec_ste( sum1v, 0, &sum1 );                     \
-    vec_ste( sum2v, 0, &sum2 );                     \
-                                                    \
-    scores[0] = sum0;                               \
-    scores[1] = sum1;                               \
-    scores[2] = sum2;                               \
+#define PIXEL_SAD_X3_ALTIVEC( name, ly )             \
+static void name( uint8_t *fenc, uint8_t *pix0,      \
+                  uint8_t *pix1, uint8_t *pix2,      \
+                  intptr_t i_stride, int scores[3] ) \
+{                                                    \
+    ALIGNED_16( int sum0 );                          \
+    ALIGNED_16( int sum1 );                          \
+    ALIGNED_16( int sum2 );                          \
+                                                     \
+    LOAD_ZERO;                                       \
+    vec_u8_t fencv, pix0v, pix1v, pix2v;             \
+    vec_s32_t sum0v, sum1v, sum2v;                   \
+                                                     \
+    sum0v = vec_splat_s32( 0 );                      \
+    sum1v = vec_splat_s32( 0 );                      \
+    sum2v = vec_splat_s32( 0 );                      \
+                                                     \
+    for( int y = 0; y < ly; y++ )                    \
+    {                                                \
+        PROCESS_PIXS                                 \
+    }                                                \
+                                                     \
+    sum0v = vec_sums( sum0v, zero_s32v );            \
+    sum1v = vec_sums( sum1v, zero_s32v );            \
+    sum2v = vec_sums( sum2v, zero_s32v );            \
+                                                     \
+    sum0v = vec_splat( sum0v, 3 );                   \
+    sum1v = vec_splat( sum1v, 3 );                   \
+    sum2v = vec_splat( sum2v, 3 );                   \
+                                                     \
+    vec_ste( sum0v, 0, &sum0 );                      \
+    vec_ste( sum1v, 0, &sum1 );                      \
+    vec_ste( sum2v, 0, &sum2 );                      \
+                                                     \
+    scores[0] = sum0;                                \
+    scores[1] = sum1;                                \
+    scores[2] = sum2;                                \
 }
 
 PIXEL_SAD_X3_ALTIVEC( pixel_sad_x3_8x8_altivec, 4 )
@@ -965,10 +965,10 @@ static void pixel_sad_x3_16x8_altivec( uint8_t *fenc, uint8_t *pix0,
 }
 
 #define PIXEL_SAD_X4_ALTIVEC( name, ly )                                              \
-static int name( uint8_t *fenc,                                                       \
-                 uint8_t *pix0, uint8_t *pix1,                                        \
-                 uint8_t *pix2, uint8_t *pix3,                                        \
-                 intptr_t i_stride, int scores[4] )                                   \
+static void name( uint8_t *fenc,                                                      \
+                  uint8_t *pix0, uint8_t *pix1,                                       \
+                  uint8_t *pix2, uint8_t *pix3,                                       \
+                  intptr_t i_stride, int scores[4] )                                  \
 {                                                                                     \
     ALIGNED_16( int sum0 );                                                           \
     ALIGNED_16( int sum1 );                                                           \
