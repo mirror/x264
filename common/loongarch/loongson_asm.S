@@ -1,5 +1,5 @@
 /*********************************************************************
- * Copyright (c) 2022 Loongson Technology Corporation Limited
+ * Copyright (c) 2022-2024 Loongson Technology Corporation Limited
  * Contributed by Xiwei Gu <guxiwei-hf@loongson.cn>
  *                Shiyou Yin <yinshiyou-hf@loongson.cn>
  *
@@ -31,11 +31,18 @@
  */
 
 #define LML_VERSION_MAJOR 0
-#define LML_VERSION_MINOR 2
-#define LML_VERSION_MICRO 2
+#define LML_VERSION_MINOR 4
+#define LML_VERSION_MICRO 0
 
 #define ASM_PREF
 #define DEFAULT_ALIGN    5
+
+/*
+ *============================================================================
+ * macros for specific projetc, set them as needed.
+ * Following LoongML macros for your reference.
+ *============================================================================
+ */
 
 .macro function name, align=DEFAULT_ALIGN
 .macro endfunc
@@ -98,6 +105,39 @@ ASM_PREF\name: ;
 #define zero $zero
 #define sp   $sp
 #define ra   $ra
+
+#define fa0  $fa0
+#define fa1  $fa1
+#define fa2  $fa2
+#define fa3  $fa3
+#define fa4  $fa4
+#define fa5  $fa5
+#define fa6  $fa6
+#define fa7  $fa7
+#define ft0  $ft0
+#define ft1  $ft1
+#define ft2  $ft2
+#define ft3  $ft3
+#define ft4  $ft4
+#define ft5  $ft5
+#define ft6  $ft6
+#define ft7  $ft7
+#define ft8  $ft8
+#define ft9  $ft9
+#define ft10 $ft10
+#define ft11 $ft11
+#define ft12 $ft12
+#define ft13 $ft13
+#define ft14 $ft14
+#define ft15 $ft15
+#define fs0  $fs0
+#define fs1  $fs1
+#define fs2  $fs2
+#define fs3  $fs3
+#define fs4  $fs4
+#define fs5  $fs5
+#define fs6  $fs6
+#define fs7  $fs7
 
 #define f0  $f0
 #define f1  $f1
@@ -272,23 +312,41 @@ ASM_PREF\name: ;
 .endm
 
 /*
- * Description : Range each element of vector
+ * Description : Range element vj[i] to vk[i] ~ vj[i]
  * clip: vj > vk ? vj : vk && vj < va ? vj : va
- * clip255: vj < 255 ? vj : 255 && vj > 0 ? vj : 0
  */
 .macro vclip.h  vd,  vj, vk, va
     vmax.h    \vd,  \vj,   \vk
     vmin.h    \vd,  \vd,   \va
 .endm
 
-.macro vclip255.w  vd, vj
-    vmaxi.w   \vd,   \vj,  0
-    vsat.wu   \vd,   \vd,  7
+.macro vclip.w  vd,  vj, vk, va
+    vmax.w    \vd,  \vj,   \vk
+    vmin.w    \vd,  \vd,   \va
 .endm
 
 .macro xvclip.h  xd,  xj, xk, xa
     xvmax.h    \xd,  \xj,   \xk
     xvmin.h    \xd,  \xd,   \xa
+.endm
+
+.macro xvclip.w  xd,  xj, xk, xa
+    xvmax.w    \xd,  \xj,   \xk
+    xvmin.w    \xd,  \xd,   \xa
+.endm
+
+/*
+ * Description : Range element vj[i] to 0 ~ 255
+ * clip255: vj < 255 ? vj : 255 && vj > 0 ? vj : 0
+ */
+.macro vclip255.h  vd, vj
+    vmaxi.h   \vd,   \vj,  0
+    vsat.hu   \vd,   \vd,  7
+.endm
+
+.macro vclip255.w  vd, vj
+    vmaxi.w   \vd,   \vj,  0
+    vsat.wu   \vd,   \vd,  7
 .endm
 
 .macro xvclip255.h  xd, xj
