@@ -517,19 +517,35 @@ DECLARE_REG 14, R13, 120
     %endif
 %endmacro
 
-%macro WIN64_PUSH_XMM 0
+; Push XMM registers to the stack. If no argument is specified all used register
+; will be pushed, otherwise only push previously unpushed registers.
+%macro WIN64_PUSH_XMM 0-2 ; new_xmm_regs_used, xmm_regs_pushed
     %if mmsize != 8
+        %if %0 == 2
+            %assign %%pushed %2
+            %assign xmm_regs_used %1
+        %elif %0 == 1
+            %assign %%pushed xmm_regs_used
+            %assign xmm_regs_used %1
+        %else
+            %assign %%pushed 0
+        %endif
         ; Use the shadow space to store XMM6 and XMM7, the rest needs stack space allocated.
-        %if xmm_regs_used > 6 + high_mm_regs
+        %if %%pushed <= 6 + high_mm_regs && xmm_regs_used > 6 + high_mm_regs
             movaps [rstk + stack_offset +  8], xmm6
         %endif
-        %if xmm_regs_used > 7 + high_mm_regs
+        %if %%pushed <= 7 + high_mm_regs && xmm_regs_used > 7 + high_mm_regs
             movaps [rstk + stack_offset + 24], xmm7
         %endif
-        %assign %%xmm_regs_on_stack xmm_regs_used - high_mm_regs - 8
-        %if %%xmm_regs_on_stack > 0
-            %assign %%i 8
-            %rep %%xmm_regs_on_stack
+        %assign %%pushed %%pushed - high_mm_regs - 8
+        %if %%pushed < 0
+            %assign %%pushed 0
+        %endif
+        %assign %%regs_to_push xmm_regs_used - %%pushed - high_mm_regs - 8
+        %if %%regs_to_push > 0
+            ASSERT (%%regs_to_push + %%pushed) * 16 <= stack_size_padded - stack_size - 32
+            %assign %%i %%pushed + 8
+            %rep %%regs_to_push
                 movaps [rsp + (%%i-8)*16 + stack_size + 32], xmm %+ %%i
                 %assign %%i %%i+1
             %endrep
@@ -537,12 +553,18 @@ DECLARE_REG 14, R13, 120
     %endif
 %endmacro
 
-%macro WIN64_SPILL_XMM 1
+; Allocated stack space for XMM registers and push all, or a subset, of those
+%macro WIN64_SPILL_XMM 1-2 ; xmm_regs_used, xmm_regs_reserved
     RESET_STACK_STATE
     %if mmsize != 8
         %assign xmm_regs_used %1
         ASSERT xmm_regs_used <= 16 + high_mm_regs
-        %assign %%xmm_regs_on_stack xmm_regs_used - high_mm_regs - 8
+        %if %0 == 2
+            ASSERT %2 >= %1
+            %assign %%xmm_regs_on_stack %2 - high_mm_regs - 8
+        %else
+            %assign %%xmm_regs_on_stack %1 - high_mm_regs - 8
+        %endif
         %if %%xmm_regs_on_stack > 0
             ; Allocate stack space for callee-saved xmm registers plus shadow space and align the stack.
             %assign %%pad %%xmm_regs_on_stack*16 + 32
@@ -717,7 +739,7 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 %endif ;======================================================================
 
 %if WIN64 == 0
-    %macro WIN64_SPILL_XMM 1
+    %macro WIN64_SPILL_XMM 1-2
         RESET_STACK_STATE
         %if mmsize != 8
             %assign xmm_regs_used %1
@@ -728,7 +750,10 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
     %macro WIN64_RESTORE_XMM 0
         RESET_STACK_STATE
     %endmacro
-    %macro WIN64_PUSH_XMM 0
+    %macro WIN64_PUSH_XMM 0-2
+        %if mmsize != 8 && %0 >= 1
+            %assign xmm_regs_used %1
+        %endif
     %endmacro
 %endif
 
