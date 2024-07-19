@@ -23,6 +23,7 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
+#include "common/common.h"
 #include "pixel.h"
 #include <arm_sve.h>
 
@@ -45,7 +46,11 @@ int ALWAYS_INLINE x264_pixel_ads1_sve( int enc_dc[1], uint16_t *const sums, cons
         const svint32_t sums0 = svld1uh_s32(pg, &sums[i]);
 
         svint32_t ads = cmvx;
-        ads = svaba_s32(ads, edc0, sums0);
+#if HAVE_SVE2
+        ads = svaba_s32(ads, sums0, edc0);
+#else
+        ads = svadd_s32_m(pg, ads, svabd_s32_m(pg, sums0, edc0));
+#endif
 
         const svbool_t plt = svcmplt_n_s32(pg, ads, thresh);
         const int nlt = svcntp_b32(svptrue_b32(), plt);
@@ -78,8 +83,13 @@ int ALWAYS_INLINE x264_pixel_ads2_sve( int enc_dc[2], uint16_t *sums, const int 
         const svint32_t sums1 = svld1uh_s32(pg, &sums[delta]);
 
         svint32_t ads = cmvx;
-        ads = svaba_s32(ads, edc0, sums0);
-        ads = svaba_s32(ads, edc1, sums1);
+#if HAVE_SVE2
+        ads = svaba_s32(ads, sums0, edc0);
+        ads = svaba_s32(ads, sums1, edc1);
+#else
+        ads = svadd_s32_m(pg, ads, svabd_s32_m(pg, sums0, edc0));
+        ads = svadd_s32_m(pg, ads, svabd_s32_m(pg, sums1, edc1));
+#endif
 
         const svbool_t plt = svcmplt_n_s32(pg, ads, thresh);
         const int nlt = svcntp_b32(svptrue_b32(), plt);
@@ -88,7 +98,7 @@ int ALWAYS_INLINE x264_pixel_ads2_sve( int enc_dc[2], uint16_t *sums, const int 
         svst1h_s32(pg, &mvs[nmv], svcompact_s32(plt, i_sve));
         nmv += nlt;
 
-        i_sve = svadd_n_s32_m(svptrue_b32(), i_sve, sve_size)
+        i_sve = svadd_n_s32_m(svptrue_b32(), i_sve, sve_size);
     }
     return nmv;
 }
@@ -116,10 +126,17 @@ int ALWAYS_INLINE x264_pixel_ads4_sve( int enc_dc[4], uint16_t *sums, int delta,
         const svint32_t sums3 = svld1uh_s32(pg, &sums[delta+8]);
 
         svint32_t ads = cmvx;
+#if HAVE_SVE2
         ads = svaba_s32(ads, sums0, edc0);
         ads = svaba_s32(ads, sums1, edc1);
         ads = svaba_s32(ads, sums2, edc2);
         ads = svaba_s32(ads, sums3, edc3);
+#else
+        ads = svadd_s32_m(pg, ads, svabd_s32_m(pg, sums0, edc0));
+        ads = svadd_s32_m(pg, ads, svabd_s32_m(pg, sums1, edc1));
+        ads = svadd_s32_m(pg, ads, svabd_s32_m(pg, sums2, edc2));
+        ads = svadd_s32_m(pg, ads, svabd_s32_m(pg, sums3, edc3));
+#endif
 
         const svbool_t plt = svcmplt_n_s32(pg, ads, thresh);
         const int nlt = svcntp_b32(svptrue_b32(), plt);
@@ -128,7 +145,7 @@ int ALWAYS_INLINE x264_pixel_ads4_sve( int enc_dc[4], uint16_t *sums, int delta,
         svst1h_s32(pg, &mvs[nmv], svcompact_s32(plt, i_sve));
         nmv += nlt;
 
-        i_sve = svadd_n_s32_m(svptrue_b32(), i_sve, sve_size)
+        i_sve = svadd_n_s32_m(svptrue_b32(), i_sve, sve_size);
     }
     return nmv;
 }
