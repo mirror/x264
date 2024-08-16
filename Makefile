@@ -233,6 +233,24 @@ OBJCHK += tools/checkasm-loongarch.o
 endif
 endif
 
+# RISCV optimization
+ifeq ($(SYS_ARCH),RISCV)
+ifneq ($(findstring HAVE_RVV 1, $(CONFIG)),)
+SRCASM_X +=
+
+SRCS_X +=
+
+OBJASM +=
+ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
+OBJASM += $(SRCASM_X:%.S=%-8.o)
+endif
+ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
+OBJASM += $(SRCASM_X:%.S=%-10.o)
+endif
+
+endif
+endif
+
 endif
 
 ifneq ($(HAVE_GETOPT_LONG),1)

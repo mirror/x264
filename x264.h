@@ -187,6 +187,9 @@ typedef struct x264_nal_t
 #define X264_CPU_LSX             0x0000001U  /* LOONGARCH LSX */
 #define X264_CPU_LASX            0x0000002U  /* LOONGARCH LASX */
 
+/* RISCV */
+#define X264_CPU_RVV             0x0000001U  /* RISCV RVV */
+
 /* Analyse flags */
 #define X264_ANALYSE_I4x4       0x0001U  /* Analyse i4x4 */
 #define X264_ANALYSE_I8x8       0x0002U  /* Analyse i8x8 (requires 8x8 transform) */
