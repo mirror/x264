@@ -175,7 +175,6 @@ SRCASM_X += common/aarch64/dct-a-sve.S \
             common/aarch64/deblock-a-sve.S \
             common/aarch64/mc-a-sve.S \
             common/aarch64/pixel-a-sve.S
-SRCS_X   += common/aarch64/pixel-c-sve.c
 endif
 ifneq ($(findstring HAVE_SVE2 1, $(CONFIG)),)
 SRCASM_X += common/aarch64/dct-a-sve2.S
