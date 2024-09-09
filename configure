@@ -1004,14 +1004,8 @@ if [ $asm = auto -a $ARCH = AARCH64 ] ; then
     elif cc_check '' '' '__asm__("cmeq v0.8h, v0.8h, #0");' ; then
         define HAVE_AARCH64
         define HAVE_NEON
-        if cc_check '' '' '__asm__(".arch armv8.2-a+sve2 \n smlalb z10.s, z2.h, z1.h");' ; then
-            define HAVE_SVE
-            define HAVE_SVE2
-            CFLAGS="$CFLAGS -march=armv8.2-a+sve2"
-        elif cc_check '' '' '__asm__(".arch armv8.2-a+sve  \n ptrue p0.b, vl16");' ; then
-            define HAVE_SVE
-            CFLAGS="$CFLAGS -march=armv8.2-a+sve"
-        fi
+        cc_check '' '' '__asm__(".arch armv8.2-a+sve  \n ptrue p0.b, vl16");'         && define HAVE_SVE
+        cc_check '' '' '__asm__(".arch armv8.2-a+sve2 \n smlalb z10.s, z2.h, z1.h");' && define HAVE_SVE2
         ASFLAGS="$ASFLAGS -c"
     else
         echo "no NEON support, try adding -mfpu=neon to CFLAGS"

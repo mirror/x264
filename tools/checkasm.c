@@ -871,10 +871,10 @@ static int check_pixel( uint32_t cpu_ref, uint32_t cpu_new )
             {
                 ok = 0;
                 fprintf( stderr, "thresh: %d\n", thresh );
-                fprintf( stderr, "c%d: ", i&3 );
+                fprintf( stderr, "c%d [%d]: ", i&3, mvn_c );
                 for( int j = 0; j < mvn_c; j++ )
                     fprintf( stderr, "%d ", mvs_c[j] );
-                fprintf( stderr, "\na%d: ", i&3 );
+                fprintf( stderr, "\na%d [%d]: ", i&3, mvn_a );
                 for( int j = 0; j < mvn_a; j++ )
                     fprintf( stderr, "%d ", mvs_a[j] );
                 fprintf( stderr, "\n\n" );
