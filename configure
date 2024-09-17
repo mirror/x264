@@ -1001,6 +1001,8 @@ if [ $asm = auto -a $ARCH = AARCH64 ] ; then
     if [ $compiler = CL ] && cpp_check '' '' 'defined(_M_ARM64)' ; then
         define HAVE_AARCH64
         define HAVE_NEON
+        as_check "ptrue p0.b, vl16" && define HAVE_SVE
+        as_check "smlalb z10.s, z2.h, z1.h" && define HAVE_SVE2
     elif cc_check '' '' '__asm__("cmeq v0.8h, v0.8h, #0");' ; then
         define HAVE_AARCH64
         define HAVE_NEON
