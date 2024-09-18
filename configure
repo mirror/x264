@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if test x"$1" = x"-h" -o x"$1" = x"--help" ; then
 cat <<EOF
