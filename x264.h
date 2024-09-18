@@ -771,6 +771,27 @@ typedef struct x264_hrd_t
     double dpb_output_time;
 } x264_hrd_t;
 
+enum x264_timecode_e
+{
+    X264_TIMECODE_SECONDS = 1,
+    X264_TIMECODE_MINUTES = 1 << 1,
+    X264_TIMECODE_HOURS   = 1 << 2,
+    X264_TIMECODE_FULL    = X264_TIMECODE_SECONDS | X264_TIMECODE_MINUTES | X264_TIMECODE_HOURS,
+};
+
+typedef struct x264_timecode_t
+{
+    int b_valid;
+    uint8_t i_hours;   /* 0..23  */
+    uint8_t i_minutes; /* 0..59  */
+    uint8_t i_seconds; /* 0..59  */
+    uint8_t i_frame;   /* 0..255, Less than `ceil(time_scale / (2 * num_units_in_tick))` */
+    int b_drop;
+    int b_discontinuity;
+    int i_counting_type;
+    int i_type;
+} x264_timecode_t;
+
 /* Arbitrary user SEI:
  * Payload size is in bytes and the payload pointer must be valid.
  * Payload types and syntax can be found in Annex D of the H.264 Specification.
@@ -895,6 +916,8 @@ typedef struct x264_picture_t
     /* In: optional information to modify encoder decisions for this frame
      * Out: information about the encoded frame */
     x264_image_properties_t prop;
+    /* In: arbitary user timecode */
+    x264_timecode_t timecode[3];
     /* Out: HRD timing information. Output only when i_nal_hrd is set. */
     x264_hrd_t hrd_timing;
     /* In: arbitrary user SEI (e.g subtitles, AFDs) */
