@@ -222,6 +222,28 @@ static inline double qscale2bits( ratecontrol_entry_t *rce, double qscale )
            + rce->misc_bits;
 }
 
+static uint32_t luma_sum_mb( x264_t *h, int mb_x, int mb_y, x264_frame_t *frame )
+{
+    uint32_t sum = 0;
+    x264_prefetch_fenc( h, frame, mb_x, mb_y );
+    int stride = frame->i_stride[0];
+    int offset = PARAM_INTERLACED
+        ? 16 * mb_x + 16 * (mb_y&~1) * stride + (mb_y&1) * stride
+        : 16 * mb_x + 16 * mb_y * stride;
+    stride <<= PARAM_INTERLACED;
+
+    pixel *pix = frame->plane[0] + offset;
+    for( int y = 0; y < 16; y++ )
+    {
+        for( int x = 0; x < 16; x++ )
+        {
+            sum += pix[x];
+        }
+        pix += stride;
+    }
+    return sum;
+}
+
 static ALWAYS_INLINE uint32_t ac_energy_var( uint64_t sum_ssd, int shift, x264_frame_t *frame, int i, int b_store )
 {
     uint32_t sum = sum_ssd;
@@ -393,6 +415,29 @@ void x264_adaptive_quant_frame( x264_t *h, x264_frame_t *frame, float *quant_off
                 {
                     uint32_t energy = ac_energy_mb( h, mb_x, mb_y, frame );
                     qp_adj = strength * (x264_log2( X264_MAX(energy, 1) ) - (14.427f + 2*(BIT_DEPTH-8)));
+                }
+                if( h->param.rc.b_hdr_opt )
+                {
+                    uint32_t luma_sum = luma_sum_mb( h, mb_x, mb_y, frame );
+                    uint32_t luma_avg = luma_sum >> (BIT_DEPTH-2);
+                    if (luma_avg < 301 )
+                        qp_adj += 3;
+                    else if (luma_avg >= 301 && luma_avg < 367)
+                        qp_adj += 2;
+                    else if (luma_avg >= 367 && luma_avg < 434)
+                        qp_adj += 1;
+                    else if (luma_avg >= 501 && luma_avg < 567)
+                        qp_adj -= 1;
+                    else if (luma_avg >= 567 && luma_avg < 634)
+                        qp_adj -= 2;
+                    else if (luma_avg >= 634 && luma_avg < 701)
+                        qp_adj -= 3;
+                    else if (luma_avg >= 701 && luma_avg < 767)
+                        qp_adj -= 4;
+                    else if (luma_avg >= 767 && luma_avg < 834)
+                        qp_adj -= 5;
+                    else if (luma_avg >= 834)
+                        qp_adj -= 6;
                 }
                 if( quant_offsets )
                     qp_adj += quant_offsets[mb_xy];
