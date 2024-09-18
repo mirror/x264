@@ -1371,7 +1371,7 @@ if [ $SYS = WINDOWS -a $ARCH = X86 -a $compiler = GNU ] ; then
     cc_check '' -fno-zero-initialized-in-bss && CFLAGS="$CFLAGS -fno-zero-initialized-in-bss"
 fi
 
-if cc_check "stdio.h" "" "fseeko(stdin,0,0);" ; then
+if cc_check "stdio.h" "#define _FILE_OFFSET_BITS 64" "fseeko(stdin,0,0);" ; then
     define fseek fseeko
     define ftell ftello
 elif cc_check "stdio.h" "" "fseeko64(stdin,0,0);" ; then
