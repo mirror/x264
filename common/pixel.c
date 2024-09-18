@@ -1110,6 +1110,13 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
     if( cpu&X264_CPU_SVE )
     {
         INIT8_SVE_SSD_10BIT();
+        INIT_ADS( _sve );
+    }
+#endif
+#if HAVE_SVE2
+    if( cpu&X264_CPU_SVE2 )
+    {
+        INIT_ADS( _sve2 );
     }
 #endif
 #endif // HAVE_AARCH64
@@ -1530,11 +1537,18 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
     {
         INIT8_SVE_SSD( );
         INIT4( hadamard_ac, _sve );
+        INIT_ADS( _sve );
 
         pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8_sve;
 
         pixf->var[PIXEL_8x8]    = x264_pixel_var_8x8_sve;
         pixf->var[PIXEL_8x16]   = x264_pixel_var_8x16_sve;
+    }
+#endif
+#if HAVE_SVE2
+    if( cpu&X264_CPU_SVE2 )
+    {
+        INIT_ADS( _sve2 );
     }
 #endif
 #endif // HAVE_AARCH64

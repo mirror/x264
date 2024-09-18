@@ -521,3 +521,198 @@ SSD_FUNC_SVE   4, 8
 SSD_FUNC_SVE   4, 16
 
 #endif /* BIT_DEPTH == 8 */
+
+.arch armv8-a+sve+sve2
+
+.macro ADS_FUNC_SVE_ABSD_ADD_SVE dst tmp_src0 src1
+    sabd   \tmp_src0\().s, p0/m, \tmp_src0\().s, \src1\().s
+    add    \dst\().s, p0/m, \dst\().s, \tmp_src0\().s
+.endm
+
+.macro ADS_FUNC_SVE_ABSD_ADD_SVE2 dst tmp_src0 src1
+    saba   \dst\().s, \tmp_src0\().s, \src1\().s
+.endm
+
+.macro ADS1_FUNC_SVE sve_version
+/**
+ * int pixel_ads1(
+ * x0 = int enc_dc[1],
+ * x1 = uint16_t *sums,
+ * x2 = int delta,
+ * x3 = uint16_t *cost_mvx,
+ * x4 = int16_t *mvs,
+ * x5 = int width,
+ * x6 = int thresh)
+ */
+function pixel_ads1_sve\sve_version\(), export=1
+    ptrue  p0.s
+    index  z7.s, #0, #1  // indices for compactification
+    ld1rw  z0.s, p0/z, [x0]  // enc_dc
+    dup    z6.s, w6    // threshold
+
+    cntw   x7
+    dup    z5.s, w7
+    sxtw   x5, w5
+    mov    x10, #0  // i
+    mov    x0, #0  // nmv
+
+    // for( int i = 0; i<width; i++ )
+PIXEL_ADS1_SVE\sve_version\()_LOOP:
+    whilelt p0.s, x10, x5
+
+    // int ads = abs( enc_dc[0] - sums[i] ) + cost_mvx[i];
+    ld1h   z16.s, p0/z, [x1, x10, lsl #1]
+    ld1h   z17.s, p0/z, [x3, x10, lsl #1]
+    add    x10, x10, x7
+    ADS_FUNC_SVE_ABSD_ADD_SVE\sve_version\()  z17, z16, z0
+    
+    // if( ads < thresh ) mvs[nmv++] = i;
+    cmplt   p1.s, p0/z, z17.s, z6.s
+    compact z17.s, p1, z7.s
+    cntp    x14, p0, p1.s
+    whilelt p2.s, xzr, x14
+    st1h    z17.s, p2, [x4, x0, lsl #1]
+    add     x0, x0, x14
+    add     z7.s, p0/m, z7.s, z5.s
+    
+    cmp    x10, x5
+    b.lt   PIXEL_ADS1_SVE\sve_version\()_LOOP
+
+    ret
+endfunc
+.endm
+
+ADS1_FUNC_SVE
+ADS1_FUNC_SVE 2
+
+.macro ADS2_FUNC_SVE sve_version
+/**
+ * int pixel_ads2(
+ * x0 = int enc_dc[2],
+ * x1 = uint16_t *sums,
+ * x2 = int delta,
+ * x3 = uint16_t *cost_mvx,
+ * x4 = int16_t *mvs,
+ * x5 = int width,
+ * x6 = int thresh)
+ */
+function pixel_ads2_sve\sve_version\(), export=1
+    ptrue  p0.s, VL2
+    index  z7.s, #0, #1  // indices for compactification
+    ld1w   z31.s, p0/z, [x0]
+    dup    z0.s, z31.s[0]  // enc_dc[0]
+    dup    z1.s, z31.s[1]  // enc_dc[1]
+    dup    z6.s, w6    // threshold
+
+    cntw   x7
+    dup    z5.s, w7
+    sxtw   x2, w2
+    sxtw   x5, w5
+    mov    x10, #0  // i
+    mov    x0, #0  // nmv
+
+    // for( int i = 0; i < width; i++ )
+PIXEL_ADS2_SVE\sve_version\()_LOOP:
+    whilelt p0.s, x10, x5
+
+    // int ads = abs( enc_dc[0] - sums[i] )
+    //         + abs( enc_dc[1] - sums[i + delta] )
+    //         + cost_mvx[i];
+    ld1h   z16.s, p0/z, [x1, x10, lsl #1]  // sums[i...]
+    ld1h   z17.s, p0/z, [x3, x10, lsl #1]  // cmvx[i...]
+    ld1h   z18.s, p0/z, [x1, x2, lsl #1]   // sums[i + delta...]
+    add    x10, x10, x7
+    add    x2, x2, x7
+    ADS_FUNC_SVE_ABSD_ADD_SVE\sve_version\()  z17, z16, z0
+    ADS_FUNC_SVE_ABSD_ADD_SVE\sve_version\()  z17, z18, z1
+
+    // if( ads < thresh ) mvs[nmv++] = i;
+    cmplt   p1.s, p0/z, z17.s, z6.s
+    compact z17.s, p1, z7.s
+    cntp    x14, p0, p1.s
+    whilelt p2.s, xzr, x14
+    st1h    z17.s, p2, [x4, x0, lsl #1]
+    add     x0, x0, x14
+    add     z7.s, p0/m, z7.s, z5.s
+
+    cmp    x10, x5
+    b.lt   PIXEL_ADS2_SVE\sve_version\()_LOOP
+
+    ret
+endfunc
+.endm
+
+ADS2_FUNC_SVE
+ADS2_FUNC_SVE 2
+
+.macro ADS4_FUNC_SVE sve_version
+/**
+ * int pixel_ads4(
+ * x0 = int enc_dc[4],
+ * x1 = uint16_t *sums,
+ * x2 = int delta,
+ * x3 = uint16_t *cost_mvx,
+ * x4 = int16_t *mvs,
+ * x5 = int width,
+ * x6 = int thresh)
+ */
+function pixel_ads4_sve\sve_version\(), export=1
+    ptrue  p0.s, VL4
+    index  z7.s, #0, #1  // indices for compactification
+    ld1w   z31.s, p0/z, [x0]
+    dup    z0.s, z31.s[0]  // enc_dc[0]
+    dup    z1.s, z31.s[1]  // enc_dc[1]
+    dup    z2.s, z31.s[2]  // enc_dc[2]
+    dup    z3.s, z31.s[3]  // enc_dc[3]
+    dup    z6.s, w6    // threshold
+
+    cntw   x7
+    dup    z5.s, w7
+    sub    x7, x7, #8
+    sxtw   x2, w2
+    sxtw   x5, w5
+    mov    x10, #0  // i
+    mov    x0, #0  // nmv
+
+    // for( int i = 0; i<width; i++ )
+PIXEL_ADS4_SVE\sve_version\()_LOOP:
+    whilelt p0.s, x10, x5
+
+    // int ads = abs( enc_dc[0] - sums[0] )
+    //         + abs( enc_dc[1] - sums[8] )
+    //         + abs( enc_dc[2] - sums[delta] )
+    //         + abs( enc_dc[3] - sums[delta+8] )
+    //         + cost_mvx[i];
+    ld1h   z16.s, p0/z, [x1, x10, lsl #1]  // sums[i...]
+    ld1h   z17.s, p0/z, [x3, x10, lsl #1]  // cmvx[i...]
+    ld1h   z18.s, p0/z, [x1, x2, lsl #1]   // sums[i + delta...]
+    add    x10, x10, #8
+    add    x2, x2, #8
+    ADS_FUNC_SVE_ABSD_ADD_SVE\sve_version\()  z17, z16, z0
+    ADS_FUNC_SVE_ABSD_ADD_SVE\sve_version\()  z17, z18, z2
+
+    ld1h   z19.s, p0/z, [x1, x10, lsl #1]  // sums[i + 8...]
+    ld1h   z20.s, p0/z, [x1, x2, lsl #1]  // sums[i + delta + 8...]
+    add    x10, x10, x7
+    add    x2, x2, x7
+    ADS_FUNC_SVE_ABSD_ADD_SVE\sve_version\()  z17, z19, z1
+    ADS_FUNC_SVE_ABSD_ADD_SVE\sve_version\()  z17, z20, z3
+
+    // if( ads < thresh ) mvs[nmv++] = i;
+    cmplt   p1.s, p0/z, z17.s, z6.s
+    compact z17.s, p1, z7.s
+    cntp    x14, p0, p1.s
+    whilelt p2.s, xzr, x14
+    st1h    z17.s, p2, [x4, x0, lsl #1]
+    add     x0, x0, x14
+    add     z7.s, p0/m, z7.s, z5.s
+
+    cmp    x10, x5
+    b.lt   PIXEL_ADS4_SVE\sve_version\()_LOOP
+
+    ret
+endfunc
+.endm
+
+ADS4_FUNC_SVE
+ADS4_FUNC_SVE 2

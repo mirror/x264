@@ -161,4 +161,18 @@ float x264_pixel_ssim_end4_neon( int sum0[5][4], int sum1[5][4], int width );
 #define x264_pixel_asd8_neon x264_template(pixel_asd8_neon)
 int x264_pixel_asd8_neon( pixel *, intptr_t,  pixel *, intptr_t, int );
 
+#define x264_pixel_ads1_sve x264_template(pixel_ads1_sve)
+int x264_pixel_ads1_sve( int[1], uint16_t *, int, uint16_t *, int16_t *, int, int );
+#define x264_pixel_ads2_sve x264_template(pixel_ads2_sve)
+int x264_pixel_ads2_sve( int[2], uint16_t *, int, uint16_t *, int16_t *, int, int );
+#define x264_pixel_ads4_sve x264_template(pixel_ads4_sve)
+int x264_pixel_ads4_sve( int[4], uint16_t *, int, uint16_t *, int16_t *, int, int );
+
+#define x264_pixel_ads1_sve2 x264_template(pixel_ads1_sve2)
+int x264_pixel_ads1_sve2( int[1], uint16_t *, int, uint16_t *, int16_t *, int, int );
+#define x264_pixel_ads2_sve2 x264_template(pixel_ads2_sve2)
+int x264_pixel_ads2_sve2( int[2], uint16_t *, int, uint16_t *, int16_t *, int, int );
+#define x264_pixel_ads4_sve2 x264_template(pixel_ads4_sve2)
+int x264_pixel_ads4_sve2( int[4], uint16_t *, int, uint16_t *, int16_t *, int, int );
+
 #endif
