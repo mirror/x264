@@ -412,7 +412,7 @@ NL="
 CONFIG_HAVE="MALLOC_H ALTIVEC ALTIVEC_H MMX ARMV6 ARMV6T2 NEON AARCH64 BEOSTHREAD POSIXTHREAD WIN32THREAD THREAD LOG2F SWSCALE \
              LAVF FFMS GPAC AVS GPL VECTOREXT INTERLACED CPU_COUNT OPENCL THP LSMASH X86_INLINE_ASM AS_FUNC INTEL_DISPATCHER \
              MSA LSX MMAP WINRT VSX ARM_INLINE_ASM STRTOK_R CLOCK_GETTIME BITDEPTH8 BITDEPTH10 \
-             SVE SVE2"
+             SVE SVE2 RVV"
 
 # parse options
 
@@ -864,6 +864,14 @@ case $host_cpu in
             AS="${AS-${CC}}"
         fi
         ;;
+    riscv*)
+        ARCH="RISCV"
+        AS="${AS-${CC}}"
+        
+        CFLAGS="-march=rv64gcv $CFLAGS"
+        LDFLAGS="-march=rv64gcv $LDFLAGS"
+        ASFLAGS="-c -march=rv64gcv $ASFLAGS"
+        ;;
     s390|s390x)
         ARCH="S390"
         ;;
@@ -1039,6 +1047,16 @@ if [ $asm = auto -a $ARCH = LOONGARCH ] ; then
     if cc_check '' '' '__asm__("xvadd.b $xr0, $xr1, $xr2");' ; then
         # Use HAVE_LSX as the base flag, compiler support LA SIMD(LSX and LASX)
         define HAVE_LSX
+    fi
+fi
+
+if [ $asm = auto -a $ARCH = RISCV ] ; then
+    if ! echo $CFLAGS | grep -Eq '(-march=|-mabi=)' ; then
+        CFLAGS="-march=rv64gc -mabi=lp64d $CFLAGS"
+    fi
+
+    if cc_check '' '' '__asm__("vsetvli t0, a0, e32, m1, ta, ma");' ; then
+        define HAVE_RVV
     fi
 fi
 
@@ -1692,7 +1710,7 @@ cat conftest.log >> config.log
 cat conftest.log
 
 [ "$SRCPATH" != "." ] && ln -sf ${SRCPATH}/Makefile ./Makefile
-mkdir -p common/{aarch64,arm,mips,ppc,x86,loongarch} encoder extras filters/video input output tools
+mkdir -p common/{aarch64,arm,mips,ppc,x86,loongarch,riscv} encoder extras filters/video input output tools
 
 echo
 echo "You can run 'make' or 'make fprofiled' now."
