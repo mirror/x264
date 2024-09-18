@@ -857,6 +857,10 @@ typedef struct x264_image_properties_t
 
     /* Out: Average effective CRF of the encoded frame */
     double f_crf_avg;
+    /* Out: Average QPs of encoded frame as decided by RC */
+    float   f_qp_avg_rc;
+    /* Out: Average QPs of encoded frame as decided by AQ in addition to RC */
+    float   f_qp_avg_aq;
 } x264_image_properties_t;
 
 typedef struct x264_picture_t

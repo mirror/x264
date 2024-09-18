@@ -4093,6 +4093,10 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
     psz_message[0] = '\0';
     double dur = h->fenc->f_duration;
     h->stat.f_frame_duration[h->sh.i_type] += dur;
+
+    pic_out->prop.f_qp_avg_rc = h->fdec->f_qp_avg_rc;
+    pic_out->prop.f_qp_avg_aq = h->fdec->f_qp_avg_aq;
+
     if( h->param.analyse.b_psnr )
     {
         int64_t ssd[3] =
