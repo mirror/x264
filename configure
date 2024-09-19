@@ -661,6 +661,10 @@ case $host_os in
             cc_check "" -mdynamic-no-pic && CFLAGS="$CFLAGS -mdynamic-no-pic"
         fi
         ;;
+    dragonfly*)
+        SYS="DRAGONFLY"
+        libm="-lm"
+        ;;
     freebsd*)
         SYS="FREEBSD"
         libm="-lm"
@@ -1324,7 +1328,7 @@ if [ "$avs" = "auto" ] ; then
         define HAVE_AVS
         AVS_LIBS="-ldl"
         LDFLAGSCLI="$AVS_LIBS $LDFLAGSCLI"
-    elif [ "$SYS" = "FREEBSD" -o "$SYS" = "OPENBSD" -o "$SYS" = "NETBSD" -o "$SYS" = "HAIKU" ] ; then
+    elif [ "$SYS" = "DRAGONFLY" -o "$SYS" = "FREEBSD" -o "$SYS" = "NETBSD" -o "$SYS" = "OPENBSD" -o "$SYS" = "HAIKU" ] ; then
         avs="yes"
         define HAVE_AVS
         # dlopen is exported from libc on both *BSD and Haiku
