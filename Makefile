@@ -363,6 +363,17 @@ endif
 ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
 	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS_X) $(SRCCLI_X) $(SRCCHK_X)), $(SRCPATH)/tools/msvsdepend.sh "$(CC)" "$(CFLAGS)" "$(SRC)" "$(SRC:$(SRCPATH)/%.c=%-10.o)" 1>> .depend;)
 endif
+# ti compiler -ppd=filename will override file's content not append
+# by default, ti compiler generates output in . not $(dir $(SRC)) so -fr is needed
+# by default, ti compiler generates *.obj not *.o so -eo=o is needed
+else ifeq ($(COMPILER),TI)
+	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS) $(SRCCLI) $(SRCSO) $(SRCEXAMPLE)), $(CC) $(CFLAGS) $(SRC) -eo=o -fr=$(dir $(SRC)) $(DEPMM)=.depend.orig && cat .depend.orig >> .depend;)
+ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
+	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS_X) $(SRCS_8) $(SRCCLI_X) $(SRCCHK_X)), $(CC) $(CFLAGS) $(SRC) -eo=o -fr=$(dir $(SRC)) $(DEPMM)=.depend.orig && sed 's/\.o:/-8&/' .depend.orig >> .depend;)
+endif
+ifneq ($(findstring HAVE_BITDEPTH10 1, $(CONFIG)),)
+	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS_X) $(SRCCLI_X) $(SRCCHK_X)), $(CC) $(CFLAGS) $(SRC) -eo=o -fr=$(dir $(SRC)) $(DEPMM)=.depend.orig && 's/\.o:/-10&/' .depend.orig >> .depend;)
+endif
 else
 	@$(foreach SRC, $(addprefix $(SRCPATH)/, $(SRCS) $(SRCCLI) $(SRCSO) $(SRCEXAMPLE)), $(CC) $(CFLAGS) $(SRC) $(DEPMT) $(SRC:$(SRCPATH)/%.c=%.o) $(DEPMM) 1>> .depend;)
 ifneq ($(findstring HAVE_BITDEPTH8 1, $(CONFIG)),)
