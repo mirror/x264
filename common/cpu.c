@@ -517,17 +517,7 @@ int x264_cpu_num_processors( void )
     return sysconf( _SC_NPROCESSORS_CONF );
 #else
     cpu_set_t p_aff;
-    memset( &p_aff, 0, sizeof(p_aff) );
-    if( sched_getaffinity( 0, sizeof(p_aff), &p_aff ) )
-        return 1;
-#if HAVE_CPU_COUNT
-    return CPU_COUNT(&p_aff);
-#else
-    int np = 0;
-    for( size_t bit = 0; bit < 8 * sizeof(p_aff); bit++ )
-        np += (((uint8_t *)&p_aff)[bit / 8] >> (bit % 8)) & 1;
-    return np;
-#endif
+    return sched_getaffinity( 0, sizeof(p_aff), &p_aff ) ? 1 : CPU_COUNT(&p_aff);
 #endif
 
 #elif SYS_BEOS
