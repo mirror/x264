@@ -369,7 +369,7 @@ void x264_adaptive_quant_frame( x264_t *h, x264_frame_t *frame, float *quant_off
             avg_adj_pow2 /= h->mb.i_mb_count;
             strength = h->param.rc.f_aq_strength * avg_adj;
             avg_adj = avg_adj - 0.5f * (avg_adj_pow2 - 14.f) / avg_adj;
-            bias_strength = h->param.rc.f_aq_strength;
+            bias_strength = h->param.rc.f_aq_strength * h->param.rc.f_aq_bias_strength;
         }
         else
             strength = h->param.rc.f_aq_strength * 1.0397f;
