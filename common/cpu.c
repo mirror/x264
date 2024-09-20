@@ -469,7 +469,29 @@ uint32_t x264_cpu_detect( void )
 
 uint32_t x264_cpu_detect( void )
 {
-    return X264_CPU_MSA;
+    uint32_t flags = 0;
+
+# ifdef __linux__
+    FILE* fp = fopen("/proc/cpuinfo", "r");
+    if (!fp)
+        return flags;
+
+    char buf[200];
+    memset(buf, 0, sizeof(buf));
+    while (fgets(buf, sizeof(buf), fp)) {
+        if(!strncmp(buf, "ASEs implemented", strlen("ASEs implemented"))) {
+            if (strstr(buf, "msa")) {
+                flags |= X264_CPU_MSA;
+            }
+            break;
+        }
+    }
+    fclose(fp);
+# else
+    flags |= X264_CPU_MSA;
+# endif
+
+    return flags;
 }
 
 #elif HAVE_LSX
