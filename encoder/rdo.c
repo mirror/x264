@@ -929,7 +929,7 @@ int quant_trellis_cavlc( x264_t *h, dctcoef *dct,
     const uint32_t *coef_weight2 = b_8x8 ? x264_dct8_weight2_tab : x264_dct4_weight2_tab;
     int64_t delta_distortion[16];
     int64_t score = 1ULL<<62;
-    int i, j;
+    unsigned int i, j;
     const int f = 1<<15;
     int nC = b_chroma && dc ? 3 + (num_coefs>>2)
                             : ct_index[x264_mb_predict_non_zero_code( h, !b_chroma && dc ? (idx - LUMA_DC)*16 : idx )];
