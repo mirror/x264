@@ -112,6 +112,81 @@ const x264_cpu_name_t x264_cpu_names[] =
 #include <setjmp.h>
 static sigjmp_buf jmpbuf;
 static volatile sig_atomic_t canjump = 0;
+int x264_cpu_detect_cgroups(void);
+
+
+/**
+ * Detects CPU count from cgroups if available
+ * Returns the number of CPUs available according to cgroups limitations
+ * Returns 0 if cgroups detection fails or is not applicable
+ */
+int x264_cpu_detect_cgroups( void )
+{
+    int cpu_count = 0;
+    char buf[256];
+    long quota = -1;
+    long period = -1;
+    int fd;
+    ssize_t len;
+
+    // Try cgroup v2 first
+    fd = open( "/sys/fs/cgroup/cpu.max", O_RDONLY );
+    if( fd >= 0 )
+    {
+        // cgroup v2 format: "quota period"
+        len = read( fd, buf, sizeof(buf) - 1 );
+        close( fd );
+        if( len > 0 )
+        {
+            buf[len] = '\0';
+            if( sscanf( buf, "%ld %ld", &quota, &period ) != 2 )
+            {
+                quota = -1;
+                period = -1;
+            }
+        }
+    }
+    else
+    {
+        // Fall back to cgroup v1
+        fd = open( "/sys/fs/cgroup/cpu/cpu.cfs_quota_us", O_RDONLY );
+        if( fd >= 0 )
+        {
+            len = read( fd, buf, sizeof(buf) - 1 );
+            close( fd );
+            if( len > 0 )
+            {
+                buf[len] = '\0';
+                quota = atol( buf );
+            }
+        }
+
+        fd = open( "/sys/fs/cgroup/cpu/cpu.cfs_period_us", O_RDONLY );
+        if( fd >= 0 )
+        {
+            len = read( fd, buf, sizeof(buf) - 1 );
+            close( fd );
+            if( len > 0 )
+            {
+                buf[len] = '\0';
+                period = atol( buf );
+            }
+        }
+    }
+
+    // Calculate CPU count based on quota and period
+    if( quota > 0 && period > 0 )
+    {
+        cpu_count = (int)( quota / period );
+        if( cpu_count < 1 )
+            cpu_count = 1;
+    }
+
+    return cpu_count;
+}
+
+/**
+
 
 static void sigill_handler( int sig )
 {
@@ -502,6 +577,8 @@ uint32_t x264_cpu_detect( void )
 
 int x264_cpu_num_processors( void )
 {
+int system_cpu_count = 0;
+int cgroups_cpu_count = 0;
 #if !HAVE_THREAD
     return 1;
 
@@ -521,7 +598,14 @@ int x264_cpu_num_processors( void )
     if( sched_getaffinity( 0, sizeof(p_aff), &p_aff ) )
         return 1;
 #if HAVE_CPU_COUNT
-    return CPU_COUNT(&p_aff);
+    // Check for cgroups limitations
+    cgroups_cpu_count = x264_cpu_detect_cgroups();
+
+    // Use the lower of the two values if cgroups detection succeeded
+    if( cgroups_cpu_count > 0 )
+        return cgroups_cpu_count;
+    else
+        return CPU_COUNT(&p_aff);
 #else
     int np = 0;
     for( size_t bit = 0; bit < 8 * sizeof(p_aff); bit++ )
@@ -547,4 +631,5 @@ int x264_cpu_num_processors( void )
 #else
     return 1;
 #endif
+
 }
