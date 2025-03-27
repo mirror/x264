@@ -312,6 +312,128 @@ uint32_t x264_cpu_detect( void )
 
 #if SYS_MACOSX || SYS_OPENBSD || SYS_FREEBSD || SYS_NETBSD
 
+uint32_t int get_cpu_count_cgroup( void )
+{
+    char path[256] = {0};
+    int quota_fd = -1;
+    int period_fd = -1;
+    int is_cgroup_v2 = 0;
+
+    // Try to read CPU quota and period from cgroup v2
+    strcpy(path, "/sys/fs/cgroup/cpu.max");
+    quota_fd = open(path, O_RDONLY);
+    if (quota_fd >= 0) {
+        is_cgroup_v2 = 1;
+    } else {
+        // Fall back to cgroup v1
+        strcpy(path, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us");
+        quota_fd = open(path, O_RDONLY);
+    }
+    
+    if (quota_fd >= 0) {
+        char quota_buf[64] = {0};
+        int len = read(quota_fd, quota_buf, sizeof(quota_buf) - 1);
+        close(quota_fd);
+        
+        if (len > 0) {
+            // Remove newline if present
+            if (quota_buf[len-1] == '\n') {
+                quota_buf[len-1] = '\0';
+            }
+            
+            long quota = -1;
+            long period = 100000; // Default period
+            
+            // Parse quota value
+            if (is_cgroup_v2 && strstr(quota_buf, "max")) {
+                // "max" means no limit in cgroup v2
+                quota = -1;
+            } else {
+                quota = strtol(quota_buf, NULL, 10);
+            }
+            
+            // If we have a valid quota, we need to get the period
+            if (quota > 0) {
+                if (!is_cgroup_v2) {
+                    // Read period from cgroup v1
+                    period_fd = open("/sys/fs/cgroup/cpu/cpu.cfs_period_us", O_RDONLY);
+                    if (period_fd >= 0) {
+                        char period_buf[64] = {0};
+                        len = read(period_fd, period_buf, sizeof(period_buf) - 1);
+                        close(period_fd);
+                        
+                        if (len > 0) {
+                            if (period_buf[len-1] == '\n') {
+                                period_buf[len-1] = '\0';
+                            }
+                            period = strtol(period_buf, NULL, 10);
+                        }
+                    }
+                } else if (strchr(quota_buf, ' ') != NULL) {
+                    // In cgroup v2, the format is "quota period"
+                    char* space = strchr(quota_buf, ' ');
+                    if (space) {
+                        period = strtol(space + 1, NULL, 10);
+                    }
+                }
+                
+                if (period > 0) {
+                    int cpu_count = (int)((quota + period - 1) / period); // Round up
+                    if (cpu_count > 0) {
+                        return cpu_count;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Try to read the CPU set limits
+    int cpuset_fd = -1;
+    cpuset_fd = open("/sys/fs/cgroup/cpuset.cpus", O_RDONLY);
+    if (cpuset_fd < 0) {
+        cpuset_fd = open("/sys/fs/cgroup/cpuset/cpuset.cpus", O_RDONLY);
+    }
+    
+    if (cpuset_fd >= 0) {
+        char cpuset_buf[1024] = {0};
+        int len = read(cpuset_fd, cpuset_buf, sizeof(cpuset_buf) - 1);
+        close(cpuset_fd);
+        
+        if (len > 0) {
+            // Remove newline if present
+            if (cpuset_buf[len-1] == '\n') {
+                cpuset_buf[len-1] = '\0';
+            }
+            
+            // Parse CPU set format like "0-3,5,7-8"
+            int cpu_count = 0;
+            char* saveptr = NULL;
+            char* tok = strtok_r(cpuset_buf, ",", &saveptr);
+            
+            while (tok != NULL) {
+                if (strchr(tok, '-') != NULL) {
+                    // Range like "0-3"
+                    int start, end;
+                    if (sscanf(tok, "%d-%d", &start, &end) == 2) {
+                        cpu_count += end - start + 1;
+                    }
+                } else {
+                    // Single CPU like "5"
+                    cpu_count++;
+                }
+                tok = strtok_r(NULL, ",", &saveptr);
+            }
+            
+            if (cpu_count > 0) {
+                return cpu_count;
+            }
+        }
+    }
+    
+    // Failed to get CPU count from cgroup, return -1 to fall back to defaults
+    return -1;
+}
+
 uint32_t x264_cpu_detect( void )
 {
     /* Thank you VLC */
@@ -516,12 +638,16 @@ int x264_cpu_num_processors( void )
     // Android NDK does not expose sched_getaffinity
     return sysconf( _SC_NPROCESSORS_CONF );
 #else
+    int c = get_cpu_count_cgroup();
+    if (c > 0) {
+        return 1;
+    }
     cpu_set_t p_aff;
     memset( &p_aff, 0, sizeof(p_aff) );
     if( sched_getaffinity( 0, sizeof(p_aff), &p_aff ) )
         return 1;
 #if HAVE_CPU_COUNT
-    return CPU_COUNT(&p_aff);
+        return CPU_COUNT(&p_aff);
 #else
     int np = 0;
     for( size_t bit = 0; bit < 8 * sizeof(p_aff); bit++ )

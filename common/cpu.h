@@ -27,6 +27,7 @@
 #define X264_CPU_H
 
 X264_API uint32_t x264_cpu_detect( void );
+X264_API int get_cpu_count_cgroup( void );
 X264_API int      x264_cpu_num_processors( void );
 void     x264_cpu_emms( void );
 void     x264_cpu_sfence( void );
